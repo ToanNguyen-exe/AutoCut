@@ -1,0 +1,49 @@
+preset: lecture_programming
+
+transcript:
+  model: whisper-large-v3
+  language: vi
+  use_outline_as_prompt: true
+
+segmentation:
+  levels: 2
+  section_labels: [Giới thiệu, Lý thuyết, Thực hành ví dụ, Bài tập, Hỏi đáp, Tổng kết]
+  export_sections: [Lý thuyết, Thực hành ví dụ, Bài tập]
+  drop_labels: [Ngoài lề]
+  merge_revisited_topics: false
+  max_llm_chars: 60000
+  llm_max_retries: 2
+
+outline:
+  mode: guided
+  strict: false
+  text: ""
+
+duration:
+  max_duration: 420            # 7 phút = 420 giây
+  max_overflow: 10             # Dung sai 10% (tối đa 462 giây)
+  min_duration: 30             # Bỏ/gộp đoạn < 30 giây
+  split_strategy: balanced     # balanced | greedy
+  split_search_window: 60      # Cửa sổ tìm kiếm điểm ngắt (giây)
+  part_overlap: 0
+
+cut_points:
+  pause_threshold: 1.5         # Ngưỡng im lặng lấy hơi (giây)
+  snap_window_sentences: 3     # Quét +/- 3 câu quanh mốc LLM
+  cue_phrases:
+    - "tiếp theo"
+    - "chuyển sang"
+    - "bây giờ chúng ta"
+    - "bài tập số"
+    - "ví dụ tiếp theo"
+    - "sang phần"
+
+output:
+  naming_template: "{topic_no:02d}_{slug}{part}"
+  section_folder_template: "{section_no:02d}_{section_slug}"
+  part_label: "_Phan{n}"
+  folder_structure: nested
+  export_chapters: true
+  padding_start: 0.3           # Lùi 0.3s chống cụt âm đầu
+  padding_end: 0.5             # Tiến 0.5s cho thở tự nhiên
+  cut_mode: accurate           # accurate (re-encode libx264) | fast (stream copy)

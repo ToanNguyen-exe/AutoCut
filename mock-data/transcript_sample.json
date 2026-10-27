@@ -1,0 +1,37 @@
+{
+  "video": "Bai05_VongLap.mp4",
+  "duration": 1820.0,
+  "sentences": [
+    {
+      "id": "S0001",
+      "start": 0.0,
+      "end": 4.5,
+      "text": "Chào các bạn, hôm nay chúng ta sẽ bắt đầu với vòng lặp for.",
+      "words": [
+        { "word": "Chào", "start": 0.0, "end": 0.5 },
+        { "word": "các", "start": 0.5, "end": 0.8 },
+        { "word": "bạn", "start": 0.8, "end": 1.1 }
+      ]
+    },
+    {
+      "id": "S0040",
+      "start": 345.0,
+      "end": 350.2,
+      "text": "Như vậy chúng ta đã tìm hiểu xong cú pháp và ví dụ cơ bản của vòng lặp for.",
+      "words": [
+        { "word": "Như", "start": 345.0, "end": 345.3 },
+        { "word": "vậy", "start": 345.3, "end": 345.6 }
+      ]
+    },
+    {
+      "id": "S0041",
+      "start": 352.0,
+      "end": 357.8,
+      "text": "Tiếp theo, bây giờ chúng ta sẽ chuyển sang vòng lặp while.",
+      "words": [
+        { "word": "Tiếp", "start": 352.0, "end": 352.4 },
+        { "word": "theo", "start": 352.4, "end": 352.8 }
+      ]
+    }
+  ]
+}
