@@ -7,9 +7,6 @@
 # Java & Spring Boot
 target/
 *.class
-.mvn/
-mvnw
-mvnw.cmd
 .gradle/
 build/
 *.jar
