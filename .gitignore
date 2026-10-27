@@ -41,3 +41,6 @@ output/
 *.mp3
 *.wav
 *.zip
+
+# AI Agents & Skills
+.agents/
