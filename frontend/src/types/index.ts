@@ -46,3 +46,31 @@ export interface SegmentsData {
   reviewed: boolean;
   segments: Segment[];
 }
+
+export interface User {
+  id: string;
+  username: string;
+  password?: string;
+  name: string;
+  role: string;
+  email: string;
+  avatar: string;
+  avatarColor: string;
+}
+
+export interface VideoLibraryItem {
+  id: string;
+  name: string;
+  lesson: string;
+  title: string;
+  url: string;
+  duration: number;
+  status: "edited" | "pending" | "added";
+  statusLabel: string;
+  category: string;
+  segmentsCount: number;
+  updatedAt: string;
+  segments: Segment[];
+  transcript?: TranscriptData;
+}
+

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "u01",
+    "username": "admin",
+    "password": "admin123",
+    "name": "Nguyễn Văn Toàn",
+    "role": "Giảng viên / Trưởng nhóm",
+    "email": "toan.nguyen@autocut.ai",
+    "avatar": "T",
+    "avatarColor": "from-purple-600 to-indigo-600"
+  },
+  {
+    "id": "u02",
+    "username": "sv1",
+    "password": "video123",
+    "name": "Trần Quang Minh",
+    "role": "SV1 - Video Engine (FFmpeg)",
+    "email": "minh.tq@autocut.ai",
+    "avatar": "M",
+    "avatarColor": "from-blue-600 to-cyan-600"
+  },
+  {
+    "id": "u03",
+    "username": "sv2",
+    "password": "ai123",
+    "name": "Lê Hoàng Nam",
+    "role": "SV2 - AI Whisper & LLM",
+    "email": "nam.lh@autocut.ai",
+    "avatar": "N",
+    "avatarColor": "from-emerald-600 to-teal-600"
+  },
+  {
+    "id": "u04",
+    "username": "sv3",
+    "password": "core123",
+    "name": "Phạm Đức Anh",
+    "role": "SV3 - Core REST API",
+    "email": "anh.pd@autocut.ai",
+    "avatar": "A",
+    "avatarColor": "from-amber-600 to-orange-600"
+  },
+  {
+    "id": "u05",
+    "username": "sv4",
+    "password": "ui123",
+    "name": "Hoàng Thị Mai",
+    "role": "SV4 - Web Studio & QA",
+    "email": "mai.ht@autocut.ai",
+    "avatar": "H",
+    "avatarColor": "from-violet-600 to-pink-600"
+  },
+  {
+    "id": "u06",
+    "username": "demo",
+    "password": "demo123",
+    "name": "Học viên Demo",
+    "role": "Tester / Student",
+    "email": "demo@autocut.ai",
+    "avatar": "D",
+    "avatarColor": "from-slate-600 to-slate-800"
+  }
+]

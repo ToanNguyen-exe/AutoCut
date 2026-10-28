@@ -1,0 +1,80 @@
+[
+  {
+    "id": "vid_01",
+    "name": "Bai05_VongLap.mp4",
+    "lesson": "Bai05_VongLap",
+    "title": "Bài 05: Cấu trúc lặp For, While và Do-While",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 5700,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình C/C++ Cơ Bản",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 14:15"
+  },
+  {
+    "id": "vid_02",
+    "name": "Bai04_HamVaThamSo.mp4",
+    "lesson": "Bai04_HamVaThamSo",
+    "title": "Bài 04: Hàm và Truyền tham số trong C++",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "duration": 2700,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình C/C++ Cơ Bản",
+    "segmentsCount": 3,
+    "updatedAt": "28/10/2026 11:30"
+  },
+  {
+    "id": "vid_03",
+    "name": "Bai06_CauTrucDuLieu.mp4",
+    "lesson": "Bai06_CauTrucDuLieu",
+    "title": "Bài 06: Mảng một chiều và Con trỏ trong bộ nhớ",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "duration": 3600,
+    "status": "pending",
+    "statusLabel": "Chưa sửa",
+    "category": "Cấu Trúc Dữ Liệu",
+    "segmentsCount": 2,
+    "updatedAt": "27/10/2026 16:40"
+  },
+  {
+    "id": "vid_04",
+    "name": "Bai07_ThuatToanSapXep.mp4",
+    "lesson": "Bai07_ThuatToanSapXep",
+    "title": "Bài 07: Các thuật toán sắp xếp (Bubble, QuickSort)",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 5100,
+    "status": "pending",
+    "statusLabel": "Chưa sửa",
+    "category": "Giải Thuật & Thuật Toán",
+    "segmentsCount": 3,
+    "updatedAt": "26/10/2026 09:15"
+  },
+  {
+    "id": "vid_05",
+    "name": "BaiGiang_TriTueNhanTao_Full.mp4",
+    "lesson": "BaiGiang_TriTueNhanTao_Full",
+    "title": "Bài giảng: Trí tuệ Nhân tạo & Machine Learning căn bản",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "duration": 6900,
+    "status": "added",
+    "statusLabel": "Đã thêm",
+    "category": "Trí Tuệ Nhân Tạo (AI)",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 13:40"
+  },
+  {
+    "id": "vid_06",
+    "name": "BaiGiang_LapTrinhWeb_2Gio.mp4",
+    "lesson": "BaiGiang_LapTrinhWeb_2Gio",
+    "title": "Full Khóa Lập Trình Web Hiện Đại với React & Next.js",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 7200,
+    "status": "added",
+    "statusLabel": "Đã thêm",
+    "category": "Lập Trình Web",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 14:20"
+  }
+]

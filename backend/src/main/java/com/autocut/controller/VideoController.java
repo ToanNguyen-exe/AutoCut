@@ -42,7 +42,8 @@ public class VideoController {
             return ResponseEntity.notFound().build();
         }
         try {
-            SegmentsDTO dto = objectMapper.readValue(path.toFile(), SegmentsDTO.class);
+            String content = Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+            SegmentsDTO dto = objectMapper.readValue(content, SegmentsDTO.class);
             return ResponseEntity.ok(dto);
         } catch (IOException e) {
             log.error("Lỗi đọc segments_sample.json: {}", e.getMessage(), e);
@@ -61,7 +62,8 @@ public class VideoController {
             return ResponseEntity.notFound().build();
         }
         try {
-            TranscriptDTO dto = objectMapper.readValue(path.toFile(), TranscriptDTO.class);
+            String content = Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+            TranscriptDTO dto = objectMapper.readValue(content, TranscriptDTO.class);
             return ResponseEntity.ok(dto);
         } catch (IOException e) {
             log.error("Lỗi đọc transcript_sample.json: {}", e.getMessage(), e);
@@ -82,6 +84,14 @@ public class VideoController {
             ));
         }
         return ResponseEntity.ok(Map.of("cached", false));
+    }
+
+    /**
+     * Trả về cấu hình hiện tại từ config.yaml.
+     */
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, Object>> getConfig() {
+        return ResponseEntity.ok(configService.getRawConfig());
     }
 
     /**
