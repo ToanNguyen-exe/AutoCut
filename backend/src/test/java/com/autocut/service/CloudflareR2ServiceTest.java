@@ -23,14 +23,14 @@ public class CloudflareR2ServiceTest {
         Files.writeString(tempFile, "Hello Cloudflare R2 from AutoCut!");
 
         try {
-            String testKey = "test/test-connection.txt";
+            String testKey = "test-connection.txt";
             String uploadedUrl = r2Service.uploadFile(tempFile, testKey);
 
             System.out.println(">>> Upload thành công lên R2!");
             System.out.println(">>> Public URL: " + uploadedUrl);
 
             Assertions.assertNotNull(uploadedUrl);
-            Assertions.assertTrue(uploadedUrl.contains("test-connection.txt"));
+            Assertions.assertTrue(uploadedUrl.contains("autocut/test-connection.txt"));
         } finally {
             Files.deleteIfExists(tempFile);
         }

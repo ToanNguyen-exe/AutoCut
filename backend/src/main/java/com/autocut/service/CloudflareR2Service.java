@@ -9,7 +9,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.File;
 import java.net.URI;
@@ -19,7 +22,8 @@ import java.nio.file.Path;
 public class CloudflareR2Service {
 
     private static final Logger log = LoggerFactory.getLogger(CloudflareR2Service.class);
-
+    public static final long MAX_STORAGE_LIMIT_BYTES = 8L * 1024 * 1024 * 1024; // Trần an toàn 8GB (tránh vượt 10GB free của Cloudflare)
+    public static final String ROOT_FOLDER = "autocut/";
     private final String endpoint;
     private final String bucketName;
     private final String accessKeyId;
@@ -58,13 +62,39 @@ public class CloudflareR2Service {
     }
 
     /**
-     * Tải một file lên Cloudflare R2
+     * Tính tổng dung lượng hiện tại đang lưu trữ trong bucket (bytes)
+     */
+    public long getCurrentUsageBytes() {
+        if (s3Client == null) return 0;
+        long totalBytes = 0;
+        String continuationToken = null;
+
+        do {
+            ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
+                    .bucket(bucketName);
+            if (continuationToken != null) {
+                builder.continuationToken(continuationToken);
+            }
+
+            ListObjectsV2Response res = s3Client.listObjectsV2(builder.build());
+            for (S3Object obj : res.contents()) {
+                totalBytes += obj.size();
+            }
+            continuationToken = res.nextContinuationToken();
+        } while (continuationToken != null);
+
+        return totalBytes;
+    }
+
+    /**
+     * Tải một file lên Cloudflare R2 bên trong folder "autocut/"
+     * Tự động kiểm tra trần dung lượng 8GB để bảo vệ tài khoản, tránh phát sinh phí ngoài ý muốn.
      *
      * @param localFilePath Đường dẫn file trên ổ cứng máy
-     * @param r2Key         Đường dẫn lưu trên bucket (vd: uploads/Bai05.mp4 hoặc output/01_for.mp4)
-     * @return URL truy cập file (hoặc r2Key nếu chưa có public domain)
+     * @param relativeKey   Đường dẫn tương đối bên trong folder autocut (vd: uploads/Bai05.mp4)
+     * @return URL truy cập file
      */
-    public String uploadFile(Path localFilePath, String r2Key) {
+    public String uploadFile(Path localFilePath, String relativeKey) {
         if (s3Client == null) {
             throw new IllegalStateException("Cloudflare R2 chưa được cấu hình Access Key!");
         }
@@ -74,19 +104,38 @@ public class CloudflareR2Service {
             throw new IllegalArgumentException("File nguồn không tồn tại: " + localFilePath);
         }
 
+        long fileSize = file.length();
+        long currentUsage = getCurrentUsageBytes();
+
+        // Kiểm tra trần 8GB
+        if (currentUsage + fileSize > MAX_STORAGE_LIMIT_BYTES) {
+            double currentGb = (double) currentUsage / (1024 * 1024 * 1024);
+            double incomingGb = (double) fileSize / (1024 * 1024 * 1024);
+            String err = String.format("CẢNH BÁO: Dung lượng lưu trữ Cloudflare R2 đã đạt %.2f GB / 8.00 GB giới hạn an toàn. Không thể upload thêm file %.2f GB để tránh phát sinh chi phí!",
+                    currentGb, incomingGb);
+            log.error(err);
+            throw new IllegalStateException(err);
+        }
+
+        // Tự động ghim tiền tố folder autocut/
+        String finalKey = relativeKey.startsWith("/") ? relativeKey.substring(1) : relativeKey;
+        if (!finalKey.startsWith(ROOT_FOLDER)) {
+            finalKey = ROOT_FOLDER + finalKey;
+        }
+
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(r2Key)
+                .key(finalKey)
                 .build();
 
-        log.info("Bắt đầu upload lên Cloudflare R2: {} -> {}/{}", file.getName(), bucketName, r2Key);
+        log.info("Bắt đầu upload lên Cloudflare R2: {} -> {}/{}", file.getName(), bucketName, finalKey);
         s3Client.putObject(request, RequestBody.fromFile(file));
-        log.info("Upload hoàn tất lên R2: {}", r2Key);
+        log.info("Upload hoàn tất lên R2: {}", finalKey);
 
         if (publicUrl != null && !publicUrl.isBlank()) {
-            return publicUrl.endsWith("/") ? publicUrl + r2Key : publicUrl + "/" + r2Key;
+            return publicUrl.endsWith("/") ? publicUrl + finalKey : publicUrl + "/" + finalKey;
         }
-        return endpoint + "/" + bucketName + "/" + r2Key;
+        return endpoint + "/" + bucketName + "/" + finalKey;
     }
 
     public boolean isConfigured() {
