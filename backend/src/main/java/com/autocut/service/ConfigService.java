@@ -109,4 +109,8 @@ public class ConfigService {
     public Map<String, Object> getRawConfig() {
         return Collections.unmodifiableMap(configMap != null ? configMap : Collections.emptyMap());
     }
+
+    public Dotenv getDotenv() {
+        return dotenv;
+    }
 }
