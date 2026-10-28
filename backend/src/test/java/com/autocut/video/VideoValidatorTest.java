@@ -1,6 +1,5 @@
-package com.autocut.service;
+package com.autocut.video;
 
-import com.autocut.dto.VideoValidationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,55 +16,58 @@ import static org.junit.jupiter.api.Assertions.*;
 class VideoValidatorTest {
 
     private VideoValidator validator;
+    private VideoProps props;
 
     @TempDir
     Path tempDir;
 
     @BeforeEach
     void setUp() {
-        validator = new VideoValidator("ffprobe");
+        props = new VideoProps("ffprobe", "ffmpeg", 10);
+        validator = new VideoValidator(props);
     }
 
     @Test
-    @DisplayName("Kiểm tra file null: Trả về kết quả không hợp lệ, không crash")
+    @DisplayName("Kiểm tra file null: Trả về kết quả không hợp lệ, mã lỗi FILE_NOT_FOUND")
     void testValidate_NullFile() {
-        VideoValidationResult result = validator.validate((File) null);
+        ValidationResult result = validator.validate((File) null);
         assertNotNull(result);
         assertFalse(result.isValid());
-        assertTrue(result.errorMessage().contains("null"));
+        assertEquals(ErrorCode.FILE_NOT_FOUND, result.errorCode());
     }
 
     @Test
-    @DisplayName("Kiểm tra file không tồn tại: Trả về kết quả không hợp lệ")
+    @DisplayName("Kiểm tra file không tồn tại: Trả về kết quả không hợp lệ, mã lỗi FILE_NOT_FOUND")
     void testValidate_NonExistentFile() {
         File missingFile = tempDir.resolve("missing_video.mp4").toFile();
-        VideoValidationResult result = validator.validate(missingFile);
+        ValidationResult result = validator.validate(missingFile);
         assertNotNull(result);
         assertFalse(result.isValid());
-        assertTrue(result.errorMessage().contains("không tồn tại"));
+        assertEquals(ErrorCode.FILE_NOT_FOUND, result.errorCode());
     }
 
     @Test
-    @DisplayName("Kiểm tra file 0 byte: Trả về kết quả không hợp lệ")
+    @DisplayName("Kiểm tra file 0 byte: Trả về kết quả không hợp lệ, mã lỗi FILE_EMPTY")
     void testValidate_ZeroByteFile() throws IOException {
         Path emptyFilePath = tempDir.resolve("empty.mp4");
         Files.createFile(emptyFilePath);
 
-        VideoValidationResult result = validator.validate(emptyFilePath.toFile());
+        ValidationResult result = validator.validate(emptyFilePath.toFile());
         assertNotNull(result);
         assertFalse(result.isValid());
-        assertTrue(result.errorMessage().contains("0 bytes"));
+        assertEquals(ErrorCode.FILE_EMPTY, result.errorCode());
     }
 
     @Test
     @DisplayName("Kiểm tra file rác/hỏng: Bắt lỗi file hỏng và không làm sập chương trình")
     void testValidate_CorruptedFile() throws IOException {
         Path corruptedPath = tempDir.resolve("corrupted.mp4");
-        Files.writeString(corruptedPath, "Day la file van ban gia mao video mp4");
+        Files.writeString(corruptedPath, "Day la file gia mao mp4");
 
-        VideoValidationResult result = validator.validate(corruptedPath.toFile());
+        ValidationResult result = validator.validate(corruptedPath.toFile());
         assertNotNull(result);
         assertFalse(result.isValid());
+        assertNotEquals(ErrorCode.SUCCESS, result.errorCode());
         assertNotNull(result.errorMessage());
     }
 
@@ -82,7 +84,7 @@ class VideoValidatorTest {
 
         List<File> batch = List.of(emptyFile.toFile(), corruptedFile.toFile(), missingFile);
 
-        List<VideoValidationResult> results = validator.validateBatch(batch);
+        List<ValidationResult> results = validator.validateBatch(batch);
 
         assertEquals(3, results.size());
         assertFalse(results.get(0).isValid());
