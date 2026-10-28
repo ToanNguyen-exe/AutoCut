@@ -23,7 +23,11 @@ public class ConfigService {
     private Map<String, Object> configMap;
 
     public ConfigService() {
-        this.dotenv = Dotenv.configure().ignoreIfMissing().load();
+        Dotenv loaded = Dotenv.configure().ignoreIfMissing().load();
+        if (loaded.get("R2_ACCESS_KEY_ID") == null) {
+            loaded = Dotenv.configure().directory("../").ignoreIfMissing().load();
+        }
+        this.dotenv = loaded;
         loadYamlConfig();
     }
 
