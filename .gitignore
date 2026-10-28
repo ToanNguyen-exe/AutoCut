@@ -43,4 +43,19 @@ output/
 *.avi
 *.mp3
 *.wav
+*.m4a
+*.aac
 *.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+.pytest_cache/
