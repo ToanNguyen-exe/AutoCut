@@ -35,6 +35,8 @@ Thumbs.db
 # Media & Cache Files
 cache/
 output/
+temp/
+player_test.html
 *.mp4
 *.mkv
 *.avi
