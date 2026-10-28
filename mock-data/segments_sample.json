@@ -59,14 +59,8 @@
         {
           "part": 1,
           "start": 710.0,
-          "end": 1080.0,
-          "file": "01_LyThuyet/03_do-while_Phan1.mp4"
-        },
-        {
-          "part": 2,
-          "start": 1080.0,
           "end": 1450.5,
-          "file": "01_LyThuyet/03_do-while_Phan2.mp4"
+          "file": "01_LyThuyet/03_do-while.mp4"
         }
       ]
     },
