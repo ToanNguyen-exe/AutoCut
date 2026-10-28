@@ -2,6 +2,8 @@ package com.autocut.controller;
 
 import com.autocut.dto.Models.SegmentsDTO;
 import com.autocut.dto.Models.TranscriptDTO;
+import com.autocut.entity.VideoEntity;
+import com.autocut.repository.VideoRepository;
 import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
@@ -31,12 +33,14 @@ public class VideoController {
     private final CacheService cacheService;
     private final ConfigService configService;
     private final CloudflareR2Service r2Service;
+    private final VideoRepository videoRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
+        this.videoRepository = videoRepository;
     }
 
     /**
@@ -69,6 +73,15 @@ public class VideoController {
             // Upload lên Cloudflare R2 trong folder autocut/sample_videos/
             String r2Key = "sample_videos/" + hash.substring(0, 12) + "_" + originalFilename;
             String publicUrl = r2Service.uploadFile(tempFile, r2Key);
+
+            // Lưu thông tin video vào Neon Lakebase Postgres
+            VideoEntity videoEntity = videoRepository.findBySha256Hash(hash).orElse(new VideoEntity());
+            videoEntity.setFileName(originalFilename);
+            videoEntity.setSha256Hash(hash);
+            videoEntity.setFileSize(file.getSize());
+            videoEntity.setCloudUrl(publicUrl);
+            videoEntity.setStatus("UPLOADED");
+            videoRepository.save(videoEntity);
 
             // Dọn dẹp file temp cục bộ
             Files.deleteIfExists(tempFile);
