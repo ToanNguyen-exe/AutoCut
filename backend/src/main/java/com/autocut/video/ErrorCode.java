@@ -10,8 +10,10 @@ public enum ErrorCode {
     CORRUPTED_FILE("Tệp hỏng hoặc không đúng định dạng media"),
     NO_AUDIO_STREAM("Video không có luồng âm thanh thực tế (audio stream = 0)"),
     INVALID_DURATION("Thời lượng video không hợp lệ (duration <= 0)"),
-    TIMEOUT("ffprobe chạy quá thời gian chờ cho phép (timeout)"),
-    PROCESS_EXECUTION_FAILED("Không thể khởi chạy công cụ ffprobe"),
+    INVALID_TIME_RANGE("Mốc thời gian cắt không hợp lệ (start >= end hoặc start < 0)"),
+    CUT_FAILED("Cắt video thất bại"),
+    TIMEOUT("Tiến trình chạy quá thời gian chờ cho phép (timeout)"),
+    PROCESS_EXECUTION_FAILED("Không thể khởi chạy công cụ ffmpeg/ffprobe"),
     JSON_PARSE_ERROR("Không thể giải mã cấu trúc JSON từ ffprobe"),
     UNKNOWN_ERROR("Lỗi không xác định");
 

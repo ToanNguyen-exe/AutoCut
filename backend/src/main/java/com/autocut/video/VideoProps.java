@@ -12,13 +12,19 @@ public class VideoProps {
     private String ffprobePath = "ffprobe";
     private String ffmpegPath = "ffmpeg";
     private int timeoutSeconds = 20;
+    private int cutTimeoutSeconds = 300;
 
     public VideoProps() {}
 
     public VideoProps(String ffprobePath, String ffmpegPath, int timeoutSeconds) {
+        this(ffprobePath, ffmpegPath, timeoutSeconds, 300);
+    }
+
+    public VideoProps(String ffprobePath, String ffmpegPath, int timeoutSeconds, int cutTimeoutSeconds) {
         this.ffprobePath = ffprobePath;
         this.ffmpegPath = ffmpegPath;
         this.timeoutSeconds = timeoutSeconds;
+        this.cutTimeoutSeconds = cutTimeoutSeconds;
     }
 
     public String getFfprobePath() {
@@ -43,5 +49,13 @@ public class VideoProps {
 
     public void setTimeoutSeconds(int timeoutSeconds) {
         this.timeoutSeconds = timeoutSeconds;
+    }
+
+    public int getCutTimeoutSeconds() {
+        return cutTimeoutSeconds;
+    }
+
+    public void setCutTimeoutSeconds(int cutTimeoutSeconds) {
+        this.cutTimeoutSeconds = cutTimeoutSeconds;
     }
 }
