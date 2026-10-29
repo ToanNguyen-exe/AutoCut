@@ -71,7 +71,8 @@ public class CloudflareR2Service {
 
         do {
             ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
-                    .bucket(bucketName);
+                    .bucket(bucketName)
+                    .prefix(ROOT_FOLDER);
             if (continuationToken != null) {
                 builder.continuationToken(continuationToken);
             }

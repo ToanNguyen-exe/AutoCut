@@ -28,13 +28,7 @@ public class DatabaseConfig {
         String databaseUrl = dotenv.get("DATABASE_URL");
 
         if (databaseUrl == null || databaseUrl.isBlank()) {
-            log.warn("Chưa cấu hình DATABASE_URL trong .env, sử dụng H2 in-memory tạm thời!");
-            return DataSourceBuilder.create()
-                    .driverClassName("org.h2.Driver")
-                    .url("jdbc:h2:mem:autocut_db;DB_CLOSE_DELAY=-1")
-                    .username("sa")
-                    .password("")
-                    .build();
+            throw new IllegalStateException("Chưa cấu hình DATABASE_URL trong .env. Vui lòng cung cấp chuỗi kết nối PostgreSQL của Neon!");
         }
 
         try {
@@ -59,6 +53,9 @@ public class DatabaseConfig {
                 String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
                 if (query != null && !query.isBlank()) {
                     jdbcUrl += "?" + query;
+                    if (!query.contains("sslmode")) {
+                        jdbcUrl += "&sslmode=require";
+                    }
                 } else {
                     jdbcUrl += "?sslmode=require";
                 }

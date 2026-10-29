@@ -55,6 +55,7 @@ public class VideoController {
             return ResponseEntity.badRequest().body(Map.of("error", "File video rỗng!"));
         }
 
+        Path tempFile = null;
         try {
             String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "sample.mp4";
             Path tempDir = Paths.get("temp");
@@ -62,7 +63,7 @@ public class VideoController {
                 Files.createDirectories(tempDir);
             }
 
-            Path tempFile = tempDir.resolve(System.currentTimeMillis() + "_" + originalFilename);
+            tempFile = tempDir.resolve(System.currentTimeMillis() + "_" + originalFilename);
             try (InputStream is = file.getInputStream()) {
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
             }
@@ -79,12 +80,10 @@ public class VideoController {
             videoEntity.setFileName(originalFilename);
             videoEntity.setSha256Hash(hash);
             videoEntity.setFileSize(file.getSize());
+            videoEntity.setR2Key(r2Key);
             videoEntity.setCloudUrl(publicUrl);
             videoEntity.setStatus("UPLOADED");
             videoRepository.save(videoEntity);
-
-            // Dọn dẹp file temp cục bộ
-            Files.deleteIfExists(tempFile);
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "SUCCESS");
@@ -102,6 +101,14 @@ public class VideoController {
         } catch (Exception e) {
             log.error("Lỗi khi upload video lên R2: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of("error", "Lỗi server: " + e.getMessage()));
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    log.warn("Không thể xóa tệp tạm {}: {}", tempFile, e.getMessage());
+                }
+            }
         }
     }
 
@@ -151,11 +158,15 @@ public class VideoController {
         Optional<TranscriptDTO> cached = cacheService.getCachedTranscript(hash);
         if (cached.isPresent()) {
             return ResponseEntity.ok(Map.of(
+                    "status", "HIT",
                     "cached", true,
                     "transcript", cached.get()
             ));
         }
-        return ResponseEntity.ok(Map.of("cached", false));
+        return ResponseEntity.ok(Map.of(
+                "status", "MISS",
+                "cached", false
+        ));
     }
 
     /**

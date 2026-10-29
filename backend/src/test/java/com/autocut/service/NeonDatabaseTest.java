@@ -19,6 +19,7 @@ public class NeonDatabaseTest {
     void testNeonDatabaseConnectionAndCrud() {
         String testHash = "neon_test_hash_" + System.currentTimeMillis();
         VideoEntity video = new VideoEntity("Bai05_VongLap.mp4", testHash, "UPLOADED", 104857600L);
+        video.setR2Key("sample_videos/" + testHash + "_Bai05_VongLap.mp4");
         video.setCloudUrl("https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4");
 
         // 1. Lưu vào Neon Postgres

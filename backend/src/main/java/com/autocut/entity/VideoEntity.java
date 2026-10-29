@@ -14,11 +14,17 @@ public class VideoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "owner_id")
+    private Long ownerId;
+
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
     @Column(name = "file_path", length = 500)
     private String filePath;
+
+    @Column(name = "r2_key", length = 500)
+    private String r2Key;
 
     @Column(name = "cloud_url", length = 500)
     private String cloudUrl;
@@ -44,6 +50,10 @@ public class VideoEntity {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -66,10 +76,14 @@ public class VideoEntity {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
     public String getFilePath() { return filePath; }
     public void setFilePath(String filePath) { this.filePath = filePath; }
+    public String getR2Key() { return r2Key; }
+    public void setR2Key(String r2Key) { this.r2Key = r2Key; }
     public String getCloudUrl() { return cloudUrl; }
     public void setCloudUrl(String cloudUrl) { this.cloudUrl = cloudUrl; }
     public Long getFileSize() { return fileSize; }
@@ -90,4 +104,6 @@ public class VideoEntity {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }
