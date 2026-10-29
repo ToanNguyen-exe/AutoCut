@@ -9,7 +9,7 @@ Nhiệm vụ trong Pipeline:
 import json
 import logging
 import time
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 from google import genai
 from google.genai import types
@@ -27,12 +27,12 @@ class TranscriptRefiner:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-3.5-flash"
+        model_name: Optional[str] = None
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        self.model_name = model_name
+        self.model_name = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.client = genai.Client(
             api_key=self.api_key,
             http_options={"timeout": 60000.0}  # 60s timeout cho mỗi lượt text

@@ -8,20 +8,20 @@ Hỗ trợ:
 
 import argparse
 import json
-import logging
+
 import sys
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from .config_loader import default_ai_config
+
 from .gemini_transcriber import GeminiTranscriber
-from .post_processor import post_process_sentence, post_process_transcript
+from .post_processor import post_process_transcript
 from .models import TranscriptOutput
 
 
-def clean_existing_transcript_file(file_path: str, output_path: str = None):
+def clean_existing_transcript_file(file_path: str, output_path: str = None, refine_with_gemini: bool = False, outline_text: str = None):
     """Làm sạch và nâng cấp chất lượng một file transcript.json có sẵn."""
     p = Path(file_path)
     if not p.exists():
@@ -38,10 +38,19 @@ def clean_existing_transcript_file(file_path: str, output_path: str = None):
 
     cleaned_transcript = post_process_transcript(transcript)
 
+    if refine_with_gemini:
+        from .transcript_refiner import TranscriptRefiner
+        print(f"[*] Đang kích hoạt Gemini LLM để hiệu đính và sửa lỗi chính tả cho {len(cleaned_transcript.sentences)} câu...")
+        try:
+            refiner = TranscriptRefiner()
+            cleaned_transcript = refiner.refine_transcript(cleaned_transcript, outline_text=outline_text)
+        except Exception as e:
+            print(f"[!] Lỗi khi chạy Gemini Refiner: {e}")
+
     with open(out_p, "w", encoding="utf-8") as f:
         f.write(cleaned_transcript.model_dump_json(indent=2, exclude_none=True))
 
-    print(f"[+] Đã làm sạch thành công {total_before} câu!")
+    print(f"[+] Đã làm sạch và tối ưu: từ {total_before} câu vụn ➔ gộp lại thành {len(cleaned_transcript.sentences)} câu hoàn chỉnh!")
     print(f"[+] Đã loại bỏ hiện tượng lặp từ, ký tự ngoại ngữ rác (Hàn/Trung), và chuẩn hóa thuật ngữ chuyên ngành.")
     print(f"[+] File xuất kết quả: {out_p}")
 
@@ -50,7 +59,8 @@ def main():
     parser = argparse.ArgumentParser(description="AutoCut AI - SV2 Speech-to-Text Pipeline Nâng Cấp")
     parser.add_argument("--input", "-i", default=None, help="Đường dẫn tệp video hoặc audio đầu vào")
     parser.add_argument("--clean-file", default=None, help="Làm sạch và sửa lỗi trực tiếp trên tệp transcript.json có sẵn")
-    parser.add_argument("--outline", "-o", default=None, help="Văn bản đề cương bài giảng (dùng tạo initial_prompt)")
+    parser.add_argument("--refine", action="store_true", help="Kích hoạt Gemini LLM để hiệu đính ngữ cảnh, sửa lỗi chính tả và chuẩn hóa thuật ngữ sau khi Whisper bóc băng")
+    parser.add_argument("--outline", "-o", default=None, help="Văn bản đề cương bài giảng (dùng tạo initial_prompt và đối chiếu thuật ngữ)")
     parser.add_argument("--outline-file", default=None, help="Đường dẫn tệp văn bản chứa đề cương")
     parser.add_argument("--output", default="transcript.json", help="Đường dẫn lưu tệp transcript.json (mặc định: transcript.json)")
     parser.add_argument("--engine", choices=["whisper", "gemini"], default="whisper", help="Công nghệ STT sử dụng (mặc định: whisper)")
@@ -67,9 +77,19 @@ def main():
         print(f"[+] Đã dọn dẹp và xóa sạch {n} tệp cache thành công!")
         return
 
+    outline_text = args.outline
+    if args.outline_file and Path(args.outline_file).exists():
+        with open(args.outline_file, "r", encoding="utf-8") as f:
+            outline_text = f.read()
+
     # Chế độ làm sạch file transcript có sẵn
     if args.clean_file:
-        clean_existing_transcript_file(args.clean_file, args.output)
+        clean_existing_transcript_file(
+            file_path=args.clean_file,
+            output_path=args.output,
+            refine_with_gemini=args.refine,
+            outline_text=outline_text
+        )
         return
 
     if not args.input:
@@ -77,13 +97,10 @@ def main():
         print("\n[!] Lỗi: Bạn cần cung cấp --input <tệp_video> hoặc dùng --clean-file <transcript.json>")
         return
 
-    outline_text = args.outline
-    if args.outline_file and Path(args.outline_file).exists():
-        with open(args.outline_file, "r", encoding="utf-8") as f:
-            outline_text = f.read()
-
     print(f"[*] Bắt đầu xử lý file: {args.input}")
     print(f"[*] STT Engine: {args.engine.upper()}")
+    if args.refine:
+        print("[*] Gemini Refiner: BẬT (Whisper bóc băng ➔ Gemini sửa chính tả)")
     if outline_text:
         print(f"[*] Đề cương cung cấp:\n{outline_text.strip()}\n")
 
@@ -100,8 +117,22 @@ def main():
         output_file=args.output
     )
 
+    # Nếu bật cờ --refine: Dùng Gemini LLM để hiệu đính chính tả & chuẩn hóa thuật ngữ
+    if args.refine:
+        from .transcript_refiner import TranscriptRefiner
+        print("\n[*] Đang gửi kết quả sang Gemini LLM để hiệu đính chính tả & chuẩn hóa thuật ngữ...")
+        try:
+            refiner = TranscriptRefiner()
+            res = refiner.refine_transcript(res, outline_text=outline_text)
+            if args.output:
+                with open(args.output, "w", encoding="utf-8") as f:
+                    f.write(res.model_dump_json(indent=2, exclude_none=True))
+            print(f"[+] Đã hoàn tất hiệu đính chính tả bằng Gemini và lưu vào: {args.output}")
+        except Exception as e:
+            print(f"[!] Lỗi khi chạy Gemini Refiner: {e}")
+
     print("\n" + "=" * 50)
-    print(f"[+] Bóc băng hoàn tất!")
+    print(f"[+] Quy trình hoàn tất!")
     print(f"[+] Tên file: {res.video}")
     print(f"[+] Tổng thời lượng: {res.duration:.2f} giây")
     print(f"[+] Tổng số câu phân đoạn: {len(res.sentences)} câu")

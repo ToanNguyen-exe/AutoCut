@@ -9,31 +9,20 @@
 
 import json
 import logging
-import os
-import sys
 import time
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 
 from google import genai
 from google.genai import types
 
-from .models import Word, Sentence, TranscriptOutput
-from .prompt_builder import extract_terms_from_outline, build_initial_prompt
+from .models import Sentence, TranscriptOutput
+from .prompt_builder import extract_terms_from_outline
 from .config_loader import default_ai_config
-from .post_processor import post_process_sentence
+from .post_processor import post_process_sentence, merge_fragmented_segments
+from .whisper_service import compute_file_sha256
 
 logger = logging.getLogger("AutoCut.AI.GeminiSTT")
-
-
-def compute_file_sha256(file_path: str, chunk_size: int = 65536) -> str:
-    """Tính mã băm SHA-256 của file bằng luồng dữ liệu 64KB (RAM < 10MB)."""
-    import hashlib
-    hasher = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        while chunk := f.read(chunk_size):
-            hasher.update(chunk)
-    return hasher.hexdigest()
 
 
 AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma"}
@@ -110,13 +99,13 @@ class GeminiTranscriber:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-3.5-flash",
+        model_name: Optional[str] = None,
         cache_dir: Optional[str] = None
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        self.model_name = model_name
+        self.model_name = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.cache_dir = cache_dir or default_ai_config.cache_dir
         # Lưu ý quan trọng: Trong SDK google-genai, HttpOptions.timeout được tính bằng MILI-GIÂY (ms)!
         # Đặt timeout 600_000 ms (tương đương 600 giây = 10 phút).
@@ -242,49 +231,19 @@ LƯU Ý QUAN TRỌNG:
             raw_sentences = parsed.get("sentences", [])
             total_duration = float(parsed.get("duration", 0.0))
 
-            # Bước 4: Đánh mã câu S0001, S0002... theo Mục 5.1
-            digit_count = 5 if len(raw_sentences) > 9999 else 4
+            # Bước 4: Hậu xử lý gộp các đoạn vụn và đánh mã câu S0001, S0002... theo Mục 5.1
+            merged_items = merge_fragmented_segments(raw_sentences)
+            digit_count = 5 if len(merged_items) > 9999 else 4
             sentences: List[Sentence] = []
 
-            for idx, item in enumerate(raw_sentences, start=1):
+            for idx, item in enumerate(merged_items, start=1):
                 sentence_id = f"S{idx:0{digit_count}d}"
-                s_start = round(float(item.get("start", 0.0)), 2)
-                s_end = round(float(item.get("end", s_start + 1.0)), 2)
-                s_text = post_process_sentence(item.get("text", "").strip())
-                if not s_text:
-                    continue
-
-                words_data = item.get("words", [])
-                seg_words: List[Word] = []
-
-                if words_data:
-                    for w in words_data:
-                        word_str = w.get("word", "").strip()
-                        if word_str:
-                            seg_words.append(
-                                Word(
-                                    word=word_str,
-                                    start=round(float(w.get("start", s_start)), 2),
-                                    end=round(float(w.get("end", s_end)), 2)
-                                )
-                            )
-                else:
-                    # Nếu thiếu words, nội suy mốc thời gian đều cho từng từ
-                    tokens = s_text.split()
-                    if tokens:
-                        n = len(tokens)
-                        step = (s_end - s_start) / max(n, 1)
-                        for i, token in enumerate(tokens):
-                            w_start = round(s_start + i * step, 2)
-                            w_end = round(min(s_end, w_start + step), 2)
-                            seg_words.append(Word(word=token, start=w_start, end=w_end))
-
                 sentences.append(
                     Sentence(
                         id=sentence_id,
-                        start=s_start,
-                        end=s_end,
-                        text=s_text
+                        start=item["start"],
+                        end=item["end"],
+                        text=item["text"]
                     )
                 )
 

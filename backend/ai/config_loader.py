@@ -46,12 +46,25 @@ class AIConfig:
         self.whisper_language: str = transcript_cfg.get("language", "vi")
         self.use_outline_as_prompt: bool = transcript_cfg.get("use_outline_as_prompt", True)
 
-        # Gemini API Key
+        # Cấu hình VAD lọc khoảng lặng (tránh bẻ vụn câu khi giảng viên ngừng nghỉ ngắn)
+        self.vad_min_silence_duration_ms: int = int(
+            os.getenv("VAD_MIN_SILENCE_MS")
+            or transcript_cfg.get("min_silence_duration_ms")
+            or 1000
+        )
+        self.vad_speech_pad_ms: int = int(
+            os.getenv("VAD_SPEECH_PAD_MS")
+            or transcript_cfg.get("speech_pad_ms")
+            or 500
+        )
+
+        # Gemini API Key & Model
         self.gemini_api_key: str = (
             os.getenv("GEMINI_API_KEY")
             or os.getenv("LLM_API_KEY")
             or ""
         )
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
         # Thư mục cache và output
         self.cache_dir: str = os.getenv("CACHE_DIR", "./cache")

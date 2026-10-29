@@ -6,14 +6,15 @@
 3. P04: Cache transcript theo SHA-256 của file video/audio.
 4. Tầng hậu xử lý: Tự động chuẩn hóa thuật ngữ chuyên ngành (blockchain, Web3, tech stack, airdrop...).
 5. Tự động vá tương thích PyAV 14+ (khử lỗi metadata_errors).
+6. Tinh chỉnh VAD & Hậu xử lý gộp các segment vụn không có dấu chấm câu.
 """
 
 import hashlib
 import json
 import logging
-import os
+
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List
 
 # Bản vá tương thích giữa faster-whisper và PyAV 14+ (bỏ metadata_errors)
 try:
@@ -28,10 +29,10 @@ try:
 except Exception:
     pass
 
-from .models import Word, Sentence, TranscriptOutput
+from .models import Sentence, TranscriptOutput
 from .prompt_builder import build_initial_prompt
 from .config_loader import default_ai_config
-from .post_processor import post_process_sentence, post_process_transcript
+from .post_processor import post_process_sentence, post_process_transcript, merge_fragmented_segments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("AutoCut.AI.Whisper")
@@ -169,8 +170,8 @@ class WhisperTranscriber:
             language=self.language,
             vad_filter=True,
             vad_parameters=dict(
-                min_silence_duration_ms=500,
-                speech_pad_ms=400,
+                min_silence_duration_ms=default_ai_config.vad_min_silence_duration_ms,
+                speech_pad_ms=default_ai_config.vad_speech_pad_ms,
                 threshold=0.5
             ),
             word_timestamps=False,
@@ -205,26 +206,24 @@ class WhisperTranscriber:
                 raise
 
         total_segments = len(raw_segments)
-        logger.info(f"Whisper hoàn thành: nhận diện được {total_segments} câu.")
+        logger.info(f"Whisper hoàn thành: nhận diện được {total_segments} raw segments.")
 
-        # Bước 4: Làm sạch ảo giác và chuẩn hóa thuật ngữ chuyên ngành
-        digit_count = 5 if total_segments > 9999 else 4
+        # Bước 4: Hậu xử lý gộp các đoạn bị tách vụn và chuẩn hóa mã định danh câu Sxxxx
+        merged_items = merge_fragmented_segments(raw_segments)
+        total_merged = len(merged_items)
+        logger.info(f"Sau khi gộp câu vụn: còn lại {total_merged} câu hoàn chỉnh (tối ưu từ {total_segments} segments).")
+
+        digit_count = 5 if total_merged > 9999 else 4
         sentences: List[Sentence] = []
 
-        for idx, seg in enumerate(raw_segments, start=1):
-            raw_text = seg.text.strip()
-            # Áp dụng bộ lọc dọn rác và sửa từ chuyên ngành
-            cleaned_text = post_process_sentence(raw_text)
-            if not cleaned_text:
-                continue
-
+        for idx, item in enumerate(merged_items, start=1):
             sentence_id = f"S{idx:0{digit_count}d}"
             sentences.append(
                 Sentence(
                     id=sentence_id,
-                    start=round(seg.start, 2),
-                    end=round(seg.end, 2),
-                    text=cleaned_text
+                    start=item["start"],
+                    end=item["end"],
+                    text=item["text"]
                 )
             )
 
