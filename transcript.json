@@ -1,666 +1,1602 @@
 {
-  "video": "javascript.mp4",
-  "duration": 3427.57,
+  "video": "web3-lecture.mp4",
+  "duration": 1479.46,
   "sentences": [
     {
       "id": "S0001",
-      "start": 4.3,
-      "end": 9.22,
-      "text": "JavaScript là ngôn ngữ lập trình luôn nằm trong top bảng xếp hạng với mức độ phổ biến."
+      "start": 5.04,
+      "end": 10.66,
+      "text": "Hãy subscribe cho kênh Ghiền Mì Gõ để không bỏ lỡ những video hấp dẫn."
     },
     {
       "id": "S0002",
-      "start": 9.24,
-      "end": 110.52,
-      "text": "Anh em mà biết sử dụng JavaScript có thể viết được nhiều loại app từ desktop, web app đến mobile. Và cộng đồng các lập trình viên biết sử dụng ngôn ngữ JavaScript cũng rất là lớn, họ đã cùng nhau xây dựng một kho thư viện khổng lồ. Và chắc chắn rồi, anh em chúng ta có thể tận dụng kho thư viện này để phục vụ cho công việc copy-paste của chúng ta. Có một điều rất là quan trọng đó là nhu cầu tuyển dụng về ngôn ngữ JavaScript ở Việt Nam rất là lớn, có thể coi là dẫn đầu thị trường ở Việt Nam. Do vậy, anh em nào biết về JavaScript thì sẽ không lo thất nghiệp. Nghe qua đã hấp dẫn chưa anh em nhỉ? Trong video ngày hôm nay sẽ là một bài giảng nhập môn về ngôn ngữ JavaScript dành cho các anh em mới bắt đầu. OK anh em! Mục lục của video bài giảng này thì sẽ gồm một số nội dung sau: Đầu tiên, mình sẽ hướng dẫn anh em cách thiết lập môi trường. Sau đó, chúng ta sẽ bắt đầu làm quen với một số khái niệm cơ bản trong lập trình, ví dụ như là biến, nhập xuất dữ liệu, các kiểu dữ liệu như thế nào, có các phép toán gì, rồi thì các cấu trúc điều khiển. Sau đó, mình sẽ đi sang một số kiểu dữ liệu nâng cao như là Object, Array, String, Function. Rồi đến là một số cơ chế DOM và xử lý bất đồng bộ. Nhìn chung cũng nhiều đấy, nhưng mà mình sẽ cố gắng hết sức gói tóm được cái tinh thần của ngôn ngữ này trong khoảng 1 giờ đồng hồ trở lại. Nghe cũng có vẻ hơi lâu đấy, nhưng mà các anh em cứ hình dung nó chỉ ngang một tiết học mà các anh em học ở trên trường thôi. Nghĩ vậy cho nó thoải mái, đúng không ạ?"
+      "start": 37.2,
+      "end": 41.96,
+      "text": "Bạn member, team member cũng là của builder mà còn rất trẻ, nó sẽ đi number 3 thôi."
     },
     {
       "id": "S0003",
-      "start": 111.57,
-      "end": 226.38,
-      "text": "Rồi, chúng ta bắt đầu luôn để tiết kiệm thời gian nhá. Thì JavaScript cũng giống như các ngôn ngữ lập trình khác, nó cần có một cái môi trường để mà hoạt động, tiếng Anh gọi là runtime environment. Môi trường thì thực ra nó chỉ là một chương trình máy tính. Chương trình này nó hiểu được các đoạn mã được viết bằng ngôn ngữ lập trình. Giờ thì nói nhiều hơn về ngôn ngữ JavaScript đi. Bắt đầu sinh ra là để phục vụ cho môi trường trình duyệt web thôi, bây giờ JavaScript đã được mở rộng ra ở trên rất nhiều các loại môi trường khác nữa, trong đó nổi bật nhất là thằng Node.js. Tuy nhiên, ở mức độ nhập môn thì mình sẽ chỉ hướng dẫn các anh em viết code JavaScript ở trên môi trường trình duyệt thôi, kiểu như chúng ta sẽ viết những cái app nhỏ nhỏ chạy trên trình duyệt web. Xít quên! Anh em đợi mình lắp cái webcam. Bình thường mình không giảng bài thì mình sẽ bỏ cái cam ra bởi vì nó bị che mất phần viền trên, nhìn rất khó chịu. Thì trong môi trường trình duyệt web, anh em cần phải biết thêm một cái ngôn ngữ nữa gọi là HTML, hay nói thuần Việt là hát-tê-mê-lờ đi. Cái này cũng dễ học thôi, anh em yên tâm nha. Nôm na nó dùng để dựng phần khung của trang văn bản hiển thị lên trình duyệt web. Và mình đã có hẳn một video riêng để nói về ngôn ngữ HTML này, anh em nào chưa biết thì có thể xem lại nha. Trong video đấy mình cũng đã hướng dẫn cách setup môi trường luôn. Tóm tắt nhanh lại, các anh em cần cài cho mình 3 cái công cụ: 1 là VS Code để mà soạn thảo code này, 2 là một trình duyệt web (ở đây mình chọn Google Chrome), thứ ba là một plugin của VS Code, nôm na là để liên kết VS Code với trình duyệt web. OK! Anh em nào nghe những thứ vừa rồi mà cảm thấy nó lạ lạ thì tốt nhất là nên xem lại video cũ của mình về HTML đã nhé. Ở đây mình đã tạo sẵn 1 file văn bản HTML, và các đoạn code JavaScript của chúng ta sẽ được nhúng vào văn bản này. Đấy, code của anh em sẽ viết vào giữa cặp thẻ mở và thẻ đóng này."
+      "start": 42.0,
+      "end": 44.96,
+      "text": "Hôm nay chúng ta sẽ được gặp thêm một cái nhân vật mới trong kênh của mình."
     },
     {
       "id": "S0004",
-      "start": 226.38,
-      "end": 229.38,
-      "text": "Rồi, mình sẽ bắt đầu với một câu lệnh JavaScript đơn giản đầu tiên."
+      "start": 45.0,
+      "end": 45.68,
+      "text": "Hello mọi người!"
     },
     {
       "id": "S0005",
-      "start": 229.38,
-      "end": 336.92,
-      "text": "Nha! Đó là in một cái dòng thông báo ra phần trang web thì anh em gọi cho mình document.write. Sau đó là một cái dòng thông báo, ví dụ như mình viết là \"Kimochi\". Anh em nhớ bọc nó vào một cặp dấu nháy rồi anh em bấm Ctrl + S. Đó, thì cái dòng dữ liệu của chúng ta đã được in ra phần trang web. Ngoài ra, nếu anh em không muốn in dữ liệu ra trang web thì anh em cũng có thể chuyển nó vào phần console thông qua lệnh là console.log, đúng không ạ? Console có thể hiểu nó là một môi trường dòng lệnh. Dữ liệu khi mà đẩy ra console thì thường để phục vụ mục đích là phân tích cũng như là quan sát. Để mà mở được console trên trình duyệt thì anh em bấm cho mình F12 nhé, chọn tab là Console. OK! Bây giờ mình chạy lại anh em xem nè. Đó... Lúc này nó đã hiển thị Kimochi ở đây. Tuy nhiên, để cho dễ nhìn thì mình sẽ chủ yếu dùng lệnh document.write nhé. Rồi, bây giờ tôi sẽ giới thiệu với anh em về khái niệm biến, thuật ngữ tiếng Anh của nó gọi là variable. Có thể hiểu nó là một cái để lưu trữ dữ liệu tạm thời trong khi chương trình đang hoạt động và nó cần có một cái tên nhé. Ví dụ mình muốn tạo ra một biến để lưu trữ thông tin về độ tuổi của một em gái nào đấy chẳng hạn thì anh em có thể gõ lại như sau: var tuổi = 18; Thì ở đây, cái biến của chúng ta có tên là tuổi và var là từ khóa của lệnh. Ngoài ra chúng ta cũng có thể sử dụng từ khóa là let hoặc là const. Còn chúng khác nhau như thế nào thì tí nữa mình nói sau nha. Đó, thì cái việc mà chúng ta tạo ra một biến như thế này sẽ được gọi một cách kỹ thuật hơn gọi là khai báo biến, thuật ngữ tiếng Anh gọi là declaration. Và chi tiết hơn nữa, cái việc declare ở đây thì nó chỉ nằm ở lệnh var tuổi thôi. Còn cái việc chúng ta tạo một giá trị ban đầu cho nó sẽ được gọi là initialization, tức là khởi tạo. Chúng ta có thể gán những giá trị gì cho một biến? Thì chúng ta sẽ có 2 kiểu nhé: một là anh em sẽ cho nó một giá trị cố định, hai là lấy một giá trị từ một biến khác, đúng không ạ?"
+      "start": 45.72,
+      "end": 52.0,
+      "text": "Và này tên là Bich Trần cũng đang muốn trở thành một YouTuber về education về vlog trên dev giống như mình thôi."
     },
     {
       "id": "S0006",
-      "start": 336.92,
-      "end": 393.74,
-      "text": "Thì ở đây, trường hợp này là chúng ta đang lấy một giá trị cố định số 18, thuật ngữ tiếng Anh gọi trường hợp này là Literal hoặc là Fixed Value, tức là giá trị cố định, nó không thay đổi. Còn trường hợp thứ hai là chúng ta khai báo ra một biến, ví dụ là tuổi 2 chẳng hạn, và chúng ta có thể khởi tạo một giá trị ban đầu cho nó lấy từ cái biến tuổi, đúng không ạ, như thế này. Rồi, vấn đề tiếp theo đó là về kiểu dữ liệu (Data type). Nó sẽ thể hiện dạng thức dữ liệu mà cái biến đấy lưu trữ. Và chúng ta sẽ có 2 nhóm kiểu dữ liệu: một là kiểu nguyên thủy (tiếng Anh gọi là Primitive), loại thứ hai là phi nguyên thủy, hay nó có một cái tên riêng là Object. Với kiểu nguyên thủy, anh em có thể hình dung nó là những dạng dữ liệu đơn giản, những loại cơ bản. Ví dụ như là kiểu số, như số 18 đây là một ví dụ của kiểu number. Chúng ta có kiểu string, hay còn gọi là chuỗi ký tự, dùng để lưu các đoạn text. Ví dụ mình muốn lưu tên của một em gái nào đấy mà mình crush chẳng hạn thì mình sẽ tạo 1 biến là tên, đúng không ạ? Sau đó là gì?"
+      "start": 52.48,
+      "end": 59.08,
+      "text": "Mọi người có thể coi cái kênh của Bich ở dưới và Bich sẽ làm những nội dung về Solana lớp trên và ngôn ngữ Rust."
     },
     {
       "id": "S0007",
-      "start": 393.74,
-      "end": 450.92,
-      "text": "\"Eimi Fukada\". Và các đoạn text anh em cần bọc trong một dấu nháy, có thể là nháy đơn hay nháy kép đều được nha. Rồi thì kiểu logic này, tiếng Anh anh em gọi là Boolean. Anh em nào học môn toán logic rồi sẽ biết cái kiểu dữ liệu này. Nó chỉ nhận 1 trong 2 giá trị là true hoặc false, tức là đúng hay sai. Ví dụ mình tạo ra một biến là conZin để thể hiện thông tin là em gái crush đấy còn zin hay không, đúng không? Nếu là đúng thì mình ghi là true, còn nếu là sai thì mình sẽ ghi là false. Ê anh em chú ý nhé, chỉ có đúng hoặc là sai, tức là còn hoặc không còn, không có kiểu nửa vời nhé, kiểu như là \"không còn nhưng mà mang đi vá\". Kìa thế! Ngoài ra có một cái kiểu đặc biệt gọi là null, nó thể hiện rằng là nó chẳng lưu cái dữ liệu gì cả. Rồi, cái nhóm kiểu dữ liệu thứ 2 là Object. Có thể hiểu nó là kết hợp từ các dữ liệu có kiểu nguyên thủy hoặc là các object khác. Ví dụ mình muốn tạo ra 1 cái biến gọi là crush để lưu được tổng hợp đủ các loại thông tin mà mình vừa tạo ở trên ấy, gộp chung vào một biến thôi. Đấy, thì lúc đó chúng ta sẽ sử dụng đến Object. Thì cái này nó phức tạp hơn một chút, chúng ta sẽ bàn đến sau nha."
+      "start": 59.12,
+      "end": 61.84,
+      "text": "Bich là một người developer trong hàng Rust trên khá là thành công."
     },
     {
       "id": "S0008",
-      "start": 450.94,
-      "end": 457.5,
-      "text": "Bây giờ có vài đồ chơi đơn giản như thế này, chúng ta cứ tập sử dụng đã. OK, mình vừa nói đến việc là sử dụng biến, đúng không ạ?"
+      "start": 61.84,
+      "end": 68.12,
+      "text": "Và ở trong team member của mình, Bich cũng rất là một người đó và thật sự giỏi và có thể làm việc trên nhiều lĩnh vực khác nhau."
     },
     {
       "id": "S0009",
-      "start": 457.52,
-      "end": 489.44,
-      "text": "Sử dụng ở đây tức là chúng ta đưa các biến này vào các câu lệnh. Bởi vì các biến nó mang dữ liệu mà, đúng không ạ? Ví dụ ở đây thay vì mình in ra 1 chuỗi cố định, cái này gọi là cái gì mình vừa nói nhỉ? Literal, đúng không ạ? Thế bây giờ mình sẽ in 1 cái dữ liệu từ 1 cái biến ra nha. Ví dụ mình in tên chẳng hạn. Đấy, OK, save lại này: Eimi Fukada. Đó, thì lúc này mình nói rằng cái document.write này nó lấy dữ liệu từ biến có tên là tên. OK, thì đó là xuất dữ liệu từ biến ra phần trang web. Bây giờ cái chiều ngược lại thì sao?"
+      "start": 68.14,
+      "end": 75.64,
+      "text": "Vậy thì khi mà chúng ta làm việc với một cái rock vibe, hay là chúng ta muốn tìm kiếm một công việc ở trong thị trường lúc chiến á."
     },
     {
       "id": "S0010",
-      "start": 489.48,
-      "end": 510.08,
-      "text": "Tức là từ phía trang web, chúng ta nhập một cái dữ liệu gì đấy và nó đi vào biến để lưu trữ. Sẽ có nhiều cách anh em nha. Tuy nhiên, cách đơn giản nhất mà mình nghĩ là nó phù hợp với các anh em mới bắt đầu là chúng ta sẽ sử dụng một cái lệnh gọi là window.prompt. Mở đóng ngoặc tròn này, sau đó sẽ là một cái thông báo gì đấy để yêu cầu anh em nhập dữ liệu ấy, ví dụ như là."
+      "start": 75.66,
+      "end": 76.92,
+      "text": "Thì câu hỏi quan trọng nhất?"
     },
     {
       "id": "S0011",
-      "start": 513.68,
-      "end": 517.58,
-      "text": "Đó, sau khi anh em gọi cái lệnh này nha, mình Ctrl + S lại này. Đó, anh em thấy không?"
+      "start": 76.92,
+      "end": 77.86,
+      "text": "Em nghĩ đấy là gì?"
     },
     {
       "id": "S0012",
-      "start": 517.68,
-      "end": 549.8,
-      "text": "Ở trên trình duyệt của chúng ta sẽ mở ra một cửa sổ cho phép anh em mình nhập dữ liệu vào đây, ví dụ... OK. Nhưng sau đó thì cái dữ liệu đấy nó đi đâu? Nó không được lưu ở đâu cả, do là chúng ta chỉ gọi lệnh đấy thôi. Cho nên là anh em sẽ cần phải tạo ra một biến để hứng lấy cái giá trị mà anh em vừa nhập bằng cách là gì? Mình sẽ sử dụng luôn cái biến ở trên nha. Anh em viết là tên = window.prompt... Thì cái Yua Mikami đó sẽ được lưu vào cái tên này, nó sẽ đè vào cái Eimi Fukada. Và đây sẽ được gọi là một câu lệnh gán (Assignment). Lệnh này thì cũng dùng dấu bằng, giống với phép khai báo biến, đúng không ạ?"
+      "start": 77.88,
+      "end": 86.84,
+      "text": "Quan trọng nhất, em nghĩ là cơ hội xem cơ hội mấy cơ hội là về cái tiền quá, quan trọng là tiền anh chọn mình phải có tiền."
     },
     {
       "id": "S0013",
-      "start": 549.84,
-      "end": 625.18,
-      "text": "Bây giờ anh em cùng xem này. Mình Ctrl + S lại nhé, sau đó mình nhập là Yua Mikami. OK! Đó thì anh em thấy không, sau khi lệnh này được thực hiện xong thì nó thực hiện tiếp lệnh document.write, đó là nó in cái tên ra trang web. Do biến tên của chúng ta đã được gán lại bằng Yua Mikami mà anh em vừa nhập, do đó khi mình in ra trang web thì nó sẽ in ra giá trị sau cùng. Sau cùng tức là lệnh nào được gọi sau thì lệnh đấy có giá trị. Ngoài cách chúng ta dùng lệnh window.prompt để mở một cửa sổ trên trình duyệt ra, thì chúng ta cũng có thể sử dụng các cặp thẻ HTML thuộc nhóm Form, tức là các ô nhập liệu trực tiếp trên phần trang web này. Tuy nhiên, các anh em sẽ cần phải hiểu một chút về kiểu function cũng như là cơ chế DOM, thì phần đó chúng ta sẽ bàn sau nha. OK, thì những thao tác nhập dữ liệu vào rồi xuất dữ liệu ra như vậy người ta gọi tương ứng là input và output. Đó có thể coi là một cái luồng hoạt động cơ bản của một chương trình phần mềm rồi đấy. Tuy nhiên thì việc nhập dữ liệu vào rồi in ra luôn như thế này thì nó không mang ý nghĩa mấy, đoạn chương trình đã trả xử lý gì cả. Thực tế là thường nó sẽ có một cái công đoạn ở giữa nữa, được gọi là xử lý (process). Ví dụ sau khi cái tên mình nhập vào, mình muốn in ra một câu là \"I love\" cộng với cái tên đó, thì mình sẽ phải xử lý để thay đổi dữ liệu của cái tên này, đúng không ạ?"
+      "start": 86.86,
+      "end": 90.82,
+      "text": "Khi mà mình làm nó phải có tiền thì chúng ta mới có động lực."
     },
     {
       "id": "S0014",
-      "start": 625.34,
-      "end": 626.24,
-      "text": "Bằng cách như sau."
+      "start": 90.82,
+      "end": 99.82,
+      "text": "Vậy á, thì blockchain nào chúng ta có thể dễ dàng gọi là tham gia hackathon, tham gia thi và blockchain nó sẽ airdrop cho chúng ta tiền á."
     },
     {
       "id": "S0015",
-      "start": 626.26,
-      "end": 674.66,
-      "text": "Tên = \"I love \" + tên. Đây, chạy lại nha, mình viết ngắn gọn thôi nha: Mikami. OK, anh em thấy chưa? Đây là một chương trình đơn giản: nhập tên của idol và in ra một lời tỏ tình với idol đó. Có thể hiểu như vậy. Và cái thao tác như vừa rồi, người ta gọi là một phép toán (operation). Nó thể hiện sự phối hợp giữa các dữ liệu để tạo ra một cái dữ liệu mới. Các dữ liệu tham gia ở đây người ta sẽ gọi là toán hạng (operand). Toán hạng có thể là một giá trị cố định (literal) như ở đây, hoặc là biến (variable). Dấu cộng ở đây người ta gọi là một toán tử (operator). Nó thể hiện cách thức mà hai toán hạng phối hợp với nhau. Tương ứng với các kiểu dữ liệu của các toán hạng tham gia thì nó cũng sẽ có các kiểu phép toán tương ứng. Chẳng hạn như đây là một phép toán kết hợp giữa 2 chuỗi ký tự."
+      "start": 99.82,
+      "end": 104.82,
+      "text": "Thì blockchain nào là xứng đáng nhất để chúng ta có thể học làm việc thì phần đầu tiên của video này."
     },
     {
       "id": "S0016",
-      "start": 674.66,
-      "end": 688.74,
-      "text": "Hai string, và cụ thể là nó mang ý nghĩa là nối hai string này lại. Từ tiếng Anh chuyên ngành của nó là concatenation. Còn nếu là phép toán giữa các số với nhau thì nó sẽ gọi là arithmetic operation. Ví dụ như là tuổi, mình sẽ cho tuổi cộng 1 chẳng hạn, đúng không nhỉ?"
+      "start": 104.82,
+      "end": 109.82,
+      "text": "Chúng ta sẽ nói về cái hệ sinh thái với blockchain hiện tại có những blockchain nào nó hỗ trợ tốt cho blockchain ở Việt Nam."
     },
     {
       "id": "S0017",
-      "start": 688.76,
-      "end": 695.77,
-      "text": "Sau đó mình sẽ in ra cái tuổi này. Lúc này mình chỉ in ra cái tuổi thôi, thế nên là cái tên mình nhập vào gì cũng được nha!"
+      "start": 110.82,
+      "end": 114.82,
+      "text": "Focus vào nó, học ngành cái ngôn ngữ nào hay là những tech stack nào nó phù hợp với blockchain."
     },
     {
       "id": "S0018",
-      "start": 695.79,
-      "end": 711.67,
-      "text": "Mình để rỗng đi. Các phép toán anh em có thể thực hiện nối tiếp. Mình sẽ thực hiện cộng biến tuổi lên 1 trực tiếp trong câu lệnh document.write, đúng không ạ? Thì nó sẽ thực hiện cái tuổi cộng 1 trước, sau đó nó lấy kết quả đấy nó đưa vào lệnh document.write. Bây giờ nó sẽ là... à gì?"
+      "start": 114.82,
+      "end": 118.62,
+      "text": "Chúng ta bắt đầu trở thành một builder trong nào Web3, video này sẽ chia nó thành 3 phần."
     },
     {
       "id": "S0019",
-      "start": 711.69,
-      "end": 784.42,
-      "text": "Là 20, đúng không anh em? Ở đây mình đã ví dụ phép cộng rồi, chúng ta cũng có phép nhân, phép chia, đúng không ạ? Phép nhân thì là dấu sao (*), phép chia thì là dấu gạch (/). Hồi tiểu học, kể cả quy tắc nhân chia trước cộng trừ sau, trong lập trình nó cũng vậy. Ví dụ như ở đây là tuổi + 1 * 3, đúng không ạ? Thì nó sẽ ưu tiên phép nhân trước, sau đó nó mới cộng, đúng không ạ? Còn nếu anh em muốn ưu tiên phép cộng trước thì anh em phải cho nó thêm một cái dấu ngoặc ở đây. Rồi, ngoài nhóm phép toán số học thì chúng ta còn một nhóm phép toán gọi là quan hệ (relational operation). Nghe từ quan hệ có vẻ hơi nhạy cảm. Có cách gọi khác gọi là comparison operation. Nó là các phép toán dùng để so sánh, ví dụ như là tuổi < 30. Đấy, thì đây là một phép toán so sánh, và toán tử nhỏ hơn này người ta gọi là toán tử so sánh. Kết quả trả về của những phép toán này sẽ là những giá trị logic như là đúng hoặc sai. Ví dụ như ở đây là tuổi có nhỏ hơn 30 không? Tuổi của mình đang là 19, đúng không ạ? 19 nhỏ hơn 30 là đúng. Ngược lại, nếu mà anh em viết 1 mệnh đề sai... Ngoài ra các phép toán khác nhau cũng có thể phối hợp lại được với nhau. Ví dụ như ở đây chúng ta đang có phép toán quan hệ, đúng không nhỉ?"
+      "start": 118.62,
+      "end": 119.58,
+      "text": "Blockchain nào?"
     },
     {
       "id": "S0020",
-      "start": 784.62,
-      "end": 826.84,
-      "text": "Thì bây giờ mình sẽ cộng thêm một cái dấu cộng nữa. Chuyên ngành người ta hay gọi là biểu thức, đúng không ạ? Đó, thì trong cái biểu thức mà gồm nhiều các phép toán như thế này thì nó sẽ dựa trên một tính chất là precedence, tạm dịch là độ ưu tiên. Ở đây thì các phép toán số học sẽ có độ ưu tiên cao hơn các phép toán quan hệ. Thế nên là nó sẽ thực hiện 30 + 1 trước, sau đó nó sẽ lấy kết quả đấy đưa vào phép toán quan hệ với biến tuổi. OK, xâu chuỗi lại các khái niệm vừa rồi: chúng ta có các toán tử, các toán hạng, thì chúng kết hợp lại với nhau để tạo nên một cái biểu thức (expression). OK, vừa rồi là một số những kiến thức cơ bản liên quan đến phần phép toán. Vậy bây giờ hỏi anh em 1 câu nha: Nếu cho các anh em cộng với 1 cô gái mới lớn như thế này, hỏi kết quả trả về sẽ là gì?"
+      "start": 120.14,
+      "end": 122.9,
+      "text": "Ngôn ngữ gì và tech stack của blockchain đó là gì?"
     },
     {
       "id": "S0021",
-      "start": 827.0,
-      "end": 841.44,
-      "text": "Ê... tỉnh táo vào nha! Đầu tiên nên thực hiện 1 cái lệnh gọi là kiểm tra cho mình xem có hợp lệ, có đủ tiêu chuẩn không. Sau đó dựa vào cái kết quả là true hay là false thì mình tính đến phép toán tiếp theo là giao hay là hợp, bất phương trình gì đấy."
+      "start": 122.94,
+      "end": 126.7,
+      "text": "Bây giờ chúng ta sẽ bắt đầu review vào video này thôi, đầu tiên là nói về blockchain."
     },
     {
       "id": "S0022",
-      "start": 841.76,
-      "end": 887.6,
-      "text": "Cuộc đời nó nhiều biến cố lắm anh em. Cùng 1 cái hành vi đấy, thế nhưng mà tuổi của cô bé đó mà trên 16 lại khác, còn dưới 16 các anh em sẽ rẽ sang một ngả khác. Trong lập trình nó cũng vậy thôi. Code của các anh em ấy, không bao giờ nó đi theo 1 đường thẳng trôi tuột từ trên xuống dưới đâu, mà nó có thể rẽ sang những cái hướng khác nhau dựa trên 1 cái điều kiện gì đấy. Đó, và cái cơ chế hoạt động như vậy người ta gọi là cấu trúc điều khiển (control statement). Chúng ta sẽ có 2 nhóm cấu trúc điều khiển chính, đó là rẽ nhánh và cấu trúc lặp. Trong cái nhóm rẽ nhánh thì sẽ có 1 cái cấu trúc gọi là if-else, tạm dịch là \"nếu như thế này tôi sẽ thực hiện như vậy, còn không thì tôi sẽ thực hiện kiểu khác\". Bây giờ lấy ví dụ chúng ta sẽ làm 1 cái chương trình đơn giản đi, đó là nhập tuổi của một cái em gái nào đấy mà anh em crush chẳng hạn. Sau đó, chương trình sẽ đưa ra 1 cái nhận định là chúng ta có thể A-A hay không?"
+      "start": 126.74,
+      "end": 134.46,
+      "text": "Đầu tiên là cái độ phổ biến của blockchain."
     },
     {
       "id": "S0023",
-      "start": 887.6,
-      "end": 893.22,
-      "text": "Còn A-A là gì thì tùy anh em nghĩ nha. Thì mình sẽ sửa lại code một chút như sau để phù hợp với bài toán bây giờ."
+      "start": 134.82,
+      "end": 142.26,
+      "text": "Blockchain có thực sự ủng hộ những Web3 developer tại Việt Nam hay không bằng cách mình nhìn vào cộng đồng của blockchain, ví dụ như Ethereum cộng đồng rất lớn rồi."
     },
     {
       "id": "S0024",
-      "start": 893.52,
-      "end": 899.78,
-      "text": "Bây giờ sẽ là nhập tuổi thôi. Đơn giản phần này sẽ không nhập tên, mình sẽ gán nó là nhập tuổi nha!"
+      "start": 142.26,
+      "end": 148.22,
+      "text": "Nhưng có những blockchain khác, ngoài Ethereum ra ví dụ như Solana."
     },
     {
       "id": "S0025",
-      "start": 901.18,
-      "end": 935.06,
-      "text": "Rồi, mình chỉ cần dùng đến biến tuổi thế nên là mình sẽ xóa 2 biến tên và biến conZin đi. Cái này sẽ là tuổi. Rồi sau đó cấu trúc if-else mình sẽ viết như sau. Mình sẽ diễn giải theo kiểu văn xuôi trước, sau đó giải thích theo cách kỹ thuật sau nha: Nếu (if) tuổi mà lớn hơn hoặc bằng 16, thì mình sẽ in ra 1 thông báo là \"Quất luôn\", else có nghĩa là \"còn không thì rút lui\"."
+      "start": 148.24,
+      "end": 157.82,
+      "text": "Thì tại Việt Nam nó có Solana Superteam, bên Polkadot thì nó có OpenGuild, còn Ton thì hình như cũng có tuyển ở Việt Nam đó có Ton."
     },
     {
       "id": "S0026",
-      "start": 935.16,
-      "end": 936.66,
-      "text": "Anh em hiểu ý đồ của mình chứ?"
+      "start": 160.24,
+      "end": 166.45,
+      "text": "Tôi, Sui là cùng có hỗ trợ tại Việt Nam, suy nữa dạ, Sui Hub."
     },
     {
       "id": "S0027",
-      "start": 936.76,
-      "end": 946.54,
-      "text": "Mưu này dễ đoán mà, mình nghĩ anh em đã hiểu thôi. Thì khi mà đưa vào if-else thì nó như thế. Thế bây giờ phân tích dưới góc độ lập trình một chút thì cái if này anh em thấy là nó đi kèm với cái gì nhỉ?"
+      "start": 166.45,
+      "end": 169.6,
+      "text": "Đúng rồi, Sui luôn, VBI Academy."
     },
     {
       "id": "S0028",
-      "start": 946.78,
-      "end": 986.02,
-      "text": "Một biểu thức logic nha. Cái lớn hơn và cái bằng này thì đọc là lớn hơn hoặc bằng. Anh em học toán chắc là biết cái phép toán này đúng không ạ? Nếu cái biểu thức này là true thì nó sẽ thực hiện các câu lệnh nằm trong khối ngoặc nhọn đi kèm với cái if, và ngược lại, tức là cái này là false thì nó sẽ đi sang cái nhánh else. Tuy nhiên ở đây có 1 cái anh em cần đặc biệt lưu ý cho mình: đó là cái phép toán này là một phép toán so sánh số học, do vậy là cái biến tuổi này của chúng ta cũng cần phải có kiểu dữ liệu là số học. Trong khi đó, cái lệnh window.prompt thì dữ liệu nhập vào của nó sẽ luôn tồn tại dạng là string. Do vậy anh em sẽ cần phải thêm một cái lệnh trung gian nữa, đó là gì?"
+      "start": 169.6,
+      "end": 177.72,
+      "text": "Tụi mình, tức là hai tổng bài nào đều làm tại VBI hết, mọi người có thể ấn trên trang VBI để xem thì VBI luôn có thể hợp tác qua những bên."
     },
     {
       "id": "S0029",
-      "start": 986.1,
-      "end": 1027.4,
-      "text": "Là parseInt nha! Parse có nghĩa là chuyển đổi, Int có nghĩa là integer (số nguyên) nha anh em nha. Anh em kéo nó vào cho mình. OK không ạ? Đây chính là khả năng thực hiện nối tiếp các lệnh đó anh em. Chúng ta nhập dữ liệu vào, sau đó đưa nó vào lệnh parseInt, được bao nhiêu lại gán tiếp vào biến tuổi. Tiện cũng nhắc lại luôn là cái dữ liệu mà anh em nhập vào sẽ đè cái giá trị 18 này nhé. Do vậy là cái số 18 ở đây nó chỉ mang tính là khởi tạo giá trị ban đầu thôi, anh em có thể viết bao nhiêu cũng được, khởi tạo bằng 0 cũng không sao cả, đúng không ạ? Bây giờ mình sẽ chạy cho anh em xem này. Nhập tuổi: ê, cô gái của chúng ta 18 tuổi thì có ấy được không? \"Quất luôn!\". Đấy! Thử một trường hợp khác nhỏ hơn 16 xem nào, chọn số 13 đi. Hmm."
+      "start": 177.74,
+      "end": 184.2,
+      "text": "Polygon người ta rất là hỗ trợ bên phía của Việt Nam mình khi người ta muốn hỗ trợ thì người ta mới hợp tác với VBI của đội mình."
     },
     {
       "id": "S0030",
-      "start": 1027.42,
-      "end": 1052.1,
-      "text": "Tuổi đẹp đấy! Tuổi này tuổi trăng tròn mới nhú, vừa hồng vừa thơm anh em ơi. Thế nhưng chương trình của chúng ta bảo là \"rút lui\". Anh em nhé, biết hấp dẫn đấy thế nhưng mà phải tỉnh táo nè, đừng để 1 phút yếu lòng đánh mất bản thân anh em nhá. Tuy nhiên mình thấy con gái 13 tuổi nó lớn lắm, nhiều khi không phân biệt được đâu, nên anh em càng phải check căn cước công dân trước. OK, trở lại bài giảng nha. Thì anh em thấy mình giảng có bị nhanh quá không?"
+      "start": 184.22,
+      "end": 190.08,
+      "text": "Để mở ra những cái hackathon này giống như Sui hay là những cái hackathon ở Việt Nam thì mọi người hãy follow VBI."
     },
     {
       "id": "S0031",
-      "start": 1052.3,
-      "end": 1127.94,
-      "text": "Tất nhiên trong thời lượng có hạn, mình khó có thể dạy với tốc độ quá chậm được và nó cũng sẽ không thể đầy đủ hết các phần kiến thức. Bài giảng này vẫn chỉ mang tính định hướng thôi. Dựa trên bài giảng này anh em vẫn phải triển khai ra những kiến thức xung quanh. Ví dụ như phần if-else này, nó sẽ còn 1 cơ chế rẽ nhánh khác gọi là switch-case. Thì cách thức hoạt động của nó cũng gần tương tự, anh em nên tìm hiểu thêm nhé. Đó, còn trong những trường hợp mà anh em không thể tự học được vì một số lý do như là về ngoại ngữ hay là khả năng tin học vẫn còn yếu, thì cũng có thể tham khảo 1 lớp học của mình dành riêng cho các anh em mới bắt đầu, những ai chưa quen với việc lập trình. Và không chỉ riêng với ngôn ngữ JavaScript mà mình cũng có một số những khóa khác về C++ hay là Python, anh em cũng có thể tham khảo nữa nha. OK, bây giờ thì mình sẽ chuyển sang cái cấu trúc điều khiển (control statement) thứ 2, đó là cấu trúc lặp, tiếng Anh người ta hay gọi là Loop. Thì cấu trúc lặp nó sẽ cho phép các anh em thực hiện lặp đi lặp lại 1 tập các câu lệnh nào đó nhiều lần. Ví dụ như ở đây, mình muốn in ra câu là \"Năm nay em 18 tuổi\", mình muốn in ra cái câu đấy 10 lần. Mình sẽ sửa lại cái lệnh in trước: \"Năm nay em \". Bây giờ mình muốn lấy cái giá trị tuổi từ cái biến tuổi này thì chúng ta sẽ ngắt cái chuỗi ký tự ra và anh em điền cho mình dấu phẩy, sau đó sẽ là tên biến, đúng không ạ?"
+      "start": 190.1,
+      "end": 197.12,
+      "text": "Rồi thứ hai là chúng ta cũng phải xét theo cái độ nổi tiếng của blockchain đó trong cộng đồng nước ngoài nữa."
     },
     {
       "id": "S0032",
-      "start": 1127.96,
-      "end": 1143.0,
-      "text": "Sau đó nếu như anh em vẫn tiếp tục muốn nối tiếp một chuỗi ký tự khác, anh em lại điền dấu phẩy cho mình. Ví dụ như ở đây mình sẽ điền nốt cái chữ là \"tuổi\", đúng không ạ? Chạy thử 1 cái lệnh này đã nhá. Ví dụ như mình nhập là 19 tuổi. OK không ạ?"
+      "start": 197.12,
+      "end": 202.08,
+      "text": "Rồi thứ hai là chúng ta cũng phải xét theo cái độ nổi tiếng của blockchain đó trong cộng đồng nước ngoài nữa."
     },
     {
       "id": "S0033",
-      "start": 1143.02,
-      "end": 1155.92,
-      "text": "\"Năm nay em 19 tuổi\". Thì cái chữ \"Năm nay em \" và cái chữ \"tuổi\" nó được gọi là 2 literal hay còn gọi fixed value. Còn cái 19 này nó được lấy từ variable có tên là tuổi, đó, nhắc lại phần kiến thức cũ nha."
+      "start": 202.08,
+      "end": 207.88,
+      "text": "Thì để xét đến cái độ nổi tiếng, chúng ta có thể truy cập vào một website là DefiLlama."
     },
     {
       "id": "S0034",
-      "start": 1156.02,
-      "end": 1193.53,
-      "text": "Rồi, còn bây giờ anh em muốn lặp câu lệnh này khoảng 10 lần thì chúng ta cần đưa nó vào 1 cụm cấu trúc có từ khóa lặp for, mở đóng ngoặc như thế này. Trong phần for này, anh em sẽ cần phải chỉ định một số biểu thức sau: Đầu tiên là phép khởi tạo 1 biến lặp, var i = 0. Biến này có thể hiểu là nó dùng để đếm số lần lặp. Chấm phẩy. Chúng ta sẽ đếm i chạy đến 9 thì anh em có thể viết là i < 10. Tiếp tục là chấm phẩy, đến thành phần thứ 3 là một phép tăng biến lặp. Phép tăng biến lặp là 1 phép toán thể hiện cách thức mà biến i nó thay đổi sau mỗi lần đếm. Ví dụ ở đây là chúng ta đếm từ 0, 1, 2, 3, đúng không ạ?"
+      "start": 207.92,
+      "end": 216.52,
+      "text": "Khi mà chúng ta vào DefiLlama, chúng ta sẽ coi ở phần Chain, cái đó bấm vào phần Chain này thì chúng ta hãy coi phần Total Value Locked."
     },
     {
       "id": "S0035",
-      "start": 1193.55,
-      "end": 1247.03,
-      "text": "Mỗi lần i nó tăng lên 1 thì anh em sẽ viết là i = i + 1. Tuy nhiên còn một cách viết ngắn gọn hơn, đó là i++. Nhé! OK, mình save lại này, Ctrl + S. Nhập lại số tuổi là 20 đi. OK, \"Năm nay em 20 tuổi\", nó bị dính vào nhau. Lý do là vì chúng ta chưa tạo ra sự ngắt dòng cho mỗi lần in xong một câu. Cách khắc phục như sau: ở cuối lệnh document.write, sau khi in xong chữ \"tuổi\" thì anh em có thể viết cho mình dấu chấm này, kèm theo 1 cái dấu xuống dòng. Thì trong văn bản HTML, để mà xuống dòng được thì chúng ta cần phải điền 1 thẻ, 1 tag có tên là <br>. Đây là 1 thẻ đơn nên anh em sẽ không cần phải viết thẻ đóng. <br> là viết tắt của từ break, thường mang ý nghĩa là ngắt dòng. OK, bây giờ save lại nè. Đây, \"Năm nay em 20 tuổi\", mình sẽ thu nhỏ lại nha. Đó, anh em thấy không?"
+      "start": 216.56,
+      "end": 219.28,
+      "text": "Tại vì khi mà chúng ta coi cái Total Value Locked rồi này."
     },
     {
       "id": "S0036",
-      "start": 1247.05,
-      "end": 1270.75,
-      "text": "OK! Cùng nhìn lại cái cú pháp một chút này: Cấu trúc của chúng ta là for, và bên trong sẽ có thể hiểu là các thành phần để điều khiển cái cấu trúc lặp, nó sẽ được nằm giữa cặp ngoặc tròn. Đấy, và cái phần nằm giữa cặp ngoặc nhọn thì sẽ được coi là cái nội dung mà chúng ta sẽ thực hiện lặp đi lặp lại. Thì ở đây mình chỉ thực hiện đúng 1 câu lệnh thôi, nếu anh em viết thêm nhiều các câu lệnh khác thì tập các câu lệnh đấy sẽ được thực hiện đi thực hiện lại nhiều lần."
+      "start": 219.28,
+      "end": 227.04,
+      "text": "Thì chúng ta sẽ biết được là cái hệ sinh thái đó đang được những nhà đầu tư người ta nhắm tới để người ta sử dụng hay có dApp đấy không?"
     },
     {
       "id": "S0037",
-      "start": 1271.05,
-      "end": 1302.97,
-      "text": "Nói thêm một chút về cái biến lặp i này, thì thật ra nó cũng không khác gì 1 cái biến bình thường cả. Anh em hoàn toàn có thể thực hiện thao tác các phép toán với biến này ở trong khối code được lặp. Ví dụ như ở đây, phần tuổi mình sẽ cộng thêm biến i đấy, đúng không ạ? Thì cái giá trị tuổi lúc này của mình sẽ không phải là cố định 20 tuổi nữa mà nó sẽ tăng dần đều lên một đơn vị. Anh em cùng xem nhé. Về phần cấu trúc lặp này thì chúng ta có một từ khóa là while nữa, thế nhưng mà ý tưởng của nó thì cũng tương tự thôi, thế nên là anh em hãy tự tìm hiểu nha."
+      "start": 227.04,
+      "end": 228.16,
+      "text": "Đúng không?"
     },
     {
       "id": "S0038",
-      "start": 1303.97,
-      "end": 1308.97,
-      "text": "OK! Thì đến đây cũng có thể coi là đã khép lại 1 số đồ chơi hết sức cơ bản về ngôn ngữ JavaScript này."
+      "start": 228.32,
+      "end": 232.56,
+      "text": "Thì hiện tại nếu mà các bạn nhìn, Ethereum và Solana đã quản mở ở đơn top đầu luôn."
     },
     {
       "id": "S0039",
-      "start": 1309.97,
-      "end": 1316.97,
-      "text": "Đấy, thì mình tin chắc là 1 số anh em khi mà học qua những phần vừa rồi thì cảm thấy là nó cũng khá là tương đồng với 1 số các ngôn ngữ lập trình khác."
+      "start": 233.44,
+      "end": 242.12,
+      "text": "Nhưng có một cái khi mình nói đến ngôn ngữ, Ethereum là nó sử dụng ngôn ngữ Solidity, mình có khóa Solidity rồi."
     },
     {
       "id": "S0040",
-      "start": 1316.97,
-      "end": 1325.29,
-      "text": "Tương đồng với một số các ngôn ngữ lập trình khác: chúng có kiểu dữ liệu nguyên thủy, các cấu trúc điều khiển if-else rồi thì for, đúng không ạ?"
+      "start": 242.16,
+      "end": 245.8,
+      "text": "Thì ngay lập tức chúng ta biết và khi mà chúng ta vào học bài, chúng ta mới biết chúng ta nên học cái gì thôi."
     },
     {
       "id": "S0041",
-      "start": 1325.49,
-      "end": 1349.25,
-      "text": "Và bây giờ mình sẽ chuyển qua giới thiệu về kiểu duyên liệu object của trong những đặc trưng của ngôn mữ ZivaStream Kiểu object thì như lúc đầu mình có chia sẻ là nó cộng cái tên khác Bởi là non-primitive có nghĩa là phimuyên thuỷ Có thể hiểu đơn giản nó là tập hợp của nhiều các loại dư liệu có kiểu khác nhau Nó tập họp vào trong 1 biến để quản lý Thì các thành phần dữ liệu có thể là kiểu nguyên thủy hoặc cũng có thể cắt cái object khác."
+      "start": 245.8,
+      "end": 252.0,
+      "text": "Tại vì sao mình hướng dẫn các bạn Solidity từ lớp cơ bản, xong rồi tới Ethereum và Solidity thì tại vì nó là cái đầu tiên."
     },
     {
       "id": "S0042",
-      "start": 1349.27,
-      "end": 1401.84,
-      "text": "Ví dụ như mình đang có một số những thông tin dữ lượu liên quan đến tên, tuổi, tình trạng hôn nhân của 1 em hàng xóm, em crush nào đó của mình chẳng ạn Bây giờ là thay vì mình lưu chữ các thông tim này vào các biến rời ràng thì mình có thể tạo ra 1 biến có kiểu objects và lưua được tất cả các cái dữ líộn này Ví dụ như sau, đây mình sẽ xóa cái này đi đá Mình sẽ tạo ra một biến có tên là cô hàng sóng và ngạ bằng cái gì Cú pháp để tạo rằng 1 object sẽ làm 1 cặp mở đóng hoặc nhọn Anh em có thể xuống dòng cũng được Sau đó anh em cần phải khai báo từng thành phần thông tin theo cái định dạng sau Vídụ như nào chúng ta có tê Sau đó là 2 chấm Đúng rồi, ví dụ nha là lan Đúng ạ Phải Tuổi 18 Hôn nhân À gì Cho kiểu logic đi Là Vâng anh em có thể tự liệt kê tiếp, nhưng kiểu là chúng ta đi thu thập thông tin của em hàng xóm ấy."
+      "start": 252.56,
+      "end": 255.2,
+      "text": "Và cộng đồng rất là lớn, nó cũng dễ học nữa."
     },
     {
       "id": "S0043",
-      "start": 1401.88,
-      "end": 1413.64,
-      "text": "Bên trong object này cũng có một cái object con khác nữa ví dụ như mình có 1 cái thông tim linh quan đến địa chỉ nó sẽ gồm các trường thông tyn con như quay quán, quận nguyên ở đâu? Đúng không ạ? Thì làm sao?"
+      "start": 256.28,
+      "end": 261.52,
+      "text": "Nếu mà các bạn đã học qua trường để học ví dụ như biết hợp kiến trúc để học á hoặc là học JavaScript."
     },
     {
       "id": "S0044",
-      "start": 1413.68,
-      "end": 1456.54,
-      "text": "Anh em sẽ lại tạo 1 cặp mở đó ngọc nhọn nữa và trong này chúng ta tiếp tục điền các trương thông tiên con ví dù là quận là gì? Câu giấy phần magic Ví dụ thế chẳng hạn, anh em tự hoàn thiện luôn nha Các thể thực tế hơn mà cách là anh em đi thu thập những cái thông tin cá nhân của M6 Đó thì trở lại cú pháp của việc khai báo óc rách một chút Thì anh em thấy các cái thồng tin được ngăn cách nhau bởi giấu phải Đấy thì các cái không tin này người ta gọi là property Tạm dịch là thuộc tính Các cái property thì anh em có thể viết ở các dòng tách biệt Hoặc là viết chung 1 dòng nếu nó ngắn Nhiên tuy nhiên mình sẽ viết cách dòng ra để cho nó dễ nhìn Đã qua trong mỗi 1 property thì nó có 2 phần Một phần là phần nêm và phần tên của property Hay một cách coi khác là khi nữa Đúng không ạ?"
+      "start": 261.72,
+      "end": 263.64,
+      "text": "Thì lúc mà học Solidity nó cũng rất là đơn giản."
     },
     {
       "id": "S0045",
-      "start": 1456.58,
-      "end": 1507.5,
-      "text": "Phần thứ 2 là phân value Tức là cái phần giá trị thực tế mà thông tin này nó đang có Đúng đúng ạ, và chúng được ngăn cách nhau bởi dấu hai chấm Ok sau khi mời gong thông tiên dữ liệu vào trong 1 object rồi Bây giờ chúng ta lại muốn chuyên xuất nổi ra thì làm thế nào Ra xử là anh em muốn in ra phần trang quét Anh em sẽ viết cho mình như sau document.write đã này Rồi đó chúng ta cần phải chỉ định tên of the object đã nhé Cô hàng sóng Đúng ả? Sau đó anh em vít cho mình một cái gọi là dâu chấn Sau đó là tên của thuộc tính. Ví dụ mình muốn ít ra tên thì anh em bây giờ chấm tên Căn trồn em lại nè Ý ra là Tương tự với các thuộc tin khác, anh em có thể thử nhá Với cái thuộc tim là địa chỉ Thì nó lại là một object khác nữa Thì nên là anh em cần thêm 1 phép truy cập đến thuộc Tim Con nữa ví dụ như ở đây Mình viết là địạch chỉ sau đó Chúng ta muốn chia sát ra quận để anh em lại chấм quận câu giấy Ok! Anh em đã hình dùm được cách sử dụng cho Bây giờ mình sẽ chuyển sang 1 kiểu di liệu Được gọi là function tạm dịch là hàm."
+      "start": 264.36,
+      "end": 267.76,
+      "text": "Khi mà chúng ta học được Solidity rồi thì chúng ta sẽ có cái base, cái nền tảng này."
     },
     {
       "id": "S0046",
-      "start": 1507.52,
-      "end": 1572.52,
-      "text": "Function là một kiểu object đặc biệt thế là nó sẽ vẫn rựa trên kiểu dữ liệu object nhưng được tiết hợp thêm một số cơ chế đặc Biệt Nó đặc điểm chỗ là cái dữ lịu mà nó lưu trữ nếu làm 1 đoạn code hay nó cách khác thì nó là 1 tập các câu lệnh nào đó Do vậy, một số tài liệu còn gọi function là chương trình con Tức là bản thân có thể lưuu trữ 1 chương Trình nhỏ nhỏ phục vụ trong chương Chính lớn Ví dụ bây giờ mình sẽ tạo ra một chương chình Con là Nhật 5 sinh In ra số tuổi giảng Hạ Thì anh em sẽ biết thế nào. Đang mình sẽ cốt nhanh nhé Mình sẽ tạo ra một biến là 5x sinh Bằng gì? Window.pro đúng không ạ, để nhập vào từ trinh duyệt Giả sử 5 hiện tại là 52023 thì tuổi của chúng ta sẽ là 20232D5X Trong thực tế thì cái số 2023 này nó nên được lấy từ 1 cái lệnh của hệ thống để mà in ra được số 5 hiện tại Tuy nhiên thì mình viết cố định số 2023 đây cho nó đơn giản Đã thì đại khái chương trình con của chúng tôi sẽ cùng 23 cái dòng cốt ngắn gọn như vậy Bây giờ mình sẽ tạo ra một biến có kiểu là function để lưu chữ 3 cái dòng code này nha Cái anh em sẽ viết cho mình như sau Đầu tiên nó cũng là 1 biếng, chúng ta cũng dùng lệnh va đúng không ạ?"
+      "start": 267.8,
+      "end": 272.12,
+      "text": "Để nó học những blockchain khác, ví dụ là Solana, Sui hay là Ton."
     },
     {
       "id": "S0047",
-      "start": 1572.54,
-      "end": 1574.72,
-      "text": "Sau đó sẽ là tên của biến được không ả?"
+      "start": 272.12,
+      "end": 277.12,
+      "text": "Đó là những blockchain rất là thịnh hành, nó đang là những cái blockchain chạy đầu xu hướng."
     },
     {
       "id": "S0048",
-      "start": 1574.74,
-      "end": 1604.32,
-      "text": "Mình có thể viết là tính tuổi Sao là giấu bằng Sau đó là 1 từ khóa function mở đóng hoặc tròn Mở đó ngọc nhọn Trúc này nhìn giống với câu chút íp LV4 nhỉ Đúng rồi anh em Chúng ta cũng sẽ vết code vào rửa cặp ngọt nhọn này Nè thì anh em phải chuyển cho mình ba cái dồng code đây Lên trên, đó ngạc đi vào giữa Đó Thì cái phần function nó là một tử khóa vắt buộc cho kiểu function Cái cặp mọt tròn này là nơi chúng ta định nghĩa ra các biến tham số Nó làm gì thì tí nữa mình sẽ giải thích sau Bây giờ mình sẽ chạy cái chương trình con này trước Chạy chương chừng con là sao?"
+      "start": 277.12,
+      "end": 285.12,
+      "text": "Hay là ví dụ như chúng ta có những cái lúc kia layer 2, blockchain được build trên Ethereum thì nó cũng được viết bằng cái ngôn ngữ là Solidity."
     },
     {
       "id": "S0049",
-      "start": 1604.32,
-      "end": 1669.77,
-      "text": "Tức là các lệch ở bên trong cái function lúc này Nó mới chỉ mang tính định nhĩa thôi Nó chưa thực sự được thực hiện Nha Để mà thực hiện thì anh em sẽ phải thông qua 1 thao tác gọi là Ngọt Hàm Đấy Tiếng Anh người ta hay gọi Kohl Function Hoặc là Invoke Function Kèm theo cặp mở nóng gọt tròn Anh em cùng xem chương trình chạy nha Có vẻ là nó không chại anh em ạ Đã thì cái việc mà viết cốt xong và chương chỉnh không chảy Nó là chuyện hết sức bình thường Và tuyệt đây mình sẽ dự thiệu anh em về cái cách thức để chech ra cái lỗi đó là gì Thì ở trên trình duyên Google Chrome, anh em bấm cho mình F12 Để họa đến mở ra phần console Console sẽ là nơi mà nó sẽ check ra được cái lối trong quá trình anh em viết các đoạn code JavaScript Ví dụ ở đây anh em thấy nó có một giòng báo đỏ là Tyro kiểu du liệu Nó báo ở cái lệnh window.prom is not a function A, đây này Cái lệng Window Prom là mình viết xa chính thạc Mình viết thiếu một chữ P Prom PT Anh em nhé Và mình cũng vừa trở nhận ra là Cái nam sinh này của mình cũng cần phải chuyển về kiểu xuống nguyên Đấy Pass in the T Nếu không nó sẽ là kiểu string Bây giờ canchon S lại này Đó Anh em thấy không Chương trình nó chạy được bình thường đúng không ạ?"
+      "start": 285.12,
+      "end": 290.12,
+      "text": "Cho nên khi mà chúng ta học về Web3 bên lớp chain và bên lớp khác này."
     },
     {
       "id": "S0050",
-      "start": 1669.79,
-      "end": 1759.37,
-      "text": "Ví dụ mình nhập Là Nam sinh 2000 chẳng hạn Oh In da cầu giá À đúng rồi Bởi vì cái document drive này của minh Vẫn in ra cái địa chỉ của cô hàng xóm ở trên Đá, ok tạm thời bây giờ chúng ta không quan tâm đến cô hàngxóm nữa nhé Chúng ta sẽ quan tâng đến chương trình con là chúng ta in được cái tuổi đó nè Mình chạy lại này 2.000 này 2.00 thì năm nay 23 tuổi Đó Ok, vậy thì việc mà chúng ta Tách các câu lệnh này ra và đưa vào function ấy Thì nó có khác gì với việc chúng ta gọi nó một cách độc lập Ví dụ như mình đưa cái lệch này ra ngoài hẳn hạn Như thế này thì nó vẫn chạj anh em nha Tuy nhiên khi mà chúng tôi đưa nó vào functions thì nó sẽ giúp chúng ta có thể tái sử dụng cái phang sinh đấy trong những tỉnh huống kế tiếp Ví dụ như nếu mình muốn thực hiện công việc là tính tuổi nhiều lần nhẳn hạ Mình sẽ lại chuyển nó vào trong Và bây giờ, mình có thể thực hiện lại cái việc tính Tuổi Bằng cách gọi lại phang xin đấy là xong Đúng không ạ? Anh em chỉ cần gọi thêm một cái tính Tuyệt nữa Thì nó sẽ thực hiện 2 lần tính tuyệt cho anh em Ví do đây, mình sẽ im ra 1 cái ngắt rồng nữa này Mình nhập nhá 2000 Với nhập 5 sinh của mình đi 1992 Đấy 23331 Anh em thấy không? Nó thực hiện 2 lần công việc tính tuổi Thì khi anh em không có function thì anh em sẽ phải gọi lại 3 dòng cốt này không Và khi số lần yêu cầu nó tăng lên, cái số cốt của anh em cũng sẽ giải ra Đấy thì cái việc mà sử dụng function thì nó sẽ rút ngắn code của chúng ta và tăng tinh tái xử dựng trong logic một đoạn tính toán nào đấy OK! Một phần kiến thức khác cũng rất là quan trọng đối với phần function mà anh em cần nắm được Có thể kể đến như là phần parameter Thế là phần tham số của function."
+      "start": 291.12,
+      "end": 294.12,
+      "text": "Làm một Web3 đó chúng ta phải biết build nguyên một dApp luôn."
     },
     {
       "id": "S0051",
-      "start": 1759.47,
-      "end": 1797.51,
-      "text": "Có thể hiểu nó là các biến đứng định nghĩa ở trong cái phần ngoặc tròn này, thì tham so ấy có thể hiệu nó là cái nơi tiếp nhận input Tức là cái đầu vào cho chương trình con đó Ví dụ như là cái chương tính tuổi này của mình Thay vì là mình nhận thông tin 5sync từ phần windowprome Thì mình sẽ nhận từ 1 lệnh nào khác để chẳng hạn Thì anh em sẽ cần liệt kê biến tham sâu ở đây Ví rượu nhá! Mình sẽ chuyển cái 5sink lên đây Phần này thì mình sẽ tạ ẩn nó đi Anh em có thể dùng 2 dấu cách chiếu Các này người ta gọi là comment Tức là cái dòng cốt này sẽ bị vô hiệu hóa đi, nó không thực hiện cái dòm cốt đó Ngoài ra anh em có thể dùng cái comment để mà chú thích cho các loạn cốt của mình Rồi khi mà gác phang sừng của chúng ta đã định nghĩa có 1 cái input như thế này Đấy hoạng thì anh em sẽ làm gì?"
+      "start": 295.12,
+      "end": 298.12,
+      "text": "Bạn có thể build cả roll-up, cả smart contract ở trên nhiều chain khác nhau."
     },
     {
       "id": "S0052",
-      "start": 1797.53,
-      "end": 1815.83,
-      "text": "Thì khi mà anh em gọi cái harm đó Anh em sẽ phải truyền cho nó một cái giá trị Đấy ông ạ, ví dụ như 2 nghìn này Một cái là 192 này Bây giờ anh em cùng xem nha Nó sẽ chạy ra chương trình chạc như cũ Nhưng mà nó sẽ không tạo ra cái gì Không tạo da cái Chrome cửa sổ để mà cho chúng ta nhập dưới liệu nữa và nó sẽ lấy trực tiếp cái gia trị này."
+      "start": 298.12,
+      "end": 303.36,
+      "text": "Nếu mà chúng ta chỉ muốn trở thành một lập trình viên Web3 thì cái đầu tiên chúng ta nên học là làm Web2."
     },
     {
       "id": "S0053",
-      "start": 1815.85,
-      "end": 1820.55,
-      "text": "Nha! Các cái giá chị này có thể được tạo ra bởi một lệnh nào đấy mà anh em lập trình sau này, đúng không ạ?"
+      "start": 304.08,
+      "end": 312.44,
+      "text": "Các bạn muốn biết cách để làm Web3 thì nên học Web2 trước, nếu mình chưa như chẳng hiểu gì thì chúng ta cần phải học HTML và JavaScript."
     },
     {
       "id": "S0054",
-      "start": 1820.57,
-      "end": 1832.83,
-      "text": "Ở đây theo mình nghĩ thì có 1 cách hình dung nó rẽ liên tưởng hơn về khái niệm tham số này Anh em có thể nhớ về cái khai niệng hoặc là Hàm số mà anh học ở cấp 2, cấp 3 XX, đông ạ chứ S đó là tách của từ Function Đúng không nhỉ?"
+      "start": 313.0,
+      "end": 314.12,
+      "text": "Rồi."
     },
     {
       "id": "S0055",
-      "start": 1832.85,
-      "end": 1833.95,
-      "text": "Con x là gì?"
+      "start": 315.96,
+      "end": 323.52,
+      "text": "Học HTML, CSS, framework, học framework và framework phổ biến nhất hiện tại mà hầu hết tất cả những dApp đều dùng là React."
     },
     {
       "id": "S0056",
-      "start": 1833.97,
-      "end": 1839.57,
-      "text": "X là biến số đúng ạ Với mỗi một giá trị của biến Thì nó sẽ có những cái kết quả khác nhau, đúng không?"
+      "start": 324.36,
+      "end": 326.56,
+      "text": "Hoặc là chúng ta học React và chúng ta học Next.js."
     },
     {
       "id": "S0057",
-      "start": 1839.59,
-      "end": 1842.65,
-      "text": "Thì ở đây 5 sinh nó không khác gì là biến số trong hàng một số cả."
+      "start": 326.56,
+      "end": 333.28,
+      "text": "Rồi, nếu chúng ta có thời gian, chúng ta không quá gấp trong việc mà chúng ta phải chuyển đổi thành web hợp thức."
     },
     {
       "id": "S0058",
-      "start": 1842.67,
-      "end": 1880.93,
-      "text": "Đúng ạ! Với mỗi 1 giá trị khác nhAU 2.192 thì nó sẽ cho ra những cái Kết Quả khác Nhau Và trong lập trình thì những cái giá Trị mà chúng ta chuyển cho phần tham số parameter này còn được gọi là đối số tính anh của là argument anh em nha Ok thế là xong cái phần input của function Đúng rồi, còn phần output Phần đầu da thì làm sao Ở đây em thấy là cái function này nó tạo ra những số 23 và 31 đúng chứ Nó được thực hiện thông qua lệnh document drive Điều bạn tuy nhiên, cái lệch này là làm việc trực tiếp với phần trang web Chứ nó không thể hiện phần output đầu da của function Trong thực tế là cái function này của chúng ta Có thể là nó sẽ tạo ra một kết quả và giá trị gì đấy để phục vụ cho những cái lĩnh tiếp theo Vâng không ạ?"
+      "start": 333.28,
+      "end": 338.36,
+      "text": "Chúng ta nên biết cách build backend, để chúng ta cũng có thể viết backend bằng chính ngôn ngữ JavaScript luôn."
     },
     {
       "id": "S0059",
-      "start": 1880.95,
-      "end": 1895.19,
-      "text": "Thì trong chân ngập đó thì anh em phải sử dụng 1 cái lạnh mà là return Đây là 1 cây lạnh được sử-dụng ở bên trong cái funcion Return có nghĩa là trả về Điếu bạn ví dụ ở đây mình tính ra cái tuổi Bằng bao nhiêu đấy mình sẽ return kiền biến tuổi để ra Nó đi thơ ra đầu, nó sẽ trải kết quả về đâu?"
+      "start": 338.36,
+      "end": 342.44,
+      "text": "Thì khi chúng ta biết backend rồi và chúng ta học thêm smart contract vì chúng ta áp dụng vô những cái dApp."
     },
     {
       "id": "S0060",
-      "start": 1895.51,
-      "end": 1923.08,
-      "text": "Đây anh em cùng nhìn xuống cái chỗ mà anh em mới gọi phang sần nè Đấy thì tại thiệt điểm anh em gọi fang sơn này này Nó sẽ tính ra một cái kết Quả gì đấy và để lấy được cái giá trị đấy Anh em sẽ phải dùng 1 biến để hứng lấy cái già trị đó Đúng không ạ? Ví dụ như mình sẽ dùng cái biên tuổi Thì lúc này cái tính tuổi nó sẽ tạo ra một kết QUA gì đấy Và nó sẽ gắn cho miếng tuổi ở đây Bây giờ mình sẽ thử chuyển cái lệnh document drive này đi xuống dưới nha Anh em theo mình vừa xép lại đấy Các kết quả vẫn như cũ, đúng không ạ?"
+      "start": 342.44,
+      "end": 348.12,
+      "text": "Chúng ta sẽ biết là đã cần gì để làm ở frontend, nghĩa là nếu các bạn coi cái video này."
     },
     {
       "id": "S0061",
-      "start": 1923.08,
-      "end": 1929.56,
-      "text": "Ngoài ra để mà ngắn gọn hơn thì các em cũng có thể gọi trực tiếp phang sân tính tuổi này ở bên trong cái lệnh right, nha. Như sao?"
+      "start": 348.12,
+      "end": 351.48,
+      "text": "Của mình có thể hiểu được là on-chain và off-chain là gì đó, nhưng mà nếu không hiểu đó."
     },
     {
       "id": "S0062",
-      "start": 1933.13,
-      "end": 1960.57,
-      "text": "Đây chẳng qua là cách cơ gối tiếp các câu lệch mình đã chia sẻ ở đầu vài học Gọn hơn rất nhiều đúng hông nhỉ Nếu như phang sinh không có lệng return thì mặc định nào nó sẽ return về một giá trị của lại undefined Ok, chắc là về phang son thì mình xin phép được tạo dường tại đây để cho nó phù hợp với tinh thần nhập môn của bài giản này Đấy, các anh em có thể tìm hiểu thêm 1 số những vấn đề khác Ví dụ như là các cách thức để khai báo ra 1 phang sần Nhưng ở đây, cái cách khai Báu này nó giống với cách Khai Báo biến đúng không ạ?"
+      "start": 351.52,
+      "end": 355.6,
+      "text": "Các bạn hãy ngay lập tức vô khóa học blockchain cơ bản để xem on-chain và off-chain nó là gì."
     },
     {
       "id": "S0063",
-      "start": 1960.73,
-      "end": 1991.05,
-      "text": "Tuy nhiên thì chúng ta cũng có thể khai bao mà Phang Sần Theo cách trường thống giống một số ngu lập trình như là C hay là Java đã làm Ngoài ra thì nó có một cách khais báo nó hiện đại hơn Đó là KuFap Arrow Function Nó dùng ký hiệu mũi tên ý Tuy niên thì với các anh em nhập mon Thì mình nghĩ là việc sử dụng quá nhiều ký hợp Thì nó sẽ hơi rối và khóa hình dung Thế nên mình cũng không đề xuất trong bài dạn này Đãi ngoài ra có 1 vấn đề nữa đó là khi mà anh em truyền tham số thì nó sẽ có sự khác nhau giữa kiểu dư liệu primitive và object Thì anh em có thể chủ động tìm hiểu thêm về vấn điện này nha."
+      "start": 355.6,
+      "end": 362.56,
+      "text": "Thì chúng ta sẽ biết được là cái gì nên để cho on-chain, cái gì nên để off-chain và cái gì nên để ở decentralized storage."
     },
     {
       "id": "S0064",
-      "start": 1992.02,
-      "end": 2044.78,
-      "text": "Ok, mình sẽ phép được truyển qua cái kiểu Dư liều tiếp theo được gọi là array Tạm dịch làm mạng Nó cũng là một object đặc biệt Và nó đặc Biệt ở chỗ là các dữ liệu Mà anh em tổ chức trong array thì nó không thông qua Các kỳ hay là property name mà nó sẽ thông quan 1 cái khái niệm của index Tạng hiểu là số thứ tự đi Ok, mình sẽ lấy 1 cái ví dụ anh em sẽ hiểu ngay nha Dạ sử mình có một vài thông tin như là Lan Thảo Amy Fukada Ojawa chẳng hạn Nếu mà muốn lưu nhiều dữ liệu như này Anh em vẫn hoàn toàn có thể sử dụng ông Jack Tuy nhiên trong trường gặp này khi chúng ta không biết rõ được các tên của thuộc tính là gì thì anh em có thể xử dục Array Nhà thì anh Em có thể liệt kê các giá trị ra ngăn cạnh nhau bởi dấu phẩy Và bọc nó trong 1 cập ngoặc vuông Sau đó gán nó cho 1 biến Mình tạm 1 gọi là A đi Lúc này, A chính là một biến có kiểu là array."
+      "start": 362.56,
+      "end": 371.32,
+      "text": "Khi mà chúng ta biết được những điều đó thì việc mà chúng ta học nó sẽ đơn giản hơn, và nếu một lộ trình của một lập trình viên trọn vẹn hoàn toàn."
     },
     {
       "id": "S0065",
-      "start": 2044.78,
-      "end": 2075.97,
-      "text": "Và lúc này cái việc truy cập các phần tử trong array sẽ thông qua các số thứ tự người ta gọi là index và được tính từ không Ví dụ ở đây cái la xuất hiện đầu tiên thì nó sẽ là số 0 Anh em sẽ viết cho mình là a ngọc vuông 0 Anh em lưu ý nhé, lúc nay cái toán tử mọc vua Nó đóng vai chờ là truy kập đến 1 phần Tử theo cái số thứ Tự Đây! Mình sẽ in anh em xem này Lan, mình sẽ tạm xóa 2 cái trên đi cho nó đỡ vướng nha Ví dụ anh em muốn ín văn tử số 1, có nghĩa là thảo thì anh em số 1 vào đây."
+      "start": 371.36,
+      "end": 382.36,
+      "text": "Thì giống như từ nãy giờ mình nói, sẽ là HTML, CSS, JavaScript và chúng ta học thêm backend, bây giờ nói về ngôn ngữ."
     },
     {
       "id": "S0066",
-      "start": 2075.97,
-      "end": 2104.97,
-      "text": "Cho nên cái cơ chế đặc biệt mà Thằng Array này nó có Quả đầu thì nó vẫn là một object anh em nhé Nhưng lúc đó mình còn nói Array nó là một objects đặc Biệt Nó vẫn là kiểu y liệu rượu trên object Thì nên là nó vẫn có thể quản lý các thuộc tính cách property Anh em nhá, ví dụ như là với Array thì nó có một thục tính đặcbiệt Còn là lan được tích hợp sẵn ở trong Array Anh em lui nhá Với thuộc Tính thì chúng ta sẽ vẫn dùng dấu trấm Thuộc tính lang sẽ thể hiện cái độ dài của array. Độ dài đây là số lượng phân tử Ví dụ ở đây chúng ta có 4 phân thử đúng không nhỉ?"
+      "start": 382.4,
+      "end": 389.84,
+      "text": "Ở JavaScript đây chắc chắn hơn chúng ta phải biết TypeScript, tại sao các bạn nên học TypeScript, tại vì TypeScript các bạn học xong thằng Solidity nó cũng giống."
     },
     {
       "id": "S0067",
-      "start": 2105.17,
-      "end": 2130.73,
-      "text": "Làng này nó trả ra là 4 anh em nha Ngoài ra thì nó còn một số thuốc tính khác, có kiểu là function Dùng để bổ chợi cho array Nhưng hàm push để thêm dữ liệu vào và hàmp pop để xóa dữ đi Ví vụ như sau a.push Nó là 1 function và anh em cần phải chuyển 1 tham số Thể hiện là cái phân từ mà anh em muốn thêm Ví dụ mình muốn thêm 1 thông tin là UAMI-KAMI Thì lúc này anh em xem là cái lang này nó có tăng lên một không nhá?"
+      "start": 391.84,
+      "end": 398.84,
+      "text": "Khá là giống có syntax, tiếp theo nữa là những ngôn ngữ mà viết backend phổ biến hiện tại, các bạn cũng có thể học thêm thằng Python."
     },
     {
       "id": "S0068",
-      "start": 2130.73,
-      "end": 2156.15,
-      "text": "Đó, lên là 5 đúng ạ Để mà in được cái array A này ra phần trang web Anh em có thể chuyển trực tiếp cái A này và có lệnh document drive nha Nó sẽ hiển thị các phân tử trong array Phân cách nhau bởi rấu phẩy Và anh em lưu ý là nó sẽ không có kênh giống hoặc vua Lệnh POS này anh thấy là nó thì sẽ thêm một phân từ vào cuối Để mặt xóa cái vật tử ở cuối đi thì chúng ta có 1 cái lệng của là POC Đây, ví dụ như thế này Anh em thấy không?"
+      "start": 398.94,
+      "end": 407.34,
+      "text": "Nếu mà các bạn familiar với Python, tại vì nếu mà viết trên những cái blockchain như là Ethereum hay Layer 2 của Ethereum, ví dụ như là Binance Chain này."
     },
     {
       "id": "S0069",
-      "start": 2156.15,
-      "end": 2178.39,
-      "text": "Lúc này thì nó sẽ đẩy cái Maria ra Đấy, nó chỉ còn đến Amy Fukada thôi Có thêm có xóa thì phải có sửa là đúng không ạ Ví dụ như mình muốn sửo phân tử Amy Fukadda này Rút gọn lại con Fukadah thôi Thì anh em sẽ làm gì đơn giản thôi Chúng ta sẽ truy cập vào phân từ đấy Thông qua cái toán từ Ngọc vuông Nhá. Là A Ngọt vuông Không này Một này Hai này Đúng không hả?"
+      "start": 407.44,
+      "end": 415.41,
+      "text": "Arbitrum này, Avalanche này, rồi chúng ta sẽ có thêm nữa là Optimism này."
     },
     {
       "id": "S0070",
-      "start": 2178.41,
-      "end": 2186.97,
-      "text": "Thế đây sẽ là hai Bằng gì Fuka Da Đúng ạ Để anh em yên lại này Đó Chỉ còn là Fukada Đó thì vừa rồi mình đã ví dụ nhanh 4 thao tác cơ bản."
+      "start": 415.43,
+      "end": 422.57,
+      "text": "Đó thì tất cả những blockchain EVM nào nó cũng sẽ hỗ trợ thêm ngôn ngữ là Vyper, và ngôn ngữ Vyper là ngôn ngữ được phát triển trên ngôn ngữ Python."
     },
     {
       "id": "S0071",
-      "start": 2186.99,
-      "end": 2189.07,
-      "text": "Đó là thêm xóa sửa truy cập."
+      "start": 422.59,
+      "end": 427.19,
+      "text": "Cho nên khi mà chúng ta biết Python, chúng ta cũng có thể sử dụng và chúng ta đã viết được smart contract luôn."
     },
     {
       "id": "S0072",
-      "start": 2189.09,
-      "end": 2206.07,
-      "text": "Trong lập trình nó có một cái thuật ngữ của C R U D Ví tắt của Korea, read update và delete để thiết 4 tháo tác câu bản này khi mà làm việc với 1 cấu chúc sự liệu Thì anh em có thể tra cứu thêm 1 số những phang sinh khác nhé ví dự như là chúng ta có thể xóá phân tử ở giữa này hoặc là thèm vào từng vào giữa thì làm thế nào?"
+      "start": 427.21,
+      "end": 436.29,
+      "text": "Rồi có một cái ngôn ngữ về blockchain nữa mà mình không biết nên khuyên mọi người học không, nhưng mà mọi."
     },
     {
       "id": "S0073",
-      "start": 2206.09,
-      "end": 2261.45,
-      "text": "Với array thì mình còn 1 chuý nữa đối với anh em đó là các phân Tử trong arrays thì có thể không cần giống nhau về kiểu dư liệu nhé Ví dụ như đây có thể là 1, 2, 3 Rồi đây là chú Bất cứ kiểu gì mà anh em được học tới đầu đến giờ Kể cả là object, kể cả lại một array khác nữa vẫn hoàn toàn được anh em nha Nó có thể sẽ hơi khác một chút với cách nghĩ của anh em về array trong một số ngôn gương lập trình khác thì là C hay là Java Đã mình vừa canh cho nét xong các giá trị khác kiểu diễn đều nhau nhưng vẫn lưu được bình thường Nha Ok Cái kiểu điện tiếp theo mà anh Em cũng sẽ làm việc rất thường xuyên đó là string tạm dịch là chuỗi ký tự Ví dụ như cái Maria ở đây, hai cái Fucada ở đây Nó chính là các chúa ký tự String nó cũng làm kiểu di liệu cũng rất đặc biệt Nó thuộc nhóm Primitive là kiểu nguyên thủy Thế nhưng mà nó có thể thực hiện một số những thao tác giống với array Đây để ca anh em rõ hơn thì mình sẽ tag string fucada này ra Và 1 cái biến khác nha Mình sẽ tạm gọi nó bía S Đúng ạ?"
+      "start": 436.31,
+      "end": 442.03,
+      "text": "Ngay chính cái lúc mà chúng ta viết hay chính cái lúc chúng ta học dApp, chúng ta cũng có thể học luôn ngôn ngữ Rust ở đây rồi."
     },
     {
       "id": "S0074",
-      "start": 2261.47,
-      "end": 2293.49,
-      "text": "Mình xóa cái này trên đi Chúng ta có thể coi bia s này Nó là một array với các phần tử là các cái kí tự, các chữ cãi hoặc là chữ số Vì dụ có thể 1 2 3 như thế này Nó cũng là ký tự mà Thậm chí giống cách này cũng là một ký Tự Anh em chú ý nha Nó giống với array ở chỗ nào Chúng ta có thể truy cập đến các cái Kí tượng này theo index Ví dụ như là Cái chữ cá đầu tiên là F đúng không nhỉ thì anh em sẽ dùng tuấn tưởng của vua Do đó điền xuộc không vào giữa là nó sẽ truy gặp đến chữ f Anh em xem này Sau đây mình đang dùng biến A Mình phải thay hành chữ S Đúng không ạ?"
+      "start": 442.03,
+      "end": 451.29,
+      "text": "Nhưng mà nếu các bạn thực sự mạnh, chúng ta đã từng viết về những ngôn ngữ lập trình trước đó giống như Java thì Rust không có vấn đề gì."
     },
     {
       "id": "S0075",
-      "start": 2293.49,
-      "end": 2295.61,
-      "text": "Đó là chữ F, đúng không?"
+      "start": 451.31,
+      "end": 454.19,
+      "text": "Nhưng mà nếu các bạn là một người học trái ngành thì sao?"
     },
     {
       "id": "S0076",
-      "start": 2295.61,
-      "end": 2325.41,
-      "text": "Rồi nó cũng có thuộc tính lang Đây, anh em dùng rấu trấm gọi đến cái lang Thì nó sẽ ra cái gì Nó sẽ ra độ dài của cái chuỗi kí tự này Nó còn có 11 kí Tự như anh em thấy ở đây Mặc dù là cách sử dụng nó có vẻ giống array thế nhưng mà nó lại không phải là array Anh em nha Trong JavaScript có một nhóm các kiểu duy liệu mà nó cũng hoạt động giống với Array như thế này Nó được gọi là array like object Tức là nó cũng sẽ dùng các tóán tử hoặc vuông, miến lang để thể hiện số lượng phân thở."
+      "start": 454.21,
+      "end": 460.77,
+      "text": "Thì một khi các bạn vừa bắt đầu lao vào học Rust luôn thì nó rất khó, nó giống như là bước đi cái đặt đầu của từng ấy."
     },
     {
       "id": "S0077",
-      "start": 2325.43,
-      "end": 2332.85,
-      "text": "Tuy nhiên thì nó không có một số cơ chế đặc biệt mà RA có Ví dụ như map, filter or reduce anh em có thể tính lượm thêm nhá!"
+      "start": 460.79,
+      "end": 466.39,
+      "text": "Thì rất là khó cho các vấn đề đó, cho nên là cái hướng của mình vẫn sẽ là các bạn phải học."
     },
     {
       "id": "S0078",
-      "start": 2332.87,
-      "end": 2342.41,
-      "text": "Ok trở lại cái rong code ở đây, liệu của anh em nào phát hiện ra là Cái biến S của chúng ta Nó là kiểu primitive, kiểu nguyên thuỷ nhưng tại sao lại có thể truy cập được vào thuộc tính hay không?"
+      "start": 466.39,
+      "end": 477.95,
+      "text": "Từ những thứ cơ bản nhất của lập trình web, HTML, CSS, JavaScript, chúng ta nâng cấp đến TypeScript."
     },
     {
       "id": "S0079",
-      "start": 2342.43,
-      "end": 2351.21,
-      "text": "Thuộc tín property Đó là của object thôi mà chỉ có objects mới có thuộc tiếng Đúng rồi, con nguyên thủy là nó như kiểu là đơn vị giới liệu nhỏ nhất rồi không rãi nhỏ người được nữa."
+      "start": 477.97,
+      "end": 482.93,
+      "text": "Rồi chúng ta sẽ học cái BigBug mà nó chất nên TypeScript thôi, hoặc là chúng ta có thể tự cho thêm một số ngôn ngữ, ví dụ như Python của Golang hoặc Rust."
     },
     {
       "id": "S0080",
-      "start": 2351.23,
-      "end": 2354.23,
-      "text": "Nhưng tại sao S này có chúng ta lại truy cập đến cái lang nữa?"
+      "start": 482.95,
+      "end": 491.03,
+      "text": "Mà chúng ta đưa tiền theo sở thích của chúng ta, vì là mình không biết Golang, mình cũng chưa biết về TypeScript, mình chỉ biết sơ sơ về Rust."
     },
     {
       "id": "S0081",
-      "start": 2354.25,
-      "end": 2381.89,
-      "text": "Đó là bởi vì ở trong Zavascript nó có 1 cái cơ chế của là Time Coercent Có thể tạm hiểu Nominal đó là một cái cưa chế tự động chuyển đổi kiểu dữ liệu khi cần thiết Thì ở đây, tại thời điểm này rồng 20 thì biến s nó vẫn là 1 string nhưng để rồng 21 thì chúng ta gọi cái chấm lang này này Đấy thì cái S này nó sẽ được thẳng trình dịch tự động chuyển đổi thành cái object, sau đó trong cái object nó có thuộc tính là lang để lưu thông tin của cái object đấy."
+      "start": 491.05,
+      "end": 495.15,
+      "text": "TypeScript thôi là mình đủ để làm rồi, vậy nên mình vẫn hướng các bạn là học TypeScript."
     },
     {
       "id": "S0082",
-      "start": 2381.91,
-      "end": 2386.85,
-      "text": "Do vậy có thể nói chúng ta có hai loại string, đó là stringuyên thủy và stringobject nha!"
+      "start": 495.15,
+      "end": 499.15,
+      "text": "Và các bạn khi mà chúng ta build được fully một cái dApp rồi, full view of Web 2."
     },
     {
       "id": "S0083",
-      "start": 2386.89,
-      "end": 2415.8,
-      "text": "Ok về phần kiểu di liệu data type thì mình nghĩ là chúng ta còn có thể tạm dừng ở đây Thì mình nghĩ với ngân này cũng đã đủ đồ chơi để các anh em có thể nhịt rồi Bây giờ chúng ta sẽ chuyển qua cơ chế, đồng với tắt của document object model Có thể hiểu nó là thành phần cầu nối giữa các đoạn code Java Script Với trang văn bản HTML Tràng hạ như đơn giản là lệnh document drive này Nó đẩy dữ liệu từ trong code của anh em Da phần trang web đúng không ạ?"
+      "start": 499.15,
+      "end": 508.15,
+      "text": "Full view of Web 3 rồi thì bắt đầu chúng ta sẽ học về smart contract, về Solidity."
     },
     {
       "id": "S0084",
-      "start": 2415.92,
-      "end": 2446.06,
-      "text": "Đấy thì cái document này Nó chính là cái object đã đại diện cho cầu núi đó Cái cơ che cầu nuôi này được gọi là DOM Khi nhờ có đông, mà cái trang văn bản HTML của chúng ta nó không còn là trang vàn bản tính nữa Mà nó có thể hoạt động được như một cái app App ở đây là application Đó là phần mềm ứng dụng Nó là chương trình mà Đúng rồi, đó là chung trình thì nó sẽ có phần input đầu vào là gì Nó sẽ xử lý tinh toát cái gì đấy để cho 1 cái đầu da 1 cái output Thì đây anh em mới thấy là Chúng ta mới chỉ có chiều output thôi Chiều đi ra thôi Còn chiều đi vào thì thế nào?"
+      "start": 508.15,
+      "end": 510.05,
+      "text": "Tại sao mình giới thiệu Solidity?"
     },
     {
       "id": "S0085",
-      "start": 2446.08,
-      "end": 2534.29,
-      "text": "Giả sử ở đây nha Mình sẽ tạo cho nó 1 cái input đi Đúng ạ, một cái input element Chỗ này sẽ là 1 cái nhập tên đi Đó như thế này. Mình sẽ zoom nhỏ lại với chút Rồi mình sẽ cho thêm 1 cái button nữa Đấy thì ở đây mình đang giả sửa 1 cái trương trình rất đơn giản Đó là nhập ten của ai đấy vào đây Sau đó bấm nút ok Đúng không ạ? Sau đó trương Trình nó sẽ in ra 1 lời trao ứng từ cái tên đó Thì chúng ta cần phải làm thế nào Thì trong HTML nha Khi mà chúng ta tác động 1 cái gì đấy Vào các cái elements Các phần tử trên trang web thì cái phân tử đó nó sẽ phát ra một tín hiệu có thể tạm hiểu như vậy, còn thật ngươi tính anh người ta gọi là event và nó sẽ cho phép chúng ta là định nghĩa hay là chỉ da hành động mà chúng ta sẽ làm khi mà event nó xảy ra thông qua 1 thuộc tính gọi lại event handler và cái thuộc tiếng này, nó là thuộc túc của HTML element từ trên gánh của nó là attribute Và nó được định nhị ở trong phần thề mở của Element ví dụ như thế này là button Cụ thể ở đây, cái event của chúng ta cần quan tâm đó là click Tức là bấm chuột Thì cái event handler attribute của nó sẽ là onClick OnClick Như thế này Đấy, vscode của mình nó đã gợi ý ra như thế này Thì ở dưỡng giấu nháy này Chúng ta sẽ viết các đoạn code JavaScript để thực hiện các thao tác xử lý phản hồi lại việc chúng ta bấм nút Thì đây cũng có thể coi là cái thể hiện của cầu nối trong người cơ chiến đồng OK. Đi vào cụ thể thì sẽ như thế nào?"
+      "start": 510.05,
+      "end": 516.15,
+      "text": "Tại vì mình có sẵn source Solidity các bạn ạ, ngay trong kênh trên YouTube."
     },
     {
       "id": "S0086",
-      "start": 2534.29,
-      "end": 2577.94,
-      "text": "Ở đây thì thay vì viết trực tiếp code server script hôm nay thì chúng ta sẽ định nghĩa 1 cái function gì đấy ở cái script element sau đó, chúng ta sẽ gọi hảm trong này thôi nha như vậy nó sẽ ngắn gọn hơn Đây mình sẽ xóa hết cái code cố đi nhá cho nó lỡ dối đúng ạ Rồi, mình sẽ hay báo ra một cái function tạm gọi là Xin chào đi Trong thực tế thì anh em nên chọn tiếng Anh nhé Mình dùng tiếng Việt để cho nó dễ gần mà cho nó anh em giấy hình dung Rồi Trong cái function Xin chảo này Chúng ta sẽ xử lý cái gì Đầu tiên là anh em sẽ cần phải lấy được cái thông tin hay là cái dưới liệu mà anh em điền vào cái input này này Đãi Sau đó thì chúng ta sẽ nối nó, nối cái tên này với một cái chuỗi nghĩ tự và là xin chào đến đây đi để gép thành cái câu xin chao Amy Fukada đúng không ạ?"
+      "start": 516.15,
+      "end": 522.15,
+      "text": "Một phần nữa là học hết."
     },
     {
       "id": "S0087",
-      "start": 2577.96,
-      "end": 2654.44,
-      "text": "Đấy kết hợp được 1 cái kết quả như vậy cuối cùng là anh em sẽ in nó ra phần trang web có thể In ở phía dưỡi này chẳng hạn Đúng không à Đó Đi từng bếp 1 nhá đầu tiên là lấy dư�ơi liệu ra Thì cho ghét anh em cần phải trên cái input element anh em cho nó 1 cái ID đúng rồi ạ Sau khi nó có ID rồi, thì trong phần Function này, xin chào anh em sẽ gọi cho mình cái lệnh là document.getElementByID Đó lại là một thể hiện của cơ trễ đôm đây Nó bắt cầu sang phần trang văn bạn chúng ta Nó truy cập được vào element của id là input Thông qua lệch là documentGetElement ByID như thế này Nó là 1 function với tham số là gì anh em truyền đúng id mà anh em vừa tạo vào trên input này thì cái lệnh này nó sẽ truy cập được vào element này tuy nhiên thì đây mới chỉ là truy gập vào Element thôi Anh em muốn lấy ra giá trị mà chúng ta nhập vào đây nè thì anh em cần thêm 1 cái nữa là chấm value Cái value ở đấy, nó sẽ từng ứng với thuộc tính ở bên trong thể HTML này Nó có một cái thể là Value Thì cái thuốc tính này nó sẽ lưu cái giá che mà anh im nhập và phần input và chúng ta sẽ truy cập cái value đấy thông qua cái dâu chấm Cát cái attribute khác của HTML element cũng như vậy, đúng không ạ?"
+      "start": 522.15,
+      "end": 529.91,
+      "text": "Cái hai cái ngôn ngữ chắc chắn chúng ta phải học khi mà chúng ta trở thành một Web 3 developer chính là Solidity và Rust, tại sao nha?"
     },
     {
       "id": "S0088",
-      "start": 2654.46,
-      "end": 2680.5,
-      "text": "Rồi sau khi chúng ta gọi lệnh này xong anh em sẽ gàn nó trong một biến nào đấy mình tặng gọi là miến tên chẳng ạ Đúng không hả ạ Rồi bước thứ 2, thể hiện việc sử lý giữ liệu đúng ạ Đơn giản ở đây thì mình chỉ là ghép cái câu sinh chào sao đó làm gì cộng với cái tên ở trên thôi Sau đó anh em xử lý xong, anh em cập nhật lại cho biến tên này Một bước gán lại dữ liệu nha Cuối cùng là anh em sẽ làm gì?"
+      "start": 529.95,
+      "end": 536.03,
+      "text": "Tại vì hầu như hồi nãy mình nói trên DefiLlama là Ethereum á, nền tảng nó vẫn đang ở 55% Total Value Locked."
     },
     {
       "id": "S0089",
-      "start": 2680.5,
-      "end": 2710.96,
-      "text": "Chúng ta sẽ in ra phần trang web In ra trang weft đi đơn giản rồi Suốt từ đầu đến giờ chúng ta làm việc với cái lệnh là document.write được không nhỉ Anh em in cái tên ở đây ra Cái này mình có thể đã nổi thành lời chào thì đứng yếng ít hơn Lời chàu Ok Em in ra cái lời chao Đây là mình làm kiểu chậm từng bớc 1 Để các anh em rất ạch dùng thì mình biết như thế thôi Thực tế thì anh em có thể gục 3 câu lệnh này 1 cũng được, không sao cảng Tuy nhiên thì nó hơi khó theo dõi Sẽ như thế nào nhỉ?"
+      "start": 536.07,
+      "end": 540.67,
+      "text": "Và kiểu gì chúng ta làm việc cũng sẽ một cách nào đó, nó cũng sẽ liên quan tới Ethereum."
     },
     {
       "id": "S0090",
-      "start": 2711.0,
-      "end": 2744.88,
-      "text": "Căn chuẩn s lại nè Chưa coi gì xảy ra đúng à anh em Vì cái phang sinh này như mình nói đấy Nó mới chỉ là phần định nghĩa thôi Chúng ta phải thật hiện một thao tác gọi là gọi Hàm Đúng ạ Thì cái Hàм đó mới được thực hiện Thì chúng ta sẽ gọi ở đâu Chúng tôi sẽ gỏi Hàum ở đây này Đây là nơi Sẽ được thực hiện khi mà anh em bấm cứ nút OK Anh em sẽ gọn Hàam ở đây Gọi như nào Või như gọi Hàm bình thường thôi, tên hàm cộng với cái cặp mở nóng hoạch tròn Nha! Hàм này không có tham số Đúng ạ Rồi, bây giờ anh em cùng xem này Căn chuẩn S lại nè Bây giờ mình nhập nhé Amy Fukada Ok Anh em thấy không?"
+      "start": 540.71,
+      "end": 547.87,
+      "text": "Và cái nền tảng công nghệ bây giờ chúng ta không còn ở một chain nữa, khi mà chúng ta build một dApp hay Web3, nó là multi-chain."
     },
     {
       "id": "S0091",
-      "start": 2744.92,
-      "end": 2775.48,
-      "text": "Nó y ra một câu là xin chào Amy Fukadda Tuy nhiên Ở đây anh em thấy toàn bộ các element khác của mình biết mất Là bởi vì sao Bởi vậy lệnh document drive sẽ khi đề toàn buộc Nội dung của trang văn bản HTML Nếu như anh em muốn giữ nguyên các elements trên trang vàng bản Thì chúng ta phải làm gì Cái element khác, sau đó dùng đông để thay thế cái nội rung Vọt là text ở bên trong cái element đấy Đã khá như thế này này Mình sẽ tạo ra một cái element của lần deep thôi Element chung chung thôi Đúng không ạ?"
+      "start": 547.91,
+      "end": 550.71,
+      "text": "Multi-chain chắc chắn sẽ dính đến Ethereum."
     },
     {
       "id": "S0092",
-      "start": 2775.5,
-      "end": 2796.86,
-      "text": "Kỷ dip này mình cũng sẽ cho nó 1 cái ID Mình đặt nó là lời trào chẳng ạ Thể hiện là cái element này để in ra cái lời trao Thì bây giờ thay vì là mình gọi document drive ở đây Đúng rồi, thì mình sẽ tiếp tục lại truy cập đến cái gì Truy cấp đến cái element lời chảo Ở máy em vừa định nghĩa đây nè Thông qua cái gì lại document Get element By ID Đúng không ạ?"
+      "start": 550.71,
+      "end": 558.71,
+      "text": "Cho nên là chúng ta sẽ cần phải biết cái ngôn ngữ là Solidity để chúng ta ok về thằng Ethereum chứ, và Ethereum cũng rất là dễ học."
     },
     {
       "id": "S0093",
-      "start": 2796.88,
-      "end": 2846.93,
-      "text": "Anh em nhập lìm lời chào vào Sau đó làm dậy chúng ta truy cặp đến cái gì anh em nhỉ Cái mà chúng ta đang muốn bây giờ là String sinh chào a Bifurcada Nó phải trùi vào giữa các cặps thầy deep đúng không à Đấy thì cái thuộc tính mà lưu cái dữ liệu đấy nó có tên là inner HTML Nhà khi chúng ta get element xong Anh em gọi cho mình cái của lại Inner HTML như thế này Inner có nghĩa là bên trong Toàn bộ các cái đoạn code HTML bên trong Cũng cái element là phần này Đấy, chúng ta chuyên cập được Và sau đó anh em sẽ dùng cái khép gán để mà cầm nhật thay đổi duy liệu cho nó Đấy thì đây đơn giản là chúng ta sẽ gắn nó cho cái lời chào ở trên thôi Cái biến lời chao ở trên Là xong Nha! Ok bây giờ mình trại lại chương trình anh em xem nè Nhập tên A.mi Êa đồ khác đi Ua Mikami đi Đấy anh em thấy không?"
+      "start": 558.71,
+      "end": 563.71,
+      "text": "Sau khi mà chúng ta đã học được rồi thì chúng ta bắt đầu học những blockchain khác, ví dụ như Solana."
     },
     {
       "id": "S0094",
-      "start": 2846.97,
-      "end": 2851.13,
-      "text": "Xin chào Ua Mikami Anh em hiểu cái bản chất của vấn đề không ạ?"
+      "start": 563.71,
+      "end": 568.71,
+      "text": "Cái cách phân tán data của Solana nó sẽ khác với Ethereum."
     },
     {
       "id": "S0095",
-      "start": 2851.37,
-      "end": 2881.87,
-      "text": "Đãi thì khi mà anh em thông được phần document object model này rồi thì anh em hoàn toàn có thể chủ động tìm hiểu sang các loại input element khác này Các loại event khác nhau ứng với mỗi Element đó và tự xây dựng ra những cái app vì theo sở thích của anh em Chà ngạo như ở trong quá học thì mình còn hứa dẫn anh em làm một số áp khác như kiểu là đến từ, đến trữ này Hoặc là lập trình ra 1 cái app máy tính cộng trừ nhân chia Đó là những cái app rất đơn giản mà mình nghĩ là em có thể tự thực hành được để hoặc là cùng cố kênh thức về JavaScript của mình."
+      "start": 568.71,
+      "end": 573.71,
+      "text": "Nhưng mà Big sẽ thường xuyên có nhiều video nói về vấn đề đó, các bạn có thể ấn subscribe kênh."
     },
     {
       "id": "S0096",
-      "start": 2882.49,
-      "end": 3010.89,
-      "text": "Ok, mình sẽ phát triển sang cái phần tiếp theo đó là về cơ chế bất đồng bộ Asynchronous đây có thể coi là cái phẩm kiến thức rất quan trọng của nguồn ngữ JavaScript mà anh em cần phải nắm được khi mà xác định muốn sử dụng JavaScript để phát chuyển các sản phẩn này hoặc đi so hơn với quân gương này chuyển tiếp sang làm lập trình web chẳng hạn và theo mình nhận định thì Những cái kiến thức về bất đồng bộ thì thực ra nó không phải là khó tuy nhiên thì nó sẽ hơi khó tiếp cận với các bạn mới bắt đầu mà trước đấy anh em chưa từng học nguồn gương lập trình nào còn nếu anh em nào đã từng tiếp xúc với Xi hay Xi ổng vọng dối Cái anh em đã hiểu về Da Luong Mantit Thread rồi ấy thì phần Bất Đồng Bộ nó cũng sẽ rễ tiếp cặn thôi Ở cái mức độ nhập môn thì anh em có thể hình dung thế này Tức là một số những cái lệnh nó sẽ mất thời gian để thực hiện xong Đấy, thì những cái lệnh như vậy có thể là có cơ chế Chúng ta không cần đợi nó thực hiện xong Mà chúng ta có thể thực hiện một cái lạnh khác Và sau đấy Sau khi nó thực diện xong rồi Nó sẽ quay lại thông báo cho chúng ta Thì từ đầu về học đến giờ Thì chủ yếu là các anh em mới làm quen với các cái lãnh Đừng gọi là nồng bộ thôi Tức là các cái Lãnh Sâu Thì phải đợng lượng trước thực hiện Xong Thì nó mới thực hiện lên lãng sâu Nha Còn đây sẽ là 1 cái ví dụ về câu lãn bất ổng bộ này Ví dụ chúng ta Có 1 cái lảnh của là Set Tamal Lệnh này nó sẽ tạo ra một cái đồng hồ đến ngược Nó cần có 2 tham số Tham số nhất là 1 phang sần Mình sẽ giải thích cái tham xô thứ hai trước Cái tham soát thứ Hai sẽ hiểu hơn Nó sẽ là thời gian mà nó sẽ điếm lùi Ví dụ như mình điếp lùy 3 giây Thì anh em phải chuyển cho mình làm 3000 Do đơn vị của nó là mili giây Thế nên anh em truyền 3000 thì nó sẽ từng ưng với ba giây Rồi, quay lại cái thAMSÔT thứ nhất Nó cũng sẽ là fang sinh để định nghĩa Việc chúng ta sẽ thực hiện khi mà Cái đồng hồ này nó đếm được thành công Tức là nó đêm hết, vì không thì nó sẽ làm cái gì Thì ở đây mình sẽ khai báo tắc ra để anh em dễ nhìn nhá Anh em có thể viết trực tiếp vào trong cũng được Nhưng mà mình sẽ 2 báo tác ra để em dạy nhìn hơn thông báo chả ngại bằng phăng sừng Mình trong này mình sẽ viết ở gì Mình sẽ im một cái thông bao vào cái element lời trao nha Mình xin câu hết giờ nha Sau đó mình sẽ chuyển cái biến thông bao này Vào làm núi số cho cái lệnh set thammao Đấy không ạ?"
+      "start": 573.71,
+      "end": 576.71,
+      "text": "Và bật cái nút chuông lên để các bạn coi được những nội dung của Big làm."
     },
     {
       "id": "S0097",
-      "start": 3010.91,
-      "end": 3016.66,
-      "text": "Ok chạy thử nha Căn chuẩn s lại này Đợi khoảng 3 giây Đó, anh em theo không?"
+      "start": 576.71,
+      "end": 582.71,
+      "text": "Bất ngờ trong team mình thôi, cho nên là các bạn có thể tự tin về cái vấn đề nội dung của video đó."
     },
     {
       "id": "S0098",
-      "start": 3016.66,
-      "end": 3049.96,
-      "text": "Khoảng 3 Giây sau nó hình dạy hết giờ đúng nhỉ Bây giờ đang sau lệnh set tham ao này Mình sẽ gọi thêm 1 cái lệch nữa Đây mình sẽ copy đây ở trên Mình ngắt rồng ra cho dễ nhìn nha Đây mình ít là Xin chào các bạn ạ Ok Đến đây thì theo anh em là nó sẽ Đếm hết ba giây Ít ra chỉ hết giờ Rồi mới ít trữ xin chào Hay là ít tự sinh chào trước chạy thử thì biết nhá anh em thấy chưa?"
+      "start": 582.71,
+      "end": 585.71,
+      "text": "Khi mà chúng ta học được Solana rồi, chúng ta sẽ có thể."
     },
     {
       "id": "S0099",
-      "start": 3049.96,
-      "end": 3076.81,
-      "text": "Nó in ra chịu xin chào trước sau đó 3 giây sau, nó để chịu hết giờ vào Để các anh em quan sát dễ hơn mình sẽ thay cái tóa tự bằng thành cộng bằng có nghĩa là nối thêm dữ liệu vào đúng không ạ? Thay vì cái đẻ đúng hả? Dấu bằng đây là chúng ta cài đẻ dữ lượm mới vào đấy. Mình sẽ thêm cái xuống rồng nữa anh em dễ nhìn Đấy, anh em thấy không? Nó vẫn yên ra sự xin chào trước, sau đấy mới gọi trị hết giờ."
+      "start": 585.71,
+      "end": 588.02,
+      "text": "Thứ nhất là các bạn học Rust trên Solana, thứ hai."
     },
     {
       "id": "S0100",
-      "start": 3076.81,
-      "end": 3117.61,
-      "text": "Mặc dù cái lệnh Setamao chúng ta gọi trước đúng ạ Cái sinh chào chúng ta Gọi sau để giải thích đơn giản cho hiện tượng này thì anh em có thể hình dung như sau cái Setamaon nó là một lệch được thực hiện bởi 1 cái thành phần khác trong môi trường trình duyệt Người ta sẽ hay gọi là Modul Mặc Dù cái trình dịch Mac Javascript đó là một trình đơn luồng Tất cả nó chỉ chạy tuần tự từ trên xuống dưới thôi Thế tuy nhiên thì cái môi Trường Trình Duyệt web của chúng ta Ví dụ là cái Google Chrome này, nó được code bằng si cộng cộn Nó là một môi trường đa luận Si cộp cộc thì support đã luận Thế nên là 1 số những tác vụ mà mất thời gian ý Chúng ta vẫn có thể gửi sang mô đuân khác trong cái môi chường đấy Ví du là xét thammao này Nó phải mất đến 3 giây nếu mới điểm xong Sau khi 3 giày nào được điểm song Dạm sao?"
+      "start": 588.02,
+      "end": 592.71,
+      "text": "Học thêm những cái blockchain khác cũng viết bằng Rust là Near."
     },
     {
       "id": "S0101",
-      "start": 3117.63,
-      "end": 3186.15,
-      "text": "Thì cái function này sẽ lại được gửи về cái thằng chính dịch mã JavaScript Để nó thực hiện Cái thằng chỉnh dịch má ở trong Google Chrome Nó có tên là VH Engine Hay đọc tiếng viện là V8Engine Đó thì dựa vào những cái tử khóa vừa rồi, anh em có thể search để tìm hiểu thêm Và mình cũng sẽ phân tích rõ hơn về nghe NGV8 này trong 1 video khác Rồi trở lại với việc gọi hàm bất đồng Bộ Cách gọi Hàm như thế này, người ta gọi là Truyền Convac Anh em nha, ngoài ra chúng ta còn các cơ chế khác Như là kiểu ProMix hay là cửa chế Asin Await Thì cái nội dung tiến thức của phần này mình nghĩ nó khá là nặng và nó hoàn toàn có thể là một cái bài giảng kéo dài đến 1-2 giờ đồng hồ nữa Trong khóa phục JavaScript của mình thì cái phần bắt đầu bộ này còn kéo ra đến tận 15 bài giảng cơ Thì nên là việc nhổ nhét kiến thức vào thời lượng cuối của cái bài dạng nhập môn này Có lẽ nó hơi bất khả thi Do vậy, mình xin phép để dành cái phẩn Kiên thức chuyên sâu về bắt đồng bộ cũng như là Engine V8 trong một video khác Anh em nhá Con ở bước độ nhập Môn thì anh em cần hiểu ý tưởng của nó là nó làm cái gì rồi Rồi! Bây giờ mình sẽ truyền sang cái Phần Kiến thích cuối cùng Đó là về Data Storage Lưu chữ Giữ liệu Một trong những chức năng tối thiểu mà bất cứ một cái áp nào cũng cần phải làm được."
+      "start": 593.71,
+      "end": 596.71,
+      "text": "Nhưng mà có một cái là thằng TypeScript cũng có thể viết smart contract trên NEAR."
     },
     {
       "id": "S0102",
-      "start": 3186.23,
-      "end": 3189.83,
-      "text": "Lưu trữ dí liệu ở đây không phải là đang để gặp đến biến variable nha."
+      "start": 597.71,
+      "end": 600.71,
+      "text": "Cho nên khi mà chúng ta viết người con ngủ với TypeScript thì nó cũng rất đơn giản."
     },
     {
       "id": "S0103",
-      "start": 3189.87,
-      "end": 3211.71,
-      "text": "Biến nó cũng là để lưu chữ dý liệu nhưng mà chỉ là lưa chữ tạng thời thôi Tức là khi chương trình của anh em mà tác đi thì cái dưới liệu trong biến nó sẽ bị biến mất Đấy và cái cơ trên data strip mình muốn nói là chúng ta sẽ lưua chữ di liệu lâu giải hơn Anh em có thể tắt chương Trình đi và bật lại thì cái gì đó vẫn còn nha Ở trong ngôi trường web browser thì có khá nhiều cách thức khác nhau cho phép chúng ta có thể lưu trữ được data."
+      "start": 600.71,
+      "end": 610.71,
+      "text": "Chúng ta cũng cần phải học thêm một số blockchain khác, nếu mà chúng ta đã được học làm blockchain thì yêu cầu phải học một blockchain nào thì phải làm một blockchain đó thôi."
     },
     {
       "id": "S0104",
-      "start": 3211.95,
-      "end": 3214.45,
-      "text": "Đưa giản thì có thể kể đến như là cookies này."
+      "start": 611.71,
+      "end": 613.71,
+      "text": "Cho nên là chúng ta hãy nên học Solidity trước phải tại vì nó dễ."
     },
     {
       "id": "S0105",
-      "start": 3214.47,
-      "end": 3277.67,
-      "text": "Chúng ta còn West storage này hoặc nơi cao hơn anh em h� toàn có thể sử dụng Database của anh em nào đã học về 4 cơ sở di liệu rồi thì biết là chúng ta không tổn chức một cái database riêng sau đó anh em sẽ kết đối với cái database này Với cái app viết bằng JavaScript của anh Em Bạn thân trình duyệt Google Chrome này nó cũng đã được tích hợp 1 cái Database gọi là Index DB Nó làm 1 cái tiêu chuẩn của HTM L5 Cũng khá là dễ dùng và tiện cho việc thực hành tuy nhiên thì các anh em cần phải biết một chút kiến thức cơ bản về NoSQL Databay đã Còn với mức độ nhập mon cũng như là làm quen với nguồn ngữ JavaScript Thì mình đề xuất các anh sử dụng cái cơ chế local storage Data của các anh sẽ được lưu trực tiếp ở trong browser Theo kiểu giống như object nó cũng có property, cũng có value Đây mình sẽ ví dụ nhanh nha Để gọi đến cái local storage thì anh em viết là local storage như thế này Sau đó anh em sẽ viết cho mình dấu chấm sau đó sẽ là cái tên thuộc tính mà anh em muốn tạo ra để lưu dữ liệu ví dụ mình muốn lư, cái thuộc tiếng là Tên Đấy Mình nghĩ là vũ, nguyên folder chẳng ạ Đó, mình tạo đến nữa đi bằng gì?"
+      "start": 614.71,
+      "end": 622.19,
+      "text": "Sau đó thì chúng ta học Rust và chúng ta biết được Solana trên này nên biết những blockchain mà hiện tại đang rất là hot."
     },
     {
       "id": "S0106",
-      "start": 3277.67,
-      "end": 3321.26,
-      "text": "Hà Nội Chẳn hạn Anh em canh chuẩn En lại cho mình này Khi mà canh Chuẩn en lại nhé thì đoạn Script này nó đã được chạy rồi và cái dữ Liệu này của chúng ta đã được lưuu ở trong LocalStory thôi Để mà kiểm tra cái dữ liệu này được lưu như thế nào, thì anh em sẽ bấm F12 trên Google Chrome cho mình Anh em vào tab là application Nó tồn tại giạo một ận dụng ở phần story này Anh em nhìn thấy không? Nó có khá nhiều các cơ chế lươi sự dữ di liệu Thì anh em bấc vào cho mình cái local storage Anh em mở ra nè Anh em chọn vào web app của anh em đang chạy nhé Ở đây là mình đang chảy app thông qua clip server Thì nó chạyy ở pột 5.500 Đấy anh em thấy không Đây là cái bản dự liệu mà nó lưua này Cái key là gì?"
+      "start": 622.23,
+      "end": 624.47,
+      "text": "Hiện tại cho cộng đồng EVM, chúng ta là Sui."
     },
     {
       "id": "S0107",
-      "start": 3321.26,
-      "end": 3323.26,
-      "text": "Key là property name Đúng không ạ?"
+      "start": 625.51,
+      "end": 627.39,
+      "text": "Aptos. Đúng rồi!"
     },
     {
       "id": "S0108",
-      "start": 3323.26,
-      "end": 3378.82,
-      "text": "Giống trong object, đúng lẽ mình đã phân tích đúng hông ạ Key chính là propertyname Đây là value Điệ trì và tên Bây giờ mình sẽ tắt cái chinh suyền này đi Mình mở lại anh em xem nhá Tắt đi nè Ok Mình sẽ mở ở bên này Không sao Như nhau cả thôi F12 Anh em nhớ truy cập lại vào cái đường link của các áp của anh em 127.0.1 5500 Cái local storage nó sẽ lưu theo địa chỉ của từng các app App của chúng ta đang là webapp Thế nên địa trị của app sẽ là ip và pod Đó, cái dưới liệu chúng ta vẫn còn ở đây Đây mình sẽ xoá 2 đậm cốt này đi Xoá đi rồi Không anh em lại nghĩ là cốt để nó chạy lại thì nó sẽ lu lại Bây giờ mình đã xoay cốt đi rồi mình chạY lại Đúng không ạ?"
+      "start": 627.51,
+      "end": 633.19,
+      "text": "Aptos, cô viết bằng ngôn ngữ Move thì cái ngôn ngữ đó là Move được chạy trên Rust."
     },
     {
       "id": "S0109",
-      "start": 3378.82,
-      "end": 3385.26,
-      "text": "Bây giờ anh em muốn truy xuất cái dý lợi ra thì đơn giản cũng chỉ cần gọi LogoStory.Ten hoặc là chấm địa chỉ là xong, nha!"
+      "start": 633.31,
+      "end": 640.75,
+      "text": "Cho nên chúng ta biết Rust thì học Move nó không có vấn đề cả, rồi khi mà chúng ta học xong được Rust rồi chúng ta mới quay về."
     },
     {
       "id": "S0110",
-      "start": 3385.28,
-      "end": 3427.48,
-      "text": "Tất nhiên anh em có thể sớt theo một vàng lạnh nữa của Logo Story này để phục vụ cho 1 app nào đấy của anh em Nha nó cũng rễ sử dụng thôi Ok, thời lượng của video bài giảng giao nay cũng đã tương đối là dài rồi tuy nhiên thì hạm lượng kiến thức nó mới chỉ dừng lại ở mức độ hết rất là cơ bản thôi Tuy nhiên mình vẫn hi vọng là bài Giảng sẽ giúp cho ca ngèm Có 1 cái đà ban đầu Có 1 cái bị phóng về Kiến Thức Để giúp ca ngèm có thể tự tin hơn khi mà tiếp cận nguồn như này cũng như là chuyển được cái cảm thúc cho anh em Chúc ca ngem tự tiên và học tốt nhá Còn ca ngêm nào vẫn mong muốn đi theo một khóa học mà nó chi tiết hơn, nó đi từng bước về JavaScript thì cũng có thể tham khảo qua của mình ở channel website www.vungecoder.com Có bây giờ thì xin chào và hẹn gặp lại ca nghe trong những bài dản kế tiếp Xin chào."
+      "start": 641.39,
+      "end": 643.91,
+      "text": "Biết cách sử dụng smart contract cơ bản ở trên những blockchain đó rồi."
+    },
+    {
+      "id": "S0111",
+      "start": 643.95,
+      "end": 648.07,
+      "text": "Thì khi yêu cầu của trong việc của chúng ta hay chúng ta tham gia một cuộc thi Hackathon nào đó đi."
+    },
+    {
+      "id": "S0112",
+      "start": 648.07,
+      "end": 652.51,
+      "text": "Của một cái blockchain nào đó đi, ví dụ Aptos thì chúng ta mới cần học Move."
+    },
+    {
+      "id": "S0113",
+      "start": 652.51,
+      "end": 660.87,
+      "text": "Hay là ví dụ như chúng ta tìm một cái các bạn có tham gia cộng đồng của Solana Superteam thì các bạn sẽ có những cái hackathon của Solana."
+    },
+    {
+      "id": "S0114",
+      "start": 660.87,
+      "end": 666.27,
+      "text": "Thì Solana Hackathon các bạn biết các bạn phải đào sâu vào trong framework của cái blockchain đó, ví dụ như Solana là Anchor."
+    },
+    {
+      "id": "S0115",
+      "start": 666.27,
+      "end": 674.71,
+      "text": "Khi mình đã học tới cái trình độ rồi, bây giờ nó sẽ thiên về framework, khi mà chúng ta học framework chúng ta biết ngôn ngữ."
+    },
+    {
+      "id": "S0116",
+      "start": 674.75,
+      "end": 682.31,
+      "text": "Thì bây giờ mình sẽ nói tới framework, ví dụ như Solana nó sẽ có framework để viết smart contract nó là Anchor, trên Solidity của Ethereum."
+    },
+    {
+      "id": "S0117",
+      "start": 682.33,
+      "end": 688.17,
+      "text": "Nó sẽ viết smart contract bằng Foundry, thật ra các bạn nếu mà các bạn học khóa của mình cũng sẽ nói về Foundry."
+    },
+    {
+      "id": "S0118",
+      "start": 688.19,
+      "end": 691.11,
+      "text": "Rồi chúng ta viết bằng Sui Sui phát được gì không?"
+    },
+    {
+      "id": "S0119",
+      "start": 691.13,
+      "end": 694.67,
+      "text": "Sui Move phải không Move hả?"
+    },
+    {
+      "id": "S0120",
+      "start": 694.69,
+      "end": 696.35,
+      "text": "Move là framework mà đúng không?"
+    },
+    {
+      "id": "S0121",
+      "start": 696.37,
+      "end": 703.51,
+      "text": "Dạ. Thế nào là chúng ta biết ngữ Rust thì cái Move language nó cũng sẽ là kiểu nó có thể framework, chúng ta có thể code smart contract vậy đó."
+    },
+    {
+      "id": "S0122",
+      "start": 703.51,
+      "end": 707.91,
+      "text": "Khi mà chúng ta học một cái framework, nó sẽ phụ thuộc vào công việc của chúng ta."
+    },
+    {
+      "id": "S0123",
+      "start": 708.21,
+      "end": 710.41,
+      "text": "Nó có liên quan nhiều tới blockchain đó hay không?"
+    },
+    {
+      "id": "S0124",
+      "start": 710.51,
+      "end": 712.91,
+      "text": "Nó mới yêu cầu đúng với công việc đó hay không?"
+    },
+    {
+      "id": "S0125",
+      "start": 713.11,
+      "end": 717.41,
+      "text": "Cho nên là nếu chúng ta đã học được đến hết ngôn ngữ rồi thì không có lý do gì."
+    },
+    {
+      "id": "S0126",
+      "start": 717.51,
+      "end": 722.81,
+      "text": "Thì chúng ta không có học những framework để hỗ trợ người dùng hết."
+    },
+    {
+      "id": "S0127",
+      "start": 723.21,
+      "end": 730.91,
+      "text": "Tùy thuộc vào hành trình của bạn mới học tới đâu và các bạn thi cái hackathon nào."
+    },
+    {
+      "id": "S0128",
+      "start": 730.91,
+      "end": 740.43,
+      "text": "Mình sẽ chuyển qua cái phần là Q&A và mình sẽ có một chút đam mê tại vì nếu mà vấn đề khi chúng ta làm roadmap."
+    },
+    {
+      "id": "S0129",
+      "start": 740.45,
+      "end": 744.79,
+      "text": "Khi chúng ta đi theo roadmap, thực ra nó có sẵn hết rồi đúng không?"
+    },
+    {
+      "id": "S0130",
+      "start": 744.81,
+      "end": 752.35,
+      "text": "Mình chỉ cần nói vài ba câu nữa để các bạn bắt đầu học thôi, còn để làm sao thì chúng ta có thể dễ dàng kiếm việc hơn."
+    },
+    {
+      "id": "S0131",
+      "start": 752.37,
+      "end": 754.47,
+      "text": "Chúng ta phải chứng minh bản thân của chúng ta."
+    },
+    {
+      "id": "S0132",
+      "start": 754.47,
+      "end": 760.95,
+      "text": "Mà muốn chứng minh đó thì để người khác tin, chúng ta không thể làm những cái dự án mà làm theo mình trên tutorial của mình được."
+    },
+    {
+      "id": "S0133",
+      "start": 761.19,
+      "end": 765.11,
+      "text": "Thì vì là cái đó là của mình, nó không phải là của các bạn, cho nên là các bạn phải có riêng cho con mình."
+    },
+    {
+      "id": "S0134",
+      "start": 765.15,
+      "end": 769.71,
+      "text": "Và phải có những ai verify cho các bạn thông qua những cuộc thi hackathon."
+    },
+    {
+      "id": "S0135",
+      "start": 769.83,
+      "end": 776.23,
+      "text": "Có những giải hackathon Bích cũng là một người tham gia hackathon, nếu tính từ trước giờ thì hết hackathon đều bị giải rồi."
+    },
+    {
+      "id": "S0136",
+      "start": 777.52,
+      "end": 782.56,
+      "text": "Chắc là thưởng hơn năm, hơn năm, hơn năm mà giải nào cũng rất nhiều tiền."
+    },
+    {
+      "id": "S0137",
+      "start": 782.56,
+      "end": 793.02,
+      "text": "Cũng tính bằng tiền ngàn đô không, thì Bích cũng là một người rất tài năng ăn, cho nên là VBI tự mình mới biết rất là thật dụng nhân tài."
+    },
+    {
+      "id": "S0138",
+      "start": 793.04,
+      "end": 795.28,
+      "text": "Rồi, nếu mà giải lớn nhất."
+    },
+    {
+      "id": "S0139",
+      "start": 795.28,
+      "end": 804.7,
+      "text": "Mới đi Thái Lan giật chắc là Airdrop nhưng có cái là bạn đó thi là thi tại thành phố Hồ Chí Minh và đạt giải."
+    },
+    {
+      "id": "S0140",
+      "start": 804.72,
+      "end": 810.08,
+      "text": "Và bắt đầu qua bên phía của Thái Lan đạt giải vào được submit để qua Thái Lan thi một lần và thẳm phép."
+    },
+    {
+      "id": "S0141",
+      "start": 810.08,
+      "end": 813.4,
+      "text": "Khi các bạn hỏi mình, các bạn đặt mục tiêu là các bạn phải được đi làm đúng không?"
+    },
+    {
+      "id": "S0142",
+      "start": 813.42,
+      "end": 820.16,
+      "text": "Nhưng mà các bạn biết rằng là chúng ta phải thể hiện ra cho cái nhà tuyển dụng của chúng ta là chúng tôi làm được gì cho họ."
+    },
+    {
+      "id": "S0143",
+      "start": 820.48,
+      "end": 830.36,
+      "text": "Nhưng nếu các bạn CV hay resume của bạn toàn là những dự án mà code theo trên mạng rất là phổ biến, chúng ta phải tham gia những cuộc thi hackathon."
+    },
+    {
+      "id": "S0144",
+      "start": 830.38,
+      "end": 835.06,
+      "text": "Và muốn tham gia mà code được ra sản phẩm mà có giải thì chúng ta sẽ bắt đầu học theo Google Maps rồi lại về năm nay đói."
+    },
+    {
+      "id": "S0145",
+      "start": 835.08,
+      "end": 838.94,
+      "text": "Các bạn đã phải dừng video lại thì mình sẽ edit một cái bản roadmap để các bạn có thể thấy được."
+    },
+    {
+      "id": "S0146",
+      "start": 838.96,
+      "end": 845.74,
+      "text": "Chúng ta nên học từ thế gì, cái gì, thứ gì như blockchain dev thực sự là nó rất là khó tính hành, nó rất khó này tiếp cận."
+    },
+    {
+      "id": "S0147",
+      "start": 845.76,
+      "end": 852.26,
+      "text": "Tại vì blockchain dev hầu hết là mọi người đều biết thiết kế tất cả mọi thứ vì team member của mình chỉ có mỗi Hải, Hải là dev đó không?"
+    },
+    {
+      "id": "S0148",
+      "start": 852.28,
+      "end": 858.68,
+      "text": "Dạ con, như mình hay là Bích hay là có bạn Thắng nữa Lê Đại Thắng thì."
+    },
+    {
+      "id": "S0149",
+      "start": 859.3,
+      "end": 866.1,
+      "text": "Tất cả mọi anh em đều có thể viết dev main và smart contract, đó chính là anh em để có thể tự nhận mình là web3 developer."
+    },
+    {
+      "id": "S0150",
+      "start": 866.12,
+      "end": 871.04,
+      "text": "Còn nếu mà các bạn chỉ biết code sở smart contract thôi, nó chỉ làm blockchain dev thôi, nhưng mà tại sao chúng nên học hết?"
+    },
+    {
+      "id": "S0151",
+      "start": 871.06,
+      "end": 874.1,
+      "text": "Khi mà chúng ta học xong thì chúng ta focus được một cái thôi."
+    },
+    {
+      "id": "S0152",
+      "start": 874.1,
+      "end": 878.46,
+      "text": "Chúng ta sẽ biết chúng ta mạnh cái gì, mạnh Front-end hay mạnh Back-end thì làm Back-end."
+    },
+    {
+      "id": "S0153",
+      "start": 878.48,
+      "end": 883.42,
+      "text": "Mạnh smart contract thì biết smart contract, tại vì khi mà chúng ta học rộng thì."
+    },
+    {
+      "id": "S0154",
+      "start": 883.44,
+      "end": 886.62,
+      "text": "Thực vụ không thể đào sâu được, mời các bạn học tới mức biết thôi."
+    },
+    {
+      "id": "S0155",
+      "start": 886.62,
+      "end": 889.6,
+      "text": "Tại bởi vì khi chúng ta team member có thể thiếu, thiếu người."
+    },
+    {
+      "id": "S0156",
+      "start": 889.62,
+      "end": 896.26,
+      "text": "Cho nên là chúng ta phải ý thức cái lộ trình tiếp theo là khi các bạn học xong là các bạn nên thi hackathon."
+    },
+    {
+      "id": "S0157",
+      "start": 896.3,
+      "end": 897.77,
+      "text": "Tại sao các bạn nên thi?"
+    },
+    {
+      "id": "S0158",
+      "start": 897.77,
+      "end": 902.9,
+      "text": "Tại vì là những cuộc thi về lập trình có thể giúp cho profile nó vững hơn, cứng hơn."
+    },
+    {
+      "id": "S0159",
+      "start": 902.94,
+      "end": 906.04,
+      "text": "Và nó có một cái gì đó mà để cho người ta tin hơn."
+    },
+    {
+      "id": "S0160",
+      "start": 906.04,
+      "end": 910.5,
+      "text": "Rồi biết các bạn có thể code project các bạn làm tới đâu, nó rất là tốt."
+    },
+    {
+      "id": "S0161",
+      "start": 910.78,
+      "end": 916.82,
+      "text": "Nhưng mà bây giờ đâu cần phải ghi là kinh nghiệm, chỉ cần đi awards thôi là hết một trang rồi đúng không?"
+    },
+    {
+      "id": "S0162",
+      "start": 916.82,
+      "end": 923.42,
+      "text": "Rồi mình sẽ tới kế tiếp phần là hỏi những câu hỏi các bạn, có hai bạn gửi tin nhắn hỏi mình."
+    },
+    {
+      "id": "S0163",
+      "start": 923.82,
+      "end": 929.02,
+      "text": "Thì đầu tiên là sẽ có bạn Nguyễn Hoàng Phúc à?"
+    },
+    {
+      "id": "S0164",
+      "start": 929.06,
+      "end": 932.7,
+      "text": "Em biết anh có một video trên YouTube, em đang làm một thạc sĩ trình về web."
+    },
+    {
+      "id": "S0165",
+      "start": 932.74,
+      "end": 936.46,
+      "text": "Và muốn chuyển sang blockchain thì thị trường ở Việt Nam về blockchain có đang ổn không vậy ạ?"
+    },
+    {
+      "id": "S0166",
+      "start": 936.5,
+      "end": 938.94,
+      "text": "Thì ổn hay không thì hỏi cái thằng này có nhiều tiền hay không?"
+    },
+    {
+      "id": "S0167",
+      "start": 938.98,
+      "end": 939.77,
+      "text": "Nhiều tiền lắm."
+    },
+    {
+      "id": "S0168",
+      "start": 939.77,
+      "end": 945.38,
+      "text": "Nếu mà mỗi thị trường mới cất trắng, người ta cần phải có gì cả, người ta sẽ bơm tiền vào trong thị trường."
+    },
+    {
+      "id": "S0169",
+      "start": 945.38,
+      "end": 949.38,
+      "text": "Và Việt Nam mình may mắn một cái là nhà nước rất là ủng hộ thị trường này."
+    },
+    {
+      "id": "S0170",
+      "start": 950.38,
+      "end": 954.38,
+      "text": "Nó không có pháp lý để sử dụng, nhưng mà chúng ta vẫn có pháp lý."
+    },
+    {
+      "id": "S0171",
+      "start": 955.38,
+      "end": 959.38,
+      "text": "Ví dụ như một cái bài báo về chính thức ban hành chiến lược blockchain quốc gia."
+    },
+    {
+      "id": "S0172",
+      "start": 960.38,
+      "end": 962.38,
+      "text": "Nhưng mà mình gửi cho bạn Phúc, nếu mà Phúc có ví cơ chế TV đôi này."
+    },
+    {
+      "id": "S0173",
+      "start": 963.38,
+      "end": 967.38,
+      "text": "Khi nhà nước đã được ban hành ra rồi thì chắc chắn trong tương lai nhà nước sẽ muốn đẩy mạnh ra."
+    },
+    {
+      "id": "S0174",
+      "start": 968.38,
+      "end": 969.88,
+      "text": "Và nhà nước còn gì?"
+    },
+    {
+      "id": "S0175",
+      "start": 969.88,
+      "end": 972.49,
+      "text": "Chiến lược để mở cái gì đa khu hả?"
+    },
+    {
+      "id": "S0176",
+      "start": 972.49,
+      "end": 974.54,
+      "text": "Đa khu blockchain, đúng rồi."
+    },
+    {
+      "id": "S0177",
+      "start": 974.54,
+      "end": 984.34,
+      "text": "Rồi Thành phố Hồ Chí Minh cũng mới tạo ra một cái gọi là Việt Nam Blockchain Association của những bác rất lớn tuổi đúng không?"
+    },
+    {
+      "id": "S0178",
+      "start": 984.34,
+      "end": 992.02,
+      "text": "Của bác giáo sư, thì tại vì khi mà chúng ta build ở trong cái lộ trình roadmap và chúng ta muốn đi xa."
+    },
+    {
+      "id": "S0179",
+      "start": 992.06,
+      "end": 994.55,
+      "text": "Thì cái quan trọng nhất của chúng ta nó phải niềm tin."
+    },
+    {
+      "id": "S0180",
+      "start": 994.55,
+      "end": 997.54,
+      "text": "Chúng ta phải tin là chúng ta vô thị trường mà chúng ta làm được."
+    },
+    {
+      "id": "S0181",
+      "start": 997.54,
+      "end": 1000.66,
+      "text": "Còn chúng ta cứ thế chết này trên khắp, nhảy qua cái này giá khác thì khó lắm."
+    },
+    {
+      "id": "S0182",
+      "start": 1000.66,
+      "end": 1005.1,
+      "text": "Ví dụ như tại vì AI có rất là nhiều cuộc thi nè, Blockchain cũng có rất vài nhiều cuộc thi nè."
+    },
+    {
+      "id": "S0183",
+      "start": 1005.12,
+      "end": 1010.06,
+      "text": "Hay kể cả Web, Web Hosting nó cũng có những cuộc thi nhưng mà cái cuộc thi đó bão hòa rồi, rất là nhiều người làm rồi."
+    },
+    {
+      "id": "S0184",
+      "start": 1010.08,
+      "end": 1015.06,
+      "text": "Cho nên khi mà chúng ta làm về Blockchain thì rất là dễ nhiệm vụ chúng ta có thể chiến thắng được hackathon."
+    },
+    {
+      "id": "S0185",
+      "start": 1015.08,
+      "end": 1021.44,
+      "text": "Chỉ cần ý tưởng chúng ta đổi thực tế thôi ra được và chúng ta phải build ra một sản phẩm demo được, mà muốn build thì phải học thôi."
+    },
+    {
+      "id": "S0186",
+      "start": 1021.46,
+      "end": 1030.02,
+      "text": "Rồi Việt Nam mình nó cũng các dự án mà gọi là list luôn, ví dụ như là Axie Infinity, lĩnh vực GameFi, lĩnh vực thị trường Blockchain luôn."
+    },
+    {
+      "id": "S0187",
+      "start": 1030.06,
+      "end": 1033.94,
+      "text": "Tại vì mọi con mắt ở trên thế giới đều đổ dồn vào Blockchain, bởi Blockchain tại Việt Nam."
+    },
+    {
+      "id": "S0188",
+      "start": 1033.98,
+      "end": 1041.66,
+      "text": "Nếu mà các bạn có nền tảng ngoại ngữ tiếng Anh rất là tốt nữa thì khả năng chúng ta ngồi ở nhà làm việc ở nước ngoài rất là dễ."
+    },
+    {
+      "id": "S0189",
+      "start": 1041.7,
+      "end": 1047.74,
+      "text": "Việt Nam mình đang mở cửa, các bạn có thấy nó rất phát triển và Mỹ đang hội nhập với lại Việt Nam."
+    },
+    {
+      "id": "S0190",
+      "start": 1047.78,
+      "end": 1052.06,
+      "text": "Cho nên Việt Nam là một trong những đối tác rất là lớn của Mỹ rồi, các bạn cũng có thể ngồi nhà."
+    },
+    {
+      "id": "S0191",
+      "start": 1052.06,
+      "end": 1053.17,
+      "text": "Các bạn làm việc nước ngoài."
+    },
+    {
+      "id": "S0192",
+      "start": 1053.17,
+      "end": 1058.02,
+      "text": "Đó chính là roadmap, roadmap luôn luôn và trong roadmap là phải học tiếng Anh, các bạn phải học tiếng Anh rất là tốt."
+    },
+    {
+      "id": "S0193",
+      "start": 1058.04,
+      "end": 1063.12,
+      "text": "Thì khi mà chúng ta go global thì các cảnh này thì chúng ta phải rất tốt và tiếng Anh thì chúng mình mới có thể làm việc tốt được."
+    },
+    {
+      "id": "S0194",
+      "start": 1063.14,
+      "end": 1067.66,
+      "text": "Với lại là blog của mấy cái này toàn tiếng Anh không?"
+    },
+    {
+      "id": "S0195",
+      "start": 1067.68,
+      "end": 1074.92,
+      "text": "Có dịch qua thì cũng chưa chắc gì nó sát hiểu hết, đây là kiểu gì chúng ta vẫn phải học."
+    },
+    {
+      "id": "S0196",
+      "start": 1074.94,
+      "end": 1085.48,
+      "text": "Có một tin nhắn khá là dài, sinh viên năm 4 tại Úc có theo Web, đây là bạn first starter cho anh hồi nãy, hồi sáng em mới nói với em."
+    },
+    {
+      "id": "S0197",
+      "start": 1085.48,
+      "end": 1091.12,
+      "text": "Trong cái clip này ở đầu tiên mình cũng có để tên là các bạn này sinh viên năm 4 tại Úc."
+    },
+    {
+      "id": "S0198",
+      "start": 1091.12,
+      "end": 1097.72,
+      "text": "Em có theo Web Data nhưng đang khó khăn trong việc kiếm intern, bị từ chối thực tập của 60 đến 70 công ty rồi."
+    },
+    {
+      "id": "S0199",
+      "start": 1097.76,
+      "end": 1104.6,
+      "text": "Nên em có nản với ngành và cũng đang hơi mất đam mê bởi lập trình, hiện nay chỉ đang học thêm Full Stack của Meta trên Coursera."
+    },
+    {
+      "id": "S0200",
+      "start": 1104.64,
+      "end": 1113.6,
+      "text": "Để thêm chữ cho resume thôi ạ."
+    },
+    {
+      "id": "S0201",
+      "start": 1114.0,
+      "end": 1116.76,
+      "text": "Có kỹ năng mà mình phải kể hiển thị kỹ năng đó ra, phải đi thi thố."
+    },
+    {
+      "id": "S0202",
+      "start": 1116.8,
+      "end": 1123.6,
+      "text": "So với cái việc chúng ta nộp vào 60 đến 70 cái công ty thì chúng ta chỉ cần nộp 6 đến 7 cái thôi là có khi là chúng ta lại ăn một hackathon rồi đúng không?"
+    },
+    {
+      "id": "S0203",
+      "start": 1123.64,
+      "end": 1125.32,
+      "text": "Kêu à Hoàng nhé và các bạn khác này nha!"
+    },
+    {
+      "id": "S0204",
+      "start": 1125.36,
+      "end": 1129.44,
+      "text": "Và Hoàng nói mình khuyên ấy là mình bạn nên lên đi thì hackathon nha."
+    },
+    {
+      "id": "S0205",
+      "start": 1129.48,
+      "end": 1133.92,
+      "text": "À và thấy video của lúc trước của anh nước ngoài nhưng sẽ xem roadmap vì roadmap còn vừa nói sau."
+    },
+    {
+      "id": "S0206",
+      "start": 1133.92,
+      "end": 1140.44,
+      "text": "Mình nghĩ là cả hai bạn Phúc và Hoàng hỏi mình thì hai bạn đều có thể nhìn nền tảng truyền tốt, điều là sinh viên cả."
+    },
+    {
+      "id": "S0207",
+      "start": 1140.48,
+      "end": 1142.34,
+      "text": "Nhưng mà các bạn đang thiếu cái định hướng thôi."
+    },
+    {
+      "id": "S0208",
+      "start": 1142.34,
+      "end": 1145.88,
+      "text": "Và mình đã liên thương nhắc mọi người phải đi thi Hát Trà Thôn nếu các bạn chưa ký vị được."
+    },
+    {
+      "id": "S0209",
+      "start": 1145.92,
+      "end": 1149.24,
+      "text": "Và ngoài ra cũng muốn kiếm mentor cho bạn này luôn nếu em nhận mentor."
+    },
+    {
+      "id": "S0210",
+      "start": 1149.28,
+      "end": 1151.66,
+      "text": "À, cái này chắc chắn mà ai không biết."
+    },
+    {
+      "id": "S0211",
+      "start": 1151.66,
+      "end": 1156.32,
+      "text": "Hoàng biết rồi ha, sẽ chắc chắn là mình sẽ không lấy một đồng xu cắc bạc nào của các bạn."
+    },
+    {
+      "id": "S0212",
+      "start": 1156.36,
+      "end": 1161.08,
+      "text": "Khi các bạn tham gia khóa học, các bạn có thể vào trong VBI Academy các bạn hỏi."
+    },
+    {
+      "id": "S0213",
+      "start": 1161.08,
+      "end": 1164.72,
+      "text": "Thì anh em mình rất là sẵn sàng riêng về cái việc mà chúng ta sẽ trả lời hết tất cả mọi câu hỏi."
+    },
+    {
+      "id": "S0214",
+      "start": 1164.8,
+      "end": 1169.68,
+      "text": "Và bọn mình sẽ không có thu phí hay lấy tiền của bất kỳ ai cả."
+    },
+    {
+      "id": "S0215",
+      "start": 1170.24,
+      "end": 1174.32,
+      "text": "Chứ thậm chí các bạn vô học có khi còn được có tiền, đã nói gì mà tụi mình lấy tiền của các bạn."
+    },
+    {
+      "id": "S0216",
+      "start": 1174.44,
+      "end": 1180.08,
+      "text": "Tụi mình đang lấy tiền của Corporation về xong rồi tụi mình đưa lại cho những bạn học viên, cái nên là phải cứ tập trung vào và học thôi."
+    },
+    {
+      "id": "S0217",
+      "start": 1180.2,
+      "end": 1184.68,
+      "text": "Học full-time theo quyết định bên lên này thì mình không biết được, mỗi người một khác mà, đúng không?"
+    },
+    {
+      "id": "S0218",
+      "start": 1185.0,
+      "end": 1188.84,
+      "text": "Giúp sửa resume và hỏi đáp lạ, cái này thì OK rồi."
+    },
+    {
+      "id": "S0219",
+      "start": 1188.84,
+      "end": 1195.08,
+      "text": "Hoàng cứ thoải mái nhắn tin cho mình hỏi ha, Roadmap đang free trên YouTube cũng thoải mái."
+    },
+    {
+      "id": "S0220",
+      "start": 1195.08,
+      "end": 1202.32,
+      "text": "Thì Roadmap anh đã nói với em trong lúc mà mình nhắn tin với nhau rồi thì chắc chắn là ngày 17 chính là cái ngày mà."
+    },
+    {
+      "id": "S0221",
+      "start": 1202.36,
+      "end": 1209.0,
+      "text": "Dịp sinh nhật của kênh YouTube của mình thì mình sẽ đăng luôn cả Roadmap lên và từ nãy giờ thì mình có nói được rồi."
+    },
+    {
+      "id": "S0222",
+      "start": 1209.04,
+      "end": 1214.88,
+      "text": "Nhưng là Roadmap các bạn học xong, các bạn sử dụng skill bật quãng khi mà kiểu học xong chúng ta đi interview rất khó."
+    },
+    {
+      "id": "S0223",
+      "start": 1214.88,
+      "end": 1222.4,
+      "text": "Tại vì hiện tại thị trường lúc này nó không phải mỗi thị trường lúc này mà là toàn ngành dev luôn, toàn ngành lập trình luôn, ai cũng khó khăn hết."
+    },
+    {
+      "id": "S0224",
+      "start": 1222.42,
+      "end": 1228.54,
+      "text": "Chứ không phải một cái là bộ lớp trên dev không, cho nên nếu mà toàn ngành đã đi lên lại thì chúng ta lại có cơ hội thôi."
+    },
+    {
+      "id": "S0225",
+      "start": 1228.56,
+      "end": 1235.88,
+      "text": "Còn thế về việc mà chúng ta tham gia, chúng ta chưa biết chúng ta nên làm gì á, thì giống như bạn Hoàng cũng có thể học thêm những thứ khác."
+    },
+    {
+      "id": "S0226",
+      "start": 1235.9,
+      "end": 1243.46,
+      "text": "Kiếm thêm các certificate và những chứng chỉ, tốt nhất là chúng ta nên học ở OpenEdu, lấy những chứng chỉ của những foundation."
+    },
+    {
+      "id": "S0227",
+      "start": 1243.46,
+      "end": 1251.22,
+      "text": "Mười người nhìn vào các bạn, tham gia blockchain kia thì người ta sẽ có niềm tin hơn khi mà các bạn gia nhập một công ty về blockchain đó."
+    },
+    {
+      "id": "S0228",
+      "start": 1251.26,
+      "end": 1252.94,
+      "text": "Thì người ta sẽ tin hơn là ồ."
+    },
+    {
+      "id": "S0229",
+      "start": 1252.98,
+      "end": 1262.1,
+      "text": "Biết về blockchain, người ta sẽ dễ dàng hơn để quyết định tuyển dụng các bạn, còn VBI của mình cũng mở rộng ra từ intern."
+    },
+    {
+      "id": "S0230",
+      "start": 1262.14,
+      "end": 1267.62,
+      "text": "Cho nên là chắc chắn là sẽ có những cơ hội cho những anh em nào thực sự đi vào VBI và sống được ở trong đó."
+    },
+    {
+      "id": "S0231",
+      "start": 1267.62,
+      "end": 1276.34,
+      "text": "Nhưng mà cuối cùng chữa năng đọc như là VBI Academy và các bạn cứ, nếu mà các bạn muốn tìm hiểu về intern trên VBI thì có thể là follow fanpage của VBI Academy."
+    },
+    {
+      "id": "S0232",
+      "start": 1276.38,
+      "end": 1282.18,
+      "text": "Sẽ thỉnh thoảng có đăng những đơn tuyển dụng intern đó, chỉ chúng ta có thể vào trong công ty VBI có trợ cấp luôn."
+    },
+    {
+      "id": "S0233",
+      "start": 1282.22,
+      "end": 1287.46,
+      "text": "Chúng ta có thêm việc làm việc tại VBA Academy ngoài ra thì ở Việt Nam mình giống như hồi nãy mình đã nói."
+    },
+    {
+      "id": "S0234",
+      "start": 1287.5,
+      "end": 1293.26,
+      "text": "Có rất nhiều công ty giữa đầu ngành ví dụ như Axie Infinity bây giờ là đổi thành Ronin Chain Ronin."
+    },
+    {
+      "id": "S0235",
+      "start": 1293.3,
+      "end": 1302.66,
+      "text": "Ronin không phải đổi vừa mở rộng ra giống như Facebook thành Meta hay là bên Coin98 thì công ty cũng rất lượng, hay là Coin98."
+    },
+    {
+      "id": "S0236",
+      "start": 1302.66,
+      "end": 1306.86,
+      "text": "Bây giờ được re-brand nữa cũng giống như."
+    },
+    {
+      "id": "S0237",
+      "start": 1306.86,
+      "end": 1316.02,
+      "text": "Nerd Notation còn đổi thành Near thì những cái công ty này hoàn toàn nhận những chương trình thực tập của mọi người không chỉ ở VBA Academy."
+    },
+    {
+      "id": "S0238",
+      "start": 1316.02,
+      "end": 1321.78,
+      "text": "Sẽ chẳng sao nếu mà chúng ta có sẵn tiếng Anh, chúng ta biết và hiểu về lớp trên, cơ bản của lớp trên."
+    },
+    {
+      "id": "S0239",
+      "start": 1321.78,
+      "end": 1328.66,
+      "text": "Ở trong roadmap, khi chúng ta lập trình, chúng ta phải hiểu lớp trên nữa tại vì khi mà chúng ta vừa đi học của lớp trên."
+    },
+    {
+      "id": "S0240",
+      "start": 1328.7,
+      "end": 1333.58,
+      "text": "Chúng ta hiểu nó là nền tảng, chúng ta học bất kỳ ngôn ngữ của lớp trên nào khác."
+    },
+    {
+      "id": "S0241",
+      "start": 1333.62,
+      "end": 1341.58,
+      "text": "Và nó kết hợp với cái ngôn ngữ của chúng ta nữa thì rất dễ thì chúng ta có thể thi một lớp chuyên nào đó."
+    },
+    {
+      "id": "S0242",
+      "start": 1341.62,
+      "end": 1348.14,
+      "text": "Biểu dự án chỉ trong vòng hai tuần để chúng ta kịp để thi, trong quá trình chúng ta thi thì chúng ta cũng có thể nên."
+    },
+    {
+      "id": "S0243",
+      "start": 1348.18,
+      "end": 1350.26,
+      "text": "Tìm kiếm những cơ hội intern không chỉ ở trong nước."
+    },
+    {
+      "id": "S0244",
+      "start": 1350.26,
+      "end": 1356.58,
+      "text": "Mà ở nước ngoài nữa, mà có những lúc foundation mà người ta chơi vào trong các bạn vô một trong những dự án bất kỳ kể xuống dưới."
+    },
+    {
+      "id": "S0245",
+      "start": 1356.62,
+      "end": 1364.5,
+      "text": "Có phần hiring đó, We are hiring thì ảnh quá à để xem thử kiếm như thế nào và kể cả là người ta không có tuyển cái vị trí với người ta."
+    },
+    {
+      "id": "S0246",
+      "start": 1364.54,
+      "end": 1369.26,
+      "text": "Chúng ta vẫn nên gửi cái CV, biết đâu được, biết đâu được đúng không?"
+    },
+    {
+      "id": "S0247",
+      "start": 1369.3,
+      "end": 1373.58,
+      "text": "Có thể là người ta biết người ta sẽ không muốn tuyển intern nhưng mà biết đâu được cái skill với năng lực của các bạn rất là tuyệt."
+    },
+    {
+      "id": "S0248",
+      "start": 1373.62,
+      "end": 1380.58,
+      "text": "Người ta muốn đem các bạn vào trong một vị trí trong công ty thì chúng ta hướng luyện lên cho phù hợp với vị trí đó hay sao, cho nên là."
+    },
+    {
+      "id": "S0249",
+      "start": 1380.58,
+      "end": 1387.58,
+      "text": "Mà hy vọng nếu mà các bạn chưa có công việc hay là các bạn bắt đầu học thì phải giữ vật liền tin như bitch."
+    },
+    {
+      "id": "S0250",
+      "start": 1388.58,
+      "end": 1396.58,
+      "text": "Chúng ta mới có thể thành công được, bitch mới là series number 3 thôi cho nên còn các bạn nào chúng ta trái ngành đi chẳng hạn."
+    },
+    {
+      "id": "S0251",
+      "start": 1397.77,
+      "end": 1398.77,
+      "text": "Cũng phải cần rất nhiều niềm tin."
+    },
+    {
+      "id": "S0252",
+      "start": 1399.77,
+      "end": 1400.77,
+      "text": "Cần nhiều niềm tin hơn những các bạn."
+    },
+    {
+      "id": "S0253",
+      "start": 1401.77,
+      "end": 1409.77,
+      "text": "Học đúng anh, học từ những nền tảng nhỏ nhất, học các điểm thiết bị build full một cái app."
+    },
+    {
+      "id": "S0254",
+      "start": 1409.77,
+      "end": 1412.88,
+      "text": "Nếu chúng ta không có bị thì chúng ta phải trễ hiểu ra."
+    },
+    {
+      "id": "S0255",
+      "start": 1412.88,
+      "end": 1415.77,
+      "text": "Chúng ta biết là phải tham gia những hackathon."
+    },
+    {
+      "id": "S0256",
+      "start": 1415.77,
+      "end": 1423.77,
+      "text": "Thì sẽ có người verify được key project và chúng ta làm đó chính là của bạn chứ không phải đem một key project nào trên tutorial rồi xong rồi bỏ vô CV."
+    },
+    {
+      "id": "S0257",
+      "start": 1423.77,
+      "end": 1430.77,
+      "text": "Rồi nữa là hãy kiên trì bấy ngàn tại vì không có gì mà nó làm một ngày một hai và nó phát triển đồng nền được."
+    },
+    {
+      "id": "S0258",
+      "start": 1430.77,
+      "end": 1435.77,
+      "text": "Ví dụ như là Blockchain tại cái chính sách trên cái bài báo này."
+    },
+    {
+      "id": "S0259",
+      "start": 1435.77,
+      "end": 1442.05,
+      "text": "Cái chiến lược Blockchain quốc gia, cái bài báo mới tháng 10 năm 2024 à?"
+    },
+    {
+      "id": "S0260",
+      "start": 1442.05,
+      "end": 1446.05,
+      "text": "Thì bây giờ mới là tháng 2 năm 2020 là cuối tháng 10."
+    },
+    {
+      "id": "S0261",
+      "start": 1446.05,
+      "end": 1451.05,
+      "text": "Bây giờ bắt đầu sang tháng 1 không thể có cái nào mà trong vòng hai tháng và nó phát triển nhanh như vậy được."
+    },
+    {
+      "id": "S0262",
+      "start": 1451.05,
+      "end": 1453.05,
+      "text": "Tất cả ít nhất các bạn phải chờ 6 tháng, một năm gì đó."
+    },
+    {
+      "id": "S0263",
+      "start": 1453.05,
+      "end": 1466.02,
+      "text": "Cái này là hay duy vật không tin đây, mình đang đưa cho bạn một ví dụ về sự thành công của một bạn sinh viên khi làm việc về Blockchain hay là Web3 và cũng là một người tìm mở rất giàu sạch trong tiền của mình."
+    },
+    {
+      "id": "S0264",
+      "start": 1466.02,
+      "end": 1472.35,
+      "text": "Xin chào tạm biệt và hy vọng các bạn sẽ học tập thật tốt và tìm kiếm cái công việc trong tương lai nhé?"
+    },
+    {
+      "id": "S0265",
+      "start": 1472.35,
+      "end": 1475.05,
+      "text": "Hay là thi thích các khóa thành công ở đây?"
+    },
+    {
+      "id": "S0266",
+      "start": 1476.49,
+      "end": 1478.49,
+      "text": "Đây là lần đầu tiên ngoài video clip."
     }
   ]
 }
