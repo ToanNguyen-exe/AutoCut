@@ -18,7 +18,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 class VideoControllerTest {
 
@@ -92,11 +91,32 @@ class VideoControllerTest {
     @Test
     void testAnalyzeVideo() {
         Map<String, Object> req = Map.of(
-                "videoName", "Bai05_VongLap.mp4",
-                "lesson", "Bai05_VongLap",
-                "duration", 300.0
+                "videoName", "javascript.mp4",
+                "lesson", "javascript",
+                "duration", 3427.57
         );
         ResponseEntity<?> response = controller.analyzeVideo(req);
         Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertEquals("SUCCESS", body.get("status"));
+        TranscriptDTO transcript = (TranscriptDTO) body.get("transcript");
+        SegmentsDTO segmentsData = (SegmentsDTO) body.get("segmentsData");
+
+        Assertions.assertNotNull(transcript);
+        Assertions.assertNotNull(segmentsData);
+        Assertions.assertFalse(transcript.sentences().isEmpty());
+        Assertions.assertFalse(segmentsData.segments().isEmpty());
+
+        // Đảm bảo dữ liệu trả về từ module AI có mã câu chuẩn S0001..Sxxxx (không phải mock s001..s007)
+        Assertions.assertTrue(
+                transcript.sentences().get(0).id().matches("^S\\d{4,5}$"),
+                "Mã câu từ module AI phải có định dạng S0001, nhận được: " + transcript.sentences().get(0).id()
+        );
+        Assertions.assertTrue(
+                transcript.sentences().size() > 10,
+                "Transcript thực tế từ module AI phải chứa đầy đủ các câu đã tách (> 10 câu)"
+        );
     }
 }

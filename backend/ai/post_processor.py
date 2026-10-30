@@ -1,19 +1,19 @@
-"""Module hậu xử lý và làm sạch Transcript (Làm sạch ảo giác & chuẩn hóa thuật ngữ chuyên ngành).
+"""Module hậu xử lý và làm sạch Transcript (Làm sạch ảo giác, tách câu đơn & chuẩn hóa thuật ngữ chuyên ngành).
 
 Giải quyết triệt để các lỗi thường gặp của Whisper:
 1. Lặp từ vô tận (Repetition Loop / Hallucination): 'kênh kênh kênh...' -> 'kênh'
 2. Ký tự ngoại ngữ rác (Korean/Chinese/Japanese tokens do ảo giác âm lượng nhỏ: 습니다, 로...)
 3. Chuẩn hóa các thuật ngữ CNTT / Web3 / Lập trình bị nhận dạng sai âm tiếng Việt.
-4. Gộp các segment bị tách vụn do ngừng nghỉ ngắn không có dấu chấm câu.
+4. Gộp các segment quá ngắn bị ngắt giữa chừng và tách các đoạn văn dài thành từng câu đơn độc lập kèm nội suy thời gian.
 5. Luôn viết hoa chữ cái đầu câu và kết thúc câu bằng đúng 1 dấu chấm câu.
 """
 
 import re
-from typing import List, Optional
+from typing import List
 from .models import Sentence, TranscriptOutput
 
 
-# Từ điển ánh xạ các thuật ngữ bị Whisper nhận dạng sai âm trong bài giảng CNTT/Web3
+# Từ điển ánh xạ các thuật ngữ bị Whisper nhận dạng sai âm trong bài giảng CNTT/Web3/JavaScript
 DOMAIN_TERM_MAPPINGS = [
     # Blockchain & Web3
     (r"\b(?:bởi\s+lúc\s+trên|lúc\s+chain|lốc\s+chen|bởi\s+lúc\s+chen|lúc\s+chen)\b", "blockchain"),
@@ -34,10 +34,17 @@ DOMAIN_TERM_MAPPINGS = [
     (r"\b(?:smart\s+contract|xì\s+mát\s+con\s+trắc)\b", "smart contract"),
     (r"\b(?:Solidity|xô\s+li\s+đi\s+ti)\b", "Solidity"),
 
+    # JavaScript / Web Development
+    (r"\b(?:gia\s+va\s+sờ\s+cờ\s+ríp|gia\s+va\s+sờ\s+cờ\s+rít|javascript)\b", "JavaScript"),
+    (r"\b(?:nốt\s+js|nốt\s+giây\s+ét|nodejs)\b", "Node.js"),
+    (r"\b(?:hát\s+tê\s+mờ\s+lờ|html)\b", "HTML"),
+    (r"\b(?:vê\s+ét\s+cốt|vs\s+cốt|vscode)\b", "VS Code"),
+    (r"\b(?:đốc\s+cơ\s+mừn\s+chấm\s+rai|document\s+chấm\s+write)\b", "document.write"),
+    (r"\b(?:con\s+sôn\s+chấm\s+lốc|console\s+chấm\s+log)\b", "console.log"),
+
     # Lỗi phát âm & chính tả tiếng Việt phổ biến khi Whisper nghe bài giảng
     (r"\b(?:hệ\s+sinh\s+tái)\b", "hệ sinh thái"),
-    (r"\b(?:hôn\s+ngữ)\b", "ngôn ngữ"),
-    (r"\b(?:muôn\s+ngữ)\b", "ngôn ngữ"),
+    (r"\b(?:hôn\s+ngữ|muôn\s+ngữ)\b", "ngôn ngữ"),
     (r"\b(?:hội\s+chữ|hổng\s+hộ)\b", "hỗ trợ"),
     (r"\b(?:thị\s+trùm)\b", "thị trường"),
     (r"\b(?:sứng\s+đáng)\b", "xứng đáng"),
@@ -48,8 +55,11 @@ DOMAIN_TERM_MAPPINGS = [
     (r"\b(?:thể\s+ấn\s+trên\s+hộ)\b", "thể lên trên fanpage"),
 ]
 
-# Các ký tự kết thúc câu hoặc mệnh đề hoàn chỉnh
-PUNCTUATION_ENDINGS = ('.', ',', '?', '!', ';', ':', '…', '...')
+# Chỉ coi dấu kết thúc câu thực sự (., ?, !, …) là ranh giới đóng câu
+SENTENCE_END_PUNCTUATION = ('.', '?', '!', '…', '...')
+
+# Biểu thức chính quy tách câu tại dấu ., ?, !, … nhưng KHÔNG tách bên trong tên kỹ thuật như Node.js, document.write, console.log, v.v.
+SENTENCE_BOUNDARY_RE = re.compile(r'(?<=[.?!…])\s+(?=[A-ZÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ"\'“‘(\[])')
 
 
 def clean_hallucination_and_artifacts(text: str) -> str:
@@ -57,19 +67,11 @@ def clean_hallucination_and_artifacts(text: str) -> str:
     if not text:
         return ""
 
-    # 1. Bỏ ký tự tiếng Hàn, Trung, Nhật rác do Whisper ảo giác ở đoạn âm thanh nhỏ/nhiễu
     cleaned = re.sub(r"[\uac00-\ud7a3\u4e00-\u9fff\u3040-\u30ff]+", "", text)
-
-    # 2. Xóa các chuỗi lặp từ vô nghĩa (ví dụ: 'kênh kênh kênh kên kên...')
     cleaned = re.sub(r"(?:kênh|kên)(\s+(?:kênh|kên)){2,}", "kênh", cleaned, flags=re.IGNORECASE)
-    # Lặp bất kỳ từ nào từ 3 lần trở lên liên tiếp
     cleaned = re.sub(r"\b(\w+)(?:\s+\1){2,}\b", r"\1", cleaned, flags=re.IGNORECASE)
-
-    # 3. Dọn rác các đoạn vô nghĩa kiểu 'compatibility xin lỗimillion', 'asingly number thôi'
     cleaned = re.sub(r"xin lỗimillion", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"asingly number thôi", "", cleaned, flags=re.IGNORECASE)
-
-    # 4. Chuẩn hóa khoảng trắng và dấu câu
     cleaned = re.sub(r"\s{2,}", " ", cleaned)
     cleaned = re.sub(r"\s+([,.\?!])", r"\1", cleaned)
     return cleaned.strip()
@@ -96,7 +98,6 @@ def ensure_sentence_casing_and_punctuation(text: str) -> str:
     if not text:
         return ""
 
-    # 1. Chữ ở đầu câu luôn viết hoa (bỏ qua dấu mở ngoặc/trích dẫn nếu có)
     start_idx = 0
     while start_idx < len(text) and text[start_idx] in ('"', "'", '“', '‘', '(', '[', '{', ' '):
         start_idx += 1
@@ -104,10 +105,8 @@ def ensure_sentence_casing_and_punctuation(text: str) -> str:
     if start_idx < len(text) and text[start_idx].isalpha():
         text = text[:start_idx] + text[start_idx].upper() + text[start_idx + 1:]
 
-    # 2. Xóa các dấu câu lửng lơ ở cuối như phẩy, hai chấm, chấm phẩy, gạch ngang
     text = text.rstrip(" \t,;:-")
 
-    # 3. Cuối câu luôn có đúng 1 dấu chấm (hoặc giữ dấu hỏi/cảm thán nếu có sẵn)
     if text.endswith("?"):
         text = text.rstrip("?").rstrip() + "?"
     elif text.endswith("!"):
@@ -117,7 +116,6 @@ def ensure_sentence_casing_and_punctuation(text: str) -> str:
     elif text.endswith("…"):
         text = text.rstrip("…").rstrip() + "."
     elif text.endswith("."):
-        # Đảm bảo chỉ có đúng 1 dấu chấm duy nhất (tránh ".." hay "...")
         text = text.rstrip(".").rstrip() + "."
     else:
         text = text + "."
@@ -134,20 +132,82 @@ def post_process_sentence(text: str) -> str:
 
 
 def is_ending_with_punctuation(text: str) -> bool:
-    """Kiểm tra xem câu có kết thúc bằng dấu chấm câu (chấm, phẩy, hỏi chấm, than...) hay không."""
+    """Kiểm tra xem câu có kết thúc bằng dấu kết thúc câu (., ?, !, …) hay không."""
     t = text.strip().rstrip('"\'”)]{}')
-    return bool(t) and t.endswith(PUNCTUATION_ENDINGS)
+    return bool(t) and t.endswith(SENTENCE_END_PUNCTUATION)
 
 
-def merge_fragmented_segments(segments: list) -> list[dict]:
-    """Hậu xử lý gộp các segment bị tách vụn không có dấu chấm câu vào segment liền kề.
+def split_text_into_sentences(text: str) -> List[str]:
+    """Tách một đoạn văn bản dài chứa nhiều câu thành danh sách các câu đơn độc lập."""
+    if not text or not text.strip():
+        return []
 
-    Quy tắc (Chuẩn Python 3.12):
-    - Nếu segment không kết thúc bằng dấu chấm câu (chấm, phẩy, hỏi chấm, than...),
-      hãy gộp text và mốc end của nó vào segment liền kề phía sau, đồng thời giữ nguyên
-      mốc start ban đầu.
-    - Mỗi câu sau khi hoàn tất luôn có chữ đầu câu viết hoa và cuối câu có đúng 1 dấu chấm.
-    """
+    raw_parts = SENTENCE_BOUNDARY_RE.split(text.strip())
+    sentences: List[str] = []
+
+    for part in raw_parts:
+        p = part.strip()
+        if not p:
+            continue
+        word_count = len(p.split())
+        # Nếu mảnh trước đó quá ngắn (<= 2 từ, ví dụ "OK!", "Nha!", "Rồi.") thì ghép vào câu kế tiếp
+        if sentences and len(sentences[-1].split()) <= 2:
+            sentences[-1] = f"{sentences[-1]} {p}"
+        else:
+            sentences.append(p)
+
+    # Nếu mảnh cuối cùng quá ngắn (<= 2 từ) thì ghép vào câu liền trước
+    if len(sentences) > 1 and len(sentences[-1].split()) <= 2:
+        last_part = sentences.pop()
+        sentences[-1] = f"{sentences[-1]} {last_part}"
+
+    return [ensure_sentence_casing_and_punctuation(s) for s in sentences if s.strip()]
+
+
+def split_segment_into_timed_sentences(start: float, end: float, text: str) -> List[dict]:
+    """Tách một segment có thể chứa nhiều câu thành các câu đơn kèm nội suy mốc [start, end] theo tỷ lệ độ dài."""
+    sentence_texts = split_text_into_sentences(text)
+    if not sentence_texts:
+        return []
+
+    if len(sentence_texts) == 1:
+        return [{
+            "start": round(float(start), 2),
+            "end": round(float(end), 2),
+            "text": sentence_texts[0]
+        }]
+
+    total_duration = max(0.01, float(end) - float(start))
+    char_lengths = [max(1, len(s)) for s in sentence_texts]
+    total_chars = sum(char_lengths)
+
+    result: List[dict] = []
+    curr_start = float(start)
+    for idx, (s_text, c_len) in enumerate(zip(sentence_texts, char_lengths)):
+        if idx == len(sentence_texts) - 1:
+            curr_end = round(float(end), 2)
+        else:
+            ratio = c_len / total_chars
+            curr_end = round(curr_start + total_duration * ratio, 2)
+            if curr_end <= curr_start:
+                curr_end = round(curr_start + 0.05, 2)
+
+        result.append({
+            "start": round(curr_start, 2),
+            "end": curr_end,
+            "text": s_text
+        })
+        curr_start = curr_end
+
+    return result
+
+
+def merge_fragmented_segments(
+    segments: list,
+    max_merged_duration: float = 12.0,
+    max_merged_words: int = 32
+) -> list[dict]:
+    """Hậu xử lý gộp các segment bị ngắt vụn quá ngắn và tự động tách các đoạn dài thành câu đơn độc lập."""
     merged: list[dict] = []
     current: dict | None = None
 
@@ -168,15 +228,24 @@ def merge_fragmented_segments(segments: list) -> list[dict]:
                 "text": cleaned_text
             }
         else:
-            # Nếu segment trước đó không kết thúc bằng dấu chấm câu -> Gộp vào segment này
-            if not is_ending_with_punctuation(current["text"]):
+            combined_duration = float(s_end) - float(current["start"])
+            combined_words = len(current["text"].split()) + len(cleaned_text.split())
+            gap = float(s_start) - float(current["end"])
+
+            should_merge = (
+                not is_ending_with_punctuation(current["text"])
+                and combined_duration <= max_merged_duration
+                and combined_words <= max_merged_words
+                and gap <= 1.5
+            )
+
+            if should_merge:
                 current["text"] = f"{current['text']} {cleaned_text}"
                 current["end"] = round(float(s_end), 2)
-                # Mốc start được giữ nguyên từ segment ban đầu
             else:
-                # Segment trước đã hoàn tất -> Chuẩn hóa viết hoa đầu câu & 1 dấu chấm cuối câu
-                current["text"] = ensure_sentence_casing_and_punctuation(current["text"])
-                merged.append(current)
+                merged.extend(
+                    split_segment_into_timed_sentences(current["start"], current["end"], current["text"])
+                )
                 current = {
                     "start": round(float(s_start), 2),
                     "end": round(float(s_end), 2),
@@ -184,14 +253,15 @@ def merge_fragmented_segments(segments: list) -> list[dict]:
                 }
 
     if current is not None:
-        current["text"] = ensure_sentence_casing_and_punctuation(current["text"])
-        merged.append(current)
+        merged.extend(
+            split_segment_into_timed_sentences(current["start"], current["end"], current["text"])
+        )
 
     return merged
 
 
 def post_process_transcript(transcript: TranscriptOutput) -> TranscriptOutput:
-    """Lọc rác, gộp các đoạn bị tách vụn và chuẩn hóa mã định danh câu Sxxxx."""
+    """Lọc rác, tách các đoạn văn dài thành câu đơn và chuẩn hóa mã định danh câu Sxxxx."""
     merged_items = merge_fragmented_segments(transcript.sentences)
     digit_count = 5 if len(merged_items) > 9999 else 4
 

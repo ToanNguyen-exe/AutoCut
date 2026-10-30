@@ -4,15 +4,16 @@
 1. P02: Chống hiện tượng lặp từ vô tận ('kênh kênh kênh...') và ảo giác tiếng Hàn/ngoại ngữ rác (습니다, 로).
 2. P03: initial_prompt tích hợp từ điển thuật ngữ CNTT / Web3 / Blockchain chuyên sâu.
 3. P04: Cache transcript theo SHA-256 của file video/audio.
-4. Tầng hậu xử lý: Tự động chuẩn hóa thuật ngữ chuyên ngành (blockchain, Web3, tech stack, airdrop...).
+4. Tầng hậu xử lý: Tự động chuẩn hóa thuật ngữ chuyên ngành và tách câu đơn chuẩn xác.
 5. Tự động vá tương thích PyAV 14+ (khử lỗi metadata_errors).
-6. Tinh chỉnh VAD & Hậu xử lý gộp các segment vụn không có dấu chấm câu.
+6. Bộ hiển thị tiến trình thời gian thực (Progress %, tốc độ x realtime, thời gian đã chạy & ETA).
 """
 
 import hashlib
 import json
 import logging
-
+import sys
+import time
 from pathlib import Path
 from typing import Optional, List
 
@@ -32,10 +33,27 @@ except Exception:
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import build_initial_prompt
 from .config_loader import default_ai_config
-from .post_processor import post_process_sentence, post_process_transcript, merge_fragmented_segments
+from .post_processor import post_process_transcript, merge_fragmented_segments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("AutoCut.AI.Whisper")
+
+
+def format_duration(seconds: float) -> str:
+    """Định dạng số giây thành chuỗi MM:SS hoặc HH:MM:SS dễ đọc."""
+    seconds = max(0, int(round(seconds)))
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
+
+
+def build_progress_bar(percent: float, width: int = 22) -> str:
+    """Tạo thanh tiến trình ASCII trực quan."""
+    p = max(0.0, min(100.0, percent))
+    filled = int(round(width * p / 100.0))
+    return "█" * filled + "░" * (width - filled)
 
 
 def compute_file_sha256(file_path: str, chunk_size: int = 65536) -> str:
@@ -121,6 +139,43 @@ class WhisperTranscriber:
         """Đường dẫn tệp cache theo mã hash SHA-256."""
         return Path(self.cache_dir) / f"{file_hash}_transcript.json"
 
+    @staticmethod
+    def _consume_segments_with_progress(segments_gen, total_duration: float) -> list:
+        """Duyệt từng segment từ generator của Whisper và hiển thị thanh tiến trình + ETA theo thời gian thực."""
+        raw_segments = []
+        start_wall = time.perf_counter()
+
+        for seg in segments_gen:
+            raw_segments.append(seg)
+            elapsed = max(0.001, time.perf_counter() - start_wall)
+            processed_audio_sec = float(getattr(seg, "end", 0.0) or 0.0)
+
+            if total_duration and total_duration > 0:
+                percent = min(100.0, (processed_audio_sec / total_duration) * 100.0)
+                speed_x = processed_audio_sec / elapsed
+                remaining_audio = max(0.0, total_duration - processed_audio_sec)
+                eta_sec = (remaining_audio / speed_x) if speed_x > 0.01 else 0.0
+                bar = build_progress_bar(percent)
+                sys.stdout.write(
+                    f"\r[Whisper STT] [{bar}] {percent:5.1f}% | "
+                    f"Video: {format_duration(processed_audio_sec)}/{format_duration(total_duration)} | "
+                    f"Tốc độ: {speed_x:4.1f}x | Đã chạy: {format_duration(elapsed)} | "
+                    f"Còn lại (ETA): ~{format_duration(eta_sec)}   "
+                )
+                sys.stdout.flush()
+
+        if raw_segments and total_duration and total_duration > 0:
+            total_elapsed = time.perf_counter() - start_wall
+            bar = build_progress_bar(100.0)
+            sys.stdout.write(
+                f"\r[Whisper STT] [{bar}] 100.0% | "
+                f"Video: {format_duration(total_duration)}/{format_duration(total_duration)} | "
+                f"Hoàn tất trong: {format_duration(total_elapsed)}                        \n"
+            )
+            sys.stdout.flush()
+
+        return raw_segments
+
     def transcribe(
         self,
         media_path: str,
@@ -128,19 +183,11 @@ class WhisperTranscriber:
         force_recompute: bool = False,
         output_file: Optional[str] = None
     ) -> TranscriptOutput:
-        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1.
-
-        Args:
-            media_path: Đường dẫn tệp video hoặc audio.
-            outline_text: Văn bản đề cương (nếu có) để tạo initial_prompt.
-            force_recompute: Bỏ qua cache và chạy lại Whisper.
-            output_file: Đường dẫn lưu tệp transcript.json.
-        """
+        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1."""
         media_p = Path(media_path)
         if not media_p.exists():
             raise FileNotFoundError(f"Không tìm thấy tệp phương tiện: {media_path}")
 
-        # Bước 1: Tính SHA-256 hash để kiểm tra Cache (P04)
         logger.info(f"Đang tính SHA-256 hash cho tệp {media_p.name}...")
         file_hash = compute_file_sha256(str(media_p))
         cache_file = self.get_cache_path(file_hash)
@@ -150,7 +197,6 @@ class WhisperTranscriber:
             with open(cache_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             transcript_obj = TranscriptOutput.model_validate(data)
-            # Luôn tự động chuẩn hóa làm sạch ngay cả khi nạp từ cache cũ
             transcript_obj = post_process_transcript(transcript_obj)
 
             if output_file:
@@ -160,11 +206,9 @@ class WhisperTranscriber:
 
         logger.info(f"[CACHE MISS] Chưa có cache cho {media_p.name}. Tiến hành bóc băng với Whisper...")
 
-        # Bước 2: Tạo initial_prompt nâng cao kết hợp từ điển CNTT (P03)
         initial_prompt = build_initial_prompt(outline_text)
         logger.info(f"Đã tạo initial_prompt nâng cao: '{initial_prompt}'")
 
-        # Bước 3: Cấu hình siêu tham số chống ảo giác & tăng độ chính xác phát âm
         model = self._get_model()
         transcribe_kwargs = dict(
             language=self.language,
@@ -175,21 +219,22 @@ class WhisperTranscriber:
                 threshold=0.5
             ),
             word_timestamps=False,
-            condition_on_previous_text=False,  # Chống lan truyền lỗi lặp từ
-            no_repeat_ngram_size=3,            # Ngăn lặp lại cụm 3 từ giống nhau
-            repetition_penalty=1.2,            # Phạt nặng lặp từ
-            beam_size=5,                       # Beam search tìm từ ngữ chính xác nhất
+            condition_on_previous_text=False,
+            no_repeat_ngram_size=3,
+            repetition_penalty=1.2,
+            beam_size=5,
             best_of=5,
             temperature=[0.0, 0.2, 0.4],
-            compression_ratio_threshold=2.2,   # Phát hiện và loại bỏ đoạn lặp nén cao
-            log_prob_threshold=-1.0,           # Bỏ qua các đoạn không tự tin
+            compression_ratio_threshold=2.2,
+            log_prob_threshold=-1.0,
             no_speech_threshold=0.6,
             initial_prompt=initial_prompt
         )
 
         try:
             segments_gen, info = model.transcribe(str(media_p), **transcribe_kwargs)
-            raw_segments = list(segments_gen)
+            media_duration = float(info.duration) if info and info.duration else 0.0
+            raw_segments = self._consume_segments_with_progress(segments_gen, media_duration)
         except RuntimeError as e:
             if ("cublas" in str(e).lower() or "cudnn" in str(e).lower() or "cuda" in str(e).lower()) and self.device in ("auto", "cuda"):
                 logger.warning(
@@ -201,17 +246,17 @@ class WhisperTranscriber:
                 self.compute_type = "int8"
                 self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
                 segments_gen, info = self._model.transcribe(str(media_p), **transcribe_kwargs)
-                raw_segments = list(segments_gen)
+                media_duration = float(info.duration) if info and info.duration else 0.0
+                raw_segments = self._consume_segments_with_progress(segments_gen, media_duration)
             else:
                 raise
 
         total_segments = len(raw_segments)
         logger.info(f"Whisper hoàn thành: nhận diện được {total_segments} raw segments.")
 
-        # Bước 4: Hậu xử lý gộp các đoạn bị tách vụn và chuẩn hóa mã định danh câu Sxxxx
         merged_items = merge_fragmented_segments(raw_segments)
         total_merged = len(merged_items)
-        logger.info(f"Sau khi gộp câu vụn: còn lại {total_merged} câu hoàn chỉnh (tối ưu từ {total_segments} segments).")
+        logger.info(f"Sau khi chuẩn hóa & tách câu đơn: {total_merged} câu hoàn chỉnh (từ {total_segments} segments).")
 
         digit_count = 5 if total_merged > 9999 else 4
         sentences: List[Sentence] = []
@@ -237,13 +282,11 @@ class WhisperTranscriber:
             sentences=sentences
         )
 
-        # Lưu vào cache file (P04)
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         with open(cache_file, "w", encoding="utf-8") as f:
             f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
         logger.info(f"Đã lưu transcript vào cache: {cache_file}")
 
-        # Lưu vào file đầu ra chỉ định nếu có
         if output_file:
             out_p = Path(output_file)
             out_p.parent.mkdir(parents=True, exist_ok=True)
