@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Segment } from "@/types";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Segment, TranscriptData } from "@/types";
 import { formatTime, recalculateParts, slugify } from "@/lib/utils";
 import {
   Play,
@@ -11,6 +11,7 @@ import {
   RotateCw,
   Bookmark,
   Volume2,
+  VolumeX,
   MousePointer,
   Undo2,
   Redo2,
@@ -34,12 +35,17 @@ interface StudioTimelineProps {
   isPlaying?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
+  transcript?: TranscriptData;
+  volume?: number;
+  isMuted?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
   onTogglePlay?: () => void;
   onSeek: (time: number) => void;
   onSelectSegment: (id: string) => void;
   onUpdateSegments: (newSegments: Segment[]) => void;
+  onVolumeChange?: (vol: number) => void;
+  onToggleMute?: () => void;
 }
 
 export const StudioTimeline: React.FC<StudioTimelineProps> = ({
@@ -50,47 +56,101 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   isPlaying,
   canUndo = false,
   canRedo = false,
+  transcript,
+  volume: propVolume,
+  isMuted: propMuted,
   onUndo,
   onRedo,
   onTogglePlay,
   onSeek,
   onSelectSegment,
   onUpdateSegments,
+  onVolumeChange,
+  onToggleMute,
 }) => {
   const [internalPlaying, setInternalPlaying] = useState(false);
   const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
-  const togglePlay = onTogglePlay || (() => setInternalPlaying(!internalPlaying));
+  const togglePlay = useCallback(() => {
+    if (onTogglePlay) {
+      onTogglePlay();
+    } else {
+      setInternalPlaying((prev) => !prev);
+    }
+  }, [onTogglePlay]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [volume, setVolume] = useState(80);
-  const timelineTrackRef = useRef<HTMLDivElement>(null);
 
-  // Playback timer
+  const [internalVolume, setInternalVolume] = useState(100);
+  const [internalMuted, setInternalMuted] = useState(false);
+  const volume = propVolume !== undefined ? propVolume : internalVolume;
+  const isMuted = propMuted !== undefined ? propMuted : internalMuted;
+  const setVolume = onVolumeChange || setInternalVolume;
+  const toggleMute = onToggleMute || (() => setInternalMuted((prev) => !prev));
+
+  // Scrubbing & Hover preview states
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState<number>(0);
+
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
+
+  // Playback timer (runs when playing and not scrubbing)
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (playing) {
+    if (playing && !isScrubbing) {
       timer = setInterval(() => {
-        onSeek(Math.min(totalDuration, currentTime + 0.5));
-        if (currentTime >= totalDuration) {
+        const nextTime = Math.min(totalDuration, currentTime + 0.5);
+        onSeek(nextTime);
+        if (nextTime >= totalDuration) {
           if (onTogglePlay) onTogglePlay();
           else setInternalPlaying(false);
         }
       }, 500);
     }
     return () => clearInterval(timer);
-  }, [playing, currentTime, totalDuration, onSeek, onTogglePlay]);
+  }, [playing, isScrubbing, currentTime, totalDuration, onSeek, onTogglePlay]);
+
+  // Keyboard navigation shortcuts: Space (play/pause), Left/Right (seek 5s), J/K/L
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        onSeek(Math.max(0, currentTime - 5));
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        onSeek(Math.min(totalDuration, currentTime + 5));
+      } else if (e.key === "j" || e.key === "J") {
+        onSeek(Math.max(0, currentTime - 10));
+      } else if (e.key === "l" || e.key === "L") {
+        onSeek(Math.min(totalDuration, currentTime + 10));
+      } else if (e.key === "k" || e.key === "K") {
+        togglePlay();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlay, onSeek, currentTime, totalDuration]);
 
   // Jump to Prev / Next Segment or step back
   const handlePrevSegment = () => {
     const currentIdx = segments.findIndex((s) => s.id === activeSegmentId);
     if (currentIdx > 0 && currentTime <= segments[currentIdx].start + 2) {
-      // Nếu đang ở đầu phân đoạn hiện tại, nhảy về phân đoạn trước
       const prev = segments[currentIdx - 1];
       onSelectSegment(prev.id);
       onSeek(prev.start);
     } else if (currentIdx >= 0) {
-      // Nhảy về đầu phân đoạn hiện tại
       onSeek(segments[currentIdx].start);
     } else if (currentTime > 5) {
       onSeek(Math.max(0, currentTime - 10));
@@ -168,35 +228,146 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     }
   };
 
-  // Handle click on timeline to scrub playhead
-  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineTrackRef.current) return;
-    const rect = timelineTrackRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-    const newTime = Number((ratio * totalDuration).toFixed(1));
+  // Compute time from clientX coordinate on timeline
+  const calculateTimeFromEvent = useCallback(
+    (clientX: number): number => {
+      if (!timelineContainerRef.current) return currentTime;
+      const rect = timelineContainerRef.current.getBoundingClientRect();
+      const clickX = clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      return Number((ratio * totalDuration).toFixed(1));
+    },
+    [currentTime, totalDuration]
+  );
+
+  // Pointer Scrubbing Handlers (Click + Smooth Dragging across entire track)
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only primary mouse button
+    setIsScrubbing(true);
+    const newTime = calculateTimeFromEvent(e.clientX);
     onSeek(newTime);
+
+    const matchingSeg = segments.find((s) => newTime >= s.start && newTime <= s.end);
+    if (matchingSeg) {
+      onSelectSegment(matchingSeg.id);
+    }
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
   };
 
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!timelineContainerRef.current) return;
+    const rect = timelineContainerRef.current.getBoundingClientRect();
+    const xPos = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    setHoverX(xPos);
+
+    const newTime = calculateTimeFromEvent(e.clientX);
+    setHoverTime(newTime);
+
+    if (isScrubbing) {
+      onSeek(newTime);
+      const matchingSeg = segments.find((s) => newTime >= s.start && newTime <= s.end);
+      if (matchingSeg) {
+        onSelectSegment(matchingSeg.id);
+      }
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isScrubbing) {
+      setIsScrubbing(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const handlePointerLeave = () => {
+    if (!isScrubbing) {
+      setHoverTime(null);
+    }
+  };
+
+  // Generate waveform vertical bars ("Dạng kẻ dọc như ảnh 2")
+  const waveformBars = useMemo(() => {
+    const count = 180;
+    const bars: number[] = [];
+
+    if (transcript && transcript.sentences && transcript.sentences.length > 0) {
+      for (let i = 0; i < count; i++) {
+        const t = (i / count) * totalDuration;
+        const inSentence = transcript.sentences.some(
+          (s) => t >= s.start && t <= s.end
+        );
+
+        let height: number;
+        if (inSentence) {
+          const wave = Math.sin(i * 0.4) * 20 + Math.cos(i * 0.8) * 15;
+          const noise = Math.abs(Math.sin((i + 1) * 31.7)) * 28;
+          height = Math.min(95, Math.max(30, Math.round(52 + wave + noise)));
+        } else {
+          const noise = Math.abs(Math.sin((i + 1) * 17.3)) * 12;
+          height = Math.min(22, Math.max(10, Math.round(12 + noise)));
+        }
+
+        if (i === 0) height = 95; // Initial peak accent matching reference image 2
+        bars.push(height);
+      }
+      return bars;
+    }
+
+    // Default lecture audio waveform simulation
+    for (let i = 0; i < count; i++) {
+      const cluster = Math.sin(i * 0.12) * Math.cos(i * 0.04);
+      const speechBurst = Math.sin(i * 0.35) * 0.3 + Math.cos(i * 0.7) * 0.2;
+      const variation = Math.abs(Math.sin((i + 1) * 37.17)) * 0.38;
+      let height =
+        0.2 +
+        Math.abs(cluster) * 0.45 +
+        Math.abs(speechBurst) * 0.3 +
+        variation * 0.2;
+
+      // Realistic speech pauses
+      if (i % 24 >= 21 || i % 47 >= 44) {
+        height = height * 0.26;
+      }
+      if (i === 0) height = 0.95; // Accent first bar like image 2
+      bars.push(Math.min(96, Math.max(10, Math.round(height * 100))));
+    }
+    return bars;
+  }, [transcript, totalDuration]);
+
   // Generate ruler markers
-  const rulerTicks = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.0].map((r) => {
-    const sec = r * totalDuration;
-    return {
-      ratio: r * 100,
-      label: formatTime(sec),
-    };
-  });
+  const rulerTicks = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(
+    (r) => {
+      const sec = r * totalDuration;
+      return {
+        ratio: r * 100,
+        label: formatTime(sec),
+      };
+    }
+  );
 
   return (
     <div className="bg-[#121318] border-t border-slate-800 shrink-0 select-none flex flex-col z-20">
-      {/* 1. Transport Bar (Matching reference image: [Hide Timeline]  0:25.90 / 02:00.00  |<< Play >>| Loop Bookmark   Volume 80%) */}
+      {/* 1. Transport Bar (Matching reference: [Hide Timeline]  00:00.00 / 30:20.00  |<< Play >>| Loop Bookmark   Volume 80%) */}
       <div className="h-12 border-b border-slate-800 px-4 flex items-center justify-between">
         {/* Left: Hide/Show Timeline */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition"
         >
-          {isCollapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {isCollapsed ? (
+            <ChevronUp className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5" />
+          )}
           <span>{isCollapsed ? "Show Timeline" : "Hide Timeline"}</span>
         </button>
 
@@ -214,7 +385,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             <button
               onClick={handlePrevSegment}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              title="Phân đoạn trước"
+              title="Phân đoạn trước (hoặc lùi 5s)"
             >
               <SkipBack className="w-4 h-4 fill-current" />
             </button>
@@ -223,7 +394,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             <button
               onClick={togglePlay}
               className="w-8 h-8 rounded-full bg-white hover:bg-slate-200 text-black flex items-center justify-center shadow-lg shadow-white/10 transition transform hover:scale-105 active:scale-95"
-              title={playing ? "Tạm dừng" : "Phát"}
+              title={playing ? "Tạm dừng (Space)" : "Phát (Space)"}
             >
               {playing ? (
                 <Pause className="w-4 h-4 fill-current" />
@@ -235,7 +406,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             <button
               onClick={handleNextSegment}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              title="Phân đoạn kế tiếp"
+              title="Phân đoạn kế tiếp (hoặc tiến 5s)"
             >
               <SkipForward className="w-4 h-4 fill-current" />
             </button>
@@ -257,18 +428,30 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           </div>
         </div>
 
-        {/* Right: Volume slider */}
+        {/* Right: Volume slider with Mute toggle */}
         <div className="flex items-center gap-2 text-xs text-slate-400">
-          <Volume2 className="w-4 h-4 text-slate-400" />
+          <button
+            onClick={toggleMute}
+            className="hover:text-white transition p-1"
+            title={isMuted ? "Bật âm thanh" : "Tắt tiếng"}
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX className="w-4 h-4 text-rose-400" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </button>
           <input
             type="range"
             min="0"
             max="100"
-            value={volume}
+            value={isMuted ? 0 : volume}
             onChange={(e) => setVolume(Number(e.target.value))}
             className="w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
-          <span className="font-mono text-[11px] w-7 text-right">{volume}%</span>
+          <span className="font-mono text-[11px] w-7 text-right">
+            {isMuted ? "0%" : `${volume}%`}
+          </span>
         </div>
       </div>
 
@@ -337,49 +520,90 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
               </button>
             </div>
 
+            {/* Instruction hint: Click or Drag to Seek */}
+            <div className="hidden md:flex items-center gap-1.5 text-[11px] text-slate-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <span>Kéo hoặc click bất kỳ điểm nào để tua video (Hỗ trợ phím mũi tên &larr; &rarr;)</span>
+            </div>
+
             {/* Zoom Slider */}
             <div className="flex items-center gap-2 text-xs">
               <button
-                onClick={() => setZoomLevel(Math.max(50, zoomLevel - 25))}
+                onClick={() => setZoomLevel(Math.max(100, zoomLevel - 25))}
                 className="p-1 hover:text-white"
+                title="Thu nhỏ timeline"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
               <input
                 type="range"
-                min="50"
-                max="200"
+                min="100"
+                max="250"
                 value={zoomLevel}
                 onChange={(e) => setZoomLevel(Number(e.target.value))}
                 className="w-20 h-1 bg-slate-800 rounded appearance-none accent-purple-500 cursor-pointer"
               />
               <button
-                onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+                onClick={() => setZoomLevel(Math.min(250, zoomLevel + 25))}
                 className="p-1 hover:text-white"
+                title="Phóng to timeline"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
+              <span className="font-mono text-[10px] text-slate-500 w-8">
+                {zoomLevel}%
+              </span>
             </div>
           </div>
 
-          {/* 3. Ruler & Multi-Track Area */}
+          {/* 3. Ruler & Multi-Track Area (CapCut Multi-track Style) */}
           <div className="flex bg-[#0d0e12] overflow-x-auto relative">
-            {/* Left Track Headers (Camera, Eye, Lock) */}
-            <div className="w-16 bg-[#121318] border-r border-slate-800 shrink-0 flex flex-col justify-end p-2 select-none z-10">
-              <div className="h-16 flex items-center justify-between text-slate-500 text-xs px-1">
-                <Video className="w-3.5 h-3.5 text-slate-400" />
-                <Eye className="w-3.5 h-3.5" />
-                <Lock className="w-3.5 h-3.5" />
+            {/* Left Track Headers (V1 Video & A1 Audio) */}
+            <div className="w-16 bg-[#121318] border-r border-slate-800 shrink-0 flex flex-col select-none z-20">
+              {/* Ruler header space */}
+              <div className="h-6 bg-[#16171d] border-b border-slate-800/80 flex items-center justify-center text-[10px] font-mono text-slate-500">
+                00:00
+              </div>
+
+              {/* V1 Video Track Header */}
+              <div className="h-14 border-b border-slate-800/80 flex items-center justify-between text-slate-400 text-xs px-2 bg-[#121318]">
+                <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-purple-400">
+                  <Video className="w-3.5 h-3.5" />
+                  <span>V1</span>
+                </div>
+                <div className="flex items-center gap-1 text-slate-500">
+                  <Eye className="w-3 h-3 hover:text-white" />
+                  <Lock className="w-3 h-3 hover:text-white" />
+                </div>
+              </div>
+
+              {/* A1 Audio Track Header */}
+              <div className="h-14 flex items-center justify-between text-slate-400 text-xs px-2 bg-[#121318]">
+                <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-400">
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>A1</span>
+                </div>
+                <div className="flex items-center gap-1 text-slate-500">
+                  <Volume2 className="w-3 h-3 hover:text-white" />
+                  <Lock className="w-3 h-3 hover:text-white" />
+                </div>
               </div>
             </div>
 
-            {/* Right Track Timeline Canvas */}
-            <div className="flex-1 flex flex-col min-w-[700px] relative">
-              {/* Ruler Bar */}
-              <div
-                onClick={handleTimelineClick}
-                className="h-6 bg-[#16171d] border-b border-slate-800/80 relative cursor-pointer text-[10px] font-mono text-slate-500 flex items-center"
-              >
+            {/* Right Interactive Track Timeline Canvas */}
+            <div
+              ref={timelineContainerRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerLeave}
+              style={{ minWidth: `${Math.max(100, zoomLevel)}%` }}
+              className={`flex-1 flex flex-col relative select-none ${
+                isScrubbing ? "cursor-ew-resize" : "cursor-pointer"
+              }`}
+            >
+              {/* Top Ruler Bar with Time Markers */}
+              <div className="h-6 bg-[#16171d] border-b border-slate-800/80 relative text-[10px] font-mono text-slate-500 flex items-center overflow-hidden">
                 {rulerTicks.map((tick, i) => (
                   <div
                     key={i}
@@ -391,15 +615,12 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                 ))}
               </div>
 
-              {/* Clip Track (Purple Segment Clip Boxes with Filmstrip Thumbnails) */}
-              <div
-                ref={timelineTrackRef}
-                onClick={handleTimelineClick}
-                className="h-16 bg-[#0a0b0e] relative flex items-center cursor-pointer p-1"
-              >
+              {/* Track 1: Video Segment Clips (V1) - Absolute Time Positioned */}
+              <div className="h-14 bg-[#0a0b0e] border-b border-slate-800/80 relative w-full overflow-hidden">
                 {segments.map((seg) => {
-                  const widthPct = Math.max(
-                    1,
+                  const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
+                  const widthPct = Math.min(
+                    100 - leftPct,
                     ((seg.end - seg.start) / Math.max(1, totalDuration)) * 100
                   );
                   const isSelected = activeSegmentId === seg.id;
@@ -407,25 +628,23 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                   return (
                     <div
                       key={seg.id}
-                      style={{ width: `${widthPct}%` }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSegment(seg.id);
-                        onSeek(seg.start);
+                      style={{
+                        left: `${leftPct}%`,
+                        width: `${Math.max(1.2, widthPct)}%`,
                       }}
-                      className={`h-full rounded-md border-2 relative overflow-hidden transition-all group flex flex-col justify-between p-1.5 ${
+                      className={`absolute top-1 bottom-1 rounded-md border-2 overflow-hidden transition-all group flex flex-col justify-between p-1.5 ${
                         isSelected
-                          ? "border-purple-500 bg-purple-950/70 shadow-lg shadow-purple-500/20"
-                          : "border-purple-600/60 bg-purple-950/30 hover:border-purple-400"
+                          ? "border-purple-500 bg-purple-950/70 shadow-lg shadow-purple-500/20 z-10"
+                          : "border-purple-600/60 bg-purple-950/30 hover:border-purple-400 z-0"
                       }`}
                     >
-                      {/* Clip Title inside track box (matching reference: Video Clip Name) */}
-                      <div className="flex items-center justify-between z-10">
+                      {/* Clip Title inside track box */}
+                      <div className="flex items-center justify-between z-10 pointer-events-none">
                         <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-white truncate">
-                          <Video className="w-2.5 h-2.5 text-purple-300" />
+                          <Video className="w-2.5 h-2.5 text-purple-300 shrink-0" />
                           <span className="truncate">{seg.slug}</span>
                         </div>
-                        <span className="text-[9px] font-mono text-purple-300 shrink-0">
+                        <span className="text-[9px] font-mono text-purple-300 shrink-0 ml-1">
                           {formatTime(seg.end - seg.start)}
                         </span>
                       </div>
@@ -441,23 +660,85 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                       </div>
 
                       {/* Topic Name bottom label */}
-                      <div className="text-[10px] text-slate-300 truncate z-10 font-sans">
+                      <div className="text-[10px] text-slate-300 truncate z-10 font-sans pointer-events-none">
                         {seg.topic}
                       </div>
                     </div>
                   );
                 })}
+              </div>
 
-                {/* White Vertical Playhead Cursor with Top Triangle (Matching reference image) */}
-                <div
-                  style={{
-                    left: `${(currentTime / Math.max(1, totalDuration)) * 100}%`,
-                  }}
-                  className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_8px_white] z-30 pointer-events-none transition-[left] duration-100"
+              {/* Track 2: Audio Waveform Vertical Bars ("Dạng kẻ dọc như ảnh 2" - A1) - Full 100% Width */}
+              <div className="h-14 bg-[#14151b] relative w-full overflow-hidden border-b border-slate-800">
+                {/* Waveform Vertical Bars SVG spanning 100% without getting cut short */}
+                <svg
+                  className="w-full h-full pointer-events-none block"
+                  viewBox={`0 0 ${waveformBars.length * 4} 56`}
+                  preserveAspectRatio="none"
                 >
-                  <div className="w-3 h-3 bg-white -ml-[5px] -mt-1.5 rotate-45 rounded-xs shadow-md" />
+                  {waveformBars.map((heightPercent, idx) => {
+                    const barProgressRatio = idx / waveformBars.length;
+                    const currentProgressRatio =
+                      currentTime / Math.max(1, totalDuration);
+                    const isPlayed = barProgressRatio <= currentProgressRatio;
+                    const barH = Math.max(3, (heightPercent / 100) * 48);
+                    const x = idx * 4;
+                    const y = 52 - barH;
+
+                    return (
+                      <rect
+                        key={idx}
+                        x={x + 0.6}
+                        y={y}
+                        width={2.6}
+                        height={barH}
+                        rx={0.8}
+                        fill={isPlayed ? "#f1f5f9" : "#475569"}
+                        fillOpacity={isPlayed ? 1 : 0.65}
+                      />
+                    );
+                  })}
+                  {/* Subtle Baseline at Bottom */}
+                  <line
+                    x1="0"
+                    y1="52"
+                    x2={waveformBars.length * 4}
+                    y2="52"
+                    stroke="#334155"
+                    strokeWidth="1"
+                  />
+                </svg>
+
+                {/* Reference Image 2 Style Timestamp at Bottom-Right */}
+                <div className="absolute bottom-1 right-2 z-10 pointer-events-none font-mono text-[11px] font-bold text-slate-300 bg-black/70 px-1.5 py-0.5 rounded border border-white/10 backdrop-blur-xs">
+                  {formatTime(currentTime)}
                 </div>
               </div>
+
+              {/* Continuous Vertical Playhead Cursor across ALL tracks */}
+              <div
+                style={{
+                  left: `${(currentTime / Math.max(1, totalDuration)) * 100}%`,
+                }}
+                className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_8px_white] z-30 pointer-events-none transition-[left] duration-75"
+              >
+                {/* Top CapCut Playhead Diamond Handle */}
+                <div className="w-3.5 h-3.5 bg-white -ml-[6px] -mt-1 rotate-45 rounded-xs shadow-md shadow-black/60 border border-slate-300" />
+                {/* Bottom marker dot */}
+                <div className="absolute bottom-0 w-2 h-2 bg-white -ml-[3px] rounded-full shadow-md" />
+              </div>
+
+              {/* Hover Guide Line with Tooltip */}
+              {hoverTime !== null && !isScrubbing && (
+                <div
+                  style={{ left: `${hoverX}px` }}
+                  className="absolute top-0 bottom-0 w-[1px] bg-purple-400/80 pointer-events-none z-20 flex flex-col items-center"
+                >
+                  <div className="bg-purple-600 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded -mt-5 shadow-lg border border-purple-400">
+                    {formatTime(hoverTime)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </>

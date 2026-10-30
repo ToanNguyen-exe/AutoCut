@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   KeyRound,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
 
@@ -21,19 +22,26 @@ interface StudioHeaderProps {
   data: SegmentsData;
   backendOnline?: boolean;
   isRendering: boolean;
+  isAnalyzing?: boolean;
+  isDemo?: boolean;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
   onRender: () => void;
   onOpenAddVideo: () => void;
+  onAnalyzeAI?: () => void;
   onUserUpdate?: (user: User) => void;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   user,
+  data,
   isRendering,
+  isAnalyzing = false,
+  isDemo = false,
   onExport,
   onRender,
   onOpenAddVideo,
+  onAnalyzeAI,
   onUserUpdate,
 }) => {
   const router = useRouter();
@@ -82,11 +90,47 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/20 ml-2 hidden sm:inline-block">
               AutoCut AI
             </span>
+
+            {/* Trạng thái dữ liệu: Demo vs Đang phân tích vs Chưa phân tích vs Đã phân tích */}
+            {isDemo ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                Demo Mẫu
+              </span>
+            ) : isAnalyzing ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse flex items-center gap-1 shadow-sm">
+                <RefreshCw className="w-2.5 h-2.5 animate-spin text-purple-400" />
+                Đang phân tích AI...
+              </span>
+            ) : data.mode === "raw" ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                Chưa phân tích (1 đoạn)
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                ✓ AI Đã phân tích
+              </span>
+            )}
           </div>
         </div>
 
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Nút Phân Tích AI nổi bật khi video ở trạng thái thô (chưa phân tích) */}
+          {data.mode === "raw" && onAnalyzeAI && (
+            <button
+              onClick={onAnalyzeAI}
+              disabled={isAnalyzing}
+              title="Khởi chạy Whisper & AI để phân tích video và phân đoạn thông minh"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-600/30 transition hover:scale-105 active:scale-95 animate-pulse"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Phân Tích AI</span>
+            </button>
+          )}
+
           {/* Nút Thêm Video trên Taskbar */}
           <button
             onClick={onOpenAddVideo}

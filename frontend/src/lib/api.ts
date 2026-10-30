@@ -1,6 +1,9 @@
 import { SegmentsData, TranscriptData } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
+const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
+export const API_BASE = rawBase.endsWith("/api/video")
+  ? rawBase
+  : `${rawBase.replace(/\/+$/, "")}/api/video`;
 
 export interface ApiResponse<T> {
   data?: T;
@@ -12,7 +15,7 @@ export interface ApiResponse<T> {
 export const FALLBACK_SEGMENTS: SegmentsData = {
   video: "Bai05_VongLap.mp4",
   lesson: "Bai05_VongLap",
-  mode: "guided",
+  mode: "demo",
   reviewed: false,
   segments: [
     {
@@ -105,7 +108,7 @@ export const FALLBACK_SEGMENTS: SegmentsData = {
 };
 
 /**
- * Lấy dữ liệu segments mẫu từ Backend Spring Boot
+ * Lấy dữ liệu segments mẫu từ Backend Spring Boot (GET /api/video/mock-segments)
  */
 export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
   try {
@@ -126,7 +129,7 @@ export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
 }
 
 /**
- * Lấy transcript mẫu từ Backend
+ * Lấy transcript mẫu từ Backend (GET /api/video/mock-transcript)
  */
 export async function fetchMockTranscript(): Promise<ApiResponse<TranscriptData>> {
   try {
@@ -136,7 +139,7 @@ export async function fetchMockTranscript(): Promise<ApiResponse<TranscriptData>
       cache: "no-store",
     });
     if (!res.ok) {
-      throw new Error(`HTTP error ${res.status}`);
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
     }
     const data: TranscriptData = await res.json();
     return { data, source: "api" };
@@ -148,8 +151,37 @@ export async function fetchMockTranscript(): Promise<ApiResponse<TranscriptData>
   }
 }
 
+export interface CacheResponse {
+  cached: boolean;
+  transcript?: TranscriptData;
+}
+
 /**
- * Lấy cấu hình runtime từ config.yaml của Backend
+ * Kiểm tra trạng thái cache cho mã băm video (GET /api/video/cache/{hash} - P04)
+ */
+export async function checkCache(hash: string): Promise<ApiResponse<CacheResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/cache/${encodeURIComponent(hash)}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+    const data: CacheResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      data: { cached: false },
+      error: err instanceof Error ? err.message : "Lỗi kiểm tra cache",
+      source: "fallback",
+    };
+  }
+}
+
+/**
+ * Lấy cấu hình runtime từ config.yaml của Backend (GET /api/video/config)
  */
 export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>>> {
   try {
@@ -159,9 +191,9 @@ export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>
       cache: "no-store",
     });
     if (!res.ok) {
-      throw new Error(`HTTP error ${res.status}`);
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
     }
-    const data = await res.json();
+    const data: Record<string, unknown> = await res.json();
     return { data, source: "api" };
   } catch (err) {
     return {
@@ -171,12 +203,19 @@ export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>
   }
 }
 
+export interface RenderResponse {
+  success: boolean;
+  status?: string;
+  message: string;
+  savedPlan?: string;
+}
+
 /**
- * Gửi kế hoạch phân đoạn đã duyệt lên Backend để chuẩn bị cắt video (B10)
+ * Gửi kế hoạch phân đoạn đã duyệt lên Backend để thực hiện cắt video (POST /api/video/render - B10)
  */
 export async function submitRenderSegments(
   segmentsData: SegmentsData
-): Promise<{ success: boolean; message: string; savedPlan?: string }> {
+): Promise<RenderResponse> {
   try {
     const res = await fetch(`${API_BASE}/render`, {
       method: "POST",
@@ -185,14 +224,29 @@ export async function submitRenderSegments(
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText || `HTTP ${res.status}`);
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = (await res.json()) as { error?: string };
+        if (errJson && typeof errJson.error === "string") {
+          errorMsg = errJson.error;
+        }
+      } catch {
+        const errText = await res.text().catch(() => "");
+        if (errText) errorMsg = errText;
+      }
+      throw new Error(errorMsg);
     }
 
-    const json = await res.json();
+    const json = (await res.json()) as {
+      status?: string;
+      message?: string;
+      savedPlan?: string;
+    };
+
     return {
       success: true,
-      message: json.message || "Đã gửi phân đoạn duyệt thành công!",
+      status: json.status,
+      message: json.message || "Đã tiếp nhận và chuẩn bị cắt phân đoạn.",
       savedPlan: json.savedPlan,
     };
   } catch (err) {

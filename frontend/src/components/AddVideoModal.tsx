@@ -9,6 +9,7 @@ import {
   Film,
   Sparkles,
   AlertCircle,
+  CheckCircle2,
   Clock,
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
@@ -58,7 +59,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [tab, setTab] = useState<"url" | "file">("url");
   const [urlInput, setUrlInput] = useState("");
   const [titleInput, setTitleInput] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState<string>("115"); // Mặc định ~2h (115 phút)
+  const [durationMinutes, setDurationMinutes] = useState<string>("");
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +77,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         if (v.duration && isFinite(v.duration) && v.duration > 0) {
           const secs = Math.round(v.duration);
           setDetectedDuration(secs);
-          setDurationMinutes(Math.max(1, Math.round(secs / 60)).toString());
+          const mins = (secs / 60 >= 1 ? (secs / 60).toFixed(1) : (secs / 60).toFixed(2));
+          setDurationMinutes(mins);
         }
       };
       v.src = src;
@@ -88,13 +90,24 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const handleSelectSample = (sample: (typeof SAMPLE_VIDEOS)[0]) => {
     setUrlInput(sample.url);
     setTitleInput(sample.name);
-    setDurationMinutes(Math.round(sample.durationSeconds / 60).toString());
+    setDurationMinutes((sample.durationSeconds / 60).toFixed(1));
     setDetectedDuration(sample.durationSeconds);
     setError(null);
   };
 
   const handleUrlChange = (val: string) => {
     setUrlInput(val);
+    const lower = val.trim().toLowerCase();
+    if (lower.includes("tiktok.com")) {
+      setDetectedDuration(60);
+      setDurationMinutes("1");
+      return;
+    }
+    if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
+      setDetectedDuration(300);
+      setDurationMinutes("5");
+      return;
+    }
     if (val.trim().startsWith("http")) {
       probeDuration(val.trim());
     }
@@ -116,8 +129,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    // Tính thời lượng bằng giây
-    let finalDurationSeconds = 7200; // Mặc định 2h nếu không nhập
+    // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video)
+    let finalDurationSeconds = 60; // Mặc định 1 phút nếu video ngắn không rõ thời lượng
     const parsedMinutes = parseFloat(durationMinutes);
     if (!isNaN(parsedMinutes) && parsedMinutes > 0) {
       finalDurationSeconds = Math.round(parsedMinutes * 60);
@@ -244,6 +257,21 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                   />
                   <LinkIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 </div>
+
+                {/* TikTok / YouTube Webpage Warning Tip */}
+                {(urlInput.includes("tiktok.com") ||
+                  urlInput.includes("youtube.com") ||
+                  urlInput.includes("youtu.be")) && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-white">Đã nhận diện liên kết video trực tuyến</p>
+                      <p className="text-purple-300 mt-0.5">
+                        Hệ thống đã tự động đặt thời lượng tối ưu và chuẩn bị sẵn các phân đoạn. Để xem phát hình ảnh thực tế trên trình duyệt, bạn cũng có thể tải file video (.mp4) về máy rồi chọn tab &quot;Tải Tệp Từ Máy&quot;.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Sample Videos to click */}
@@ -336,33 +364,57 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             />
           </div>
 
-          {/* Video Duration Setting (Quan trọng để video 2h không bị giới hạn 3 phút) */}
+          {/* Video Duration Setting (Tự động nhận diện chuẩn theo video thực) */}
           <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Thời lượng toàn bộ video (Phút):</span>
+                <span>Thời lượng toàn bộ video:</span>
               </label>
               <span className="text-[11px] font-mono text-purple-400 font-bold">
-                {formatTime(parseFloat(durationMinutes || "0") * 60)}
+                {formatTime(
+                  parseFloat(durationMinutes || "0") > 0
+                    ? parseFloat(durationMinutes) * 60
+                    : detectedDuration || 60
+                )}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                min="1"
+                min="0.1"
                 max="600"
-                step="1"
+                step="0.1"
                 value={durationMinutes}
+                placeholder={detectedDuration ? (detectedDuration / 60).toFixed(1) : "Tự động"}
                 onChange={(e) => setDurationMinutes(e.target.value)}
                 className="w-24 px-3 py-1.5 rounded-lg bg-[#0e0f12] border border-slate-700 focus:border-purple-500 text-white text-xs font-mono outline-none"
               />
               <span className="text-xs text-slate-400">phút</span>
-              <div className="flex-1 text-[11px] text-slate-400 text-right">
+              <div className="flex-1 text-[11px] text-right">
                 {detectedDuration ? (
-                  <span className="text-emerald-400">✓ Đã nhận diện từ video</span>
+                  <div className="flex items-center justify-end gap-1.5 text-emerald-400">
+                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    <span>✓ Tự nhận diện ({formatTime(detectedDuration)})</span>
+                    {durationMinutes &&
+                      Math.abs(parseFloat(durationMinutes) * 60 - detectedDuration) > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDurationMinutes(
+                              detectedDuration / 60 >= 1
+                                ? (detectedDuration / 60).toFixed(1)
+                                : (detectedDuration / 60).toFixed(2)
+                            )
+                          }
+                          className="ml-1 text-purple-400 hover:underline text-[10px]"
+                        >
+                          [Khôi phục]
+                        </button>
+                      )}
+                  </div>
                 ) : (
-                  <span>Tự động tạo các chủ đề phủ đủ thời lượng</span>
+                  <span className="text-slate-400">Tự động ôm khít thời lượng video thực tế</span>
                 )}
               </div>
             </div>

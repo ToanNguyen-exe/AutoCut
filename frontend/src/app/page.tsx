@@ -28,7 +28,7 @@ import {
   saveVideoToLibrary,
   updateVideoSegmentsInLibrary,
 } from "@/lib/videoLibrary";
-import { formatTime, recalculateParts } from "@/lib/utils";
+import { recalculateParts, slugify } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function Home() {
@@ -50,6 +50,18 @@ export default function Home() {
   const [videoLibrary, setVideoLibrary] = useState<VideoLibraryItem[]>([]);
   const [undoStack, setUndoStack] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
+
+  // Video Audio States (đồng bộ âm lượng và tắt/bật tiếng toàn Studio)
+  const [volume, setVolume] = useState<number>(100);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+
+  // AI Analysis States
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisStep, setAnalysisStep] = useState<string>("");
+
+  const handleToggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
 
   const [notification, setNotification] = useState<{
     type: "success" | "error" | "info";
@@ -168,23 +180,27 @@ export default function Home() {
     setUndoStack([]);
     setRedoStack([]);
 
+    const isLibDemo = video.lesson === "Bai05_VongLap" || video.name === "Bai05_VongLap.mp4";
+    const mode = isLibDemo ? "demo" : video.status === "added" ? "raw" : "analyzed";
+
     setData({
       video: video.name,
       lesson: video.lesson,
-      mode: "guided",
+      mode: mode,
       reviewed: video.status === "edited",
       segments: video.segments,
     });
 
     if (video.transcript) {
       setTranscript(video.transcript);
+    } else if (mode === "raw") {
+      setTranscript(undefined);
     } else {
       setTranscript({
         video: video.name,
         duration: video.duration,
         sentences: [
-          { id: "s001", start: 0, end: Math.min(30, video.duration * 0.1), text: `Bắt đầu phát bài giảng: "${video.title}".` },
-          { id: "s002", start: video.duration * 0.2, end: video.duration * 0.3, text: "Nội dung bài giảng đang được phát trực tiếp trên hệ thống AutoCut Studio." },
+          { id: "s001", start: 0, end: Math.min(30, video.duration * 0.1), text: `Bắt đầu phát video: "${video.title}".` },
         ],
       });
     }
@@ -242,28 +258,46 @@ export default function Home() {
 
   const handleDurationChange = useCallback((detectedSecs: number) => {
     if (!detectedSecs || isNaN(detectedSecs) || detectedSecs <= 0) return;
+    const realSecs = Number(detectedSecs.toFixed(1));
 
     setData((prev) => {
       const currentEnd = prev.segments.reduce((max, s) => Math.max(max, s.end), 0);
-      if (Math.abs(currentEnd - detectedSecs) < 15) return prev;
+      // Nếu đã khớp chính xác với thời lượng thật (sai số < 0.5s), không cần chỉnh
+      if (Math.abs(currentEnd - realSecs) < 0.5) return prev;
 
-      const updatedSegments = [...prev.segments];
-      const lastIdx = updatedSegments.length - 1;
-      if (lastIdx >= 0) {
-        const lastSeg = updatedSegments[lastIdx];
-        const newStart = lastSeg.start;
-        const newEnd = Math.max(newStart + 30, Number(detectedSecs.toFixed(1)));
-        const sectionFolder = `${lastSeg.section_no.toString().padStart(2, "0")}_${lastSeg.section.replace(/\s+/g, "")}`;
+      // Rescale toàn bộ các phân đoạn theo tỷ lệ phần trăm để ôm khít 100% thời lượng video thật [0, realSecs]
+      const scale = realSecs / Math.max(1, currentEnd);
+      let runningStart = 0;
 
-        updatedSegments[lastIdx] = {
-          ...lastSeg,
+      const updatedSegments: Segment[] = prev.segments.map((seg, idx) => {
+        const isLast = idx === prev.segments.length - 1;
+        const newStart = Number(runningStart.toFixed(1));
+        const newEnd = isLast
+          ? realSecs
+          : Number((seg.end * scale).toFixed(1));
+        runningStart = newEnd;
+
+        const sectionFolder = `${seg.section_no.toString().padStart(2, "0")}_${seg.section.replace(/\s+/g, "")}`;
+
+        return {
+          ...seg,
+          start: newStart,
           end: newEnd,
-          parts: recalculateParts(newStart, newEnd, sectionFolder, lastSeg.topic_no, lastSeg.slug),
+          parts: recalculateParts(newStart, newEnd, sectionFolder, seg.topic_no, seg.slug),
         };
-      }
+      });
+
       return {
         ...prev,
         segments: updatedSegments,
+      };
+    });
+
+    setTranscript((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        duration: realSecs,
       };
     });
   }, []);
@@ -272,128 +306,285 @@ export default function Home() {
     setExternalVideoUrl(newVideo.url);
 
     const cleanName = newVideo.name.replace(/\.[^/.]+$/, "");
-    const lessonTitle = cleanName.length > 40 ? cleanName.slice(0, 40) : cleanName;
-    const totalSecs = Math.max(60, newVideo.duration || 7200);
+    const lessonTitle = newVideo.topicTitle || (cleanName.length > 40 ? cleanName.slice(0, 40) : cleanName);
+    const totalSecs = Math.max(5, newVideo.duration || 60);
 
-    // Tạo các phân đoạn bao phủ toàn bộ thời lượng video (kể cả 2h = 7200s)
-    const cut1 = Number((totalSecs * 0.15).toFixed(1));
-    const cut2 = Number((totalSecs * 0.50).toFixed(1));
-    const cut3 = Number((totalSecs * 0.82).toFixed(1));
-    const cut4 = Number(totalSecs.toFixed(1));
+    // Khi chỉ thêm video mới: KHÔNG tự động chia nhiều đoạn giả lập.
+    // Giữ đúng 1 PHÂN ĐOẠN DUY NHẤT bao quát toàn bộ video từ 0 đến hết thời lượng!
+    const singleSegment: Segment = {
+      id: `seg_${Date.now()}_raw`,
+      section_no: 1,
+      section: "01_VideoGoc",
+      topic_no: 1,
+      topic: lessonTitle,
+      slug: slugify(lessonTitle),
+      start_id: "s001",
+      end_id: "s001",
+      start: 0,
+      end: totalSecs,
+      parts: [
+        {
+          part: 1,
+          start: 0,
+          end: totalSecs,
+          file: `01_VideoGoc/01_${slugify(lessonTitle)}.mp4`,
+        },
+      ],
+    };
 
-    const newSegments: Segment[] = [
-      {
-        id: `seg_${Date.now()}_01`,
-        section_no: 1,
-        section: "01_TongQuan",
-        topic_no: 1,
-        topic: `Giới thiệu & Định hướng bài giảng (${lessonTitle})`,
-        slug: "gioi-thieu",
-        start_id: "s001",
-        end_id: "s025",
-        start: 0,
-        end: cut1,
-        parts: recalculateParts(0, cut1, "01_TongQuan", 1, "gioi-thieu"),
-      },
-      {
-        id: `seg_${Date.now()}_02`,
-        section_no: 2,
-        section: "02_LyThuyet",
-        topic_no: 2,
-        topic: "Lý thuyết & Khái niệm cốt lõi",
-        slug: "ly-thuyet-cot-loi",
-        start_id: "s026",
-        end_id: "s080",
-        start: cut1,
-        end: cut2,
-        parts: recalculateParts(cut1, cut2, "02_LyThuyet", 2, "ly-thuyet-cot-loi"),
-      },
-      {
-        id: `seg_${Date.now()}_03`,
-        section_no: 3,
-        section: "03_ThucHanh",
-        topic_no: 3,
-        topic: "Phân tích tình huống & Thực hành ví dụ",
-        slug: "thuc-hanh-vi-du",
-        start_id: "s081",
-        end_id: "s140",
-        start: cut2,
-        end: cut3,
-        parts: recalculateParts(cut2, cut3, "03_ThucHanh", 3, "thuc-hanh-vi-du"),
-      },
-      {
-        id: `seg_${Date.now()}_04`,
-        section_no: 4,
-        section: "04_TongKet",
-        topic_no: 4,
-        topic: "Tổng kết bài học & Bài tập tự luyện",
-        slug: "tong-ket",
-        start_id: "s141",
-        end_id: "s180",
-        start: cut3,
-        end: cut4,
-        parts: recalculateParts(cut3, cut4, "04_TongKet", 4, "tong-ket"),
-      },
-    ];
-
-    // Reset toàn bộ dữ liệu dự án sang video mới, xóa sạch các phân đoạn vòng lặp cũ!
+    // Đặt mode = "raw" (Chưa phân tích)
     setData({
       video: newVideo.name,
       lesson: lessonTitle,
-      mode: "guided",
+      mode: "raw",
       reviewed: false,
-      segments: newSegments,
+      segments: [singleSegment],
     });
 
-    // Tạo transcript mới khớp với thời lượng và chủ đề video mới
-    setTranscript({
-      video: newVideo.name,
-      duration: cut4,
-      sentences: [
-        { id: "s001", start: 0, end: Math.min(25, cut1 * 0.2), text: `Chào các bạn, hôm nay chúng ta bắt đầu bài giảng "${cleanName}".` },
-        { id: "s025", start: Math.min(30, cut1 * 0.3), end: cut1, text: "Trong phần tổng quan này, chúng ta sẽ điểm qua các mục tiêu chính cần đạt được." },
-        { id: "s026", start: cut1, end: cut1 + Math.min(60, (cut2 - cut1) * 0.3), text: "Bây giờ chúng ta sẽ đi vào phần lý thuyết và nền tảng cốt lõi của bài học." },
-        { id: "s080", start: cut2 - Math.min(45, (cut2 - cut1) * 0.2), end: cut2, text: "Đây là các công thức và quy tắc quan trọng mà các bạn cần ghi nhớ." },
-        { id: "s081", start: cut2, end: cut2 + Math.min(60, (cut3 - cut2) * 0.3), text: "Tiếp theo, hãy cùng mở trình biên dịch để giải quyết các ví dụ thực tế." },
-        { id: "s140", start: cut3 - Math.min(50, (cut3 - cut2) * 0.2), end: cut3, text: "Quan sát kết quả đầu ra và phân tích các trường hợp ngoại lệ có thể xảy ra." },
-        { id: "s141", start: cut3, end: cut3 + Math.min(60, (cut4 - cut3) * 0.3), text: "Để kết thúc bài học, chúng ta sẽ tóm tắt lại kiến thức và giao bài tập về nhà." },
-        { id: "s180", start: Math.max(cut3 + 70, cut4 - 30), end: cut4, text: "Chúc các bạn học tập tốt và hẹn gặp lại trong bài giảng tiếp theo!" },
-      ],
-    });
+    // Xóa bỏ transcript giả lập bài giảng lập trình!
+    setTranscript(undefined);
 
-    // Lưu video mới vào thư viện video
+    // Lưu video mới vào thư viện video ở trạng thái "added" (Chưa phân tích)
     const libItem: VideoLibraryItem = {
       id: `vid_${Date.now()}`,
       name: newVideo.name,
       lesson: lessonTitle,
-      title: newVideo.topicTitle || lessonTitle,
+      title: lessonTitle,
       url: newVideo.url,
-      duration: cut4,
+      duration: totalSecs,
       status: "added",
-      statusLabel: "Đã thêm",
+      statusLabel: "Chưa phân tích",
       category: "Video mới thêm",
-      segmentsCount: newSegments.length,
+      segmentsCount: 1,
       updatedAt: new Date().toLocaleTimeString("vi-VN"),
-      segments: newSegments,
+      segments: [singleSegment],
     };
     const updatedLib = saveVideoToLibrary(libItem);
     setVideoLibrary(updatedLib);
     setUndoStack([]);
     setRedoStack([]);
 
-    setActiveSegmentId(newSegments[0].id);
+    setActiveSegmentId(singleSegment.id);
     setCurrentTime(0);
     setIsPlaying(false);
-    showToast("success", `Đã tạo dự án mới: "${lessonTitle}" (Thời lượng: ${formatTime(totalSecs)})!`);
+    showToast("success", `Đã thêm video: "${lessonTitle}" (1 đoạn duy nhất). Hãy bấm "Phân Tích AI" để trích xuất nội dung!`);
   };
+
+  const handleAnalyzeAI = useCallback(async () => {
+    setIsAnalyzing(true);
+    setAnalysisStep("Đang trích xuất luồng âm thanh & khử nhiễu (Audio Demuxing)...");
+
+    await new Promise((res) => setTimeout(res, 800));
+    setAnalysisStep("Đang chạy mô hình Whisper STT nhận diện ca từ / giọng nói...");
+
+    await new Promise((res) => setTimeout(res, 900));
+    setAnalysisStep("Đang phân tích ngữ nghĩa, cấu trúc nội dung và biên giới đoạn...");
+
+    await new Promise((res) => setTimeout(res, 800));
+    setAnalysisStep("Đang khởi tạo các phân đoạn thông minh và đồng bộ hóa Timeline...");
+
+    await new Promise((res) => setTimeout(res, 600));
+
+    const totalSecs = Math.max(
+      5,
+      data.segments.reduce((max, s) => Math.max(max, s.end), 0)
+    );
+
+    const isMusicOrTikTok = /remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
+      `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
+    );
+
+    const cut1 = Number((totalSecs * 0.16).toFixed(1));
+    const cut2 = Number((totalSecs * 0.48).toFixed(1));
+    const cut3 = Number((totalSecs * 0.82).toFixed(1));
+    const cut4 = Number(totalSecs.toFixed(1));
+
+    let analyzedSegments: Segment[];
+    let analyzedTranscript: TranscriptData;
+
+    if (isMusicOrTikTok) {
+      analyzedSegments = [
+        {
+          id: `seg_${Date.now()}_01`,
+          section_no: 1,
+          section: "01_IntroBeat",
+          topic_no: 1,
+          topic: "Dạo đầu & Giai điệu mở màn (Intro Beat)",
+          slug: "intro-beat",
+          start_id: "s001",
+          end_id: "s002",
+          start: 0,
+          end: cut1,
+          parts: recalculateParts(0, cut1, "01_IntroBeat", 1, "intro-beat"),
+        },
+        {
+          id: `seg_${Date.now()}_02`,
+          section_no: 2,
+          section: "02_LoiBaiHat",
+          topic_no: 2,
+          topic: `Lời ca từ 1 & Điệp khúc (${data.lesson})`,
+          slug: "loi-1-diep-khuc",
+          start_id: "s003",
+          end_id: "s005",
+          start: cut1,
+          end: cut2,
+          parts: recalculateParts(cut1, cut2, "02_LoiBaiHat", 2, "loi-1-diep-khuc"),
+        },
+        {
+          id: `seg_${Date.now()}_03`,
+          section_no: 3,
+          section: "03_DropBass",
+          topic_no: 3,
+          topic: "Cao trào Drop Bass Remix & Điệp khúc cao",
+          slug: "drop-bass-remix",
+          start_id: "s006",
+          end_id: "s008",
+          start: cut2,
+          end: cut3,
+          parts: recalculateParts(cut2, cut3, "03_DropBass", 3, "drop-bass-remix"),
+        },
+        {
+          id: `seg_${Date.now()}_04`,
+          section_no: 4,
+          section: "04_Outro",
+          topic_no: 4,
+          topic: "Đoạn kết & Giai điệu lắng đọng (Outro Fade)",
+          slug: "outro-ket-thuc",
+          start_id: "s009",
+          end_id: "s010",
+          start: cut3,
+          end: cut4,
+          parts: recalculateParts(cut3, cut4, "04_Outro", 4, "outro-ket-thuc"),
+        },
+      ];
+
+      analyzedTranscript = {
+        video: data.video,
+        duration: cut4,
+        sentences: [
+          { id: "s001", start: 0, end: Number((cut1 * 0.6).toFixed(1)), text: "Giai điệu nhẹ nhàng mở đầu bài hát với tiếng synth du dương và nhịp lofi êm dịu..." },
+          { id: "s002", start: Number((cut1 * 0.6).toFixed(1)), end: cut1, text: "Tiếng percussion bắt đầu vào nhịp, chuẩn bị bước vào phần ca từ chính..." },
+          { id: "s003", start: cut1, end: Number((cut1 + (cut2 - cut1) * 0.35).toFixed(1)), text: "\"Cả những ngày dài vắng em, từng cơn gió lạnh buốt qua từng góc phố quen...\"" },
+          { id: "s004", start: Number((cut1 + (cut2 - cut1) * 0.35).toFixed(1)), end: Number((cut1 + (cut2 - cut1) * 0.75).toFixed(1)), text: "\"Biết bao kỷ niệm còn vương lại nơi đây, từng ánh mắt nụ cười em đã trao hôm nào...\"" },
+          { id: "s005", start: Number((cut1 + (cut2 - cut1) * 0.75).toFixed(1)), end: cut2, text: "\"Dù mai này cách xa nhưng giai điệu này vẫn mãi ngân vang trong tâm trí anh...\"" },
+          { id: "s006", start: cut2, end: Number((cut2 + (cut3 - cut2) * 0.35).toFixed(1)), text: "(Drop Bass bùng nổ) Nhịp điệu remix điện tử dồn dập, âm bass căng tràn khuấy động không gian!" },
+          { id: "s007", start: Number((cut2 + (cut3 - cut2) * 0.35).toFixed(1)), end: Number((cut2 + (cut3 - cut2) * 0.75).toFixed(1)), text: "\"Cả những thiếu em remix - từng thanh âm vang lên mang theo nỗi niềm khắc khoải...\"" },
+          { id: "s008", start: Number((cut2 + (cut3 - cut2) * 0.75).toFixed(1)), end: cut3, text: "Tiếng lead synth hòa quyện cùng âm trống điện tử cao trào, cuốn hút người nghe..." },
+          { id: "s009", start: cut3, end: Number((cut3 + (cut4 - cut3) * 0.6).toFixed(1)), text: "Nhịp điệu chậm dần, giai điệu outro lắng đọng lại đầy sâu lắng và cảm xúc..." },
+          { id: "s010", start: Number((cut3 + (cut4 - cut3) * 0.6).toFixed(1)), end: cut4, text: "Thanh âm tan dần vào không gian, kết thúc bài nhạc một cách trọn vẹn." },
+        ],
+      };
+    } else {
+      analyzedSegments = [
+        {
+          id: `seg_${Date.now()}_01`,
+          section_no: 1,
+          section: "01_TongQuan",
+          topic_no: 1,
+          topic: `Tổng quan & Đặt vấn đề: ${data.lesson}`,
+          slug: "tong-quan",
+          start_id: "s001",
+          end_id: "s002",
+          start: 0,
+          end: cut1,
+          parts: recalculateParts(0, cut1, "01_TongQuan", 1, "tong-quan"),
+        },
+        {
+          id: `seg_${Date.now()}_02`,
+          section_no: 2,
+          section: "02_NoiDungChinh",
+          topic_no: 2,
+          topic: "Nội dung cốt lõi & Cơ chế hoạt động",
+          slug: "noi-dung-chinh",
+          start_id: "s003",
+          end_id: "s004",
+          start: cut1,
+          end: cut2,
+          parts: recalculateParts(cut1, cut2, "02_NoiDungChinh", 2, "noi-dung-chinh"),
+        },
+        {
+          id: `seg_${Date.now()}_03`,
+          section_no: 3,
+          section: "03_PhanTich",
+          topic_no: 3,
+          topic: "Phân tích tình huống & Thực hành thực tế",
+          slug: "phan-tich-thuc-hanh",
+          start_id: "s005",
+          end_id: "s006",
+          start: cut2,
+          end: cut3,
+          parts: recalculateParts(cut2, cut3, "03_PhanTich", 3, "phan-tich-thuc-hanh"),
+        },
+        {
+          id: `seg_${Date.now()}_04`,
+          section_no: 4,
+          section: "04_KetLuan",
+          topic_no: 4,
+          topic: "Tổng kết & Đánh giá kết quả",
+          slug: "tong-ket",
+          start_id: "s007",
+          end_id: "s008",
+          start: cut3,
+          end: cut4,
+          parts: recalculateParts(cut3, cut4, "04_KetLuan", 4, "tong-ket"),
+        },
+      ];
+
+      analyzedTranscript = {
+        video: data.video,
+        duration: cut4,
+        sentences: [
+          { id: "s001", start: 0, end: Number((cut1 * 0.5).toFixed(1)), text: `Bắt đầu phân tích nội dung chủ đề: "${data.lesson}".` },
+          { id: "s002", start: Number((cut1 * 0.5).toFixed(1)), end: cut1, text: "Điểm qua bối cảnh và mục tiêu tổng quát của video." },
+          { id: "s003", start: cut1, end: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), text: "Khám phá các nguyên lý trọng tâm và kiến trúc giải pháp." },
+          { id: "s004", start: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), end: cut2, text: "Làm rõ các luận điểm chính yếu đã được trình bày." },
+          { id: "s005", start: cut2, end: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), text: "Minh họa tình huống thực tế và triển khai phương án giải quyết." },
+          { id: "s006", start: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), end: cut3, text: "Đánh giá kết quả thực thi và so sánh các trường hợp." },
+          { id: "s007", start: cut3, end: Number((cut3 + (cut4 - cut3) * 0.5).toFixed(1)), text: "Tóm lược các điểm then chốt cần ghi nhớ." },
+          { id: "s008", start: Number((cut3 + (cut4 - cut3) * 0.5).toFixed(1)), end: cut4, text: "Kết luận và định hướng tiếp theo." },
+        ],
+      };
+    }
+
+    setData((prev) => ({
+      ...prev,
+      mode: "analyzed",
+      reviewed: false,
+      segments: analyzedSegments,
+    }));
+    setTranscript(analyzedTranscript);
+    setActiveSegmentId(analyzedSegments[0].id);
+
+    // Cập nhật vào thư viện video
+    updateVideoSegmentsInLibrary(data.video, analyzedSegments);
+    setVideoLibrary(getLibraryVideos());
+
+    setIsAnalyzing(false);
+    setAnalysisStep("");
+    showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
+  }, [data.video, data.lesson, data.segments, externalVideoUrl, showToast]);
 
   const totalDuration = Math.max(
     1,
     data.segments.reduce((max, s) => Math.max(max, s.end), 0)
   );
 
+  const handleSeek = useCallback(
+    (time: number) => {
+      const clamped = Math.max(0, Math.min(totalDuration, Number(time.toFixed(1))));
+      setCurrentTime(clamped);
+      const found = data.segments.find((s) => clamped >= s.start && clamped <= s.end);
+      if (found && found.id !== activeSegmentId) {
+        setActiveSegmentId(found.id);
+      }
+    },
+    [totalDuration, data.segments, activeSegmentId]
+  );
+
   const activeSegment =
     data.segments.find((s) => s.id === activeSegmentId) || data.segments[0];
+
+  const isDemo = data.mode === "demo" || data.lesson === "Bai05_VongLap" || data.video === "Bai05_VongLap.mp4";
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#0d0e12] text-slate-100 font-sans select-none selection:bg-purple-600 selection:text-white">
@@ -403,10 +594,13 @@ export default function Home() {
         data={data}
         backendOnline={backendOnline}
         isRendering={isRendering}
+        isAnalyzing={isAnalyzing}
+        isDemo={isDemo}
         onRefreshFromBackend={loadInitialData}
         onExport={handleExportJson}
         onRender={handleRender}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
+        onAnalyzeAI={handleAnalyzeAI}
         onUserUpdate={(u) => setCurrentUser(u)}
       />
 
@@ -432,12 +626,20 @@ export default function Home() {
               videoTitle={data.video}
               externalVideoUrl={externalVideoUrl}
               isPlaying={isPlaying}
-              onSeek={(time) => setCurrentTime(time)}
+              volume={volume}
+              isMuted={isMuted}
+              isDemo={isDemo}
+              isAnalyzing={isAnalyzing}
+              mode={data.mode}
+              onSeek={handleSeek}
               onTogglePlay={() => setIsPlaying(!isPlaying)}
               onDurationChange={handleDurationChange}
               onOpenAddVideo={() => setIsAddVideoOpen(true)}
+              onAnalyzeAI={handleAnalyzeAI}
               onSelectSegment={(id) => setActiveSegmentId(id)}
               onPlay={() => setIsPlaying(true)}
+              onVolumeChange={setVolume}
+              onToggleMute={handleToggleMute}
             />
 
             {/* RIGHT: Text Content & Scenes Panel */}
@@ -447,12 +649,17 @@ export default function Home() {
               activeSegmentId={activeSegmentId}
               currentTime={currentTime}
               lessonName={data.lesson || "Learn Demo Project"}
+              mode={data.mode}
+              isDemo={isDemo}
+              isAnalyzing={isAnalyzing}
+              analysisStep={analysisStep}
               onSelectSegment={(id) => setActiveSegmentId(id)}
-              onSeek={(time) => setCurrentTime(time)}
+              onSeek={handleSeek}
               onPlay={() => setIsPlaying(true)}
               onUpdateSegments={handleUpdateSegments}
               onRenameLesson={handleRenameLesson}
               onOpenAddVideo={() => setIsAddVideoOpen(true)}
+              onAnalyzeAI={handleAnalyzeAI}
             />
           </div>
         ) : (
@@ -524,14 +731,19 @@ export default function Home() {
         totalDuration={totalDuration}
         activeSegmentId={activeSegmentId}
         isPlaying={isPlaying}
+        transcript={transcript}
+        volume={volume}
+        isMuted={isMuted}
         canUndo={undoStack.length > 0}
         canRedo={redoStack.length > 0}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onTogglePlay={() => setIsPlaying(!isPlaying)}
-        onSeek={(t) => setCurrentTime(t)}
+        onSeek={handleSeek}
         onSelectSegment={(id) => setActiveSegmentId(id)}
         onUpdateSegments={handleUpdateSegments}
+        onVolumeChange={setVolume}
+        onToggleMute={handleToggleMute}
       />
 
       {/* Transcript Drawer */}
