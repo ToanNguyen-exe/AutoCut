@@ -4,17 +4,18 @@
 1. P02: Chống hiện tượng lặp từ vô tận ('kênh kênh kênh...') và ảo giác tiếng Hàn/ngoại ngữ rác (습니다, 로).
 2. P03: initial_prompt tích hợp từ điển thuật ngữ CNTT / Web3 / Blockchain chuyên sâu.
 3. P04: Cache transcript theo SHA-256 của file video/audio.
-4. Tầng hậu xử lý: Tự động chuẩn hóa thuật ngữ chuyên ngành (blockchain, Web3, tech stack, airdrop...).
+4. Tầng hậu xử lý: Tự động chuẩn hóa thuật ngữ chuyên ngành (blockchain, Web3, JavaScript, DOM...).
 5. Tự động vá tương thích PyAV 14+ (khử lỗi metadata_errors).
-6. Tinh chỉnh VAD & Hậu xử lý gộp các segment vụn không có dấu chấm câu.
+6. Bộ đo tiến độ thời gian thực (Real-time Progress Bar, Tốc độ xử lý x-realtime, Thời gian đã chạy & ETA dự kiến hoàn thành).
 """
 
 import hashlib
 import json
 import logging
-
+import sys
+import time
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Callable
 
 # Bản vá tương thích giữa faster-whisper và PyAV 14+ (bỏ metadata_errors)
 try:
@@ -32,10 +33,29 @@ except Exception:
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import build_initial_prompt
 from .config_loader import default_ai_config
-from .post_processor import post_process_sentence, post_process_transcript, merge_fragmented_segments
+from .post_processor import post_process_transcript, merge_fragmented_segments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("AutoCut.AI.Whisper")
+
+
+def format_duration(seconds: float) -> str:
+    """Định dạng số giây thành chuỗi MM:SS hoặc HH:MM:SS dễ đọc."""
+    if seconds < 0 or seconds == float("inf"):
+        return "--:--"
+    total_sec = int(round(seconds))
+    hrs, rem = divmod(total_sec, 3600)
+    mins, secs = divmod(rem, 60)
+    if hrs > 0:
+        return f"{hrs:02d}:{mins:02d}:{secs:02d}"
+    return f"{mins:02d}:{secs:02d}"
+
+
+def build_progress_bar(percent: float, width: int = 20) -> str:
+    """Tạo thanh tiến độ trực quan trên giao diện dòng lệnh."""
+    pct = max(0.0, min(100.0, percent))
+    filled = int(round(width * pct / 100.0))
+    return "█" * filled + "░" * (width - filled)
 
 
 def compute_file_sha256(file_path: str, chunk_size: int = 65536) -> str:
@@ -91,6 +111,7 @@ class WhisperTranscriber:
     def _get_model(self):
         """Khởi tạo mô hình Whisper (lazy loading)."""
         if self._model is None:
+            t0 = time.perf_counter()
             from faster_whisper import WhisperModel
             import ctranslate2
 
@@ -114,28 +135,84 @@ class WhisperTranscriber:
                 device=chosen_device,
                 compute_type=chosen_compute
             )
-            logger.info("Đã tải xong model Whisper.")
+            load_sec = time.perf_counter() - t0
+            logger.info(f"Đã tải xong model Whisper trong {load_sec:.2f}s.")
         return self._model
 
     def get_cache_path(self, file_hash: str) -> Path:
         """Đường dẫn tệp cache theo mã hash SHA-256."""
         return Path(self.cache_dir) / f"{file_hash}_transcript.json"
 
+    def _consume_segments_with_progress(
+        self,
+        segments_gen,
+        total_duration: float,
+        progress_callback: Optional[Callable[[dict], None]] = None
+    ) -> list:
+        """Duyệt từng segment từ Whisper và cập nhật thanh tiến độ + ETA theo thời gian thực."""
+        raw_segments = []
+        start_wall = time.perf_counter()
+        last_print_wall = 0.0
+
+        for seg in segments_gen:
+            raw_segments.append(seg)
+            now_wall = time.perf_counter()
+            elapsed = max(0.001, now_wall - start_wall)
+
+            # Tránh I/O quá dày: chỉ cập nhật hiển thị tối đa 2 lần/giây
+            if now_wall - last_print_wall < 0.5 and (not total_duration or seg.end < total_duration):
+                continue
+            last_print_wall = now_wall
+
+            if total_duration and total_duration > 0:
+                pct = min(100.0, (seg.end / total_duration) * 100.0)
+                speed_x = seg.end / elapsed
+                remaining_video_sec = max(0.0, total_duration - seg.end)
+                eta_sec = remaining_video_sec / speed_x if speed_x > 0 else 0.0
+                bar = build_progress_bar(pct)
+
+                status_line = (
+                    f"\r[Whisper STT] [{bar}] {pct:5.1f}% "
+                    f"({seg.end:.0f}s/{total_duration:.0f}s) | "
+                    f"Tốc độ: {speed_x:.1f}x | "
+                    f"Đã chạy: {format_duration(elapsed)} | "
+                    f"Còn lại (ETA): ~{format_duration(eta_sec)}   "
+                )
+                sys.stdout.write(status_line)
+                sys.stdout.flush()
+
+                if progress_callback:
+                    progress_callback({
+                        "stage": "whisper_stt",
+                        "percent": round(pct, 1),
+                        "elapsed_sec": round(elapsed, 2),
+                        "eta_sec": round(eta_sec, 2),
+                        "speed_x": round(speed_x, 2)
+                    })
+
+        total_elapsed = time.perf_counter() - start_wall
+        if total_duration and total_duration > 0:
+            avg_speed = total_duration / max(0.001, total_elapsed)
+            bar = build_progress_bar(100.0)
+            sys.stdout.write(
+                f"\r[Whisper STT] [{bar}] 100.0% "
+                f"({total_duration:.0f}s/{total_duration:.0f}s) | "
+                f"Tốc độ TB: {avg_speed:.1f}x | "
+                f"Hoàn thành trong: {format_duration(total_elapsed)} ({total_elapsed:.2f}s)      \n"
+            )
+            sys.stdout.flush()
+
+        return raw_segments
+
     def transcribe(
         self,
         media_path: str,
         outline_text: Optional[str] = None,
         force_recompute: bool = False,
-        output_file: Optional[str] = None
+        output_file: Optional[str] = None,
+        progress_callback: Optional[Callable[[dict], None]] = None
     ) -> TranscriptOutput:
-        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1.
-
-        Args:
-            media_path: Đường dẫn tệp video hoặc audio.
-            outline_text: Văn bản đề cương (nếu có) để tạo initial_prompt.
-            force_recompute: Bỏ qua cache và chạy lại Whisper.
-            output_file: Đường dẫn lưu tệp transcript.json.
-        """
+        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1."""
         media_p = Path(media_path)
         if not media_p.exists():
             raise FileNotFoundError(f"Không tìm thấy tệp phương tiện: {media_path}")
@@ -146,16 +223,17 @@ class WhisperTranscriber:
         cache_file = self.get_cache_path(file_hash)
 
         if not force_recompute and cache_file.exists():
+            t_cache = time.perf_counter()
             logger.info(f"[CACHE HIT] Đã tìm thấy transcript có sẵn cho hash {file_hash[:8]}... Đang tải từ cache.")
             with open(cache_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             transcript_obj = TranscriptOutput.model_validate(data)
-            # Luôn tự động chuẩn hóa làm sạch ngay cả khi nạp từ cache cũ
             transcript_obj = post_process_transcript(transcript_obj)
 
             if output_file:
                 with open(output_file, "w", encoding="utf-8") as f:
                     f.write(transcript_obj.model_dump_json(indent=2, exclude_none=True))
+            logger.info(f"Đã tải và chuẩn hóa dữ liệu từ cache trong {time.perf_counter() - t_cache:.2f}s.")
             return transcript_obj
 
         logger.info(f"[CACHE MISS] Chưa có cache cho {media_p.name}. Tiến hành bóc băng với Whisper...")
@@ -187,9 +265,15 @@ class WhisperTranscriber:
             initial_prompt=initial_prompt
         )
 
+        stt_start_wall = time.perf_counter()
         try:
             segments_gen, info = model.transcribe(str(media_p), **transcribe_kwargs)
-            raw_segments = list(segments_gen)
+            media_duration = float(info.duration) if info and info.duration else 0.0
+            raw_segments = self._consume_segments_with_progress(
+                segments_gen,
+                total_duration=media_duration,
+                progress_callback=progress_callback
+            )
         except RuntimeError as e:
             if ("cublas" in str(e).lower() or "cudnn" in str(e).lower() or "cuda" in str(e).lower()) and self.device in ("auto", "cuda"):
                 logger.warning(
@@ -201,17 +285,26 @@ class WhisperTranscriber:
                 self.compute_type = "int8"
                 self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
                 segments_gen, info = self._model.transcribe(str(media_p), **transcribe_kwargs)
-                raw_segments = list(segments_gen)
+                media_duration = float(info.duration) if info and info.duration else 0.0
+                raw_segments = self._consume_segments_with_progress(
+                    segments_gen,
+                    total_duration=media_duration,
+                    progress_callback=progress_callback
+                )
             else:
                 raise
 
+        stt_elapsed = time.perf_counter() - stt_start_wall
         total_segments = len(raw_segments)
-        logger.info(f"Whisper hoàn thành: nhận diện được {total_segments} raw segments.")
+        logger.info(
+            f"Whisper hoàn thành trong {format_duration(stt_elapsed)} ({stt_elapsed:.2f}s): "
+            f"nhận diện được {total_segments} raw segments."
+        )
 
         # Bước 4: Hậu xử lý gộp các đoạn bị tách vụn và chuẩn hóa mã định danh câu Sxxxx
         merged_items = merge_fragmented_segments(raw_segments)
         total_merged = len(merged_items)
-        logger.info(f"Sau khi gộp câu vụn: còn lại {total_merged} câu hoàn chỉnh (tối ưu từ {total_segments} segments).")
+        logger.info(f"Sau khi hậu xử lý: {total_merged} câu (tối ưu từ {total_segments} segments).")
 
         digit_count = 5 if total_merged > 9999 else 4
         sentences: List[Sentence] = []

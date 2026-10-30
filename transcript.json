@@ -1,1602 +1,5100 @@
 {
-  "video": "web3-lecture.mp4",
-  "duration": 1479.46,
+  "video": "javascript.mp4",
+  "duration": 3427.57,
   "sentences": [
     {
       "id": "S0001",
-      "start": 5.04,
-      "end": 10.66,
-      "text": "Hãy subscribe cho kênh Ghiền Mì Gõ để không bỏ lỡ những video hấp dẫn."
+      "start": 4.3,
+      "end": 9.3,
+      "text": "JavaScript là ngôn ngữ lập trình luôn nằm trong top bảng xếp hạng với mức độ phổ biến."
     },
     {
       "id": "S0002",
-      "start": 37.2,
-      "end": 41.96,
-      "text": "Bạn member, team member cũng là của builder mà còn rất trẻ, nó sẽ đi number 3 thôi."
+      "start": 9.3,
+      "end": 14.3,
+      "text": "Anh em mà biết sử dụng JavaScript có thể viết được nhiều loại app từ desktop, web app đến mobile."
     },
     {
       "id": "S0003",
-      "start": 42.0,
-      "end": 44.96,
-      "text": "Hôm nay chúng ta sẽ được gặp thêm một cái nhân vật mới trong kênh của mình."
+      "start": 14.3,
+      "end": 20.3,
+      "text": "Và cộng đồng các lập trình viên biết sử dụng ngôn ngữ JavaScript cũng rất lớn và họ đã cùng nhau xây dựng một kho thư viện khổng lồ."
     },
     {
       "id": "S0004",
-      "start": 45.0,
-      "end": 45.68,
-      "text": "Hello mọi người!"
+      "start": 20.3,
+      "end": 25.3,
+      "text": "Và chắc chắn rồi, anh em chúng ta có thể tận dụng cái nguồn thư viện này để phục vụ cho công việc copy paste của chúng ta."
     },
     {
       "id": "S0005",
-      "start": 45.72,
-      "end": 52.0,
-      "text": "Và này tên là Bich Trần cũng đang muốn trở thành một YouTuber về education về vlog trên dev giống như mình thôi."
+      "start": 26.3,
+      "end": 31.8,
+      "text": "Và có một điều rất quan trọng đó là nhu cầu tuyển dụng với ngôn ngữ JavaScript ở Việt Nam rất là lớn."
     },
     {
       "id": "S0006",
-      "start": 52.48,
-      "end": 59.08,
-      "text": "Mọi người có thể coi cái kênh của Bich ở dưới và Bich sẽ làm những nội dung về Solana lớp trên và ngôn ngữ Rust."
+      "start": 32.0,
+      "end": 34.08,
+      "text": "Có thể coi là dẫn đầu thị trường Việt Nam."
     },
     {
       "id": "S0007",
-      "start": 59.12,
-      "end": 61.84,
-      "text": "Bich là một người developer trong hàng Rust trên khá là thành công."
+      "start": 34.08,
+      "end": 37.5,
+      "text": "Do vậy, anh em nào mà biết về JavaScript thì sẽ không lo thất nghiệp."
     },
     {
       "id": "S0008",
-      "start": 61.84,
-      "end": 68.12,
-      "text": "Và ở trong team member của mình, Bich cũng rất là một người đó và thật sự giỏi và có thể làm việc trên nhiều lĩnh vực khác nhau."
+      "start": 37.7,
+      "end": 39.6,
+      "text": "Nghe qua đã hấp dẫn chưa anh em nhỉ?"
     },
     {
       "id": "S0009",
-      "start": 68.14,
-      "end": 75.64,
-      "text": "Vậy thì khi mà chúng ta làm việc với một cái rock vibe, hay là chúng ta muốn tìm kiếm một công việc ở trong thị trường lúc chiến á."
+      "start": 39.6,
+      "end": 44.2,
+      "text": "Và trong video ngày hôm nay, mình sẽ làm một bài giảng nhập môn về ngôn ngữ JavaScript."
     },
     {
       "id": "S0010",
-      "start": 75.66,
-      "end": 76.92,
-      "text": "Thì câu hỏi quan trọng nhất?"
+      "start": 44.4,
+      "end": 45.6,
+      "text": "Dành cho các anh em mới bắt đầu."
     },
     {
       "id": "S0011",
-      "start": 76.92,
-      "end": 77.86,
-      "text": "Em nghĩ đấy là gì?"
+      "start": 66.6,
+      "end": 70.11,
+      "text": "OK anh em, mục lục của video bài giảng này thì sẽ gồm một số nội dung sau."
     },
     {
       "id": "S0012",
-      "start": 77.88,
-      "end": 86.84,
-      "text": "Quan trọng nhất, em nghĩ là cơ hội xem cơ hội mấy cơ hội là về cái tiền quá, quan trọng là tiền anh chọn mình phải có tiền."
+      "start": 70.11,
+      "end": 73.2,
+      "text": "Đầu tiên, mình sẽ hướng dẫn anh em cách thiết lập môi trường này."
     },
     {
       "id": "S0013",
-      "start": 86.86,
-      "end": 90.82,
-      "text": "Khi mà mình làm nó phải có tiền thì chúng ta mới có động lực."
+      "start": 73.4,
+      "end": 77.7,
+      "text": "Sau đó, chúng ta sẽ bắt đầu làm quen với một số khái niệm cơ bản trong lập trình, ví dụ như là biến này."
     },
     {
       "id": "S0014",
-      "start": 90.82,
-      "end": 99.82,
-      "text": "Vậy á, thì blockchain nào chúng ta có thể dễ dàng gọi là tham gia hackathon, tham gia thi và blockchain nó sẽ airdrop cho chúng ta tiền á."
+      "start": 77.7,
+      "end": 83.96,
+      "text": "Nhập xuất dữ liệu, các kiểu dữ liệu như thế nào, có các phép toán gì, rồi thì các cấu trúc điều khiển."
     },
     {
       "id": "S0015",
-      "start": 99.82,
-      "end": 104.82,
-      "text": "Thì blockchain nào là xứng đáng nhất để chúng ta có thể học làm việc thì phần đầu tiên của video này."
+      "start": 83.96,
+      "end": 90.28,
+      "text": "Sau đó, mình sẽ đi sang một số kiểu dữ liệu nâng cao như là Object này, Array, String, Function."
     },
     {
       "id": "S0016",
-      "start": 104.82,
-      "end": 109.82,
-      "text": "Chúng ta sẽ nói về cái hệ sinh thái với blockchain hiện tại có những blockchain nào nó hỗ trợ tốt cho blockchain ở Việt Nam."
+      "start": 90.3,
+      "end": 93.44,
+      "text": "Rồi đến là một số cơ chế DOM và tính bất đồng bộ."
     },
     {
       "id": "S0017",
-      "start": 110.82,
-      "end": 114.82,
-      "text": "Focus vào nó, học ngành cái ngôn ngữ nào hay là những tech stack nào nó phù hợp với blockchain."
+      "start": 93.44,
+      "end": 97.48,
+      "text": "Nhìn chung là cũng nhiều đấy, nhưng mà mình sẽ cố gắng hết sức."
     },
     {
       "id": "S0018",
-      "start": 114.82,
-      "end": 118.62,
-      "text": "Chúng ta bắt đầu trở thành một builder trong nào Web3, video này sẽ chia nó thành 3 phần."
+      "start": 97.5,
+      "end": 102.18,
+      "text": "Và thâu tóm được tinh hoa của ngôn ngữ này trong khoảng 1 giờ đồng hồ đổ lại."
     },
     {
       "id": "S0019",
-      "start": 118.62,
-      "end": 119.58,
-      "text": "Blockchain nào?"
+      "start": 102.18,
+      "end": 103.88,
+      "text": "Nghe cũng có vẻ hơi lâu đấy."
     },
     {
       "id": "S0020",
-      "start": 120.14,
-      "end": 122.9,
-      "text": "Ngôn ngữ gì và tech stack của blockchain đó là gì?"
+      "start": 103.88,
+      "end": 108.67,
+      "text": "Nhưng mà anh em cứ hình dung nó cũng chỉ ngang một tiết học mà anh em học ở trên trường thôi nhé."
     },
     {
       "id": "S0021",
-      "start": 122.94,
-      "end": 126.7,
-      "text": "Bây giờ chúng ta sẽ bắt đầu review vào video này thôi, đầu tiên là nói về blockchain."
+      "start": 108.67,
+      "end": 110.64,
+      "text": "Nghĩ vậy cho nó thoải mái, đúng không ạ?"
     },
     {
       "id": "S0022",
-      "start": 126.74,
-      "end": 134.46,
-      "text": "Đầu tiên là cái độ phổ biến của blockchain."
+      "start": 111.65,
+      "end": 113.87,
+      "text": "Rồi, chúng ta bắt đầu luôn để tiết kiệm thời gian nhé!"
     },
     {
       "id": "S0023",
-      "start": 134.82,
-      "end": 142.26,
-      "text": "Blockchain có thực sự ủng hộ những Web3 developer tại Việt Nam hay không bằng cách mình nhìn vào cộng đồng của blockchain, ví dụ như Ethereum cộng đồng rất lớn rồi."
+      "start": 113.87,
+      "end": 116.37,
+      "text": "Thì JavaScript nó cũng giống như các ngôn ngữ lập trình khác."
     },
     {
       "id": "S0024",
-      "start": 142.26,
-      "end": 148.22,
-      "text": "Nhưng có những blockchain khác, ngoài Ethereum ra ví dụ như Solana."
+      "start": 116.43,
+      "end": 120.63,
+      "text": "Nó cần có một môi trường để mà hoạt động, tiếng Anh gọi là Runtime Environment."
     },
     {
       "id": "S0025",
-      "start": 148.24,
-      "end": 157.82,
-      "text": "Thì tại Việt Nam nó có Solana Superteam, bên Polkadot thì nó có OpenGuild, còn Ton thì hình như cũng có tuyển ở Việt Nam đó có Ton."
+      "start": 120.63,
+      "end": 123.93,
+      "text": "Môi trường thì thực ra nó cũng chính là chương trình máy tính."
     },
     {
       "id": "S0026",
-      "start": 160.24,
-      "end": 166.45,
-      "text": "Tôi, Sui là cùng có hỗ trợ tại Việt Nam, suy nữa dạ, Sui Hub."
+      "start": 124.01,
+      "end": 128.87,
+      "text": "Và cái chương trình này nó hiểu được các đoạn mã được viết bằng ngôn ngữ lập trình, OK."
     },
     {
       "id": "S0027",
-      "start": 166.45,
-      "end": 169.6,
-      "text": "Đúng rồi, Sui luôn, VBI Academy."
+      "start": 128.87,
+      "end": 131.25,
+      "text": "Giờ thì nói kỹ hơn về ngôn ngữ JavaScript đi."
     },
     {
       "id": "S0028",
-      "start": 169.6,
-      "end": 177.72,
-      "text": "Tụi mình, tức là hai tổng bài nào đều làm tại VBI hết, mọi người có thể ấn trên trang VBI để xem thì VBI luôn có thể hợp tác qua những bên."
+      "start": 131.25,
+      "end": 135.73,
+      "text": "Thì nó ban đầu được sinh ra là để phục vụ cho cái môi trường trình duyệt web thôi."
     },
     {
       "id": "S0029",
-      "start": 177.74,
-      "end": 184.2,
-      "text": "Polygon người ta rất là hỗ trợ bên phía của Việt Nam mình khi người ta muốn hỗ trợ thì người ta mới hợp tác với VBI của đội mình."
+      "start": 135.77,
+      "end": 136.34,
+      "text": "Web browser."
     },
     {
       "id": "S0030",
-      "start": 184.22,
-      "end": 190.08,
-      "text": "Để mở ra những cái hackathon này giống như Sui hay là những cái hackathon ở Việt Nam thì mọi người hãy follow VBI."
+      "start": 136.34,
+      "end": 142.95,
+      "text": "Nhưng mà ngày nay thì JavaScript đã được mở rộng ra ở trên rất nhiều các loại môi trường khác nữa, trong đó nổi bật nhất là thằng Node.js."
     },
     {
       "id": "S0031",
-      "start": 190.1,
-      "end": 197.12,
-      "text": "Rồi thứ hai là chúng ta cũng phải xét theo cái độ nổi tiếng của blockchain đó trong cộng đồng nước ngoài nữa."
+      "start": 142.99,
+      "end": 149.17,
+      "text": "Tuy nhiên, ở mức độ nhập môn thì mình sẽ chỉ hướng dẫn cho anh em viết code JavaScript ở trên môi trường trình duyệt thôi."
     },
     {
       "id": "S0032",
-      "start": 197.12,
-      "end": 202.08,
-      "text": "Rồi thứ hai là chúng ta cũng phải xét theo cái độ nổi tiếng của blockchain đó trong cộng đồng nước ngoài nữa."
+      "start": 149.21,
+      "end": 152.76,
+      "text": "Kiểu như chúng ta sẽ viết những app nhỏ nhỏ chạy trên trình duyệt web."
     },
     {
       "id": "S0033",
-      "start": 202.08,
-      "end": 207.88,
-      "text": "Thì để xét đến cái độ nổi tiếng, chúng ta có thể truy cập vào một website là DefiLlama."
+      "start": 152.76,
+      "end": 153.27,
+      "text": "Suýt quên!"
     },
     {
       "id": "S0034",
-      "start": 207.92,
-      "end": 216.52,
-      "text": "Khi mà chúng ta vào DefiLlama, chúng ta sẽ coi ở phần Chain, cái đó bấm vào phần Chain này thì chúng ta hãy coi phần Total Value Locked."
+      "start": 153.27,
+      "end": 155.09,
+      "text": "Anh em đợi mình lắp cái webcam đã."
     },
     {
       "id": "S0035",
-      "start": 216.56,
-      "end": 219.28,
-      "text": "Tại vì khi mà chúng ta coi cái Total Value Locked rồi này."
+      "start": 155.79,
+      "end": 163.21,
+      "text": "Bình thường mình không giảng bài thì mình sẽ bỏ cái cam ra, bởi vì nó bị che mất phần viền trên nhìn rất khó chịu."
     },
     {
       "id": "S0036",
-      "start": 219.28,
-      "end": 227.04,
-      "text": "Thì chúng ta sẽ biết được là cái hệ sinh thái đó đang được những nhà đầu tư người ta nhắm tới để người ta sử dụng hay có dApp đấy không?"
+      "start": 167.22,
+      "end": 168.86,
+      "text": "Alo, alo, alo."
     },
     {
       "id": "S0037",
-      "start": 227.04,
-      "end": 228.16,
-      "text": "Đúng không?"
+      "start": 168.86,
+      "end": 170.74,
+      "text": "Alo 1 2 3 4 alo."
     },
     {
       "id": "S0038",
-      "start": 228.32,
-      "end": 232.56,
-      "text": "Thì hiện tại nếu mà các bạn nhìn, Ethereum và Solana đã quản mở ở đơn top đầu luôn."
+      "start": 171.38,
+      "end": 176.46,
+      "text": "Thì ở trong môi trường trình duyệt web, anh em cần phải biết thêm một cái ngôn ngữ nữa được gọi là HTML."
     },
     {
       "id": "S0039",
-      "start": 233.44,
-      "end": 242.12,
-      "text": "Nhưng có một cái khi mình nói đến ngôn ngữ, Ethereum là nó sử dụng ngôn ngữ Solidity, mình có khóa Solidity rồi."
+      "start": 176.58,
+      "end": 178.16,
+      "text": "Hay nói thuần Việt là H-T-M-L đi."
     },
     {
       "id": "S0040",
-      "start": 242.16,
-      "end": 245.8,
-      "text": "Thì ngay lập tức chúng ta biết và khi mà chúng ta vào học bài, chúng ta mới biết chúng ta nên học cái gì thôi."
+      "start": 178.16,
+      "end": 180.32,
+      "text": "Cái này cũng dễ học thôi, anh em yên tâm nha."
     },
     {
       "id": "S0041",
-      "start": 245.8,
-      "end": 252.0,
-      "text": "Tại vì sao mình hướng dẫn các bạn Solidity từ lớp cơ bản, xong rồi tới Ethereum và Solidity thì tại vì nó là cái đầu tiên."
+      "start": 180.34,
+      "end": 186.08,
+      "text": "Nôm na thì nó dùng để dựng phần khung của trang văn bản mà hiển thị lên trình duyệt web, và mình đã có hẳn video riêng."
     },
     {
       "id": "S0042",
-      "start": 252.56,
-      "end": 255.2,
-      "text": "Và cộng đồng rất là lớn, nó cũng dễ học nữa."
+      "start": 186.1,
+      "end": 187.31,
+      "text": "Để nói về cái ngôn ngữ HTML."
     },
     {
       "id": "S0043",
-      "start": 256.28,
-      "end": 261.52,
-      "text": "Nếu mà các bạn đã học qua trường để học ví dụ như biết hợp kiến trúc để học á hoặc là học JavaScript."
+      "start": 187.31,
+      "end": 189.72,
+      "text": "HTML này anh em nào chưa biết thì có thể xem lại nha."
     },
     {
       "id": "S0044",
-      "start": 261.72,
-      "end": 263.64,
-      "text": "Thì lúc mà học Solidity nó cũng rất là đơn giản."
+      "start": 189.72,
+      "end": 192.68,
+      "text": "Thì trong video đấy, mình cũng đã hướng dẫn cách setup môi trường luôn."
     },
     {
       "id": "S0045",
-      "start": 264.36,
-      "end": 267.76,
-      "text": "Khi mà chúng ta học được Solidity rồi thì chúng ta sẽ có cái base, cái nền tảng này."
+      "start": 193.0,
+      "end": 199.94,
+      "text": "Tóm tắt nhanh lại thì anh em cần cài cho mình 3 cái công cụ: 1 là VS Code để mà soạn thảo code này, 2 là một trình duyệt web."
     },
     {
       "id": "S0046",
-      "start": 267.8,
-      "end": 272.12,
-      "text": "Để nó học những blockchain khác, ví dụ là Solana, Sui hay là Ton."
+      "start": 199.96,
+      "end": 201.7,
+      "text": "Ở đây mình chọn Google Chrome."
     },
     {
       "id": "S0047",
-      "start": 272.12,
-      "end": 277.12,
-      "text": "Đó là những blockchain rất là thịnh hành, nó đang là những cái blockchain chạy đầu xu hướng."
+      "start": 201.7,
+      "end": 207.92,
+      "text": "Thứ ba là một plugin của VS Code, đó là Live Server, nôm na là để liên kết cái VS Code với trình duyệt web."
     },
     {
       "id": "S0048",
-      "start": 277.12,
-      "end": 285.12,
-      "text": "Hay là ví dụ như chúng ta có những cái lúc kia layer 2, blockchain được build trên Ethereum thì nó cũng được viết bằng cái ngôn ngữ là Solidity."
+      "start": 208.56,
+      "end": 214.82,
+      "text": "OK, anh em nào nghe những thứ vừa rồi mà cảm thấy nó lạ lạ thì tốt nhất là nên xem lại cái video cũ của mình về HTML đã nhé."
     },
     {
       "id": "S0049",
-      "start": 285.12,
-      "end": 290.12,
-      "text": "Cho nên khi mà chúng ta học về Web3 bên lớp chain và bên lớp khác này."
+      "start": 214.82,
+      "end": 221.26,
+      "text": "Rồi, ở đây mình đã tạo sẵn 1 file văn bản HTML và các đoạn code JavaScript của chúng ta sẽ được nhúng vào cái văn bản này."
     },
     {
       "id": "S0050",
-      "start": 291.12,
-      "end": 294.12,
-      "text": "Làm một Web3 đó chúng ta phải biết build nguyên một dApp luôn."
+      "start": 221.28,
+      "end": 223.15,
+      "text": "Thông qua cặp thẻ là script nha!"
     },
     {
       "id": "S0051",
-      "start": 295.12,
-      "end": 298.12,
-      "text": "Bạn có thể build cả roll-up, cả smart contract ở trên nhiều chain khác nhau."
+      "start": 223.15,
+      "end": 226.94,
+      "text": "Đoạn code của anh em sẽ viết vào giữa cặp thẻ mở và thẻ đóng này."
     },
     {
       "id": "S0052",
-      "start": 298.12,
-      "end": 303.36,
-      "text": "Nếu mà chúng ta chỉ muốn trở thành một lập trình viên Web3 thì cái đầu tiên chúng ta nên học là làm Web2."
+      "start": 226.98,
+      "end": 232.88,
+      "text": "Rồi, mình sẽ bắt đầu với một câu lệnh JavaScript đơn giản đầu tiên nha, đó là in 1 dòng thông báo ra phần trang web."
     },
     {
       "id": "S0053",
-      "start": 304.08,
-      "end": 312.44,
-      "text": "Các bạn muốn biết cách để làm Web3 thì nên học Web2 trước, nếu mình chưa như chẳng hiểu gì thì chúng ta cần phải học HTML và JavaScript."
+      "start": 232.92,
+      "end": 238.1,
+      "text": "Thì anh em gõ cho mình document.write, sau đó là 1 dòng thông báo, ví dụ như mình viết Kimochi."
     },
     {
       "id": "S0054",
-      "start": 313.0,
-      "end": 314.12,
-      "text": "Rồi."
+      "start": 238.1,
+      "end": 240.34,
+      "text": "Anh em nhớ bọc nó vào 1 cặp dấu nháy nha."
     },
     {
       "id": "S0055",
-      "start": 315.96,
-      "end": 323.52,
-      "text": "Học HTML, CSS, framework, học framework và framework phổ biến nhất hiện tại mà hầu hết tất cả những dApp đều dùng là React."
+      "start": 240.38,
+      "end": 245.7,
+      "text": "Rồi anh em bấm Ctrl + S, đó thì cái dòng dữ liệu của chúng ta đã được in ra phần trang web."
     },
     {
       "id": "S0056",
-      "start": 324.36,
-      "end": 326.56,
-      "text": "Hoặc là chúng ta học React và chúng ta học Next.js."
+      "start": 245.72,
+      "end": 253.44,
+      "text": "Ngoài ra, nếu anh em không muốn in dữ liệu ra trang web thì anh em cũng có thể chuyển nó vào phần console thông qua cái lệnh là console.log."
     },
     {
       "id": "S0057",
-      "start": 326.56,
-      "end": 333.28,
-      "text": "Rồi, nếu chúng ta có thời gian, chúng ta không quá gấp trong việc mà chúng ta phải chuyển đổi thành web hợp thức."
+      "start": 253.46,
+      "end": 253.99,
+      "text": "Đúng không ạ?"
     },
     {
       "id": "S0058",
-      "start": 333.28,
-      "end": 338.36,
-      "text": "Chúng ta nên biết cách build backend, để chúng ta cũng có thể viết backend bằng chính ngôn ngữ JavaScript luôn."
+      "start": 253.99,
+      "end": 256.38,
+      "text": "Console là gì, có thể hiểu nó là một môi trường dòng lệnh."
     },
     {
       "id": "S0059",
-      "start": 338.36,
-      "end": 342.44,
-      "text": "Thì khi chúng ta biết backend rồi và chúng ta học thêm smart contract vì chúng ta áp dụng vô những cái dApp."
+      "start": 256.38,
+      "end": 258.52,
+      "text": "Dữ liệu khi mà đẩy ra console thì thường để phục vụ."
     },
     {
       "id": "S0060",
-      "start": 342.44,
-      "end": 348.12,
-      "text": "Chúng ta sẽ biết là đã cần gì để làm ở frontend, nghĩa là nếu các bạn coi cái video này."
+      "start": 258.54,
+      "end": 260.8,
+      "text": "...mục đích là phân tích cũng như là quan sát."
     },
     {
       "id": "S0061",
-      "start": 348.12,
-      "end": 351.48,
-      "text": "Của mình có thể hiểu được là on-chain và off-chain là gì đó, nhưng mà nếu không hiểu đó."
+      "start": 260.8,
+      "end": 265.32,
+      "text": "Để mà mở được console trên trình duyệt thì anh em bấm cho mình F12 nhá, chọn tab là console."
     },
     {
       "id": "S0062",
-      "start": 351.52,
-      "end": 355.6,
-      "text": "Các bạn hãy ngay lập tức vô khóa học blockchain cơ bản để xem on-chain và off-chain nó là gì."
+      "start": 265.34,
+      "end": 267.02,
+      "text": "OK, bây giờ mình chạy lại cho anh em xem này."
     },
     {
       "id": "S0063",
-      "start": 355.6,
-      "end": 362.56,
-      "text": "Thì chúng ta sẽ biết được là cái gì nên để cho on-chain, cái gì nên để off-chain và cái gì nên để ở decentralized storage."
+      "start": 268.56,
+      "end": 270.88,
+      "text": "Đó, lúc này nó đã hiển thị Kimochi ở đây."
     },
     {
       "id": "S0064",
-      "start": 362.56,
-      "end": 371.32,
-      "text": "Khi mà chúng ta biết được những điều đó thì việc mà chúng ta học nó sẽ đơn giản hơn, và nếu một lộ trình của một lập trình viên trọn vẹn hoàn toàn."
+      "start": 270.88,
+      "end": 277.93,
+      "text": "Bây giờ mình sẽ giới thiệu với anh em về khái niệm biến, thuật ngữ tiếng Anh của nó là variable."
     },
     {
       "id": "S0065",
-      "start": 371.36,
-      "end": 382.36,
-      "text": "Thì giống như từ nãy giờ mình nói, sẽ là HTML, CSS, JavaScript và chúng ta học thêm backend, bây giờ nói về ngôn ngữ."
+      "start": 277.93,
+      "end": 286.88,
+      "text": "Có thể hiểu nó là một cái để lưu trữ dữ liệu tạm thời trong khi mà chương trình đang hoạt động và nó cần có 1 cái tên nha."
     },
     {
       "id": "S0066",
-      "start": 382.4,
-      "end": 389.84,
-      "text": "Ở JavaScript đây chắc chắn hơn chúng ta phải biết TypeScript, tại sao các bạn nên học TypeScript, tại vì TypeScript các bạn học xong thằng Solidity nó cũng giống."
+      "start": 286.88,
+      "end": 293.02,
+      "text": "Ví dụ mình muốn tạo ra một biến để lưu trữ thông tin về độ tuổi của 1 em gái nào đấy chẳng hạn."
     },
     {
       "id": "S0067",
-      "start": 391.84,
-      "end": 398.84,
-      "text": "Khá là giống có syntax, tiếp theo nữa là những ngôn ngữ mà viết backend phổ biến hiện tại, các bạn cũng có thể học thêm thằng Python."
+      "start": 293.04,
+      "end": 296.66,
+      "text": "Thì anh em có thể gõ lệnh như sau: var tuổi = 18."
     },
     {
       "id": "S0068",
-      "start": 398.94,
-      "end": 407.34,
-      "text": "Nếu mà các bạn familiar với Python, tại vì nếu mà viết trên những cái blockchain như là Ethereum hay Layer 2 của Ethereum, ví dụ như là Binance Chain này."
+      "start": 296.66,
+      "end": 301.9,
+      "text": "Thì ở đây, cái biến của chúng ta có tên là tuổi và var là tên của lệnh."
     },
     {
       "id": "S0069",
-      "start": 407.44,
-      "end": 415.41,
-      "text": "Arbitrum này, Avalanche này, rồi chúng ta sẽ có thêm nữa là Optimism này."
+      "start": 301.92,
+      "end": 305.16,
+      "text": "Ngoài ra, chúng ta cũng có thể sử dụng từ khóa là let hoặc là const."
     },
     {
       "id": "S0070",
-      "start": 415.43,
-      "end": 422.57,
-      "text": "Đó thì tất cả những blockchain EVM nào nó cũng sẽ hỗ trợ thêm ngôn ngữ là Vyper, và ngôn ngữ Vyper là ngôn ngữ được phát triển trên ngôn ngữ Python."
+      "start": 305.16,
+      "end": 308.02,
+      "text": "Còn chúng khác nhau như thế nào thì tý nữa mình nói sau nha."
     },
     {
       "id": "S0071",
-      "start": 422.59,
-      "end": 427.19,
-      "text": "Cho nên khi mà chúng ta biết Python, chúng ta cũng có thể sử dụng và chúng ta đã viết được smart contract luôn."
+      "start": 308.12,
+      "end": 314.56,
+      "text": "Đó, việc mà chúng ta tạo ra một biến như thế này sẽ được gọi một cách kỹ thuật hơn là Khai Báo Biến."
     },
     {
       "id": "S0072",
-      "start": 427.21,
-      "end": 436.29,
-      "text": "Rồi có một cái ngôn ngữ về blockchain nữa mà mình không biết nên khuyên mọi người học không, nhưng mà mọi."
+      "start": 314.56,
+      "end": 316.51,
+      "text": "Thuật ngữ tiếng Anh gọi là Declaration."
     },
     {
       "id": "S0073",
-      "start": 436.31,
-      "end": 442.03,
-      "text": "Ngay chính cái lúc mà chúng ta viết hay chính cái lúc chúng ta học dApp, chúng ta cũng có thể học luôn ngôn ngữ Rust ở đây rồi."
+      "start": 316.51,
+      "end": 320.52,
+      "text": "Và chi tiết hơn nữa, cái việc declare ở đây thì nó chỉ nằm ở lệnh var tuổi thôi."
     },
     {
       "id": "S0074",
-      "start": 442.03,
-      "end": 451.29,
-      "text": "Nhưng mà nếu các bạn thực sự mạnh, chúng ta đã từng viết về những ngôn ngữ lập trình trước đó giống như Java thì Rust không có vấn đề gì."
+      "start": 320.54,
+      "end": 326.68,
+      "text": "Còn cái việc mà chúng ta tạo một giá trị ban đầu cho nó sẽ được gọi là Initialization (khởi tạo)."
     },
     {
       "id": "S0075",
-      "start": 451.31,
-      "end": 454.19,
-      "text": "Nhưng mà nếu các bạn là một người học trái ngành thì sao?"
+      "start": 326.7,
+      "end": 329.58,
+      "text": "Thì chúng ta có thể gán những giá trị gì cho 1 biến?"
     },
     {
       "id": "S0076",
-      "start": 454.21,
-      "end": 460.77,
-      "text": "Thì một khi các bạn vừa bắt đầu lao vào học Rust luôn thì nó rất khó, nó giống như là bước đi cái đặt đầu của từng ấy."
+      "start": 329.58,
+      "end": 333.4,
+      "text": "Chúng ta sẽ có 2 kiểu nhé: một là anh em sẽ cho nó 1 giá trị cố định."
     },
     {
       "id": "S0077",
-      "start": 460.79,
-      "end": 466.39,
-      "text": "Thì rất là khó cho các vấn đề đó, cho nên là cái hướng của mình vẫn sẽ là các bạn phải học."
+      "start": 333.42,
+      "end": 337.0,
+      "text": "Hai là lấy 1 giá trị từ 1 biến khác, đúng không ạ?"
     },
     {
       "id": "S0078",
-      "start": 466.39,
-      "end": 477.95,
-      "text": "Từ những thứ cơ bản nhất của lập trình web, HTML, CSS, JavaScript, chúng ta nâng cấp đến TypeScript."
+      "start": 337.02,
+      "end": 343.04,
+      "text": "Thì ở đây, trường hợp này là chúng ta đang lấy một giá trị cố định số 18, và thuật ngữ tiếng Anh gọi trường hợp này là Literal."
     },
     {
       "id": "S0079",
-      "start": 477.97,
-      "end": 482.93,
-      "text": "Rồi chúng ta sẽ học cái BigBug mà nó chất nên TypeScript thôi, hoặc là chúng ta có thể tự cho thêm một số ngôn ngữ, ví dụ như Python của Golang hoặc Rust."
+      "start": 343.04,
+      "end": 346.34,
+      "text": "Hoặc là Fixed Value, tức là giá trị cố định, nó không thay đổi."
     },
     {
       "id": "S0080",
-      "start": 482.95,
-      "end": 491.03,
-      "text": "Mà chúng ta đưa tiền theo sở thích của chúng ta, vì là mình không biết Golang, mình cũng chưa biết về TypeScript, mình chỉ biết sơ sơ về Rust."
+      "start": 346.34,
+      "end": 349.8,
+      "text": "Còn trường hợp thứ hai là chúng ta khai báo ra một biến, ví dụ là."
     },
     {
       "id": "S0081",
-      "start": 491.05,
-      "end": 495.15,
-      "text": "TypeScript thôi là mình đủ để làm rồi, vậy nên mình vẫn hướng các bạn là học TypeScript."
+      "start": 349.82,
+      "end": 355.88,
+      "text": "Tuổi 2 chẳng hạn, và chúng ta có thể khởi tạo 1 cái giá trị ban đầu cho nó lấy từ cái biến tuổi, đúng không ạ, như thế này."
     },
     {
       "id": "S0082",
-      "start": 495.15,
-      "end": 499.15,
-      "text": "Và các bạn khi mà chúng ta build được fully một cái dApp rồi, full view of Web 2."
+      "start": 356.38,
+      "end": 360.4,
+      "text": "Rồi, vấn đề tiếp theo đó là về kiểu dữ liệu (Data type)."
     },
     {
       "id": "S0083",
-      "start": 499.15,
-      "end": 508.15,
-      "text": "Full view of Web 3 rồi thì bắt đầu chúng ta sẽ học về smart contract, về Solidity."
+      "start": 360.4,
+      "end": 365.2,
+      "text": "Nó sẽ thể hiện dạng dữ liệu mà biến đấy lưu trữ, và chúng ta sẽ có."
     },
     {
       "id": "S0084",
-      "start": 508.15,
-      "end": 510.05,
-      "text": "Tại sao mình giới thiệu Solidity?"
+      "start": 365.22,
+      "end": 372.92,
+      "text": "Hai nhóm kiểu dữ liệu: một là kiểu Nguyên Thủy (tiếng Anh là Primitive); hai là Phi Nguyên Thủy, hay nó có một cái tên riêng là Object."
     },
     {
       "id": "S0085",
-      "start": 510.05,
-      "end": 516.15,
-      "text": "Tại vì mình có sẵn source Solidity các bạn ạ, ngay trong kênh trên YouTube."
+      "start": 372.94,
+      "end": 378.8,
+      "text": "Với kiểu nguyên thủy, anh em có thể hình dung nó là những dạng dữ liệu đơn giản, những loại cơ bản, ví dụ như là kiểu số."
     },
     {
       "id": "S0086",
-      "start": 516.15,
-      "end": 522.15,
-      "text": "Một phần nữa là học hết."
+      "start": 378.82,
+      "end": 381.54,
+      "text": "Như số 18 đây là 1 ví dụ của kiểu number."
     },
     {
       "id": "S0087",
-      "start": 522.15,
-      "end": 529.91,
-      "text": "Cái hai cái ngôn ngữ chắc chắn chúng ta phải học khi mà chúng ta trở thành một Web 3 developer chính là Solidity và Rust, tại sao nha?"
+      "start": 381.54,
+      "end": 386.78,
+      "text": "Chúng ta có kiểu String, hay còn gọi là chuỗi ký tự, dùng để lưu các đoạn text."
     },
     {
       "id": "S0088",
-      "start": 529.95,
-      "end": 536.03,
-      "text": "Tại vì hầu như hồi nãy mình nói trên DefiLlama là Ethereum á, nền tảng nó vẫn đang ở 55% Total Value Locked."
+      "start": 386.8,
+      "end": 392.93,
+      "text": "Ví dụ như mình muốn lưu tên của một em gái nào đấy mà mình crush chẳng hạn, thì mình sẽ tạo một biến là tên, đúng không ạ?"
     },
     {
       "id": "S0089",
-      "start": 536.07,
-      "end": 540.67,
-      "text": "Và kiểu gì chúng ta làm việc cũng sẽ một cách nào đó, nó cũng sẽ liên quan tới Ethereum."
+      "start": 392.93,
+      "end": 393.58,
+      "text": "Sau đó là gì?"
     },
     {
       "id": "S0090",
-      "start": 540.71,
-      "end": 547.87,
-      "text": "Và cái nền tảng công nghệ bây giờ chúng ta không còn ở một chain nữa, khi mà chúng ta build một dApp hay Web3, nó là multi-chain."
+      "start": 393.84,
+      "end": 394.53,
+      "text": "Eimi Fukada."
     },
     {
       "id": "S0091",
-      "start": 547.91,
-      "end": 550.71,
-      "text": "Multi-chain chắc chắn sẽ dính đến Ethereum."
+      "start": 394.53,
+      "end": 400.26,
+      "text": "Và cái đoạn text anh em cần bọc trong 1 cái dấu nháy, có thể là nháy đơn hoặc nháy kép đều được nha."
     },
     {
       "id": "S0092",
-      "start": 550.71,
-      "end": 558.71,
-      "text": "Cho nên là chúng ta sẽ cần phải biết cái ngôn ngữ là Solidity để chúng ta ok về thằng Ethereum chứ, và Ethereum cũng rất là dễ học."
+      "start": 400.26,
+      "end": 401.58,
+      "text": "Rồi thì kiểu logic này."
     },
     {
       "id": "S0093",
-      "start": 558.71,
-      "end": 563.71,
-      "text": "Sau khi mà chúng ta đã học được rồi thì chúng ta bắt đầu học những blockchain khác, ví dụ như Solana."
+      "start": 401.58,
+      "end": 402.82,
+      "text": "Tiếng Anh gọi là Boolean."
     },
     {
       "id": "S0094",
-      "start": 563.71,
-      "end": 568.71,
-      "text": "Cái cách phân tán data của Solana nó sẽ khác với Ethereum."
+      "start": 402.82,
+      "end": 405.94,
+      "text": "Anh em nào học môn Toán logic rồi sẽ biết cái kiểu dữ liệu này."
     },
     {
       "id": "S0095",
-      "start": 568.71,
-      "end": 573.71,
-      "text": "Nhưng mà Big sẽ thường xuyên có nhiều video nói về vấn đề đó, các bạn có thể ấn subscribe kênh."
+      "start": 405.94,
+      "end": 409.44,
+      "text": "Nó chỉ nhận 1 trong 2 giá trị là true hoặc false, tức là đúng hay là sai."
     },
     {
       "id": "S0096",
-      "start": 573.71,
-      "end": 576.71,
-      "text": "Và bật cái nút chuông lên để các bạn coi được những nội dung của Big làm."
+      "start": 409.44,
+      "end": 411.22,
+      "text": "Ví dụ mình tạo ra một biến là conZin."
     },
     {
       "id": "S0097",
-      "start": 576.71,
-      "end": 582.71,
-      "text": "Bất ngờ trong team mình thôi, cho nên là các bạn có thể tự tin về cái vấn đề nội dung của video đó."
+      "start": 411.24,
+      "end": 414.36,
+      "text": "Để thể hiện thông tin là em gái crush đấy còn zin hay không."
     },
     {
       "id": "S0098",
-      "start": 582.71,
-      "end": 585.71,
-      "text": "Khi mà chúng ta học được Solana rồi, chúng ta sẽ có thể."
+      "start": 414.38,
+      "end": 414.97,
+      "text": "Đúng không ạ?"
     },
     {
       "id": "S0099",
-      "start": 585.71,
-      "end": 588.02,
-      "text": "Thứ nhất là các bạn học Rust trên Solana, thứ hai."
+      "start": 414.97,
+      "end": 418.33,
+      "text": "Nếu là đúng thì mình ghi là true, còn nếu là sai thì mình sẽ ghi là false."
     },
     {
       "id": "S0100",
-      "start": 588.02,
-      "end": 592.71,
-      "text": "Học thêm những cái blockchain khác cũng viết bằng Rust là Near."
+      "start": 418.33,
+      "end": 420.24,
+      "text": "Anh em chú ý nhé, chỉ có đúng hoặc là sai."
     },
     {
       "id": "S0101",
-      "start": 593.71,
-      "end": 596.71,
-      "text": "Nhưng mà có một cái là thằng TypeScript cũng có thể viết smart contract trên NEAR."
+      "start": 420.26,
+      "end": 426.06,
+      "text": "Tức là còn hoặc không còn, không có kiểu lấp lửng, kiểu như là không còn nhưng mà mang đi vá, cứ kiểu thế."
     },
     {
       "id": "S0102",
-      "start": 597.71,
-      "end": 600.71,
-      "text": "Cho nên khi mà chúng ta viết người con ngủ với TypeScript thì nó cũng rất đơn giản."
+      "start": 426.06,
+      "end": 428.0,
+      "text": "Ngoài ra có một cái kiểu đặc biệt."
     },
     {
       "id": "S0103",
-      "start": 600.71,
-      "end": 610.71,
-      "text": "Chúng ta cũng cần phải học thêm một số blockchain khác, nếu mà chúng ta đã được học làm blockchain thì yêu cầu phải học một blockchain nào thì phải làm một blockchain đó thôi."
+      "start": 428.0,
+      "end": 431.72,
+      "text": "Đó gọi là null, nó thể hiện rằng là nó chả lưu cái dữ liệu gì cả."
     },
     {
       "id": "S0104",
-      "start": 611.71,
-      "end": 613.71,
-      "text": "Cho nên là chúng ta hãy nên học Solidity trước phải tại vì nó dễ."
+      "start": 431.72,
+      "end": 433.8,
+      "text": "Rồi, cái nhóm kiểu dữ liệu thứ 2 là Object."
     },
     {
       "id": "S0105",
-      "start": 614.71,
-      "end": 622.19,
-      "text": "Sau đó thì chúng ta học Rust và chúng ta biết được Solana trên này nên biết những blockchain mà hiện tại đang rất là hot."
+      "start": 433.92,
+      "end": 438.19,
+      "text": "Có thể hiểu nó kết hợp từ các dữ liệu có kiểu nguyên thủy hoặc là các object khác."
     },
     {
       "id": "S0106",
-      "start": 622.23,
-      "end": 624.47,
-      "text": "Hiện tại cho cộng đồng EVM, chúng ta là Sui."
+      "start": 438.19,
+      "end": 440.84,
+      "text": "Ví dụ như mình muốn tạo ra 1 cái biến gọi là crush."
     },
     {
       "id": "S0107",
-      "start": 625.51,
-      "end": 627.39,
-      "text": "Aptos. Đúng rồi!"
+      "start": 441.04,
+      "end": 445.24,
+      "text": "Để lưu được tổng hợp đủ các loại thông tin mà mình vừa tạo ở trên, tập trung vào một biến thôi."
     },
     {
       "id": "S0108",
-      "start": 627.51,
-      "end": 633.19,
-      "text": "Aptos, cô viết bằng ngôn ngữ Move thì cái ngôn ngữ đó là Move được chạy trên Rust."
+      "start": 445.44,
+      "end": 447.7,
+      "text": "Đấy, thì lúc đó chúng ta sẽ sử dụng đến Object."
     },
     {
       "id": "S0109",
-      "start": 633.31,
-      "end": 640.75,
-      "text": "Cho nên chúng ta biết Rust thì học Move nó không có vấn đề cả, rồi khi mà chúng ta học xong được Rust rồi chúng ta mới quay về."
+      "start": 447.7,
+      "end": 450.48,
+      "text": "Cái này nó phức tạp hơn một chút thì chúng ta bàn đến sau."
     },
     {
       "id": "S0110",
-      "start": 641.39,
-      "end": 643.91,
-      "text": "Biết cách sử dụng smart contract cơ bản ở trên những blockchain đó rồi."
+      "start": 450.56,
+      "end": 454.98,
+      "text": "Nha, bây giờ có vài cái đồ chơi đơn giản như thế này, chúng ta cứ tập sử dụng đã."
     },
     {
       "id": "S0111",
-      "start": 643.95,
-      "end": 648.07,
-      "text": "Thì khi yêu cầu của trong việc của chúng ta hay chúng ta tham gia một cuộc thi Hackathon nào đó đi."
+      "start": 454.98,
+      "end": 458.04,
+      "text": "OK, mình vừa nói đến việc là sử dụng biến, đúng không ạ?"
     },
     {
       "id": "S0112",
-      "start": 648.07,
-      "end": 652.51,
-      "text": "Của một cái blockchain nào đó đi, ví dụ Aptos thì chúng ta mới cần học Move."
+      "start": 458.04,
+      "end": 463.04,
+      "text": "Sử dụng ở đây tức là chúng ta sẽ đưa các biến này vào các câu lệnh, bởi vì các biến nó mang dữ liệu mà."
     },
     {
       "id": "S0113",
-      "start": 652.51,
-      "end": 660.87,
-      "text": "Hay là ví dụ như chúng ta tìm một cái các bạn có tham gia cộng đồng của Solana Superteam thì các bạn sẽ có những cái hackathon của Solana."
+      "start": 464.04,
+      "end": 466.04,
+      "text": "Thay vì mình in ra một cái chuỗi cố định."
     },
     {
       "id": "S0114",
-      "start": 660.87,
-      "end": 666.27,
-      "text": "Thì Solana Hackathon các bạn biết các bạn phải đào sâu vào trong framework của cái blockchain đó, ví dụ như Solana là Anchor."
+      "start": 467.04,
+      "end": 468.04,
+      "text": "Cái này gọi là cái gì mình vừa nói nhỉ?"
     },
     {
       "id": "S0115",
-      "start": 666.27,
-      "end": 674.71,
-      "text": "Khi mình đã học tới cái trình độ rồi, bây giờ nó sẽ thiên về framework, khi mà chúng ta học framework chúng ta biết ngôn ngữ."
+      "start": 470.04,
+      "end": 471.04,
+      "text": "Đó, thì bây giờ mình sẽ in."
     },
     {
       "id": "S0116",
-      "start": 674.75,
-      "end": 682.31,
-      "text": "Thì bây giờ mình sẽ nói tới framework, ví dụ như Solana nó sẽ có framework để viết smart contract nó là Anchor, trên Solidity của Ethereum."
+      "start": 472.04,
+      "end": 473.04,
+      "text": "Một cái dữ liệu từ một cái biến ra."
     },
     {
       "id": "S0117",
-      "start": 682.33,
-      "end": 688.17,
-      "text": "Nó sẽ viết smart contract bằng Foundry, thật ra các bạn nếu mà các bạn học khóa của mình cũng sẽ nói về Foundry."
+      "start": 474.04,
+      "end": 475.04,
+      "text": "Nha, thì mình sẽ."
     },
     {
       "id": "S0118",
-      "start": 688.19,
-      "end": 691.11,
-      "text": "Rồi chúng ta viết bằng Sui Sui phát được gì không?"
+      "start": 476.04,
+      "end": 477.04,
+      "text": "Ví dụ mình in là TEN nè chẳng hạn."
     },
     {
       "id": "S0119",
-      "start": 691.13,
-      "end": 694.67,
-      "text": "Sui Move phải không Move hả?"
+      "start": 478.04,
+      "end": 479.79,
+      "text": "Save lại này, Eimi Fukada."
     },
     {
       "id": "S0120",
-      "start": 694.69,
-      "end": 696.35,
-      "text": "Move là framework mà đúng không?"
+      "start": 479.79,
+      "end": 485.04,
+      "text": "Đó, lúc này mình nói rằng document.write nó lấy dữ liệu từ biến có tên là TEN."
     },
     {
       "id": "S0121",
-      "start": 696.37,
-      "end": 703.51,
-      "text": "Dạ. Thế nào là chúng ta biết ngữ Rust thì cái Move language nó cũng sẽ là kiểu nó có thể framework, chúng ta có thể code smart contract vậy đó."
+      "start": 485.04,
+      "end": 488.02,
+      "text": "OK, thì đó là xuất dữ liệu từ biến ra phần trang web."
     },
     {
       "id": "S0122",
-      "start": 703.51,
-      "end": 707.91,
-      "text": "Khi mà chúng ta học một cái framework, nó sẽ phụ thuộc vào công việc của chúng ta."
+      "start": 488.02,
+      "end": 490.04,
+      "text": "Bây giờ cái chiều ngược lại thì sao?"
     },
     {
       "id": "S0123",
-      "start": 708.21,
-      "end": 710.41,
-      "text": "Nó có liên quan nhiều tới blockchain đó hay không?"
+      "start": 490.04,
+      "end": 493.89,
+      "text": "Tức là từ phía trang web chúng ta nhập một cái dữ liệu gì đấy và nó đi vào biến để nó lưu trữ."
     },
     {
       "id": "S0124",
-      "start": 710.51,
-      "end": 712.91,
-      "text": "Nó mới yêu cầu đúng với công việc đó hay không?"
+      "start": 493.89,
+      "end": 495.04,
+      "text": "Sẽ có nhiều cách anh em nha."
     },
     {
       "id": "S0125",
-      "start": 713.11,
-      "end": 717.41,
-      "text": "Cho nên là nếu chúng ta đã học được đến hết ngôn ngữ rồi thì không có lý do gì."
+      "start": 495.04,
+      "end": 501.04,
+      "text": "Tuy nhiên, cách đơn giản nhất mà mình nghĩ là nó phù hợp với các anh em mới bắt đầu là chúng ta sẽ sử dụng một cái lệnh."
     },
     {
       "id": "S0126",
-      "start": 717.51,
-      "end": 722.81,
-      "text": "Thì chúng ta không có học những framework để hỗ trợ người dùng hết."
+      "start": 503.04,
+      "end": 509.92,
+      "text": "Mở đóng ngoặc tròn này, sau đó sẽ là một cái thông báo gì đấy để kiểu yêu cầu anh em nhập dữ liệu ấy, ví dụ như là."
     },
     {
       "id": "S0127",
-      "start": 723.21,
-      "end": 730.91,
-      "text": "Tùy thuộc vào hành trình của bạn mới học tới đâu và các bạn thi cái hackathon nào."
+      "start": 513.62,
+      "end": 516.51,
+      "text": "Đó, sau khi anh em gọi cái lệnh này nha, mình Ctrl + S lại này."
     },
     {
       "id": "S0128",
-      "start": 730.91,
-      "end": 740.43,
-      "text": "Mình sẽ chuyển qua cái phần là Q&A và mình sẽ có một chút đam mê tại vì nếu mà vấn đề khi chúng ta làm roadmap."
+      "start": 516.51,
+      "end": 517.52,
+      "text": "Đó, anh em thấy không?"
     },
     {
       "id": "S0129",
-      "start": 740.45,
-      "end": 744.79,
-      "text": "Khi chúng ta đi theo roadmap, thực ra nó có sẵn hết rồi đúng không?"
+      "start": 517.62,
+      "end": 522.42,
+      "text": "Ở trên trình duyệt của chúng ta sẽ mở ra một cửa sổ cho phép anh em nhập dữ liệu vào đây, ví dụ."
     },
     {
       "id": "S0130",
-      "start": 744.81,
-      "end": 752.35,
-      "text": "Mình chỉ cần nói vài ba câu nữa để các bạn bắt đầu học thôi, còn để làm sao thì chúng ta có thể dễ dàng kiếm việc hơn."
+      "start": 525.36,
+      "end": 527.6,
+      "text": "OK, nhưng sau đó thì cái dữ liệu đấy nó đi đâu?"
     },
     {
       "id": "S0131",
-      "start": 752.37,
-      "end": 754.47,
-      "text": "Chúng ta phải chứng minh bản thân của chúng ta."
+      "start": 527.6,
+      "end": 530.66,
+      "text": "Nó không được lưu ở đâu cả do là chúng ta chỉ gọi lệnh đấy thôi."
     },
     {
       "id": "S0132",
-      "start": 754.47,
-      "end": 760.95,
-      "text": "Mà muốn chứng minh đó thì để người khác tin, chúng ta không thể làm những cái dự án mà làm theo mình trên tutorial của mình được."
+      "start": 530.76,
+      "end": 534.53,
+      "text": "Đó, mà anh em cần phải tạo ra một biến để hứng lấy cái giá trị mà anh em vừa nhập."
     },
     {
       "id": "S0133",
-      "start": 761.19,
-      "end": 765.11,
-      "text": "Thì vì là cái đó là của mình, nó không phải là của các bạn, cho nên là các bạn phải có riêng cho con mình."
+      "start": 534.53,
+      "end": 535.26,
+      "text": "Bằng cách là gì?"
     },
     {
       "id": "S0134",
-      "start": 765.15,
-      "end": 769.71,
-      "text": "Và phải có những ai verify cho các bạn thông qua những cuộc thi hackathon."
+      "start": 535.36,
+      "end": 541.14,
+      "text": "Mình sẽ sử dụng luôn cái biến ở trên nha, anh em viết là TEN bằng thì cái Mikami đó sẽ được lưu vào cái TEN này."
     },
     {
       "id": "S0135",
-      "start": 769.83,
-      "end": 776.23,
-      "text": "Có những giải hackathon Bích cũng là một người tham gia hackathon, nếu tính từ trước giờ thì hết hackathon đều bị giải rồi."
+      "start": 541.16,
+      "end": 545.92,
+      "text": "Nó sẽ đè vào cái Eimi Fukada và đây sẽ được gọi là một cái lệnh gán (Assignment)."
     },
     {
       "id": "S0136",
-      "start": 777.52,
-      "end": 782.56,
-      "text": "Chắc là thưởng hơn năm, hơn năm, hơn năm mà giải nào cũng rất nhiều tiền."
+      "start": 545.92,
+      "end": 549.32,
+      "text": "Lệnh này cũng dùng dấu bằng, giống với phép khai báo biến."
     },
     {
       "id": "S0137",
-      "start": 782.56,
-      "end": 793.02,
-      "text": "Cũng tính bằng tiền ngàn đô không, thì Bích cũng là một người rất tài năng ăn, cho nên là VBI tự mình mới biết rất là thật dụng nhân tài."
+      "start": 549.34,
+      "end": 549.84,
+      "text": "Đúng không ạ?"
     },
     {
       "id": "S0138",
-      "start": 793.04,
-      "end": 795.28,
-      "text": "Rồi, nếu mà giải lớn nhất."
+      "start": 549.86,
+      "end": 555.48,
+      "text": "Bây giờ anh em cùng xem này, mình Ctrl + S lại nhé, sau đó mình nhập là Yua Mikami."
     },
     {
       "id": "S0139",
-      "start": 795.28,
-      "end": 804.7,
-      "text": "Mới đi Thái Lan giật chắc là Airdrop nhưng có cái là bạn đó thi là thi tại thành phố Hồ Chí Minh và đạt giải."
+      "start": 556.34,
+      "end": 562.38,
+      "text": "OK, đó thì anh em thấy, sau khi mà cái lệnh này được thực hiện xong thì nó thực hiện tiếp là lệnh document.write."
     },
     {
       "id": "S0140",
-      "start": 804.72,
-      "end": 810.08,
-      "text": "Và bắt đầu qua bên phía của Thái Lan đạt giải vào được submit để qua Thái Lan thi một lần và thẳm phép."
+      "start": 562.4,
+      "end": 564.67,
+      "text": "Tức là nó in cái TEN ra trang web."
     },
     {
       "id": "S0141",
-      "start": 810.08,
-      "end": 813.4,
-      "text": "Khi các bạn hỏi mình, các bạn đặt mục tiêu là các bạn phải được đi làm đúng không?"
+      "start": 564.67,
+      "end": 570.0,
+      "text": "Đó, do biến TEN của chúng ta đã được gán lại bằng Yua Mikami mà anh em vừa nhập."
     },
     {
       "id": "S0142",
-      "start": 813.42,
-      "end": 820.16,
-      "text": "Nhưng mà các bạn biết rằng là chúng ta phải thể hiện ra cho cái nhà tuyển dụng của chúng ta là chúng tôi làm được gì cho họ."
+      "start": 570.16,
+      "end": 577.0,
+      "text": "Do đó, khi mình in ra trang web thì nó sẽ in ra cái giá trị sau cùng, sau cùng là lệnh nào được gọi sau thì lệnh đấy có giá trị."
     },
     {
       "id": "S0143",
-      "start": 820.48,
-      "end": 830.36,
-      "text": "Nhưng nếu các bạn CV hay resume của bạn toàn là những dự án mà code theo trên mạng rất là phổ biến, chúng ta phải tham gia những cuộc thi hackathon."
+      "start": 577.1,
+      "end": 581.82,
+      "text": "Ngoài cách chúng ta dùng lệnh window.prompt để mở một cửa sổ trên trình duyệt ra."
     },
     {
       "id": "S0144",
-      "start": 830.38,
-      "end": 835.06,
-      "text": "Và muốn tham gia mà code được ra sản phẩm mà có giải thì chúng ta sẽ bắt đầu học theo Google Maps rồi lại về năm nay đói."
+      "start": 581.92,
+      "end": 588.64,
+      "text": "Thì chúng ta cũng có thể sử dụng các cặp thẻ HTML thuộc nhóm form, tức là các ô nhập liệu trực tiếp trên phần trang web này."
     },
     {
       "id": "S0145",
-      "start": 835.08,
-      "end": 838.94,
-      "text": "Các bạn đã phải dừng video lại thì mình sẽ edit một cái bản roadmap để các bạn có thể thấy được."
+      "start": 588.68,
+      "end": 595.28,
+      "text": "Tuy nhiên, anh em sẽ cần phải hiểu một chút về kiểu function cũng như là cơ chế DOM, thế nên là chúng ta sẽ bàn sau nha."
     },
     {
       "id": "S0146",
-      "start": 838.96,
-      "end": 845.74,
-      "text": "Chúng ta nên học từ thế gì, cái gì, thứ gì như blockchain dev thực sự là nó rất là khó tính hành, nó rất khó này tiếp cận."
+      "start": 595.28,
+      "end": 601.76,
+      "text": "OK, thì những thao tác nhập dữ liệu vào rồi xuất dữ liệu ra như vậy người ta gọi tương ứng là input và output."
     },
     {
       "id": "S0147",
-      "start": 845.76,
-      "end": 852.26,
-      "text": "Tại vì blockchain dev hầu hết là mọi người đều biết thiết kế tất cả mọi thứ vì team member của mình chỉ có mỗi Hải, Hải là dev đó không?"
+      "start": 601.78,
+      "end": 605.28,
+      "text": "Đó có thể coi là một luồng hoạt động cơ bản của một chương trình phần mềm rồi đấy."
     },
     {
       "id": "S0148",
-      "start": 852.28,
-      "end": 858.68,
-      "text": "Dạ con, như mình hay là Bích hay là có bạn Thắng nữa Lê Đại Thắng thì."
+      "start": 605.3,
+      "end": 611.0,
+      "text": "Tuy nhiên thì việc nhập dữ liệu vào rồi in ra luôn như thế này nó cũng không mang ý nghĩa mấy."
     },
     {
       "id": "S0149",
-      "start": 859.3,
-      "end": 866.1,
-      "text": "Tất cả mọi anh em đều có thể viết dev main và smart contract, đó chính là anh em để có thể tự nhận mình là web3 developer."
+      "start": 611.02,
+      "end": 617.38,
+      "text": "Đoạn chương trình nó chả xử lý gì cả, mà thực tế là thường nó sẽ có một công đoạn ở giữa nữa được gọi là xử lý (Process)."
     },
     {
       "id": "S0150",
-      "start": 866.12,
-      "end": 871.04,
-      "text": "Còn nếu mà các bạn chỉ biết code sở smart contract thôi, nó chỉ làm blockchain dev thôi, nhưng mà tại sao chúng nên học hết?"
+      "start": 617.4,
+      "end": 622.18,
+      "text": "Ví dụ, sau khi cái tên mình nhập vào, mình muốn in ra một câu là \"I love\" cộng với cái tên đó."
     },
     {
       "id": "S0151",
-      "start": 871.06,
-      "end": 874.1,
-      "text": "Khi mà chúng ta học xong thì chúng ta focus được một cái thôi."
+      "start": 622.18,
+      "end": 625.2,
+      "text": "Thì mình sẽ phải xử lý để thay đổi dữ liệu của tên này, đúng không ạ?"
     },
     {
       "id": "S0152",
-      "start": 874.1,
-      "end": 878.46,
-      "text": "Chúng ta sẽ biết chúng ta mạnh cái gì, mạnh Front-end hay mạnh Back-end thì làm Back-end."
+      "start": 625.2,
+      "end": 630.8,
+      "text": "Bằng cách như sau: tên bằng \"I love\" cộng với cái tên đấy."
     },
     {
       "id": "S0153",
-      "start": 878.48,
-      "end": 883.42,
-      "text": "Mạnh smart contract thì biết smart contract, tại vì khi mà chúng ta học rộng thì."
+      "start": 630.8,
+      "end": 631.9,
+      "text": "Đây, chạy lại nha!"
     },
     {
       "id": "S0154",
-      "start": 883.44,
-      "end": 886.62,
-      "text": "Thực vụ không thể đào sâu được, mời các bạn học tới mức biết thôi."
+      "start": 631.9,
+      "end": 634.26,
+      "text": "Mình viết ngắn gọn nó nhé: MIKAMI."
     },
     {
       "id": "S0155",
-      "start": 886.62,
-      "end": 889.6,
-      "text": "Tại bởi vì khi chúng ta team member có thể thiếu, thiếu người."
+      "start": 634.26,
+      "end": 635.72,
+      "text": "OK, anh em thấy chưa?"
     },
     {
       "id": "S0156",
-      "start": 889.62,
-      "end": 896.26,
-      "text": "Cho nên là chúng ta phải ý thức cái lộ trình tiếp theo là khi các bạn học xong là các bạn nên thi hackathon."
+      "start": 635.74,
+      "end": 642.04,
+      "text": "Đây là một chương trình đơn giản là nhập tên của idol và in ra một lời tỏ tình với idol đó, có thể hiểu như vậy."
     },
     {
       "id": "S0157",
-      "start": 896.3,
-      "end": 897.77,
-      "text": "Tại sao các bạn nên thi?"
+      "start": 642.06,
+      "end": 648.42,
+      "text": "Và thao tác như vừa rồi người ta gọi là một phép toán (Operation), nó thể hiện sự phối hợp giữa các dữ liệu."
     },
     {
       "id": "S0158",
-      "start": 897.77,
-      "end": 902.9,
-      "text": "Tại vì là những cuộc thi về lập trình có thể giúp cho profile nó vững hơn, cứng hơn."
+      "start": 648.44,
+      "end": 654.04,
+      "text": "Để tạo ra một dữ liệu mới, các dữ liệu tham gia ở đây người ta sẽ gọi là toán hạng (Operand)."
     },
     {
       "id": "S0159",
-      "start": 902.94,
-      "end": 906.04,
-      "text": "Và nó có một cái gì đó mà để cho người ta tin hơn."
+      "start": 654.16,
+      "end": 659.0,
+      "text": "Toán hạng có thể là một giá trị cố định của literal như ở đây hoặc là biến (variable)."
     },
     {
       "id": "S0160",
-      "start": 906.04,
-      "end": 910.5,
-      "text": "Rồi biết các bạn có thể code project các bạn làm tới đâu, nó rất là tốt."
+      "start": 659.0,
+      "end": 662.04,
+      "text": "Dấu cộng ở đây người ta gọi là một toán tử (Operator)."
     },
     {
       "id": "S0161",
-      "start": 910.78,
-      "end": 916.82,
-      "text": "Nhưng mà bây giờ đâu cần phải ghi là kinh nghiệm, chỉ cần đi awards thôi là hết một trang rồi đúng không?"
+      "start": 662.08,
+      "end": 668.68,
+      "text": "Nó thể hiện cách thức mà hai toán hạng phối hợp với nhau và tương ứng với các kiểu dữ liệu của các toán hạng tham gia."
     },
     {
       "id": "S0162",
-      "start": 916.82,
-      "end": 923.42,
-      "text": "Rồi mình sẽ tới kế tiếp phần là hỏi những câu hỏi các bạn, có hai bạn gửi tin nhắn hỏi mình."
+      "start": 668.72,
+      "end": 675.32,
+      "text": "Thì cũng sẽ có các kiểu phép toán tương ứng, chẳng hạn như đây là một phép toán kết hợp giữa hai chuỗi ký tự (String)."
     },
     {
       "id": "S0163",
-      "start": 923.82,
-      "end": 929.02,
-      "text": "Thì đầu tiên là sẽ có bạn Nguyễn Hoàng Phúc à?"
+      "start": 675.36,
+      "end": 680.52,
+      "text": "Và cụ thể là nó mang ý nghĩa nối các String này lại, từ tiếng Anh chuyên ngành của nó là concatenate."
     },
     {
       "id": "S0164",
-      "start": 929.06,
-      "end": 932.7,
-      "text": "Em biết anh có một video trên YouTube, em đang làm một thạc sĩ trình về web."
+      "start": 680.52,
+      "end": 686.06,
+      "text": "Còn nếu là phép toán giữa các số với nhau thì nó sẽ gọi là arithmetic operation, ví dụ như là tuổi."
     },
     {
       "id": "S0165",
-      "start": 932.74,
-      "end": 936.46,
-      "text": "Và muốn chuyển sang blockchain thì thị trường ở Việt Nam về blockchain có đang ổn không vậy ạ?"
+      "start": 686.06,
+      "end": 687.98,
+      "text": "Mình sẽ cho tuổi cộng 1 chẳng hạn."
     },
     {
       "id": "S0166",
-      "start": 936.5,
-      "end": 938.94,
-      "text": "Thì ổn hay không thì hỏi cái thằng này có nhiều tiền hay không?"
+      "start": 688.14,
+      "end": 690.14,
+      "text": "Đúng không nhỉ? Sau đó mình sẽ in ra tuổi này."
     },
     {
       "id": "S0167",
-      "start": 938.98,
-      "end": 939.77,
-      "text": "Nhiều tiền lắm."
+      "start": 692.01,
+      "end": 696.39,
+      "text": "Lúc này mình chỉ in ra tuổi thôi, thế nên là cái tên mình nhập vào gì cũng được nha, mình để rỗng đi."
     },
     {
       "id": "S0168",
-      "start": 939.77,
-      "end": 945.38,
-      "text": "Nếu mà mỗi thị trường mới cất trắng, người ta cần phải có gì cả, người ta sẽ bơm tiền vào trong thị trường."
+      "start": 696.67,
+      "end": 701.59,
+      "text": "Các phép toán anh em có thể thực hiện gối tiếp nhau cũng được, ví dụ ở đây mình sẽ thực hiện cộng biến tuổi lên 1."
     },
     {
       "id": "S0169",
-      "start": 945.38,
-      "end": 949.38,
-      "text": "Và Việt Nam mình may mắn một cái là nhà nước rất là ủng hộ thị trường này."
+      "start": 701.77,
+      "end": 704.95,
+      "text": "Mình thực hiện trực tiếp trong câu lệnh document.write, đúng không ạ?"
     },
     {
       "id": "S0170",
-      "start": 950.38,
-      "end": 954.38,
-      "text": "Nó không có pháp lý để sử dụng, nhưng mà chúng ta vẫn có pháp lý."
+      "start": 704.95,
+      "end": 708.09,
+      "text": "Thì nó sẽ thực hiện cái tuổi cộng 1 trước, sau đó nó lấy kết quả đấy."
     },
     {
       "id": "S0171",
-      "start": 955.38,
-      "end": 959.38,
-      "text": "Ví dụ như một cái bài báo về chính thức ban hành chiến lược blockchain quốc gia."
+      "start": 708.09,
+      "end": 711.79,
+      "text": "Nó đưa vào lệnh document.write thì bây giờ nó sẽ là gì?"
     },
     {
       "id": "S0172",
-      "start": 960.38,
-      "end": 962.38,
-      "text": "Nhưng mà mình gửi cho bạn Phúc, nếu mà Phúc có ví cơ chế TV đôi này."
+      "start": 711.79,
+      "end": 713.01,
+      "text": "Là 20 đúng không anh em?"
     },
     {
       "id": "S0173",
-      "start": 963.38,
-      "end": 967.38,
-      "text": "Khi nhà nước đã được ban hành ra rồi thì chắc chắn trong tương lai nhà nước sẽ muốn đẩy mạnh ra."
+      "start": 713.01,
+      "end": 717.37,
+      "text": "Ở đây mình đã ví dụ phép cộng rồi, chúng ta cũng có phép nhân, phép chia đúng không ạ?"
     },
     {
       "id": "S0174",
-      "start": 968.38,
-      "end": 969.88,
-      "text": "Và nhà nước còn gì?"
+      "start": 717.37,
+      "end": 718.7,
+      "text": "Phép nhân thì là dấu sao nhé."
     },
     {
       "id": "S0175",
-      "start": 969.88,
-      "end": 972.49,
-      "text": "Chiến lược để mở cái gì đa khu hả?"
+      "start": 718.7,
+      "end": 720.2,
+      "text": "Phép chia thì là dấu gạch đúng ạ?"
     },
     {
       "id": "S0176",
-      "start": 972.49,
-      "end": 974.54,
-      "text": "Đa khu blockchain, đúng rồi."
+      "start": 720.2,
+      "end": 721.85,
+      "text": "Phép trừ thì là dấu trừ như thế này."
     },
     {
       "id": "S0177",
-      "start": 974.54,
-      "end": 984.34,
-      "text": "Rồi Thành phố Hồ Chí Minh cũng mới tạo ra một cái gọi là Việt Nam Blockchain Association của những bác rất lớn tuổi đúng không?"
+      "start": 721.87,
+      "end": 726.95,
+      "text": "Đấy, nó không khác với cái môn toán mà anh em học ở hồi tiểu học cả, kể cả những biểu thức nhân chia cộng trừ."
     },
     {
       "id": "S0178",
-      "start": 984.34,
-      "end": 992.02,
-      "text": "Của bác giáo sư, thì tại vì khi mà chúng ta build ở trong cái lộ trình roadmap và chúng ta muốn đi xa."
+      "start": 726.97,
+      "end": 728.77,
+      "text": "Thì trong lập trình nó cũng vậy."
     },
     {
       "id": "S0179",
-      "start": 992.06,
-      "end": 994.55,
-      "text": "Thì cái quan trọng nhất của chúng ta nó phải niềm tin."
+      "start": 728.77,
+      "end": 731.7,
+      "text": "Ví dụ như ở đây là tuổi cộng 1 và nhân với 3 đúng ạ?"
     },
     {
       "id": "S0180",
-      "start": 994.55,
-      "end": 997.54,
-      "text": "Chúng ta phải tin là chúng ta vô thị trường mà chúng ta làm được."
+      "start": 731.7,
+      "end": 733.61,
+      "text": "Thì nó sẽ ưu tiên phép nhân trước."
     },
     {
       "id": "S0181",
-      "start": 997.54,
-      "end": 1000.66,
-      "text": "Còn chúng ta cứ thế chết này trên khắp, nhảy qua cái này giá khác thì khó lắm."
+      "start": 733.63,
+      "end": 734.86,
+      "text": "Sau đó nó mới cộng đúng không ạ?"
     },
     {
       "id": "S0182",
-      "start": 1000.66,
-      "end": 1005.1,
-      "text": "Ví dụ như tại vì AI có rất là nhiều cuộc thi nè, Blockchain cũng có rất vài nhiều cuộc thi nè."
+      "start": 734.86,
+      "end": 738.69,
+      "text": "Còn nếu anh em muốn ưu tiên phép cộng trước thì anh em phải cho nó thêm một cái dấu ngoặc ở đây."
     },
     {
       "id": "S0183",
-      "start": 1005.12,
-      "end": 1010.06,
-      "text": "Hay kể cả Web, Web Hosting nó cũng có những cuộc thi nhưng mà cái cuộc thi đó bão hòa rồi, rất là nhiều người làm rồi."
+      "start": 738.73,
+      "end": 744.6,
+      "text": "Rồi, ngoài nhóm phép toán số học thì chúng ta còn một nhóm phép toán gọi là quan hệ Relational Operations."
     },
     {
       "id": "S0184",
-      "start": 1010.08,
-      "end": 1015.06,
-      "text": "Cho nên khi mà chúng ta làm về Blockchain thì rất là dễ nhiệm vụ chúng ta có thể chiến thắng được hackathon."
+      "start": 744.6,
+      "end": 746.65,
+      "text": "Nghe từ quan hệ có vẻ hơi nhạy cảm ạ."
     },
     {
       "id": "S0185",
-      "start": 1015.08,
-      "end": 1021.44,
-      "text": "Chỉ cần ý tưởng chúng ta đổi thực tế thôi ra được và chúng ta phải build ra một sản phẩm demo được, mà muốn build thì phải học thôi."
+      "start": 746.69,
+      "end": 749.81,
+      "text": "Có một cái tên gọi khác cũng là comparison operation."
     },
     {
       "id": "S0186",
-      "start": 1021.46,
-      "end": 1030.02,
-      "text": "Rồi Việt Nam mình nó cũng các dự án mà gọi là list luôn, ví dụ như là Axie Infinity, lĩnh vực GameFi, lĩnh vực thị trường Blockchain luôn."
+      "start": 749.81,
+      "end": 753.69,
+      "text": "Đó là các phép toán dùng để so sánh, ví dụ như là tuổi nhỏ hơn 30."
     },
     {
       "id": "S0187",
-      "start": 1030.06,
-      "end": 1033.94,
-      "text": "Tại vì mọi con mắt ở trên thế giới đều đổ dồn vào Blockchain, bởi Blockchain tại Việt Nam."
+      "start": 753.73,
+      "end": 758.77,
+      "text": "Đấy, bạn thì đây là một phép toán so sánh và cái toán tử nhỏ hơn này người ta gọi là toán tử so sánh."
     },
     {
       "id": "S0188",
-      "start": 1033.98,
-      "end": 1041.66,
-      "text": "Nếu mà các bạn có nền tảng ngoại ngữ tiếng Anh rất là tốt nữa thì khả năng chúng ta ngồi ở nhà làm việc ở nước ngoài rất là dễ."
+      "start": 758.81,
+      "end": 763.4,
+      "text": "Và kết quả trả về của những phép toán này sẽ là những giá trị logic từ lần đúng hoặc sai."
     },
     {
       "id": "S0189",
-      "start": 1041.7,
-      "end": 1047.74,
-      "text": "Việt Nam mình đang mở cửa, các bạn có thấy nó rất phát triển và Mỹ đang hội nhập với lại Việt Nam."
+      "start": 763.4,
+      "end": 765.67,
+      "text": "Ví dụ như ở đây là tuổi có nhỏ hơn 30 không?"
     },
     {
       "id": "S0190",
-      "start": 1047.78,
-      "end": 1052.06,
-      "text": "Cho nên Việt Nam là một trong những đối tác rất là lớn của Mỹ rồi, các bạn cũng có thể ngồi nhà."
+      "start": 765.69,
+      "end": 767.51,
+      "text": "Tuổi của mình đang là 19 nữa không ạ?"
     },
     {
       "id": "S0191",
-      "start": 1052.06,
-      "end": 1053.17,
-      "text": "Các bạn làm việc nước ngoài."
+      "start": 767.53,
+      "end": 769.37,
+      "text": "19 nhỏ hơn 30 là đúng, ok."
     },
     {
       "id": "S0192",
-      "start": 1053.17,
-      "end": 1058.02,
-      "text": "Đó chính là roadmap, roadmap luôn luôn và trong roadmap là phải học tiếng Anh, các bạn phải học tiếng Anh rất là tốt."
+      "start": 769.39,
+      "end": 770.41,
+      "text": "Thì nó in ra cái gì?"
     },
     {
       "id": "S0193",
-      "start": 1058.04,
-      "end": 1063.12,
-      "text": "Thì khi mà chúng ta go global thì các cảnh này thì chúng ta phải rất tốt và tiếng Anh thì chúng mình mới có thể làm việc tốt được."
+      "start": 770.43,
+      "end": 771.71,
+      "text": "In ra là true đúng không ạ?"
     },
     {
       "id": "S0194",
-      "start": 1063.14,
-      "end": 1067.66,
-      "text": "Với lại là blog của mấy cái này toàn tiếng Anh không?"
+      "start": 771.73,
+      "end": 778.52,
+      "text": "Ngược lại nếu mà anh em viết một mệnh đề sai thì nó sẽ in ra là false, ok không?"
     },
     {
       "id": "S0195",
-      "start": 1067.68,
-      "end": 1074.92,
-      "text": "Có dịch qua thì cũng chưa chắc gì nó sát hiểu hết, đây là kiểu gì chúng ta vẫn phải học."
+      "start": 778.54,
+      "end": 781.82,
+      "text": "Ngoài ra các phép toán khác nhau cũng có thể phối hợp lại được với nhau."
     },
     {
       "id": "S0196",
-      "start": 1074.94,
-      "end": 1085.48,
-      "text": "Có một tin nhắn khá là dài, sinh viên năm 4 tại Úc có theo Web, đây là bạn first starter cho anh hồi nãy, hồi sáng em mới nói với em."
+      "start": 781.82,
+      "end": 784.46,
+      "text": "Ví dụ như ở đây chúng ta đang có phép toán quan hệ đúng ạ."
     },
     {
       "id": "S0197",
-      "start": 1085.48,
-      "end": 1091.12,
-      "text": "Trong cái clip này ở đầu tiên mình cũng có để tên là các bạn này sinh viên năm 4 tại Úc."
+      "start": 784.48,
+      "end": 786.85,
+      "text": "Thì bây giờ mình sẽ cộng thêm một thằng dấu cộng nữa."
     },
     {
       "id": "S0198",
-      "start": 1091.12,
-      "end": 1097.72,
-      "text": "Em có theo Web Data nhưng đang khó khăn trong việc kiếm intern, bị từ chối thực tập của 60 đến 70 công ty rồi."
+      "start": 786.85,
+      "end": 788.64,
+      "text": "Trên ngành người ta hay gọi là triceron."
     },
     {
       "id": "S0199",
-      "start": 1097.76,
-      "end": 1104.6,
-      "text": "Nên em có nản với ngành và cũng đang hơi mất đam mê bởi lập trình, hiện nay chỉ đang học thêm Full Stack của Meta trên Coursera."
+      "start": 788.64,
+      "end": 792.28,
+      "text": "Đó, thì trong một cái biểu thức mà gồm nhiều các phép toán như thế này."
     },
     {
       "id": "S0200",
-      "start": 1104.64,
-      "end": 1113.6,
-      "text": "Để thêm chữ cho resume thôi ạ."
+      "start": 792.32,
+      "end": 796.76,
+      "text": "Thì nó sẽ dựa trên một tính chất đó là precedence, tạm dịch là độ ưu tiên."
     },
     {
       "id": "S0201",
-      "start": 1114.0,
-      "end": 1116.76,
-      "text": "Có kỹ năng mà mình phải kể hiển thị kỹ năng đó ra, phải đi thi thố."
+      "start": 796.8,
+      "end": 803.92,
+      "text": "Ở đây thì các phép toán số học sẽ có độ ưu tiên cao hơn các phép toán quan hệ, thế nên là nó sẽ thực hiện 30 cộng một trước."
     },
     {
       "id": "S0202",
-      "start": 1116.8,
-      "end": 1123.6,
-      "text": "So với cái việc chúng ta nộp vào 60 đến 70 cái công ty thì chúng ta chỉ cần nộp 6 đến 7 cái thôi là có khi là chúng ta lại ăn một hackathon rồi đúng không?"
+      "start": 803.96,
+      "end": 807.21,
+      "text": "Sau đó nó sẽ lấy kết quả để đưa vào phép toán quan hệ với biến tuổi, ok!"
     },
     {
       "id": "S0203",
-      "start": 1123.64,
-      "end": 1125.32,
-      "text": "Kêu à Hoàng nhé và các bạn khác này nha!"
+      "start": 807.21,
+      "end": 808.84,
+      "text": "Sâu chuỗi lại các khái niệm vừa rồi."
     },
     {
       "id": "S0204",
-      "start": 1125.36,
-      "end": 1129.44,
-      "text": "Và Hoàng nói mình khuyên ấy là mình bạn nên lên đi thì hackathon nha."
+      "start": 808.88,
+      "end": 815.32,
+      "text": "Chúng ta có các toán tử, các toán hạng thì chúng kết hợp lại với nhau tạo nên một cái biểu thức expression."
     },
     {
       "id": "S0205",
-      "start": 1129.48,
-      "end": 1133.92,
-      "text": "À và thấy video của lúc trước của anh nước ngoài nhưng sẽ xem roadmap vì roadmap còn vừa nói sau."
+      "start": 815.32,
+      "end": 819.24,
+      "text": "Ok, vừa rồi là một số những cái kiến thức cơ bản liên quan đến phần phép toán."
     },
     {
       "id": "S0206",
-      "start": 1133.92,
-      "end": 1140.44,
-      "text": "Mình nghĩ là cả hai bạn Phúc và Hoàng hỏi mình thì hai bạn đều có thể nhìn nền tảng truyền tốt, điều là sinh viên cả."
+      "start": 819.24,
+      "end": 822.0,
+      "text": "Vậy bây giờ hỏi anh em một câu nhé, nếu cho các anh em."
     },
     {
       "id": "S0207",
-      "start": 1140.48,
-      "end": 1142.34,
-      "text": "Nhưng mà các bạn đang thiếu cái định hướng thôi."
+      "start": 822.0,
+      "end": 826.84,
+      "text": "Cậu với một cô gái mở lên mở lên như thế này, hỏi kết quả trả về sẽ là gì?"
     },
     {
       "id": "S0208",
-      "start": 1142.34,
-      "end": 1145.88,
-      "text": "Và mình đã liên thương nhắc mọi người phải đi thi Hát Trà Thôn nếu các bạn chưa ký vị được."
+      "start": 827.08,
+      "end": 828.24,
+      "text": "Ai tỉnh táo vào nha."
     },
     {
       "id": "S0209",
-      "start": 1145.92,
-      "end": 1149.24,
-      "text": "Và ngoài ra cũng muốn kiếm mentor cho bạn này luôn nếu em nhận mentor."
+      "start": 828.24,
+      "end": 834.04,
+      "text": "Đầu tiên nên thực hiện một cái lệnh để kiểm tra cho minh bạch xem có hợp lệ, có đủ tiêu chuẩn không."
     },
     {
       "id": "S0210",
-      "start": 1149.28,
-      "end": 1151.66,
-      "text": "À, cái này chắc chắn mà ai không biết."
+      "start": 834.08,
+      "end": 841.4,
+      "text": "Sau đó ý dựa vào cái kết quả là true hay là false thì mình mới tiến đến cái phép toán tiếp theo là giao hay là hợp bất vân vi gì đấy."
     },
     {
       "id": "S0211",
-      "start": 1151.66,
-      "end": 1156.32,
-      "text": "Hoàng biết rồi ha, sẽ chắc chắn là mình sẽ không lấy một đồng xu cắc bạc nào của các bạn."
+      "start": 841.64,
+      "end": 843.64,
+      "text": "Cuộc đời nó nhiều biến cố đâu anh em."
     },
     {
       "id": "S0212",
-      "start": 1156.36,
-      "end": 1161.08,
-      "text": "Khi các bạn tham gia khóa học, các bạn có thể vào trong VBI Academy các bạn hỏi."
+      "start": 843.64,
+      "end": 847.52,
+      "text": "Cùng một hành vi đấy thế nhưng mà tuổi của cô bé đó trên 16 nó lại khác."
     },
     {
       "id": "S0213",
-      "start": 1161.08,
-      "end": 1164.72,
-      "text": "Thì anh em mình rất là sẵn sàng riêng về cái việc mà chúng ta sẽ trả lời hết tất cả mọi câu hỏi."
+      "start": 847.52,
+      "end": 850.17,
+      "text": "Nào, dưới 16 thì các em sẽ rẽ sang một ngã khác ấy."
     },
     {
       "id": "S0214",
-      "start": 1164.8,
-      "end": 1169.68,
-      "text": "Và bọn mình sẽ không có thu phí hay lấy tiền của bất kỳ ai cả."
+      "start": 850.17,
+      "end": 853.08,
+      "text": "Trong lập trình nó cũng vậy thôi, cốt quái các anh em ý."
     },
     {
       "id": "S0215",
-      "start": 1170.24,
-      "end": 1174.32,
-      "text": "Chứ thậm chí các bạn vô học có khi còn được có tiền, đã nói gì mà tụi mình lấy tiền của các bạn."
+      "start": 853.12,
+      "end": 858.88,
+      "text": "Không bao giờ nó đi theo một đường thẳng trôi tuột ở trên dốc giới đâu, mà nó có thể là rẽ sang những hướng khác nhau."
     },
     {
       "id": "S0216",
-      "start": 1174.44,
-      "end": 1180.08,
-      "text": "Tụi mình đang lấy tiền của Corporation về xong rồi tụi mình đưa lại cho những bạn học viên, cái nên là phải cứ tập trung vào và học thôi."
+      "start": 858.92,
+      "end": 860.59,
+      "text": "Dựa trên một điều kiện gì đấy."
     },
     {
       "id": "S0217",
-      "start": 1180.2,
-      "end": 1184.68,
-      "text": "Học full-time theo quyết định bên lên này thì mình không biết được, mỗi người một khác mà, đúng không?"
+      "start": 860.59,
+      "end": 865.36,
+      "text": "Và cái cơ chế hoạt động như vậy người ta gọi là câu trúc điều khiển Control Statement."
     },
     {
       "id": "S0218",
-      "start": 1185.0,
-      "end": 1188.84,
-      "text": "Giúp sửa resume và hỏi đáp lạ, cái này thì OK rồi."
+      "start": 865.4,
+      "end": 867.89,
+      "text": "Chúng ta sẽ có hai nhóm câu trúc điều khiển chính."
     },
     {
       "id": "S0219",
-      "start": 1188.84,
-      "end": 1195.08,
-      "text": "Hoàng cứ thoải mái nhắn tin cho mình hỏi ha, Roadmap đang free trên YouTube cũng thoải mái."
+      "start": 867.89,
+      "end": 869.43,
+      "text": "Đó là rẽ nhánh và cấu trúc lặp."
     },
     {
       "id": "S0220",
-      "start": 1195.08,
-      "end": 1202.32,
-      "text": "Thì Roadmap anh đã nói với em trong lúc mà mình nhắn tin với nhau rồi thì chắc chắn là ngày 17 chính là cái ngày mà."
+      "start": 869.43,
+      "end": 871.12,
+      "text": "Trong cái nhóm rẽ nhánh thì sẽ có."
     },
     {
       "id": "S0221",
-      "start": 1202.36,
-      "end": 1209.0,
-      "text": "Dịp sinh nhật của kênh YouTube của mình thì mình sẽ đăng luôn cả Roadmap lên và từ nãy giờ thì mình có nói được rồi."
+      "start": 871.12,
+      "end": 877.88,
+      "text": "Một cấu trúc là if else, tạm dịch nếu thế này thì tôi sẽ thực hiện như vậy, còn không thì tôi thực hiện kiểu khác."
     },
     {
       "id": "S0222",
-      "start": 1209.04,
-      "end": 1214.88,
-      "text": "Nhưng là Roadmap các bạn học xong, các bạn sử dụng skill bật quãng khi mà kiểu học xong chúng ta đi interview rất khó."
+      "start": 877.92,
+      "end": 880.36,
+      "text": "Bây giờ lấy ví dụ chúng ta làm một chương trình đơn giản đi."
     },
     {
       "id": "S0223",
-      "start": 1214.88,
-      "end": 1222.4,
-      "text": "Tại vì hiện tại thị trường lúc này nó không phải mỗi thị trường lúc này mà là toàn ngành dev luôn, toàn ngành lập trình luôn, ai cũng khó khăn hết."
+      "start": 880.4,
+      "end": 884.0,
+      "text": "Đó là nhập tuổi của một cái em gái nào đấy mà anh em crush chẳng hạn, đúng không?"
     },
     {
       "id": "S0224",
-      "start": 1222.42,
-      "end": 1228.54,
-      "text": "Chứ không phải một cái là bộ lớp trên dev không, cho nên nếu mà toàn ngành đã đi lên lại thì chúng ta lại có cơ hội thôi."
+      "start": 884.04,
+      "end": 888.06,
+      "text": "Sau đó, chương trình sẽ đưa ra một cái nhận định là chúng ta có thể yêu hay không."
     },
     {
       "id": "S0225",
-      "start": 1228.56,
-      "end": 1235.88,
-      "text": "Còn thế về việc mà chúng ta tham gia, chúng ta chưa biết chúng ta nên làm gì á, thì giống như bạn Hoàng cũng có thể học thêm những thứ khác."
+      "start": 888.06,
+      "end": 889.68,
+      "text": "Còn yêu là gì thì tự anh em nghĩ."
     },
     {
       "id": "S0226",
-      "start": 1235.9,
-      "end": 1243.46,
-      "text": "Kiếm thêm các certificate và những chứng chỉ, tốt nhất là chúng ta nên học ở OpenEdu, lấy những chứng chỉ của những foundation."
+      "start": 889.72,
+      "end": 893.75,
+      "text": "Thế thì mình sẽ sửa lại code một chút như sau để phù hợp với bài toán bây giờ."
     },
     {
       "id": "S0227",
-      "start": 1243.46,
-      "end": 1251.22,
-      "text": "Mười người nhìn vào các bạn, tham gia blockchain kia thì người ta sẽ có niềm tin hơn khi mà các bạn gia nhập một công ty về blockchain đó."
+      "start": 893.75,
+      "end": 895.4,
+      "text": "À, bây giờ sẽ là nhập tuổi thôi."
     },
     {
       "id": "S0228",
-      "start": 1251.26,
-      "end": 1252.94,
-      "text": "Thì người ta sẽ tin hơn là ồ."
+      "start": 895.44,
+      "end": 900.62,
+      "text": "Đơn giản cái phần này sẽ là nhập tên, thay vì nhập tên mình sẽ thay gắn lại là nhập tuổi nha."
     },
     {
       "id": "S0229",
-      "start": 1252.98,
-      "end": 1262.1,
-      "text": "Biết về blockchain, người ta sẽ dễ dàng hơn để quyết định tuyển dụng các bạn, còn VBI của mình cũng mở rộng ra từ intern."
+      "start": 900.62,
+      "end": 902.68,
+      "text": "Rồi, mình chỉ cần dùng đến biến tuổi."
     },
     {
       "id": "S0230",
-      "start": 1262.14,
-      "end": 1267.62,
-      "text": "Cho nên là chắc chắn là sẽ có những cơ hội cho những anh em nào thực sự đi vào VBI và sống được ở trong đó."
+      "start": 902.68,
+      "end": 906.46,
+      "text": "Thế nên là mình sẽ xóa hai cái biến tên và biến origin đi."
     },
     {
       "id": "S0231",
-      "start": 1267.62,
-      "end": 1276.34,
-      "text": "Nhưng mà cuối cùng chữa năng đọc như là VBI Academy và các bạn cứ, nếu mà các bạn muốn tìm hiểu về intern trên VBI thì có thể là follow fanpage của VBI Academy."
+      "start": 906.46,
+      "end": 907.7,
+      "text": "Cái này sẽ là tuổi."
     },
     {
       "id": "S0232",
-      "start": 1276.38,
-      "end": 1282.18,
-      "text": "Sẽ thỉnh thoảng có đăng những đơn tuyển dụng intern đó, chỉ chúng ta có thể vào trong công ty VBI có trợ cấp luôn."
+      "start": 907.7,
+      "end": 910.89,
+      "text": "Rồi sau đó cấu trúc if else mình sẽ viết như sau."
     },
     {
       "id": "S0233",
-      "start": 1282.22,
-      "end": 1287.46,
-      "text": "Chúng ta có thêm việc làm việc tại VBA Academy ngoài ra thì ở Việt Nam mình giống như hồi nãy mình đã nói."
+      "start": 910.89,
+      "end": 916.38,
+      "text": "Mình sẽ diễn giải theo kiểu văn xuôi, chứ sau đó giải thích theo cách kỹ thuật sau nha."
     },
     {
       "id": "S0234",
-      "start": 1287.5,
-      "end": 1293.26,
-      "text": "Có rất nhiều công ty giữa đầu ngành ví dụ như Axie Infinity bây giờ là đổi thành Ronin Chain Ronin."
+      "start": 916.38,
+      "end": 916.89,
+      "text": "Nếu này."
     },
     {
       "id": "S0235",
-      "start": 1293.3,
-      "end": 1302.66,
-      "text": "Ronin không phải đổi vừa mở rộng ra giống như Facebook thành Meta hay là bên Coin98 thì công ty cũng rất lượng, hay là Coin98."
+      "start": 918.89,
+      "end": 920.89,
+      "text": "Mà lớn hơn bằng 16."
     },
     {
       "id": "S0236",
-      "start": 1302.66,
-      "end": 1306.86,
-      "text": "Bây giờ được re-brand nữa cũng giống như."
+      "start": 924.89,
+      "end": 926.89,
+      "text": "Thì mình sẽ in ra một cái thông báo."
     },
     {
       "id": "S0237",
-      "start": 1306.86,
-      "end": 1316.02,
-      "text": "Nerd Notation còn đổi thành Near thì những cái công ty này hoàn toàn nhận những chương trình thực tập của mọi người không chỉ ở VBA Academy."
+      "start": 929.68,
+      "end": 931.68,
+      "text": "Cái mẫu này dễ đoán và mình nghĩ anh em đã hiểu thôi, đúng không?"
     },
     {
       "id": "S0238",
-      "start": 1316.02,
-      "end": 1321.78,
-      "text": "Sẽ chẳng sao nếu mà chúng ta có sẵn tiếng Anh, chúng ta biết và hiểu về lớp trên, cơ bản của lớp trên."
+      "start": 931.68,
+      "end": 934.01,
+      "text": "Thế thì khi mà đưa vào if else thì nó như thế."
     },
     {
       "id": "S0239",
-      "start": 1321.78,
-      "end": 1328.66,
-      "text": "Ở trong roadmap, khi chúng ta lập trình, chúng ta phải hiểu lớp trên nữa tại vì khi mà chúng ta vừa đi học của lớp trên."
+      "start": 934.01,
+      "end": 936.64,
+      "text": "Có bây giờ phân tích dưới góc độ lập trình một chút."
     },
     {
       "id": "S0240",
-      "start": 1328.7,
-      "end": 1333.58,
-      "text": "Chúng ta hiểu nó là nền tảng, chúng ta học bất kỳ ngôn ngữ của lớp trên nào khác."
+      "start": 936.64,
+      "end": 938.64,
+      "text": "Thì cái if này anh em thấy là nó đi kèm với cái gì nhỉ?"
     },
     {
       "id": "S0241",
-      "start": 1333.62,
-      "end": 1341.58,
-      "text": "Và nó kết hợp với cái ngôn ngữ của chúng ta nữa thì rất dễ thì chúng ta có thể thi một lớp chuyên nào đó."
+      "start": 939.64,
+      "end": 940.87,
+      "text": "Một biểu thức logic nha."
     },
     {
       "id": "S0242",
-      "start": 1341.62,
-      "end": 1348.14,
-      "text": "Biểu dự án chỉ trong vòng hai tuần để chúng ta kịp để thi, trong quá trình chúng ta thi thì chúng ta cũng có thể nên."
+      "start": 940.87,
+      "end": 943.64,
+      "text": "Cái lớn hơn với cái bằng này thì đọc là lớn hoặc bằng."
     },
     {
       "id": "S0243",
-      "start": 1348.18,
-      "end": 1350.26,
-      "text": "Tìm kiếm những cơ hội intern không chỉ ở trong nước."
+      "start": 944.64,
+      "end": 946.64,
+      "text": "Anh em học toán chắc là biết cái phép toán này đúng không ạ?"
     },
     {
       "id": "S0244",
-      "start": 1350.26,
-      "end": 1356.58,
-      "text": "Mà ở nước ngoài nữa, mà có những lúc foundation mà người ta chơi vào trong các bạn vô một trong những dự án bất kỳ kể xuống dưới."
+      "start": 947.64,
+      "end": 948.64,
+      "text": "Nếu cái biểu thức này là true."
     },
     {
       "id": "S0245",
-      "start": 1356.62,
-      "end": 1364.5,
-      "text": "Có phần hiring đó, We are hiring thì ảnh quá à để xem thử kiếm như thế nào và kể cả là người ta không có tuyển cái vị trí với người ta."
+      "start": 949.64,
+      "end": 951.64,
+      "text": "Thì nó sẽ thực hiện các câu lệnh."
     },
     {
       "id": "S0246",
-      "start": 1364.54,
-      "end": 1369.26,
-      "text": "Chúng ta vẫn nên gửi cái CV, biết đâu được, biết đâu được đúng không?"
+      "start": 952.64,
+      "end": 954.64,
+      "text": "Nằm trong khối ngoặc nhọn."
     },
     {
       "id": "S0247",
-      "start": 1369.3,
-      "end": 1373.58,
-      "text": "Có thể là người ta biết người ta sẽ không muốn tuyển intern nhưng mà biết đâu được cái skill với năng lực của các bạn rất là tuyệt."
+      "start": 955.64,
+      "end": 962.56,
+      "text": "Đó, nếu điều kiện làm được thì nó sẽ thực hiện các câu lệnh nằm trong khối ngoặc nhọn đi kèm với if và ngược lại."
     },
     {
       "id": "S0248",
-      "start": 1373.62,
-      "end": 1380.58,
-      "text": "Người ta muốn đem các bạn vào trong một vị trí trong công ty thì chúng ta hướng luyện lên cho phù hợp với vị trí đó hay sao, cho nên là."
+      "start": 962.96,
+      "end": 966.3,
+      "text": "Tức là cái này là false, thì nó có thể đi sang cái nhánh else."
     },
     {
       "id": "S0249",
-      "start": 1380.58,
-      "end": 1387.58,
-      "text": "Mà hy vọng nếu mà các bạn chưa có công việc hay là các bạn bắt đầu học thì phải giữ vật liền tin như bitch."
+      "start": 966.3,
+      "end": 969.64,
+      "text": "Tuy nhiên ở đây có một cái anh em cần đặc biệt lưu ý cho mình."
     },
     {
       "id": "S0250",
-      "start": 1388.58,
-      "end": 1396.58,
-      "text": "Chúng ta mới có thể thành công được, bitch mới là series number 3 thôi cho nên còn các bạn nào chúng ta trái ngành đi chẳng hạn."
+      "start": 969.76,
+      "end": 973.2,
+      "text": "Đó là phép toán này là một phép toán so sánh số học."
     },
     {
       "id": "S0251",
-      "start": 1397.77,
-      "end": 1398.77,
-      "text": "Cũng phải cần rất nhiều niềm tin."
+      "start": 973.4,
+      "end": 977.38,
+      "text": "Do vậy là cái biến tuổi này của chúng ta cũng cần phải có kiểu dữ liệu là số học."
     },
     {
       "id": "S0252",
-      "start": 1399.77,
-      "end": 1400.77,
-      "text": "Cần nhiều niềm tin hơn những các bạn."
+      "start": 977.38,
+      "end": 979.4,
+      "text": "Trong khi đó, cái lệnh window.prompt thì."
     },
     {
       "id": "S0253",
-      "start": 1401.77,
-      "end": 1409.77,
-      "text": "Học đúng anh, học từ những nền tảng nhỏ nhất, học các điểm thiết bị build full một cái app."
+      "start": 979.52,
+      "end": 982.63,
+      "text": "Cái dữ liệu nhập vào của nó sẽ luôn tồn tại dưới dạng là String."
     },
     {
       "id": "S0254",
-      "start": 1409.77,
-      "end": 1412.88,
-      "text": "Nếu chúng ta không có bị thì chúng ta phải trễ hiểu ra."
+      "start": 982.63,
+      "end": 986.04,
+      "text": "Do vậy, anh em sẽ cần phải thêm một cái lệnh trung gian nữa, đó là gì?"
     },
     {
       "id": "S0255",
-      "start": 1412.88,
-      "end": 1415.77,
-      "text": "Chúng ta biết là phải tham gia những hackathon."
+      "start": 986.04,
+      "end": 987.34,
+      "text": "Là parseInt nhé."
     },
     {
       "id": "S0256",
-      "start": 1415.77,
-      "end": 1423.77,
-      "text": "Thì sẽ có người verify được key project và chúng ta làm đó chính là của bạn chứ không phải đem một key project nào trên tutorial rồi xong rồi bỏ vô CV."
+      "start": 987.34,
+      "end": 992.6,
+      "text": "Parse có nghĩa là chuyển đổi, Int có nghĩa là Integer, số nguyên."
     },
     {
       "id": "S0257",
-      "start": 1423.77,
-      "end": 1430.77,
-      "text": "Rồi nữa là hãy kiên trì bấy ngàn tại vì không có gì mà nó làm một ngày một hai và nó phát triển đồng nền được."
+      "start": 993.4,
+      "end": 995.18,
+      "text": "Anh em kéo nó vào cho mình, ok không ạ?"
     },
     {
       "id": "S0258",
-      "start": 1430.77,
-      "end": 1435.77,
-      "text": "Ví dụ như là Blockchain tại cái chính sách trên cái bài báo này."
+      "start": 995.18,
+      "end": 999.44,
+      "text": "Đây chính là khả năng thực hiện nối tiếp các lệnh để anh em chúng ta nhập dữ liệu vào sau đó."
     },
     {
       "id": "S0259",
-      "start": 1435.77,
-      "end": 1442.05,
-      "text": "Cái chiến lược Blockchain quốc gia, cái bài báo mới tháng 10 năm 2024 à?"
+      "start": 999.44,
+      "end": 1002.81,
+      "text": "Đưa nó vào lại parseInt được bao nhiêu lại gán tiếp cho biến tuổi."
     },
     {
       "id": "S0260",
-      "start": 1442.05,
-      "end": 1446.05,
-      "text": "Thì bây giờ mới là tháng 2 năm 2020 là cuối tháng 10."
+      "start": 1002.81,
+      "end": 1004.04,
+      "text": "Tiện cũng nhắc lại luôn."
     },
     {
       "id": "S0261",
-      "start": 1446.05,
-      "end": 1451.05,
-      "text": "Bây giờ bắt đầu sang tháng 1 không thể có cái nào mà trong vòng hai tháng và nó phát triển nhanh như vậy được."
+      "start": 1004.08,
+      "end": 1007.57,
+      "text": "Cái dữ liệu mà anh em nhập vào sẽ đè giá trị 18 này."
     },
     {
       "id": "S0262",
-      "start": 1451.05,
-      "end": 1453.05,
-      "text": "Tất cả ít nhất các bạn phải chờ 6 tháng, một năm gì đó."
+      "start": 1007.57,
+      "end": 1009.04,
+      "text": "Do vậy là số 18 ở đây."
     },
     {
       "id": "S0263",
-      "start": 1453.05,
-      "end": 1466.02,
-      "text": "Cái này là hay duy vật không tin đây, mình đang đưa cho bạn một ví dụ về sự thành công của một bạn sinh viên khi làm việc về Blockchain hay là Web3 và cũng là một người tìm mở rất giàu sạch trong tiền của mình."
+      "start": 1009.08,
+      "end": 1011.01,
+      "text": "Nó chỉ mang tính là khởi tạo giá trị ban đầu thôi."
     },
     {
       "id": "S0264",
-      "start": 1466.02,
-      "end": 1472.35,
-      "text": "Xin chào tạm biệt và hy vọng các bạn sẽ học tập thật tốt và tìm kiếm cái công việc trong tương lai nhé?"
+      "start": 1011.01,
+      "end": 1012.51,
+      "text": "Anh em có thể viết bao nhiêu cũng được."
     },
     {
       "id": "S0265",
-      "start": 1472.35,
-      "end": 1475.05,
-      "text": "Hay là thi thích các khóa thành công ở đây?"
+      "start": 1012.51,
+      "end": 1014.52,
+      "text": "Khởi tạo bằng không cũng không sao cả, đúng không ạ?"
     },
     {
       "id": "S0266",
-      "start": 1476.49,
-      "end": 1478.49,
-      "text": "Đây là lần đầu tiên ngoài video clip."
+      "start": 1014.52,
+      "end": 1017.47,
+      "text": "Bây giờ mình sẽ chạy cho anh em xem này, nhập tuổi."
+    },
+    {
+      "id": "S0267",
+      "start": 1017.47,
+      "end": 1020.6,
+      "text": "Đấy, cô gái của chúng ta 18 tuổi thì có ấy được không?"
+    },
+    {
+      "id": "S0268",
+      "start": 1020.64,
+      "end": 1021.4,
+      "text": "Quất luôn."
+    },
+    {
+      "id": "S0269",
+      "start": 1021.4,
+      "end": 1025.02,
+      "text": "Đấy, thử một trường hợp khác nhỏ hơn 16 xác nào."
+    },
+    {
+      "id": "S0270",
+      "start": 1025.02,
+      "end": 1026.08,
+      "text": "Chọn số 13 đi."
+    },
+    {
+      "id": "S0271",
+      "start": 1027.44,
+      "end": 1028.16,
+      "text": "Tuổi đẹp đấy."
+    },
+    {
+      "id": "S0272",
+      "start": 1028.16,
+      "end": 1031.62,
+      "text": "Tuổi này tuổi trăng tròn mới nhú, vừa hồng vừa thơm anh em ơi."
+    },
+    {
+      "id": "S0273",
+      "start": 1031.62,
+      "end": 1034.24,
+      "text": "Thế nhưng chương trình của chúng ta lại bảo là."
+    },
+    {
+      "id": "S0274",
+      "start": 1034.96,
+      "end": 1036.05,
+      "text": "Rút lui anh em nha."
+    },
+    {
+      "id": "S0275",
+      "start": 1036.05,
+      "end": 1039.03,
+      "text": "Biết là hấp dẫn đấy, thế nhưng mà phải tỉnh táo lên."
+    },
+    {
+      "id": "S0276",
+      "start": 1039.03,
+      "end": 1042.36,
+      "text": "Đừng để một phút yếu lòng mà đánh mất bản thân anh em nhé."
+    },
+    {
+      "id": "S0277",
+      "start": 1042.36,
+      "end": 1046.36,
+      "text": "Tuy nhiên mình thấy bây giờ con gái người ta 13 tuổi nó lớn lắm, khi không phân biệt được đâu."
+    },
+    {
+      "id": "S0278",
+      "start": 1046.36,
+      "end": 1048.32,
+      "text": "Thế nên anh em càng phải check cẩn thận trước."
+    },
+    {
+      "id": "S0279",
+      "start": 1048.34,
+      "end": 1052.16,
+      "text": "Ok, trở lại bài giảng nhé thì anh em thấy mình giảng có bị nhanh quá không?"
+    },
+    {
+      "id": "S0280",
+      "start": 1052.18,
+      "end": 1060.12,
+      "text": "Tất nhiên trong thời lượng quá hạn mình khó mà có thể dạy với tốc độ quá chậm được và cũng sẽ không đầy đủ hết các phần kiến thức."
+    },
+    {
+      "id": "S0281",
+      "start": 1060.14,
+      "end": 1062.25,
+      "text": "Bài giảng này vẫn chỉ là mang tính định hướng thôi."
+    },
+    {
+      "id": "S0282",
+      "start": 1062.25,
+      "end": 1065.68,
+      "text": "Dựa vào bài giảng này anh em vẫn phải triển khai ra những cái kiến thức xung quanh."
+    },
+    {
+      "id": "S0283",
+      "start": 1065.7,
+      "end": 1069.58,
+      "text": "Ví dụ như phần if-else này nó còn một cơ chế rẽ nhánh khác đó là switch case."
+    },
+    {
+      "id": "S0284",
+      "start": 1069.58,
+      "end": 1073.22,
+      "text": "Thì cái cách thức hoạt động của nó cũng gần tương tự, thì anh em nên tìm hiểu thêm nhé."
+    },
+    {
+      "id": "S0285",
+      "start": 1073.26,
+      "end": 1078.54,
+      "text": "Đó, còn trong những trường hợp mà anh em không thể tự học được vì một số lý do như là về ngoại ngữ này."
+    },
+    {
+      "id": "S0286",
+      "start": 1078.58,
+      "end": 1086.06,
+      "text": "Hay khả năng tin học vẫn còn yếu này, thì cũng có thể tham khảo một lớp học của mình dành riêng cho các anh em mới bắt đầu."
+    },
+    {
+      "id": "S0287",
+      "start": 1086.1,
+      "end": 1091.7,
+      "text": "Nhưng anh em chưa quen với việc lập trình và không chỉ phải là với ngôn ngữ JavaScript mà mình cũng có một số những khóa khác về C++."
+    },
+    {
+      "id": "S0288",
+      "start": 1091.74,
+      "end": 1093.78,
+      "text": "Hay là Python anh em cũng có thể tham khảo nữa nhé!"
+    },
+    {
+      "id": "S0289",
+      "start": 1095.28,
+      "end": 1102.5,
+      "text": "Bây giờ thì mình sẽ chuyển sang cái cấu trúc điều khiển Control Statement thứ hai, đó là cấu trúc lặp mà tiếng Anh người ta hay gọi là loop."
+    },
+    {
+      "id": "S0290",
+      "start": 1102.5,
+      "end": 1107.34,
+      "text": "Thì cấu trúc lặp nó sẽ cho phép các anh em thực hiện lặp đi lặp lại một tập các câu lệnh nào đó nhiều lần."
+    },
+    {
+      "id": "S0291",
+      "start": 1107.34,
+      "end": 1113.18,
+      "text": "Ví dụ như ở đây, mình muốn in ra câu là năm nay em 18 tuổi và mình muốn in ra cái câu đấy 10 lần."
+    },
+    {
+      "id": "S0292",
+      "start": 1113.18,
+      "end": 1122.1,
+      "text": "Mình sẽ sửa lại cái lệnh in trước, năm nay em, và bây giờ mình muốn lấy cái giá trị tuổi từ cái biến tuổi này."
+    },
+    {
+      "id": "S0293",
+      "start": 1122.12,
+      "end": 1127.94,
+      "text": "Thì chúng ta sẽ ngắt cái chuỗi ký tự và anh em điền cho mình dấu phẩy, sau đó sẽ điền biến đúng không ạ?"
+    },
+    {
+      "id": "S0294",
+      "start": 1127.94,
+      "end": 1132.22,
+      "text": "Sau đó nếu như anh em vẫn tiếp tục muốn nối tiếp một chuỗi ký tự khác, anh em lại điền dấu phẩy cho mình."
+    },
+    {
+      "id": "S0295",
+      "start": 1132.26,
+      "end": 1135.98,
+      "text": "Ví dụ như ở đây, mình sẽ điền nốt cái chữ là tuổi, đúng không ạ?"
+    },
+    {
+      "id": "S0296",
+      "start": 1138.08,
+      "end": 1142.96,
+      "text": "Chạy thử cái lệnh này đã nhé, ví dụ như mình nhập 19 tuổi, OK không ạ?"
+    },
+    {
+      "id": "S0297",
+      "start": 1143.0,
+      "end": 1150.96,
+      "text": "Nói năm nay em 18 tuổi, thì cái chuỗi năm nay em và cái chữ tuổi nó được gọi là 2 literal hay còn gọi là fixed value, đúng rồi ạ."
+    },
+    {
+      "id": "S0298",
+      "start": 1151.0,
+      "end": 1156.0,
+      "text": "Còn cái 19 này nó được lấy từ variable có tên là tuổi, đó nhắc lại phần kiến thức cũ nha."
+    },
+    {
+      "id": "S0299",
+      "start": 1156.04,
+      "end": 1162.6,
+      "text": "Rồi, còn bây giờ anh em muốn lặp câu lệnh này khoảng 10 lần thì chúng ta cần đưa nó vào một cái cụm cấu trúc có từ khóa lặp for."
+    },
+    {
+      "id": "S0300",
+      "start": 1164.4,
+      "end": 1165.6,
+      "text": "Mở ngoặc ra như thế này."
+    },
+    {
+      "id": "S0301",
+      "start": 1166.51,
+      "end": 1172.99,
+      "text": "Trong cái phần for này, anh em sẽ cần phải chỉ định một số biểu thức, đầu tiên là phép khởi tạo một biến của mình là biến lặp."
+    },
+    {
+      "id": "S0302",
+      "start": 1173.15,
+      "end": 1181.11,
+      "text": "Và i bằng 0, cái biến này có thể hiểu là nó dùng để đếm cái số lần lặp, chấm phẩy, chúng ta sẽ đếm i chạy đến 9."
+    },
+    {
+      "id": "S0303",
+      "start": 1181.19,
+      "end": 1187.31,
+      "text": "Thì anh em có thể viết là i nhỏ hơn 10, tiếp tục là chấm phẩy, đến thành phần thứ ba là một cái phép tăng biến lặp."
+    },
+    {
+      "id": "S0304",
+      "start": 1187.31,
+      "end": 1191.29,
+      "text": "Phép tăng biến lặp là một phép toán thể hiện cái cách thức mà biến i nó thay đổi sau mỗi lần đếm."
+    },
+    {
+      "id": "S0305",
+      "start": 1191.31,
+      "end": 1193.62,
+      "text": "Ví dụ ở đây là chúng ta đếm từ 0, 1, 2, 3, đúng không ạ?"
+    },
+    {
+      "id": "S0306",
+      "start": 1193.62,
+      "end": 1194.67,
+      "text": "Mỗi lần i nó tăng lên 1."
+    },
+    {
+      "id": "S0307",
+      "start": 1194.69,
+      "end": 1200.05,
+      "text": "Thì anh em sẽ viết lại là i bằng i cộng 1, tuy nhiên có một cách viết ngắn gọn hơn đó là i cộng cộng."
+    },
+    {
+      "id": "S0308",
+      "start": 1201.57,
+      "end": 1204.99,
+      "text": "OK, mình save lại này, Ctrl + S, nhập lại số tuổi là 20 đi."
+    },
+    {
+      "id": "S0309",
+      "start": 1205.99,
+      "end": 1207.07,
+      "text": "OK, anh em thấy hông?"
+    },
+    {
+      "id": "S0310",
+      "start": 1207.07,
+      "end": 1212.57,
+      "text": "Nó in ra rất nhiều câu năm nay em 20 tuổi năm nay em 20 tuổi, nó bị dính vào nhau, lý do nó bị dính như vậy."
+    },
+    {
+      "id": "S0311",
+      "start": 1212.59,
+      "end": 1219.37,
+      "text": "Là do chúng ta chưa tạo ra cái sự ngắt giọng cho mỗi lần in xong một câu, cách khắc phục như sau, ở cuối lệnh document.write."
+    },
+    {
+      "id": "S0312",
+      "start": 1219.43,
+      "end": 1225.19,
+      "text": "Đấy hoặc sau khi in xong cái chữ tuổi thì anh em có thể viết cho mình dấu cộng này kèm theo một cái dấu xuống dòng."
+    },
+    {
+      "id": "S0313",
+      "start": 1225.23,
+      "end": 1232.19,
+      "text": "Thì trong văn bản HTML để mà xuống dòng được thì chúng ta cần phải điền một cái thẻ, một cái tag có tên là br."
+    },
+    {
+      "id": "S0314",
+      "start": 1232.23,
+      "end": 1239.09,
+      "text": "Đây là một cái đèn thế nên anh em sẽ không cần phải viết thẻ đóng br, hay là với tác dụng của từ break thường mang ý nghĩa là ngắt dòng."
+    },
+    {
+      "id": "S0315",
+      "start": 1239.23,
+      "end": 1240.69,
+      "text": "Bây giờ xếp lại này."
+    },
+    {
+      "id": "S0316",
+      "start": 1242.89,
+      "end": 1246.21,
+      "text": "Này, năm nay em 20 tuổi thì mình sẽ zoom nhỏ lại nha."
+    },
+    {
+      "id": "S0317",
+      "start": 1246.21,
+      "end": 1247.21,
+      "text": "Đó, anh em thấy không?"
+    },
+    {
+      "id": "S0318",
+      "start": 1247.21,
+      "end": 1255.21,
+      "text": "Cùng nhìn lại cái cú pháp một chút này, cấu trúc của chúng ta là for và bên trong có thể hiểu các thành phần để điều khiển cấu trúc lặp."
+    },
+    {
+      "id": "S0319",
+      "start": 1255.21,
+      "end": 1257.21,
+      "text": "Nó sẽ được nằm dưới cái cặp ngoặc tròn."
+    },
+    {
+      "id": "S0320",
+      "start": 1258.21,
+      "end": 1260.21,
+      "text": "Và cái phần nằm giữa cặp ngoặc nhọn."
+    },
+    {
+      "id": "S0321",
+      "start": 1261.21,
+      "end": 1263.21,
+      "text": "Sẽ được coi là cái nội dung mà chúng ta."
+    },
+    {
+      "id": "S0322",
+      "start": 1264.21,
+      "end": 1266.21,
+      "text": "Thì ở đây mình chỉ thực hiện lặp đúng một câu lệnh thôi."
+    },
+    {
+      "id": "S0323",
+      "start": 1267.21,
+      "end": 1273.21,
+      "text": "Nếu anh em viết thêm nhiều các câu lệnh khác thực hiện đi, thực hiện lại nhiều lần, nói thêm một chút về biến i này."
+    },
+    {
+      "id": "S0324",
+      "start": 1273.21,
+      "end": 1279.21,
+      "text": "Thì thật ra nó cũng không khác gì một cái biến bình thường cả, anh em hoàn toàn có thể thực hiện thao tác các phép toán với biến này."
+    },
+    {
+      "id": "S0325",
+      "start": 1279.21,
+      "end": 1287.84,
+      "text": "Ở trong phần khối code được lặp, ví dụ như ở đây câu lệnh i này, cái phần tuổi mình sẽ cộng thêm với biến i đấy, đúng ạ?"
+    },
+    {
+      "id": "S0326",
+      "start": 1287.84,
+      "end": 1294.19,
+      "text": "Thì cái giá trị tuổi lúc này của mình sẽ không phải là cố định 20 tuổi nữa mà nó sẽ tăng dần đều lên một đơn vị."
+    },
+    {
+      "id": "S0327",
+      "start": 1294.19,
+      "end": 1296.87,
+      "text": "Anh em cùng xem nhé, 22, 23, 24, 25."
+    },
+    {
+      "id": "S0328",
+      "start": 1296.87,
+      "end": 1302.15,
+      "text": "Về phần cấu trúc lặp này thì chúng ta còn một cái từ khóa là while nữa."
+    },
+    {
+      "id": "S0329",
+      "start": 1302.19,
+      "end": 1305.71,
+      "text": "Thế nhưng mà khi tiếp cận vào nó thì cũng tương tự thôi, thế nên là anh em hãy tự tin hiểu nha."
+    },
+    {
+      "id": "S0330",
+      "start": 1306.39,
+      "end": 1313.47,
+      "text": "Ok, thì đến đây có thể coi lại đã khép lại một số đồ chơi hết sức cơ bản về ngôn ngữ JavaScript này, đấy thì mình tin chắc là."
+    },
+    {
+      "id": "S0331",
+      "start": 1313.51,
+      "end": 1319.55,
+      "text": "Một số anh em khi mà học qua những phần vừa rồi cảm thấy là nó cũng khá là tương đồng với một số các ngôn ngữ chính khác."
+    },
+    {
+      "id": "S0332",
+      "start": 1319.75,
+      "end": 1325.41,
+      "text": "Chúng đều có kiểu dữ liệu nguyên thủy, chúng đều có các câu trúc điều khiển if else rồi thì vòng lặp đúng không ạ?"
+    },
+    {
+      "id": "S0333",
+      "start": 1325.41,
+      "end": 1331.63,
+      "text": "Và bây giờ mình sẽ chuyển qua giới thiệu về kiểu dữ liệu object của trong những đặc trưng của một ngôn ngữ JavaScript."
+    },
+    {
+      "id": "S0334",
+      "start": 1331.65,
+      "end": 1337.75,
+      "text": "Kiểu object thì như lúc đầu mình có chia sẻ là nó còn có cái tên khác là non-primitive, phi nguyên thủy."
+    },
+    {
+      "id": "S0335",
+      "start": 1337.77,
+      "end": 1344.57,
+      "text": "Có thể hiểu đơn giản nó là tập hợp của nhiều các loại dữ liệu có kiểu khác nhau, nó tập hợp vào trong một biến để quản lý."
+    },
+    {
+      "id": "S0336",
+      "start": 1344.59,
+      "end": 1349.33,
+      "text": "Thì các thành phần dữ liệu của nó có thể là kiểu nguyên thủy hoặc cũng có thể là các cái object khác."
+    },
+    {
+      "id": "S0337",
+      "start": 1349.35,
+      "end": 1356.25,
+      "text": "Ví dụ mình đang có một số những cái thông tin dữ liệu liên quan đến tên, tuổi, tình trạng hôn nhân của một em hàng xóm."
+    },
+    {
+      "id": "S0338",
+      "start": 1356.27,
+      "end": 1362.35,
+      "text": "Em crush nào đó của mình chẳng hạn, bây giờ thay vì là mình lưu trữ các cái thông tin này vào các biến rời rạc."
+    },
+    {
+      "id": "S0339",
+      "start": 1362.37,
+      "end": 1367.47,
+      "text": "Thì mình có thể tạo ra một biến có kiểu object và lưu được tất cả các cái dữ liệu này."
+    },
+    {
+      "id": "S0340",
+      "start": 1367.49,
+      "end": 1370.41,
+      "text": "Ví dụ như sau đây mình sẽ xóa cái này đi đã, được không?"
+    },
+    {
+      "id": "S0341",
+      "start": 1370.93,
+      "end": 1375.1,
+      "text": "Mình sẽ tạo ra một biến có tên là cô hàng xóm đi chẳng hạn bằng cái gì?"
+    },
+    {
+      "id": "S0342",
+      "start": 1375.1,
+      "end": 1378.75,
+      "text": "Cú pháp để tạo ra một Object sẽ là một cặp mở đóng ngoặc nhọn."
+    },
+    {
+      "id": "S0343",
+      "start": 1378.77,
+      "end": 1383.77,
+      "text": "Anh em có thể xuống dòng cũng được, sau đó anh em cần phải khai báo từng thành phần thông tin theo cái định dạng xong."
+    },
+    {
+      "id": "S0344",
+      "start": 1383.77,
+      "end": 1389.88,
+      "text": "Ví dụ như là chúng ta có tên, sau đó là hai chấm đúng không?"
+    },
+    {
+      "id": "S0345",
+      "start": 1389.88,
+      "end": 1392.32,
+      "text": "Ví dụ như là Lan đúng ạ?"
+    },
+    {
+      "id": "S0346",
+      "start": 1392.32,
+      "end": 1395.38,
+      "text": "Phẩy, tuổi 18, hôn nhân là gì?"
+    },
+    {
+      "id": "S0347",
+      "start": 1395.4,
+      "end": 1396.72,
+      "text": "Cho kiểu logic đi là false."
+    },
+    {
+      "id": "S0348",
+      "start": 1396.72,
+      "end": 1401.84,
+      "text": "Và vân vân, anh em có thể tự liệt kê tiếp nha kiểu như chúng ta đi thu thập thông tin của em hàng xóm ấy."
+    },
+    {
+      "id": "S0349",
+      "start": 1401.86,
+      "end": 1407.7,
+      "text": "Bên trong Object này cũng có một cái Object con khác nữa, ví dụ như mình có một cái thông tin liên quan đến địa chỉ."
+    },
+    {
+      "id": "S0350",
+      "start": 1407.72,
+      "end": 1412.1,
+      "text": "Nó sẽ gồm các trường thông tin con như là quê quán, quận huyện ở đâu này?"
+    },
+    {
+      "id": "S0351",
+      "start": 1412.1,
+      "end": 1412.9,
+      "text": "Đúng không ạ?"
+    },
+    {
+      "id": "S0352",
+      "start": 1412.9,
+      "end": 1413.64,
+      "text": "Thì làm sao?"
+    },
+    {
+      "id": "S0353",
+      "start": 1413.72,
+      "end": 1416.06,
+      "text": "Anh em sẽ lại tạo một cặp mở đóng ngoặc nhọn nữa."
+    },
+    {
+      "id": "S0354",
+      "start": 1416.12,
+      "end": 1422.69,
+      "text": "Và trong này chúng ta tiếp tục điền các trường thông tin con, ví dụ như là quận là gì?"
+    },
+    {
+      "id": "S0355",
+      "start": 1422.69,
+      "end": 1424.14,
+      "text": "Cầu Giấy chẳng hạn."
+    },
+    {
+      "id": "S0356",
+      "start": 1424.3,
+      "end": 1426.7,
+      "text": "Ví dụ thế chẳng hạn, anh em tự hoàn thiện luôn nha."
+    },
+    {
+      "id": "S0357",
+      "start": 1426.74,
+      "end": 1430.42,
+      "text": "Có thể thực tế hơn bằng cách là anh em đi thu thập những cái thông tin cá nhân của M6."
+    },
+    {
+      "id": "S0358",
+      "start": 1430.46,
+      "end": 1435.98,
+      "text": "Đó, thì trở lại cú pháp của việc khai báo Object một chút thì anh em thấy là các cái thông tin được ngăn cách nhau."
+    },
+    {
+      "id": "S0359",
+      "start": 1435.98,
+      "end": 1440.27,
+      "text": "Bởi dấu phẩy, các thông tin này gọi là property, tạm dịch là thuộc tính."
+    },
+    {
+      "id": "S0360",
+      "start": 1440.27,
+      "end": 1443.66,
+      "text": "Các property thì anh em có thể viết ở các dòng tách biệt."
+    },
+    {
+      "id": "S0361",
+      "start": 1443.92,
+      "end": 1446.1,
+      "text": "Hoặc là viết chung một dòng nếu mà nó ngắn."
+    },
+    {
+      "id": "S0362",
+      "start": 1446.1,
+      "end": 1449.54,
+      "text": "Tuy nhiên mình sẽ viết cách dòng ra để cho nó dễ nhìn, đúng không ạ?"
+    },
+    {
+      "id": "S0363",
+      "start": 1449.56,
+      "end": 1452.75,
+      "text": "Trong mỗi một property này nó có hai phần."
+    },
+    {
+      "id": "S0364",
+      "start": 1452.75,
+      "end": 1455.94,
+      "text": "Một phần là phần name là tên của property."
+    },
+    {
+      "id": "S0365",
+      "start": 1456.2,
+      "end": 1456.88,
+      "text": "Đúng không ạ?"
+    },
+    {
+      "id": "S0366",
+      "start": 1456.88,
+      "end": 1461.32,
+      "text": "Phần thứ hai là phần value, tức là cái phần giá trị thực tế mà thông tin đây đang có."
+    },
+    {
+      "id": "S0367",
+      "start": 1461.34,
+      "end": 1462.7,
+      "text": "Và chúng được ngăn cách nhau bởi dấu hai chấm."
+    },
+    {
+      "id": "S0368",
+      "start": 1462.7,
+      "end": 1466.3,
+      "text": "Ok, sau khi gói gém thông tin dữ liệu vào trong một Object rồi, bây giờ chúng ta lại muốn truy xuất nó ra thì làm thế nào?"
+    },
+    {
+      "id": "S0369",
+      "start": 1466.3,
+      "end": 1468.58,
+      "text": "Giả sử là anh em muốn in ra phần tên chẳng hạn."
+    },
+    {
+      "id": "S0370",
+      "start": 1468.58,
+      "end": 1473.14,
+      "text": "Anh em sẽ viết cho mình như sau: document.write đã này."
+    },
+    {
+      "id": "S0371",
+      "start": 1473.3,
+      "end": 1477.3,
+      "text": "Rồi, đó chúng ta cần phải chỉ định tên của cái Object đã nha, cô hàng xóm."
+    },
+    {
+      "id": "S0372",
+      "start": 1477.3,
+      "end": 1479.46,
+      "text": "Đó, sau đó anh em viết một cái dấu chấm."
+    },
+    {
+      "id": "S0373",
+      "start": 1479.5,
+      "end": 1481.01,
+      "text": "Đó, sau đó là tên thuộc tính."
+    },
+    {
+      "id": "S0374",
+      "start": 1481.01,
+      "end": 1483.56,
+      "text": "Ví dụ mình muốn in ra tên thì anh em điền là.tên."
+    },
+    {
+      "id": "S0375",
+      "start": 1483.56,
+      "end": 1485.38,
+      "text": "Căn chuẩn lên lại là in ra là được."
+    },
+    {
+      "id": "S0376",
+      "start": 1485.42,
+      "end": 1488.78,
+      "text": "Tương tự với các thuộc tính khác, anh em có thể thử nha với cái thuộc tính là địa chỉ."
+    },
+    {
+      "id": "S0377",
+      "start": 1488.78,
+      "end": 1493.34,
+      "text": "Thì khi nó lại là một Object khác nữa, do đó nên anh em cần thêm một phép truy cập đến thuộc tính con nữa."
+    },
+    {
+      "id": "S0378",
+      "start": 1493.42,
+      "end": 1500.74,
+      "text": "Ví dụ như ở đây, mình viết là địa chỉ, sau đó chúng ta muốn truy xuất ra quận thì anh em lại chấm quận, Cầu Giấy."
+    },
+    {
+      "id": "S0379",
+      "start": 1500.9,
+      "end": 1503.2,
+      "text": "OK, anh em đã hình dung được cách sử dụng chưa?"
+    },
+    {
+      "id": "S0380",
+      "start": 1503.2,
+      "end": 1507.46,
+      "text": "Rồi, bây giờ mình sẽ chuyển sang một kiểu dữ liệu đều gọi là function, tạm dịch là hàm."
+    },
+    {
+      "id": "S0381",
+      "start": 1507.58,
+      "end": 1514.42,
+      "text": "Function là một kiểu Object đặc biệt, tức là nó vẫn dựa trên kiểu dữ liệu Object nhưng được tích hợp theo một số cơ chế đặc biệt."
+    },
+    {
+      "id": "S0382",
+      "start": 1514.42,
+      "end": 1521.32,
+      "text": "Nó đặc biệt vì dữ liệu lưu trữ là một đoạn code, hay nói cách khác thì nó là một tập các câu lệnh nào đó."
+    },
+    {
+      "id": "S0383",
+      "start": 1521.42,
+      "end": 1524.92,
+      "text": "Do vậy, một số tài liệu còn gọi function là chương trình con."
+    },
+    {
+      "id": "S0384",
+      "start": 1525.02,
+      "end": 1528.72,
+      "text": "Tức là bản thân nó có thể lưu trữ một cái chương trình nhỏ nhỏ phục vụ trong chương trình lớn."
+    },
+    {
+      "id": "S0385",
+      "start": 1528.82,
+      "end": 1534.12,
+      "text": "Ví dụ, bây giờ mình sẽ tạo ra một cái chương trình con là nhập năm sinh, in ra số tuổi chẳng hạn, thì anh em sẽ biết thế nào."
+    },
+    {
+      "id": "S0386",
+      "start": 1534.22,
+      "end": 1537.12,
+      "text": "Được rồi, mình sẽ code nhanh nhé, mình sẽ tạo ra một biến là năm sinh."
+    },
+    {
+      "id": "S0387",
+      "start": 1538.87,
+      "end": 1539.47,
+      "text": "Bằng gì?"
+    },
+    {
+      "id": "S0388",
+      "start": 1539.47,
+      "end": 1543.55,
+      "text": "Window.prompt đúng không ạ để nhập vào từ trình duyệt."
+    },
+    {
+      "id": "S0389",
+      "start": 1543.55,
+      "end": 1549.66,
+      "text": "Giả sử năm hiện tại là năm 2023 thì tuổi của chúng ta sẽ là 2023 trừ đi năm sinh."
+    },
+    {
+      "id": "S0390",
+      "start": 1549.66,
+      "end": 1555.16,
+      "text": "Trong thực tế, số 2023 này nó nên được lấy từ một cái lệnh của hệ thống để in ra được số năm hiện tại."
+    },
+    {
+      "id": "S0391",
+      "start": 1555.16,
+      "end": 1562.66,
+      "text": "Tuy nhiên, mình viết cố định số 2023 ở đây cho nó đơn giản đã, khá chương trình con của chúng ta sẽ gồm hai, ba dòng code ngắn gọn như vậy."
+    },
+    {
+      "id": "S0392",
+      "start": 1562.66,
+      "end": 1567.66,
+      "text": "Bây giờ mình sẽ tạo ra một biến có kiểu function để lưu trữ ba dòng code này."
+    },
+    {
+      "id": "S0393",
+      "start": 1567.66,
+      "end": 1569.27,
+      "text": "Thì anh em sẽ viết cho mình như sau."
+    },
+    {
+      "id": "S0394",
+      "start": 1569.27,
+      "end": 1572.46,
+      "text": "Đầu tiên, nó cũng là một biến, chúng ta cũng dùng lệnh var đúng không ạ?"
+    },
+    {
+      "id": "S0395",
+      "start": 1572.56,
+      "end": 1574.56,
+      "text": "Sau đó sẽ là tên của biến được không ạ?"
+    },
+    {
+      "id": "S0396",
+      "start": 1574.66,
+      "end": 1581.26,
+      "text": "Mình có thể viết là tính tuổi, sau đó là dấu bằng, sau đó là một từ khóa function, mở đóng ngoặc tròn, mở đóng ngoặc nhọn."
+    },
+    {
+      "id": "S0397",
+      "start": 1581.36,
+      "end": 1583.63,
+      "text": "Trúc này nhìn giống với cấu trúc if-else nha."
+    },
+    {
+      "id": "S0398",
+      "start": 1583.63,
+      "end": 1587.46,
+      "text": "Đúng rồi anh em, chúng ta cũng sẽ viết code vào giữa cái cặp ngoặc nhọn này."
+    },
+    {
+      "id": "S0399",
+      "start": 1587.56,
+      "end": 1592.96,
+      "text": "Đấy, thì anh em phải chuyển cho mình ba cái dòng code này lên trên đúng ạ, đi vào giữa đó."
+    },
+    {
+      "id": "S0400",
+      "start": 1592.96,
+      "end": 1599.54,
+      "text": "Thì function nó là một từ khóa bắt buộc cho kiểu function, cái cặp ngoặc tròn này là nơi để chúng ta định nghĩa ra các biến tham số."
+    },
+    {
+      "id": "S0401",
+      "start": 1599.54,
+      "end": 1603.25,
+      "text": "Nó làm gì thì tí nữa mình sẽ giải thích sau, bây giờ mình sẽ chạy cái chương trình con này trước."
+    },
+    {
+      "id": "S0402",
+      "start": 1603.25,
+      "end": 1604.36,
+      "text": "Chạy chương trình con là sao?"
+    },
+    {
+      "id": "S0403",
+      "start": 1604.38,
+      "end": 1610.26,
+      "text": "Tức là các lệnh ở bên trong function lúc này nó mới chỉ mang tính định nghĩa thôi, nó chưa thực sự được thực hiện."
+    },
+    {
+      "id": "S0404",
+      "start": 1610.28,
+      "end": 1614.37,
+      "text": "Để mà thực hiện thì anh em sẽ phải thông qua một thao tác gọi là gọi hàm."
+    },
+    {
+      "id": "S0405",
+      "start": 1614.37,
+      "end": 1617.28,
+      "text": "Đấy, tiếng Anh người ta hay gọi là call of function."
+    },
+    {
+      "id": "S0406",
+      "start": 1617.3,
+      "end": 1618.61,
+      "text": "Hoặc là invoke of function."
+    },
+    {
+      "id": "S0407",
+      "start": 1618.61,
+      "end": 1623.92,
+      "text": "Anh em sẽ viết cho mình là tính tuổi, kèm theo cặp mở đóng ngoặc tròn, anh em cùng xem chương trình chạy nha."
+    },
+    {
+      "id": "S0408",
+      "start": 1624.73,
+      "end": 1625.9,
+      "text": "Có vẻ là nó không chạy anh em ạ."
+    },
+    {
+      "id": "S0409",
+      "start": 1625.9,
+      "end": 1629.45,
+      "text": "Đấy, thì cái việc mà viết code xong và chương trình không chạy, nó là chuyện hết sức bình thường."
+    },
+    {
+      "id": "S0410",
+      "start": 1629.47,
+      "end": 1633.85,
+      "text": "Và tiện đây mình sẽ giới thiệu anh em về cách thức để mà check ra lỗi đó là gì."
+    },
+    {
+      "id": "S0411",
+      "start": 1634.39,
+      "end": 1638.89,
+      "text": "Thì ở trên trình duyệt Google Chrome, anh em bấm cho mình F12 để mở ra phần console."
+    },
+    {
+      "id": "S0412",
+      "start": 1638.89,
+      "end": 1641.51,
+      "text": "Console sẽ là nơi mà nó sẽ check ra được cái lỗi."
+    },
+    {
+      "id": "S0413",
+      "start": 1641.55,
+      "end": 1647.27,
+      "text": "Trong quá trình anh em viết các đoạn code JavaScript, ví dụ ở đây anh em thấy là có một cái dòng báo đỏ là type kiểu dữ liệu."
+    },
+    {
+      "id": "S0414",
+      "start": 1647.27,
+      "end": 1651.12,
+      "text": "Nó báo ở cái lệnh window.prompt is not a function à, đây này."
+    },
+    {
+      "id": "S0415",
+      "start": 1651.12,
+      "end": 1656.43,
+      "text": "Cái lệnh window.prompt là mình viết sai chính tả, mình viết thiếu một chữ p, prompt."
+    },
+    {
+      "id": "S0416",
+      "start": 1656.63,
+      "end": 1663.99,
+      "text": "Anh em nhé và mình cũng vừa chợt nhận ra là cái năm sinh này của mình cũng cần phải chuyển về kiểu số nguyên đấy, parseInt."
+    },
+    {
+      "id": "S0417",
+      "start": 1664.01,
+      "end": 1666.65,
+      "text": "Nếu không thì nó sẽ là kiểu String, bây giờ Ctrl + S lại này."
+    },
+    {
+      "id": "S0418",
+      "start": 1667.39,
+      "end": 1672.45,
+      "text": "Đó, anh em thấy không, chương trình nó chạy được bình thường đúng không ạ, ví dụ mình nhập là năm sinh 2000 chẳng hạn."
+    },
+    {
+      "id": "S0419",
+      "start": 1673.17,
+      "end": 1674.83,
+      "text": "Oh, in ra câu gì à, đúng rồi."
+    },
+    {
+      "id": "S0420",
+      "start": 1674.83,
+      "end": 1679.85,
+      "text": "Bởi vì cái document.write này của mình vẫn in ra cái địa chỉ của cô hàng xóm ở trên đấy."
+    },
+    {
+      "id": "S0421",
+      "start": 1679.87,
+      "end": 1682.45,
+      "text": "Ok, tạm thời bây giờ chúng ta không quan tâm đến cô hàng xóm nữa nhé."
+    },
+    {
+      "id": "S0422",
+      "start": 1682.47,
+      "end": 1686.43,
+      "text": "Chúng ta sẽ quan tâm đến chương trình con là chúng ta in về tuổi đó các bạn ạ."
+    },
+    {
+      "id": "S0423",
+      "start": 1686.43,
+      "end": 1689.37,
+      "text": "Mình chạy lại này, 2000 này, 2000 thì năm nay 23 tuổi, đó."
+    },
+    {
+      "id": "S0424",
+      "start": 1689.39,
+      "end": 1695.73,
+      "text": "OK, vậy thì việc mà chúng ta tách câu lệnh này ra và đưa vào function thì nó có khác gì về việc chúng ta gọi nó một cách độc lập."
+    },
+    {
+      "id": "S0425",
+      "start": 1695.75,
+      "end": 1700.39,
+      "text": "Ví dụ như mình đưa cái lệnh này ra ngoài chẳng hạn, như thế này thì nó vẫn chạy anh em nhá."
+    },
+    {
+      "id": "S0426",
+      "start": 1700.41,
+      "end": 1706.73,
+      "text": "Tuy nhiên, khi mà chúng ta đưa nó vào function thì nó sẽ giúp chúng ta có thể tái sử dụng cái function đấy trong những tình huống kế tiếp."
+    },
+    {
+      "id": "S0427",
+      "start": 1706.83,
+      "end": 1712.53,
+      "text": "Ví dụ như nếu mình muốn thực hiện công việc là tính tuổi nhiều lần chẳng hạn, mình sẽ lại chuyển nó vào trong."
+    },
+    {
+      "id": "S0428",
+      "start": 1713.6,
+      "end": 1717.52,
+      "text": "Và bây giờ mình có thể thực hiện lại việc tính tuổi bằng cách gọi lại function đấy là xong."
+    },
+    {
+      "id": "S0429",
+      "start": 1717.6,
+      "end": 1718.14,
+      "text": "Đúng không ạ?"
+    },
+    {
+      "id": "S0430",
+      "start": 1718.14,
+      "end": 1722.04,
+      "text": "Anh em chỉ cần gọi thêm một cái tính tuổi nữa thì nó sẽ thực hiện 2 lần tính tuổi cho anh em."
+    },
+    {
+      "id": "S0431",
+      "start": 1722.12,
+      "end": 1724.12,
+      "text": "Ví dụ ở đây, mình sẽ in ra một cái ngắt dòng nữa này."
+    },
+    {
+      "id": "S0432",
+      "start": 1725.35,
+      "end": 1730.53,
+      "text": "Mình nhập nhé, 2000, vậy nhập năm sinh của mình đi, 1992 đi, đấy, 31."
+    },
+    {
+      "id": "S0433",
+      "start": 1730.53,
+      "end": 1731.88,
+      "text": "Anh em thấy không?"
+    },
+    {
+      "id": "S0434",
+      "start": 1731.88,
+      "end": 1734.95,
+      "text": "Nó thực hiện 2 lần công việc tính tuổi."
+    },
+    {
+      "id": "S0435",
+      "start": 1734.95,
+      "end": 1740.27,
+      "text": "Thì khi mà anh em không có function thì không phải là anh em sẽ phải gọi lại 3 dòng code này sao."
+    },
+    {
+      "id": "S0436",
+      "start": 1740.27,
+      "end": 1743.85,
+      "text": "Và khi số lần yêu cầu nó tăng lên thì cái số dòng code của anh em cũng sẽ dài ra."
+    },
+    {
+      "id": "S0437",
+      "start": 1743.87,
+      "end": 1751.55,
+      "text": "Đấy, cái việc sử dụng function thì nó sẽ rút ngắn code của chúng ta và tăng tính tái sử dụng trong logic một đoạn tính toán nào đấy."
+    },
+    {
+      "id": "S0438",
+      "start": 1751.57,
+      "end": 1757.95,
+      "text": "OK, một phần kiến thức khác cũng rất quan trọng đối với phần function mà anh em cần nắm được có thể kể đến như là phần parameter."
+    },
+    {
+      "id": "S0439",
+      "start": 1757.95,
+      "end": 1763.03,
+      "text": "Thế là phần tham số của function, có thể hiểu nó là các biến được định nghĩa ở trong cái phần ngoặc tròn này này."
+    },
+    {
+      "id": "S0440",
+      "start": 1763.31,
+      "end": 1770.15,
+      "text": "Này, thì tham số có thể hiểu nó là nơi tiếp nhận input, tức là đầu vào cho chương trình con đó, ví dụ như là."
+    },
+    {
+      "id": "S0441",
+      "start": 1770.43,
+      "end": 1777.51,
+      "text": "Cái chương trình tính tuổi này của mình, thay vì là mình nhận thông tin năm sinh từ phần window.prompt, thì mình sẽ nhận từ một lệnh nào khác để chẳng hạn."
+    },
+    {
+      "id": "S0442",
+      "start": 1777.63,
+      "end": 1782.91,
+      "text": "Thì anh em sẽ cần liệt kê biến tham số ở đây, ví dụ nha, mình sẽ chuyển cái năm sinh lên đây, phần này thì mình sẽ tạo ẩn nữa đi."
+    },
+    {
+      "id": "S0443",
+      "start": 1783.07,
+      "end": 1788.03,
+      "text": "Anh em có thể dùng hai dấu gạch chéo để comment, tức là cái dòng code đấy sẽ bị vô hiệu hóa đi."
+    },
+    {
+      "id": "S0444",
+      "start": 1788.05,
+      "end": 1789.43,
+      "text": "Nó sẽ không thực hiện cái dòng code đó."
+    },
+    {
+      "id": "S0445",
+      "start": 1789.43,
+      "end": 1792.55,
+      "text": "Đấy, ngoài ra anh em có thể dùng cái comment để mà chú thích cho các đoạn code của mình."
+    },
+    {
+      "id": "S0446",
+      "start": 1792.57,
+      "end": 1797.47,
+      "text": "Rồi, khi mà cái function của chúng ta đã định nghĩa có một cái input như thế này thì anh em sẽ làm gì?"
+    },
+    {
+      "id": "S0447",
+      "start": 1797.49,
+      "end": 1803.19,
+      "text": "Thì khi mà anh em gọi cái hàm đó, anh em sẽ phải truyền cho nó một cái giá trị, đúng không ạ, ví dụ như 2000 này."
+    },
+    {
+      "id": "S0448",
+      "start": 1803.21,
+      "end": 1804.33,
+      "text": "Một cái là 1992 nè."
+    },
+    {
+      "id": "S0449",
+      "start": 1804.33,
+      "end": 1810.23,
+      "text": "Bây giờ anh em cùng xem nhé, nó sẽ thấy chương trình chạy như cũ nhưng mà nó sẽ không tạo ra cái gì."
+    },
+    {
+      "id": "S0450",
+      "start": 1810.23,
+      "end": 1815.83,
+      "text": "Nó không tạo ra prompt cửa sổ để mà cho chúng ta nhập dữ liệu nữa và nó sẽ lấy trực tiếp cái giá trị này."
+    },
+    {
+      "id": "S0451",
+      "start": 1815.85,
+      "end": 1820.59,
+      "text": "Các giá trị này có thể được tạo ra bởi một lệnh nào đấy mà anh em lập trình sau này, đúng không ạ?"
+    },
+    {
+      "id": "S0452",
+      "start": 1820.61,
+      "end": 1824.55,
+      "text": "Ở đây theo mình nghĩ thì có một cách hình dung nó rất liên tưởng hơn về khái niệm tham số này."
+    },
+    {
+      "id": "S0453",
+      "start": 1824.57,
+      "end": 1830.23,
+      "text": "Anh em có thể nhớ về hàm số hoặc là hằng số mà anh em học ở cấp hai, cấp ba đúng không ạ?"
+    },
+    {
+      "id": "S0454",
+      "start": 1830.25,
+      "end": 1832.91,
+      "text": "Fx đó là viết tắt của từ function, đúng không nhỉ?"
+    },
+    {
+      "id": "S0455",
+      "start": 1832.93,
+      "end": 1833.97,
+      "text": "Còn x là gì?"
+    },
+    {
+      "id": "S0456",
+      "start": 1833.99,
+      "end": 1835.39,
+      "text": "X là biến số, đúng không ạ?"
+    },
+    {
+      "id": "S0457",
+      "start": 1835.39,
+      "end": 1839.55,
+      "text": "Với mỗi giá trị của biến thì nó sẽ có những cái kết quả khác nhau, đúng không ạ?"
+    },
+    {
+      "id": "S0458",
+      "start": 1839.55,
+      "end": 1843.9,
+      "text": "Thì ở đây parameter nó không khác gì là biến số trong hàm số cả, đúng ạ!"
+    },
+    {
+      "id": "S0459",
+      "start": 1843.9,
+      "end": 1846.27,
+      "text": "Với mỗi một giá trị khác nhau như 2000 hay 1992."
+    },
+    {
+      "id": "S0460",
+      "start": 1846.31,
+      "end": 1848.4,
+      "text": "Thì nó cho ra những cái kết quả khác nhau."
+    },
+    {
+      "id": "S0461",
+      "start": 1848.4,
+      "end": 1851.39,
+      "text": "Và trong lập trình thì những cái giá trị mà chúng ta truyền."
+    },
+    {
+      "id": "S0462",
+      "start": 1851.43,
+      "end": 1857.24,
+      "text": "Cho phần tham số parameter này còn được gọi là đối số, tiếng Anh của nó là argument, anh em nha."
+    },
+    {
+      "id": "S0463",
+      "start": 1857.24,
+      "end": 1860.27,
+      "text": "Ok, thế là xong phần input của function, đúng rồi."
+    },
+    {
+      "id": "S0464",
+      "start": 1860.31,
+      "end": 1862.36,
+      "text": "Còn phần output, phần đầu ra thì làm sao?"
+    },
+    {
+      "id": "S0465",
+      "start": 1862.36,
+      "end": 1866.07,
+      "text": "Ở đây anh em thấy là cái function này nó tạo ra những số 23 và 31, đúng ạ."
+    },
+    {
+      "id": "S0466",
+      "start": 1866.07,
+      "end": 1868.3,
+      "text": "Nó được thực hiện thông qua cái lệnh document.write."
+    },
+    {
+      "id": "S0467",
+      "start": 1868.3,
+      "end": 1871.61,
+      "text": "Tuy nhiên thì cái lệnh này là một lệnh làm việc trực tiếp với phần trang web."
+    },
+    {
+      "id": "S0468",
+      "start": 1871.63,
+      "end": 1873.95,
+      "text": "Chứ nó không thể hiện cái phần output đầu ra của function."
+    },
+    {
+      "id": "S0469",
+      "start": 1873.95,
+      "end": 1875.83,
+      "text": "Trong thực tế là cái function này của chúng ta."
+    },
+    {
+      "id": "S0470",
+      "start": 1875.85,
+      "end": 1880.91,
+      "text": "Có thể là nó sẽ tạo ra một kết quả và giá trị gì đấy để phục vụ cho những cái lệnh tiếp theo, vâng không ạ?"
+    },
+    {
+      "id": "S0471",
+      "start": 1880.93,
+      "end": 1884.65,
+      "text": "Thì trong trường hợp đấy thì anh em sẽ phải sử dụng cái lệnh đó là return."
+    },
+    {
+      "id": "S0472",
+      "start": 1884.65,
+      "end": 1887.57,
+      "text": "Đây là một cái lệnh được sử dụng ở bên trong cái function."
+    },
+    {
+      "id": "S0473",
+      "start": 1887.59,
+      "end": 1889.21,
+      "text": "Return có nghĩa là trả về, đúng bạn?"
+    },
+    {
+      "id": "S0474",
+      "start": 1889.21,
+      "end": 1893.17,
+      "text": "Ví dụ ở đây mình tính ra cái tuổi bằng bao nhiêu đấy, mình sẽ return đến cái tuổi đó ra."
+    },
+    {
+      "id": "S0475",
+      "start": 1893.17,
+      "end": 1895.17,
+      "text": "Nó return ra đâu, nó sẽ trả kết quả về đâu?"
+    },
+    {
+      "id": "S0476",
+      "start": 1895.45,
+      "end": 1898.16,
+      "text": "Đây, anh em cùng nhìn xuống cái chỗ mà anh em vừa gọi function nè."
+    },
+    {
+      "id": "S0477",
+      "start": 1898.16,
+      "end": 1900.21,
+      "text": "Đấy thì tại thời điểm anh em gọi function này này."
+    },
+    {
+      "id": "S0478",
+      "start": 1900.29,
+      "end": 1906.13,
+      "text": "Nó sẽ tính ra một cái kết quả gì đấy và để lấy được cái giá trị đấy, anh em sẽ phải dùng một biến để hứng lấy cái giá trị đó."
+    },
+    {
+      "id": "S0479",
+      "start": 1906.21,
+      "end": 1906.79,
+      "text": "Đúng không ạ?"
+    },
+    {
+      "id": "S0480",
+      "start": 1906.79,
+      "end": 1911.05,
+      "text": "Ví dụ như mình sẽ dùng cái biến tuổi thì lúc này cái tính tuổi nó sẽ tạo ra một kết quả gì đấy."
+    },
+    {
+      "id": "S0481",
+      "start": 1911.09,
+      "end": 1912.55,
+      "text": "Và nó sẽ gắn cho biến tuổi ở đây."
+    },
+    {
+      "id": "S0482",
+      "start": 1912.55,
+      "end": 1915.73,
+      "text": "Bây giờ mình sẽ thử chuyển cái lệnh document.write để đi xuống dưới nha."
+    },
+    {
+      "id": "S0483",
+      "start": 1920.46,
+      "end": 1922.94,
+      "text": "Anh em theo dõi mình vừa save lại đấy, các kết quả vẫn như cũ đúng không ạ?"
+    },
+    {
+      "id": "S0484",
+      "start": 1923.2,
+      "end": 1928.42,
+      "text": "Ngoài ra, để mà ngắn gọn hơn thì các em cũng có thể gọi trực tiếp phần function tính tuổi này ở bên trong cái lệnh document.write."
+    },
+    {
+      "id": "S0485",
+      "start": 1928.7,
+      "end": 1929.34,
+      "text": "Như sao?"
+    },
+    {
+      "id": "S0486",
+      "start": 1933.33,
+      "end": 1936.55,
+      "text": "Đây chẳng qua là cách gối tiếp các câu lệnh mình đã chia sẻ ở đầu bài học."
+    },
+    {
+      "id": "S0487",
+      "start": 1939.31,
+      "end": 1940.88,
+      "text": "Gọn hơn rất nhiều đúng không nhỉ?"
+    },
+    {
+      "id": "S0488",
+      "start": 1940.88,
+      "end": 1945.45,
+      "text": "Nếu như function không có lệnh return thì mặc định nào nó sẽ return về một giá trị là undefined."
+    },
+    {
+      "id": "S0489",
+      "start": 1945.71,
+      "end": 1951.09,
+      "text": "OK, chắc là về function thì mình xin phép được tạm dừng tại đây để cho nó phù hợp với tinh thần nhập môn của bài giảng này."
+    },
+    {
+      "id": "S0490",
+      "start": 1951.09,
+      "end": 1956.19,
+      "text": "Đấy, các anh em có thể tìm hiểu thêm một số những vấn đề khác, ví dụ như là các cách thức để khai báo ra một function."
+    },
+    {
+      "id": "S0491",
+      "start": 1956.21,
+      "end": 1960.43,
+      "text": "Nhưng ở đây là cái cách khai báo này nó giống với cách khai báo biến đúng không ạ?"
+    },
+    {
+      "id": "S0492",
+      "start": 1960.45,
+      "end": 1965.95,
+      "text": "Thế tuy nhiên thì chúng ta cũng có thể khai báo một function theo cái cách truyền thống giống như một số ngôn ngữ lập trình."
+    },
+    {
+      "id": "S0493",
+      "start": 1965.97,
+      "end": 1967.6,
+      "text": "Nghĩa là C hay là Java đã làm."
+    },
+    {
+      "id": "S0494",
+      "start": 1967.6,
+      "end": 1971.95,
+      "text": "Ngoài ra thì nó có một cách khai báo nó hiện đại hơn, đó là dùng Arrow Function."
+    },
+    {
+      "id": "S0495",
+      "start": 1971.97,
+      "end": 1973.34,
+      "text": "Nó dùng ký hiệu mũi tên đấy."
+    },
+    {
+      "id": "S0496",
+      "start": 1973.34,
+      "end": 1977.53,
+      "text": "Tuy nhiên thì với các anh em nhập môn thì mình nghĩ là việc sử dụng quá nhiều ký hiệu."
+    },
+    {
+      "id": "S0497",
+      "start": 1977.53,
+      "end": 1979.29,
+      "text": "Thì nó sẽ hơi rối và khó hình dung."
+    },
+    {
+      "id": "S0498",
+      "start": 1979.29,
+      "end": 1981.92,
+      "text": "Thế nên mình cũng không đề xuất trong bài giảng này."
+    },
+    {
+      "id": "S0499",
+      "start": 1981.92,
+      "end": 1983.53,
+      "text": "Đấy, ngoài ra có một vấn đề nữa."
+    },
+    {
+      "id": "S0500",
+      "start": 1983.53,
+      "end": 1989.53,
+      "text": "Khi mà anh em truyền tham số, nó sẽ có sự khác nhau giữa dữ liệu Primitive và Object."
+    },
+    {
+      "id": "S0501",
+      "start": 1989.53,
+      "end": 1992.22,
+      "text": "Thì anh em có thể chủ động tìm hiểu thêm về vấn đề này nha."
+    },
+    {
+      "id": "S0502",
+      "start": 1992.22,
+      "end": 1995.68,
+      "text": "OK, bây giờ mình sẽ chuyển qua cái kiểu dữ liệu tiếp theo được gọi là Array."
+    },
+    {
+      "id": "S0503",
+      "start": 1995.68,
+      "end": 1996.86,
+      "text": "Tạm dịch là mảng."
+    },
+    {
+      "id": "S0504",
+      "start": 1996.86,
+      "end": 2003.68,
+      "text": "Nó cũng là một object đặc biệt và nó đặc biệt ở chỗ các cái dữ liệu mà anh em tổ chức trong array."
+    },
+    {
+      "id": "S0505",
+      "start": 2003.68,
+      "end": 2009.92,
+      "text": "Thì nó sẽ không thông qua các key hay property name, mà nó sẽ thông qua một cái khái niệm là index, tạm hiểu là số thứ tự đi."
+    },
+    {
+      "id": "S0506",
+      "start": 2009.94,
+      "end": 2012.73,
+      "text": "OK, mình sẽ lấy một cái ví dụ anh em sẽ hiểu ngay nhé."
+    },
+    {
+      "id": "S0507",
+      "start": 2012.73,
+      "end": 2017.42,
+      "text": "Giả sử mình có vài những cái thông tin như là Lan, Thảo, Eimi Fukada, Yua Mikami chẳng hạn."
+    },
+    {
+      "id": "S0508",
+      "start": 2020.2,
+      "end": 2023.3,
+      "text": "Nếu mà muốn lưu nhiều dữ liệu như này, anh em vẫn hoàn toàn có thể sử dụng object."
+    },
+    {
+      "id": "S0509",
+      "start": 2023.32,
+      "end": 2030.54,
+      "text": "Đấy, tuy nhiên trong trường hợp này, khi mà chúng ta không biết rõ được các cái tên của thuộc tính là gì thì anh em có thể sử dụng Array nha."
+    },
+    {
+      "id": "S0510",
+      "start": 2030.56,
+      "end": 2036.94,
+      "text": "Đấy thì anh em có thể liệt kê các giá trị ra, ngăn cách nhau bởi dấu phẩy và bọc nó trong một cặp ngoặc vuông."
+    },
+    {
+      "id": "S0511",
+      "start": 2036.94,
+      "end": 2040.62,
+      "text": "Sau đó gán nó cho một biến, mình tạm gọi là A đi."
+    },
+    {
+      "id": "S0512",
+      "start": 2041.66,
+      "end": 2044.53,
+      "text": "Lúc này, A chính là một biến có kiểu là Array."
+    },
+    {
+      "id": "S0513",
+      "start": 2044.53,
+      "end": 2049.52,
+      "text": "Và lúc này cái việc truy cập các phần tử trong array sẽ thông qua các số thứ tự."
+    },
+    {
+      "id": "S0514",
+      "start": 2049.54,
+      "end": 2051.78,
+      "text": "Người ta gọi là index và được tính từ 0."
+    },
+    {
+      "id": "S0515",
+      "start": 2051.78,
+      "end": 2055.02,
+      "text": "Ví dụ ở đây, cái Lan xuất hiện đầu tiên thì nó sẽ là số 0."
+    },
+    {
+      "id": "S0516",
+      "start": 2056.11,
+      "end": 2059.99,
+      "text": "Anh em sẽ viết cho mình là ngoặc vuông không, anh em lưu ý nhé."
+    },
+    {
+      "id": "S0517",
+      "start": 2060.01,
+      "end": 2064.67,
+      "text": "Lúc này cái toán tử ngoặc vuông nó đóng vai trò là truy cập đến một phần tử theo cái số thứ tự đây."
+    },
+    {
+      "id": "S0518",
+      "start": 2064.67,
+      "end": 2066.19,
+      "text": "Mình sẽ in cho anh em xem này."
+    },
+    {
+      "id": "S0519",
+      "start": 2066.19,
+      "end": 2069.79,
+      "text": "Là mình sẽ tạm xóa hai cái trên đi cho nó đỡ vướng nha."
+    },
+    {
+      "id": "S0520",
+      "start": 2069.79,
+      "end": 2075.51,
+      "text": "Ví dụ anh em muốn lấy phần tử số 1, có nghĩa là thao tác thì anh em truyền số 1 vào đây."
+    },
+    {
+      "id": "S0521",
+      "start": 2075.51,
+      "end": 2081.31,
+      "text": "Cho nên là cái cơ chế đặc biệt mà thằng Array này nó có quả đầu thì nó vẫn là một object anh em nhé."
+    },
+    {
+      "id": "S0522",
+      "start": 2081.33,
+      "end": 2086.31,
+      "text": "Nhưng lúc nãy mình còn nói đó, Array nó là một object đặc biệt, nó vẫn là kiểu dữ liệu dựa trên object."
+    },
+    {
+      "id": "S0523",
+      "start": 2086.33,
+      "end": 2092.55,
+      "text": "Thì nên là nó vẫn có thể quản lý các thuộc tính, các property anh em nhé, ví dụ như là với Array thì nó có một cái thuộc tính đặc biệt."
+    },
+    {
+      "id": "S0524",
+      "start": 2092.57,
+      "end": 2097.71,
+      "text": "Còn là lang được tích hợp sẵn ở trong Array anh em lưu ý nhé, với thuộc tính thì chúng ta sẽ vẫn dùng dấu chấm."
+    },
+    {
+      "id": "S0525",
+      "start": 2097.87,
+      "end": 2101.07,
+      "text": "Thuộc tính length nó thể hiện cái độ dài của array."
+    },
+    {
+      "id": "S0526",
+      "start": 2101.09,
+      "end": 2102.59,
+      "text": "Độ dài đây là số lượng phần tử."
+    },
+    {
+      "id": "S0527",
+      "start": 2102.61,
+      "end": 2104.99,
+      "text": "Ví dụ ở đây chúng ta có 4 phần tử đúng không ạ?"
+    },
+    {
+      "id": "S0528",
+      "start": 2105.07,
+      "end": 2108.03,
+      "text": "Thì cái length này nó trả ra là 4 anh em nha."
+    },
+    {
+      "id": "S0529",
+      "start": 2108.35,
+      "end": 2113.41,
+      "text": "Ngoài ra thì nó còn một số những thuộc tính khác có kiểu là function dùng để bổ trợ cho array."
+    },
+    {
+      "id": "S0530",
+      "start": 2113.49,
+      "end": 2119.79,
+      "text": "Như là hàm push để thêm dữ liệu vào và hàm pop để xóa dữ liệu đi, ví dụ như sau a.push."
+    },
+    {
+      "id": "S0531",
+      "start": 2120.19,
+      "end": 2124.87,
+      "text": "Nó là một function và anh em cần phải truyền một tham số thể hiện là cái phần tử mà anh em muốn thêm."
+    },
+    {
+      "id": "S0532",
+      "start": 2124.87,
+      "end": 2130.63,
+      "text": "Ví dụ mình muốn thêm một thông tin là Yua Mikami, lúc này anh em xem là cái length này có tăng lên một không nhá?"
+    },
+    {
+      "id": "S0533",
+      "start": 2130.79,
+      "end": 2132.19,
+      "text": "Đó, lên là 5 đúng không ạ?"
+    },
+    {
+      "id": "S0534",
+      "start": 2132.19,
+      "end": 2138.55,
+      "text": "Để mà in được array A này ra phần trang web, anh em có thể truyền trực tiếp cái A này vào câu lệnh document.write nha."
+    },
+    {
+      "id": "S0535",
+      "start": 2138.57,
+      "end": 2144.87,
+      "text": "Đây, nó sẽ hiển thị các phần tử trong array phân cách nhau bởi dấu phẩy, và anh em lưu ý nó sẽ không có cái dấu ngoặc vuông."
+    },
+    {
+      "id": "S0536",
+      "start": 2144.89,
+      "end": 2150.25,
+      "text": "Lệnh push này anh em thấy là nó sẽ thêm một phần tử vào cuối, để mà xóa cái vật tử ở cuối đi."
+    },
+    {
+      "id": "S0537",
+      "start": 2150.25,
+      "end": 2154.25,
+      "text": "Thì chúng ta có một cái lệnh gọi là pop, đây ví dụ như thế này."
+    },
+    {
+      "id": "S0538",
+      "start": 2155.25,
+      "end": 2156.25,
+      "text": "Anh em thấy không?"
+    },
+    {
+      "id": "S0539",
+      "start": 2156.25,
+      "end": 2161.25,
+      "text": "Lúc này thì nó sẽ đẩy Yua Mikami ra, đã chỉ còn đến Eimi Fukada thôi."
+    },
+    {
+      "id": "S0540",
+      "start": 2162.25,
+      "end": 2164.25,
+      "text": "Có thêm, có xóa thì phải có sửa nữa đúng không ạ?"
+    },
+    {
+      "id": "S0541",
+      "start": 2165.25,
+      "end": 2167.25,
+      "text": "Ví dụ mình muốn sửa phần tử Eimi Fukada này."
+    },
+    {
+      "id": "S0542",
+      "start": 2168.25,
+      "end": 2169.25,
+      "text": "Rút gọn lại con Eimi Fukada thôi."
+    },
+    {
+      "id": "S0543",
+      "start": 2170.25,
+      "end": 2171.25,
+      "text": "Thì anh em sẽ làm gì?"
+    },
+    {
+      "id": "S0544",
+      "start": 2172.25,
+      "end": 2174.25,
+      "text": "Chúng ta sẽ truy cập vào phần tử đấy."
+    },
+    {
+      "id": "S0545",
+      "start": 2176.25,
+      "end": 2178.14,
+      "text": "Không, đây là 2, đúng không ạ?"
+    },
+    {
+      "id": "S0546",
+      "start": 2178.14,
+      "end": 2179.65,
+      "text": "Thì đây sẽ là 2 bằng gì?"
+    },
+    {
+      "id": "S0547",
+      "start": 2179.65,
+      "end": 2184.25,
+      "text": "Eimi Fukada, đúng ạ, để anh em in lại này, đó chỉ còn là Eimi Fukada thôi."
+    },
+    {
+      "id": "S0548",
+      "start": 2184.55,
+      "end": 2189.05,
+      "text": "Đó thì vừa rồi mình đã ví dụ nhanh bốn cái thao tác cơ bản, đó là thêm, xóa, sửa, truy cập."
+    },
+    {
+      "id": "S0549",
+      "start": 2189.25,
+      "end": 2196.65,
+      "text": "Trong lập trình, nó có một cái thuật ngữ đó là CRUD, viết tắt của Create, Read, Update và Delete để chỉ bốn cái thao tác cơ bản này."
+    },
+    {
+      "id": "S0550",
+      "start": 2196.65,
+      "end": 2201.85,
+      "text": "Khi mà làm việc với một cấu trúc dữ liệu, thì anh em có thể tra cứu thêm một số những function khác nhé."
+    },
+    {
+      "id": "S0551",
+      "start": 2201.95,
+      "end": 2206.15,
+      "text": "Ví dụ như là chúng ta có thể xóa phần tử ở giữa này hoặc là thêm phần tử vào giữa thì làm thế nào."
+    },
+    {
+      "id": "S0552",
+      "start": 2206.15,
+      "end": 2212.85,
+      "text": "Với Array thì mình có một chú ý nữa đối với anh em, đó là các phần tử trong Array thì có thể không cần giống nhau về kiểu dữ liệu nha."
+    },
+    {
+      "id": "S0553",
+      "start": 2212.87,
+      "end": 2218.67,
+      "text": "Ví dụ như đây có thể là một, hai, ba, rồi đây là true, bất cứ kiểu gì mà anh em được học từ đầu đến giờ."
+    },
+    {
+      "id": "S0554",
+      "start": 2218.69,
+      "end": 2224.15,
+      "text": "Nó có thể sẽ hơi khác một chút."
+    },
+    {
+      "id": "S0555",
+      "start": 2224.17,
+      "end": 2228.48,
+      "text": "Với cách nghĩ của anh em về Array trong một số ngôn ngữ lập trình khác như C hay là Java đó."
+    },
+    {
+      "id": "S0556",
+      "start": 2228.48,
+      "end": 2229.67,
+      "text": "Mình vừa Ctrl + S xong."
+    },
+    {
+      "id": "S0557",
+      "start": 2229.69,
+      "end": 2236.39,
+      "text": "Ok, cái kiểu dữ liệu tiếp theo mà anh em cũng sẽ làm việc rất thường xuyên."
+    },
+    {
+      "id": "S0558",
+      "start": 2236.47,
+      "end": 2243.91,
+      "text": "Ví dụ như cái Maria ở đây hay cái Eimi Fukada ở đây, nó chính là các cái chuỗi ký tự."
+    },
+    {
+      "id": "S0559",
+      "start": 2244.03,
+      "end": 2249.27,
+      "text": "Nó thuộc nhóm Primitive, tức là kiểu nguyên thủy."
+    },
+    {
+      "id": "S0560",
+      "start": 2249.35,
+      "end": 2256.99,
+      "text": "Để cho anh em rõ hơn thì mình sẽ tách cái String Eimi Fukada này ra."
+    },
+    {
+      "id": "S0561",
+      "start": 2257.07,
+      "end": 2261.35,
+      "text": "Và một cái biến khác nha, mình sẽ tạm gọi nó là biến s, đúng không ạ?"
+    },
+    {
+      "id": "S0562",
+      "start": 2261.35,
+      "end": 2266.67,
+      "text": "Chúng ta có thể coi cái biến s này, nó là một Array với các phần tử."
+    },
+    {
+      "id": "S0563",
+      "start": 2266.67,
+      "end": 2269.81,
+      "text": "Là các cái ký tự, các chữ cái hoặc là chữ số, được không bạn?"
+    },
+    {
+      "id": "S0564",
+      "start": 2269.81,
+      "end": 2272.63,
+      "text": "Ví dụ là có thể 1, 2, 3 như thế này, nó cũng là ký tự mà."
+    },
+    {
+      "id": "S0565",
+      "start": 2272.67,
+      "end": 2277.59,
+      "text": "Nó giống với Array ở chỗ nào?"
+    },
+    {
+      "id": "S0566",
+      "start": 2277.63,
+      "end": 2283.95,
+      "text": "Ví dụ như là cái chữ cái đầu tiên là f đúng không nhỉ?"
+    },
+    {
+      "id": "S0567",
+      "start": 2283.99,
+      "end": 2290.19,
+      "text": "Thì anh em sẽ dùng cái toán tử ngoặc vuông, điền số 0 vào giữa và nó sẽ truy cập đến chữ f, anh em xem này."
+    },
+    {
+      "id": "S0568",
+      "start": 2290.19,
+      "end": 2293.63,
+      "text": "Sau đó thì anh em mình đang dùng biến a, mình phải thay thành chữ s đúng không ạ?"
+    },
+    {
+      "id": "S0569",
+      "start": 2293.79,
+      "end": 2295.25,
+      "text": "Đó là chữ f đúng không?"
+    },
+    {
+      "id": "S0570",
+      "start": 2295.25,
+      "end": 2297.93,
+      "text": "Rồi, nó cũng có thuộc tính length nữa đây!"
+    },
+    {
+      "id": "S0571",
+      "start": 2297.93,
+      "end": 2302.15,
+      "text": "Anh em dùng dấu chấm gọi đến cái length thì nó sẽ ra cái gì?"
+    },
+    {
+      "id": "S0572",
+      "start": 2302.19,
+      "end": 2308.47,
+      "text": "Nó sẽ ra độ dài của chuỗi ký tự này, nó sẽ có 11 ký tự như anh em thấy ở đây."
+    },
+    {
+      "id": "S0573",
+      "start": 2308.55,
+      "end": 2313.15,
+      "text": "Mặc dù là cách sử dụng nó có vẻ là giống Array thế nhưng mà nó lại không phải là Array."
+    },
+    {
+      "id": "S0574",
+      "start": 2313.15,
+      "end": 2320.63,
+      "text": "Anh em nha, trong JavaScript có một nhóm các kiểu dữ liệu mà nó cũng hoạt động giống với Array như thế này, nó được gọi là ArrayLikeObject."
+    },
+    {
+      "id": "S0575",
+      "start": 2320.65,
+      "end": 2325.04,
+      "text": "Tức là nó sẽ dùng các cái toán tử ngoặc vuông hay là biến length để thể hiện số lượng phần tử."
+    },
+    {
+      "id": "S0576",
+      "start": 2325.04,
+      "end": 2326.43,
+      "text": "Tuy nhiên thì nó sẽ không có."
+    },
+    {
+      "id": "S0577",
+      "start": 2326.45,
+      "end": 2332.77,
+      "text": "Một số những cơ chế đặc biệt mà Array có ví dụ như map, filter, reduce, anh em có thể tìm hiểu thêm nha."
+    },
+    {
+      "id": "S0578",
+      "start": 2332.79,
+      "end": 2337.79,
+      "text": "OK, trở lại cái dòng code ở đây thì liệu có anh em nào phát hiện ra là cái biến s của chúng ta."
+    },
+    {
+      "id": "S0579",
+      "start": 2337.81,
+      "end": 2342.61,
+      "text": "Nó là kiểu primitive, kiểu nguyên thủy, nhưng tại sao lại có thể truy cập được vào thuộc tính hay không?"
+    },
+    {
+      "id": "S0580",
+      "start": 2342.61,
+      "end": 2347.75,
+      "text": "Thuộc tính property, nó là của Object thôi mà chỉ có Object mới có thuộc tính đúng không? Còn nguyên thủy."
+    },
+    {
+      "id": "S0581",
+      "start": 2347.77,
+      "end": 2351.31,
+      "text": "Là nói như kiểu là đơn vị dữ liệu nhỏ nhất rồi, không rã nhỏ người được nữa."
+    },
+    {
+      "id": "S0582",
+      "start": 2351.33,
+      "end": 2354.86,
+      "text": "Nhưng tại sao s này của chúng ta lại truy cập đến cái length được?"
+    },
+    {
+      "id": "S0583",
+      "start": 2354.86,
+      "end": 2358.65,
+      "text": "Đó là bởi vì ở trong JavaScript nó có một cái cơ chế của Type Coercion."
+    },
+    {
+      "id": "S0584",
+      "start": 2358.67,
+      "end": 2365.73,
+      "text": "Có thể tạm hiểu nôm na đó là một cái cơ chế tự động chuyển đổi kiểu dữ liệu khi cần thiết, thì ở đây tại thời điểm này dòng 20."
+    },
+    {
+      "id": "S0585",
+      "start": 2365.75,
+      "end": 2371.33,
+      "text": "Thì biến s nó vẫn là một String, nhưng đến dòng 21 thì chúng ta gọi cái chấm length này này."
+    },
+    {
+      "id": "S0586",
+      "start": 2371.69,
+      "end": 2377.65,
+      "text": "Thì cái s này sẽ được thằng trình dịch tự động chuyển đổi thành cái Object, sau đó."
+    },
+    {
+      "id": "S0587",
+      "start": 2378.21,
+      "end": 2383.97,
+      "text": "Trong cái Object nó có thuộc tính là length để lưu thông tin của cái Object đấy, do vậy, có thể nói là chúng ta có hai loại String."
+    },
+    {
+      "id": "S0588",
+      "start": 2384.05,
+      "end": 2386.79,
+      "text": "Đó là String nguyên thủy và String Object nha."
+    },
+    {
+      "id": "S0589",
+      "start": 2388.38,
+      "end": 2392.38,
+      "text": "OK, về phần kiểu dữ liệu data type thì mình nghĩ là chúng ta có thể tạm dừng ở đây."
+    },
+    {
+      "id": "S0590",
+      "start": 2392.62,
+      "end": 2396.78,
+      "text": "Mình nghĩ là với ngần này cũng đã đủ đồ chơi để các anh em có thể nghịch rồi."
+    },
+    {
+      "id": "S0591",
+      "start": 2396.78,
+      "end": 2407.3,
+      "text": "Bây giờ chúng ta sẽ chuyển qua cơ chế, đồng thời tắt của Document Object Model, có thể hiểu nó là thành phần cầu nối giữa các đoạn code JavaScript."
+    },
+    {
+      "id": "S0592",
+      "start": 2407.32,
+      "end": 2414.52,
+      "text": "Với cái phần trang văn bản HTML, chẳng hạn như đơn giản là lệnh document.write này, nó đẩy dữ liệu từ trong code của anh em."
+    },
+    {
+      "id": "S0593",
+      "start": 2414.54,
+      "end": 2416.15,
+      "text": "Ra phần trang web đúng không ạ?"
+    },
+    {
+      "id": "S0594",
+      "start": 2416.15,
+      "end": 2420.16,
+      "text": "Đấy, thì cái document này, nó chính là cái Object đã đại diện cho cầu nối đó."
+    },
+    {
+      "id": "S0595",
+      "start": 2420.18,
+      "end": 2421.5,
+      "text": "Cái cơ chế cầu nối này được gọi là DOM."
+    },
+    {
+      "id": "S0596",
+      "start": 2421.5,
+      "end": 2425.98,
+      "text": "Nhờ có DOM mà cái trang văn bản HTML của chúng ta nó không còn là trang văn bản tĩnh nữa mà nó có thể hoạt động được như một cái app."
+    },
+    {
+      "id": "S0597",
+      "start": 2426.02,
+      "end": 2428.94,
+      "text": "Văn bản tĩnh nữa mà nó có thể hoạt động được như một cái app."
+    },
+    {
+      "id": "S0598",
+      "start": 2428.98,
+      "end": 2431.68,
+      "text": "App ở đây là application, đó là phần mềm ứng dụng."
+    },
+    {
+      "id": "S0599",
+      "start": 2431.68,
+      "end": 2436.7,
+      "text": "Nó là một chương trình mà đúng vậy, đó là chương trình thì nó sẽ có phần input đầu vào là gì."
+    },
+    {
+      "id": "S0600",
+      "start": 2436.74,
+      "end": 2440.54,
+      "text": "Nó sẽ xử lý tính toán cái gì đấy để cho ra một cái đầu ra, một cái output."
+    },
+    {
+      "id": "S0601",
+      "start": 2440.58,
+      "end": 2444.63,
+      "text": "Thì đây anh em mới thấy là chúng ta mới chỉ có cái chiều output thôi, chiều đi ra thôi."
+    },
+    {
+      "id": "S0602",
+      "start": 2444.63,
+      "end": 2445.98,
+      "text": "Còn chiều đi vào thì thế nào?"
+    },
+    {
+      "id": "S0603",
+      "start": 2446.02,
+      "end": 2452.42,
+      "text": "Giả sử ở đây nha, mình sẽ tạo cho nó một cái input đi, đúng ạ, một cái input element."
+    },
+    {
+      "id": "S0604",
+      "start": 2452.42,
+      "end": 2454.98,
+      "text": "Chỗ này sẽ là một cái nhập tên đi."
+    },
+    {
+      "id": "S0605",
+      "start": 2456.29,
+      "end": 2456.96,
+      "text": "Nó như thế này."
+    },
+    {
+      "id": "S0606",
+      "start": 2456.96,
+      "end": 2458.29,
+      "text": "Mình sẽ zoom nhỏ lại một chút."
+    },
+    {
+      "id": "S0607",
+      "start": 2459.89,
+      "end": 2461.89,
+      "text": "Rồi, mình sẽ cho thêm một cái button nữa."
+    },
+    {
+      "id": "S0608",
+      "start": 2463.17,
+      "end": 2465.17,
+      "text": "Thì ở đây mình đang giả sử một chương trình rất đơn giản."
+    },
+    {
+      "id": "S0609",
+      "start": 2466.17,
+      "end": 2467.17,
+      "text": "Đó là nhập tên của ai đấy vào đây."
+    },
+    {
+      "id": "S0610",
+      "start": 2468.17,
+      "end": 2469.17,
+      "text": "Sau đó bấm nút OK."
+    },
+    {
+      "id": "S0611",
+      "start": 2470.17,
+      "end": 2470.39,
+      "text": "Đúng không ạ?"
+    },
+    {
+      "id": "S0612",
+      "start": 2470.39,
+      "end": 2471.17,
+      "text": "Sau đó chương trình nó sẽ in ra một lời chào."
+    },
+    {
+      "id": "S0613",
+      "start": 2472.17,
+      "end": 2473.17,
+      "text": "Ứng với cái tên đó thì chúng ta cần phải làm thế nào?"
+    },
+    {
+      "id": "S0614",
+      "start": 2474.17,
+      "end": 2475.17,
+      "text": "Thì chúng ta cần phải làm thế nào?"
+    },
+    {
+      "id": "S0615",
+      "start": 2476.17,
+      "end": 2477.17,
+      "text": "Ở trong HTML nha."
+    },
+    {
+      "id": "S0616",
+      "start": 2478.17,
+      "end": 2483.29,
+      "text": "Khi mà chúng ta tác động một cái gì đấy trên trang web thì cái phần tử đó nó sẽ phát ra một tín hiệu."
+    },
+    {
+      "id": "S0617",
+      "start": 2483.29,
+      "end": 2486.84,
+      "text": "Có thể tạm hiểu như vậy, còn thuật ngữ tiếng Anh người ta gọi là event."
+    },
+    {
+      "id": "S0618",
+      "start": 2486.84,
+      "end": 2488.89,
+      "text": "Và nó sẽ cho phép chúng ta là định nghĩa."
+    },
+    {
+      "id": "S0619",
+      "start": 2488.89,
+      "end": 2496.77,
+      "text": "Hay là chỉ định cái hành động mà chúng ta sẽ làm khi mà event nó xảy ra thông qua một thuộc tính gọi là event handler."
+    },
+    {
+      "id": "S0620",
+      "start": 2496.79,
+      "end": 2500.14,
+      "text": "Nó và cái thuộc tính này nó là thuộc tính của HTML element."
+    },
+    {
+      "id": "S0621",
+      "start": 2500.14,
+      "end": 2505.19,
+      "text": "Từ tiếng ngành của nó là attribute và nó được định nghĩa ở trong phần thẻ mở của element."
+    },
+    {
+      "id": "S0622",
+      "start": 2505.21,
+      "end": 2506.56,
+      "text": "Ví dụ như thế đây là button."
+    },
+    {
+      "id": "S0623",
+      "start": 2506.56,
+      "end": 2510.53,
+      "text": "Cũng thể ở đây, cái event của chúng ta cần quan tâm đó là click, tức là bấm chuột."
+    },
+    {
+      "id": "S0624",
+      "start": 2510.55,
+      "end": 2515.47,
+      "text": "Thì cái event handler attribute của nó sẽ là onclick."
+    },
+    {
+      "id": "S0625",
+      "start": 2516.33,
+      "end": 2517.45,
+      "text": "Onclick như thế này."
+    },
+    {
+      "id": "S0626",
+      "start": 2517.45,
+      "end": 2520.19,
+      "text": "Đấy, VS Code của mình nó đã gợi ý ra như thế này."
+    },
+    {
+      "id": "S0627",
+      "start": 2520.19,
+      "end": 2523.89,
+      "text": "Thì ở giữa dấu nháy này chúng ta sẽ viết các đoạn code JavaScript."
+    },
+    {
+      "id": "S0628",
+      "start": 2523.91,
+      "end": 2527.92,
+      "text": "Để thực hiện các thao tác xử lý phản hồi lại việc chúng ta bấm nút."
+    },
+    {
+      "id": "S0629",
+      "start": 2527.92,
+      "end": 2529.53,
+      "text": "Thì đây cũng có thể coi là."
+    },
+    {
+      "id": "S0630",
+      "start": 2529.55,
+      "end": 2532.43,
+      "text": "Cái thể hiện của cầu nối trong người cơ chế DOM, OK."
+    },
+    {
+      "id": "S0631",
+      "start": 2532.43,
+      "end": 2534.19,
+      "text": "Đi vào cụ thể thì sẽ như thế nào?"
+    },
+    {
+      "id": "S0632",
+      "start": 2534.19,
+      "end": 2541.13,
+      "text": "Ở đây, thay vì viết trực tiếp code JavaScript hôm nay, chúng ta sẽ định nghĩa một function gì đấy ở script element."
+    },
+    {
+      "id": "S0633",
+      "start": 2541.15,
+      "end": 2543.4,
+      "text": "Sau đó, chúng ta sẽ gọi hàm trong này thôi nha!"
+    },
+    {
+      "id": "S0634",
+      "start": 2543.4,
+      "end": 2544.76,
+      "text": "Như vậy nó sẽ ngắn gọn hơn."
+    },
+    {
+      "id": "S0635",
+      "start": 2544.76,
+      "end": 2547.29,
+      "text": "Đây, mình sẽ xóa hết code cũ đi nhé cho nó đỡ rối."
+    },
+    {
+      "id": "S0636",
+      "start": 2547.31,
+      "end": 2547.99,
+      "text": "Đúng ạ."
+    },
+    {
+      "id": "S0637",
+      "start": 2549.21,
+      "end": 2552.53,
+      "text": "Rồi, mình khai báo ra một function tạm gọi là Xin Chào đi."
+    },
+    {
+      "id": "S0638",
+      "start": 2554.43,
+      "end": 2556.64,
+      "text": "Trong thực tế thì anh em nên chọn tiếng Anh nhé."
+    },
+    {
+      "id": "S0639",
+      "start": 2556.64,
+      "end": 2559.63,
+      "text": "Mình dùng tiếng Việt để cho nó dễ gần và cho anh em dễ hình dung."
+    },
+    {
+      "id": "S0640",
+      "start": 2561.26,
+      "end": 2564.46,
+      "text": "Rồi, trong function Xin Chào này, chúng ta sẽ xử lý cái gì?"
+    },
+    {
+      "id": "S0641",
+      "start": 2564.46,
+      "end": 2567.82,
+      "text": "Đầu tiên là anh em sẽ cần phải lấy được thông tin hay dữ liệu."
+    },
+    {
+      "id": "S0642",
+      "start": 2567.84,
+      "end": 2569.5,
+      "text": "Mà anh em điền vào input này này."
+    },
+    {
+      "id": "S0643",
+      "start": 2569.54,
+      "end": 2574.76,
+      "text": "Sau đó thì chúng ta sẽ nối nó, nối cái tên này với một chuỗi ký tự là Xin Chào gì đấy đi."
+    },
+    {
+      "id": "S0644",
+      "start": 2574.78,
+      "end": 2578.23,
+      "text": "Để ghép thành câu \"Xin chào Eimi Fukada\", đúng không ạ?"
+    },
+    {
+      "id": "S0645",
+      "start": 2578.23,
+      "end": 2580.24,
+      "text": "Kết hợp được một kết quả như vậy."
+    },
+    {
+      "id": "S0646",
+      "start": 2580.26,
+      "end": 2585.63,
+      "text": "Cuối cùng là anh em sẽ in nó ra phần trang web, có thể in ở phía dưới này chẳng hạn, đúng không ạ?"
+    },
+    {
+      "id": "S0647",
+      "start": 2585.63,
+      "end": 2586.78,
+      "text": "Đi từng bước một nhé."
+    },
+    {
+      "id": "S0648",
+      "start": 2586.8,
+      "end": 2592.66,
+      "text": "Đầu tiên là lấy dữ liệu ra, thì trước hết trên input element anh em cần phải cho nó một cái ID."
+    },
+    {
+      "id": "S0649",
+      "start": 2592.66,
+      "end": 2595.54,
+      "text": "Đúng ạ, ví dụ mình đặt luôn là input đi, đúng không ạ?"
+    },
+    {
+      "id": "S0650",
+      "start": 2595.54,
+      "end": 2605.66,
+      "text": "Sau khi nó có ID rồi thì trong phần function Xin Chào, anh em sẽ gọi cho mình lệnh document.getElementById."
+    },
+    {
+      "id": "S0651",
+      "start": 2605.66,
+      "end": 2608.38,
+      "text": "Nó lại là một thể hiện của cơ chế DOM."
+    },
+    {
+      "id": "S0652",
+      "start": 2608.38,
+      "end": 2614.52,
+      "text": "Nó bắc cầu sang phần trang văn bản, chúng ta truy cập được vào element có ID là input."
+    },
+    {
+      "id": "S0653",
+      "start": 2614.54,
+      "end": 2617.94,
+      "text": "Thông qua lệnh là document.getElementById như thế này."
+    },
+    {
+      "id": "S0654",
+      "start": 2617.94,
+      "end": 2623.86,
+      "text": "Nó là function với tham số là gì, anh em truyền đúng ID mà anh em vừa tạo ở trên là input này."
+    },
+    {
+      "id": "S0655",
+      "start": 2623.86,
+      "end": 2630.26,
+      "text": "Input này thì cái lệnh này nó sẽ truy cập được vào element này, tuy nhiên thì đây mới chỉ là truy cập vào element thôi."
+    },
+    {
+      "id": "S0656",
+      "start": 2630.28,
+      "end": 2635.42,
+      "text": "Anh em muốn lấy ra cái giá trị mà chúng ta nhập vào đây thì anh em cần thêm một cái nữa là.value."
+    },
+    {
+      "id": "S0657",
+      "start": 2636.36,
+      "end": 2643.18,
+      "text": "Cái value ở đấy nó sẽ tương ứng với thuộc tính ở bên trong thẻ HTML này, nó có một cái thuộc tính là value."
+    },
+    {
+      "id": "S0658",
+      "start": 2643.2,
+      "end": 2650.74,
+      "text": "Thì thuộc tính này nó sẽ lưu giá trị mà anh em nhập vào phần input, và chúng ta sẽ truy cập cái value đấy thông qua dấu chấm."
+    },
+    {
+      "id": "S0659",
+      "start": 2650.74,
+      "end": 2654.5,
+      "text": "Các attribute khác của HTML element cũng như vậy, đúng không ạ?"
+    },
+    {
+      "id": "S0660",
+      "start": 2654.5,
+      "end": 2662.44,
+      "text": "Rồi, sau khi chúng ta gọi lệnh này xong, anh em sẽ gán nó cho một biến nào đấy, mình tạm gọi là biến tên chẳng hạn, đúng không ạ?"
+    },
+    {
+      "id": "S0661",
+      "start": 2662.46,
+      "end": 2667.25,
+      "text": "Rồi, bước thứ hai thể hiện việc xử lý dữ liệu, đúng không ạ?"
+    },
+    {
+      "id": "S0662",
+      "start": 2667.25,
+      "end": 2672.68,
+      "text": "Đơn giản ở đây thì mình chỉ là ghép cái câu Xin Chào, sau đó làm gì?"
+    },
+    {
+      "id": "S0663",
+      "start": 2672.7,
+      "end": 2674.22,
+      "text": "Cộng với cái tên ở trên thôi."
+    },
+    {
+      "id": "S0664",
+      "start": 2674.22,
+      "end": 2679.1,
+      "text": "Sau đó anh em xử lý xong, anh em cập nhật lại cho biến tên này, một bước gán lại dữ liệu nha."
+    },
+    {
+      "id": "S0665",
+      "start": 2679.12,
+      "end": 2680.5,
+      "text": "Cuối cùng là anh em sẽ làm gì?"
+    },
+    {
+      "id": "S0666",
+      "start": 2680.52,
+      "end": 2682.01,
+      "text": "Chúng ta sẽ in ra phần trang web."
+    },
+    {
+      "id": "S0667",
+      "start": 2682.01,
+      "end": 2683.5,
+      "text": "In ra trang web thì đơn giản rồi."
+    },
+    {
+      "id": "S0668",
+      "start": 2683.52,
+      "end": 2687.76,
+      "text": "Suốt từ đầu đến giờ chúng ta làm việc với cái lệnh là document.write đúng không nhỉ?"
+    },
+    {
+      "id": "S0669",
+      "start": 2687.76,
+      "end": 2689.12,
+      "text": "Anh em in cái tên ở đây ra."
+    },
+    {
+      "id": "S0670",
+      "start": 2689.14,
+      "end": 2694.01,
+      "text": "Cái này mình có thể đổi thành lời chào thì nghe ý nghĩa hơn nha."
+    },
+    {
+      "id": "S0671",
+      "start": 2694.01,
+      "end": 2694.92,
+      "text": "Lời chào nè."
+    },
+    {
+      "id": "S0672",
+      "start": 2696.67,
+      "end": 2698.97,
+      "text": "OK, anh em in ra cái lời chào."
+    },
+    {
+      "id": "S0673",
+      "start": 2699.68,
+      "end": 2704.0,
+      "text": "Đây là mình làm kiểu chậm từng bước một, để anh em dễ hình dung thì mình viết như thế thôi."
+    },
+    {
+      "id": "S0674",
+      "start": 2704.0,
+      "end": 2708.03,
+      "text": "Và thực tế thì anh em có thể gộp 3 câu lệnh này làm 1 cũng được, không sao cả."
+    },
+    {
+      "id": "S0675",
+      "start": 2708.03,
+      "end": 2709.78,
+      "text": "Tuy nhiên thì nó hơi khó theo dõi."
+    },
+    {
+      "id": "S0676",
+      "start": 2709.8,
+      "end": 2711.04,
+      "text": "Nó sẽ như thế nào nhỉ?"
+    },
+    {
+      "id": "S0677",
+      "start": 2711.06,
+      "end": 2711.84,
+      "text": "Ctrl + S lại nè."
+    },
+    {
+      "id": "S0678",
+      "start": 2711.84,
+      "end": 2713.58,
+      "text": "Chưa có gì xảy ra đúng không anh em?"
+    },
+    {
+      "id": "S0679",
+      "start": 2713.58,
+      "end": 2717.12,
+      "text": "Vì cái function này như mình nói đấy, nó mới chỉ là phần định nghĩa thôi."
+    },
+    {
+      "id": "S0680",
+      "start": 2717.14,
+      "end": 2720.47,
+      "text": "Chúng ta cần phải thực hiện một thao tác gọi là gọi hàm, đúng không ạ?"
+    },
+    {
+      "id": "S0681",
+      "start": 2720.47,
+      "end": 2722.08,
+      "text": "Thì cái hàm đó mới được thực hiện."
+    },
+    {
+      "id": "S0682",
+      "start": 2722.08,
+      "end": 2723.32,
+      "text": "Vậy chúng ta sẽ gọi ở đâu?"
+    },
+    {
+      "id": "S0683",
+      "start": 2723.34,
+      "end": 2725.36,
+      "text": "Chúng ta sẽ gọi hàm ở đây này."
+    },
+    {
+      "id": "S0684",
+      "start": 2725.36,
+      "end": 2729.53,
+      "text": "Đây là cái nơi sẽ được thực hiện khi mà anh em bấm cái nút OK."
+    },
+    {
+      "id": "S0685",
+      "start": 2729.53,
+      "end": 2731.14,
+      "text": "Anh em sẽ gọi hàm ở đây."
+    },
+    {
+      "id": "S0686",
+      "start": 2731.16,
+      "end": 2731.99,
+      "text": "Gọi như thế nào?"
+    },
+    {
+      "id": "S0687",
+      "start": 2731.99,
+      "end": 2736.01,
+      "text": "Gọi như gọi hàm bình thường thôi, tên hàm cộng với cặp mở đóng ngoặc tròn nha!"
+    },
+    {
+      "id": "S0688",
+      "start": 2736.01,
+      "end": 2737.54,
+      "text": "Hàm này không có tham số, đúng không ạ?"
+    },
+    {
+      "id": "S0689",
+      "start": 2737.68,
+      "end": 2739.68,
+      "text": "Rồi, bây giờ anh em cùng xem này."
+    },
+    {
+      "id": "S0690",
+      "start": 2739.68,
+      "end": 2740.66,
+      "text": "Ctrl + S lại nè."
+    },
+    {
+      "id": "S0691",
+      "start": 2740.66,
+      "end": 2742.78,
+      "text": "Bây giờ mình nhập nhé, Eimi Fukada."
+    },
+    {
+      "id": "S0692",
+      "start": 2743.42,
+      "end": 2746.62,
+      "text": "OK, anh em thấy nó in ra một câu là 'Xin chào Eimi Fukada'."
+    },
+    {
+      "id": "S0693",
+      "start": 2746.62,
+      "end": 2750.52,
+      "text": "Tuy nhiên, ở đây anh em thấy toàn bộ các element khác của mình biến mất."
+    },
+    {
+      "id": "S0694",
+      "start": 2750.56,
+      "end": 2751.2,
+      "text": "Là bởi vì sao?"
+    },
+    {
+      "id": "S0695",
+      "start": 2751.24,
+      "end": 2755.48,
+      "text": "Bởi lệnh document.write sẽ ghi đè toàn bộ nội dung của trang văn bản HTML."
+    },
+    {
+      "id": "S0696",
+      "start": 2755.48,
+      "end": 2759.04,
+      "text": "Nếu như anh em muốn giữ nguyên các element trên trang văn bản."
+    },
+    {
+      "id": "S0697",
+      "start": 2759.24,
+      "end": 2760.57,
+      "text": "Thì chúng ta phải làm gì?"
+    },
+    {
+      "id": "S0698",
+      "start": 2760.57,
+      "end": 2763.92,
+      "text": "Chúng ta sẽ cần phải tạo ra một cái element khác, đúng không ạ?"
+    },
+    {
+      "id": "S0699",
+      "start": 2763.92,
+      "end": 2766.12,
+      "text": "Sau đó dùng DOM để thay thế cái nội dung."
+    },
+    {
+      "id": "S0700",
+      "start": 2766.44,
+      "end": 2769.07,
+      "text": "Cụ thể là text ở bên trong cái element đấy."
+    },
+    {
+      "id": "S0701",
+      "start": 2769.07,
+      "end": 2775.44,
+      "text": "Đại khái như thế này này, mình sẽ tạo ra 1 cái element div thôi, element chung chung thôi, đúng không ạ?"
+    },
+    {
+      "id": "S0702",
+      "start": 2775.48,
+      "end": 2782.28,
+      "text": "Cái div này mình cũng sẽ cho nó 1 cái id, mình đặt nó là lời chào chẳng hạn, thể hiện là cái element này dùng để in ra cái lời chào."
+    },
+    {
+      "id": "S0703",
+      "start": 2782.32,
+      "end": 2788.36,
+      "text": "Thì bây giờ thay vì là mình gọi document.write ở đây, đúng không ạ, thì mình sẽ tiếp tục truy cập đến cái gì?"
+    },
+    {
+      "id": "S0704",
+      "start": 2788.36,
+      "end": 2792.66,
+      "text": "Truy cập đến cái element lời chào mà anh em vừa định nghĩa đây nè."
+    },
+    {
+      "id": "S0705",
+      "start": 2792.66,
+      "end": 2796.82,
+      "text": "Thì thông qua cái gì, lệnh document.getElementById đúng không ạ?"
+    },
+    {
+      "id": "S0706",
+      "start": 2796.82,
+      "end": 2798.1,
+      "text": "Anh em nhập id loi-chao vào."
+    },
+    {
+      "id": "S0707",
+      "start": 2798.1,
+      "end": 2800.62,
+      "text": "Sau đó làm gì, chúng ta truy cập đến cái gì anh em nhỉ?"
+    },
+    {
+      "id": "S0708",
+      "start": 2800.62,
+      "end": 2802.64,
+      "text": "Cái mà chúng ta đang muốn bây giờ là string."
+    },
+    {
+      "id": "S0709",
+      "start": 2802.66,
+      "end": 2806.5,
+      "text": "'Xin chào Eimi Fukada' nó phải chui vào giữa cặp thẻ div, đúng không ạ?"
+    },
+    {
+      "id": "S0710",
+      "start": 2806.5,
+      "end": 2809.9,
+      "text": "Đấy, thì cái thuộc tính mà lưu dữ liệu đấy có tên là innerHTML."
+    },
+    {
+      "id": "S0711",
+      "start": 2809.92,
+      "end": 2815.17,
+      "text": "Nào, khi chúng ta get element xong, anh em gọi cho mình cái cú pháp innerHTML như thế này này."
+    },
+    {
+      "id": "S0712",
+      "start": 2815.17,
+      "end": 2816.84,
+      "text": "Inner có nghĩa là ở bên trong."
+    },
+    {
+      "id": "S0713",
+      "start": 2816.84,
+      "end": 2822.46,
+      "text": "Toàn bộ các đoạn code HTML bên trong của element là phần này chúng ta truy cập được."
+    },
+    {
+      "id": "S0714",
+      "start": 2822.56,
+      "end": 2826.46,
+      "text": "Sau đó anh em sẽ dùng phép gán để mà cập nhật, thay đổi dữ liệu cho nó."
+    },
+    {
+      "id": "S0715",
+      "start": 2826.96,
+      "end": 2833.68,
+      "text": "Đây, đơn giản là chúng ta sẽ gán nó cho cái lời chào ở trên thôi, cái biến lời chào ở trên là xong."
+    },
+    {
+      "id": "S0716",
+      "start": 2833.74,
+      "end": 2835.96,
+      "text": "OK, bây giờ mình chạy lại chương trình cho anh em xem."
+    },
+    {
+      "id": "S0717",
+      "start": 2837.16,
+      "end": 2840.88,
+      "text": "Nhập tên Eimi idol khác đi."
+    },
+    {
+      "id": "S0718",
+      "start": 2842.33,
+      "end": 2844.47,
+      "text": "Yua Mikami đi."
+    },
+    {
+      "id": "S0719",
+      "start": 2845.85,
+      "end": 2846.87,
+      "text": "Đấy! Anh em thấy không?"
+    },
+    {
+      "id": "S0720",
+      "start": 2846.89,
+      "end": 2848.23,
+      "text": "Xin chào Yua Mikami!"
+    },
+    {
+      "id": "S0721",
+      "start": 2848.23,
+      "end": 2851.17,
+      "text": "Anh em hiểu cái bản chất của vấn đề không ạ?"
+    },
+    {
+      "id": "S0722",
+      "start": 2851.17,
+      "end": 2858.69,
+      "text": "Đấy, thì khi mà anh em thông được phần Document Object Model này rồi thì anh em hoàn toàn có thể chủ động tìm hiểu sang các loại input element khác này."
+    },
+    {
+      "id": "S0723",
+      "start": 2858.71,
+      "end": 2865.13,
+      "text": "Các loại event khác nhau ứng với mỗi element đó và tự xây dựng ra những app tùy theo sở thích của anh em."
+    },
+    {
+      "id": "S0724",
+      "start": 2865.15,
+      "end": 2871.01,
+      "text": "Chẳng hạn như ở trong khóa học thì mình cũng có hướng dẫn anh em làm một số app khác như kiểu là đếm từ, đếm chữ này."
+    },
+    {
+      "id": "S0725",
+      "start": 2871.03,
+      "end": 2879.27,
+      "text": "Hoặc lập trình ra 1 app máy tính cộng trừ nhân chia, đó là những cái app rất đơn giản mà mình nghĩ anh em có thể tự thực hành được."
+    },
+    {
+      "id": "S0726",
+      "start": 2879.29,
+      "end": 2881.83,
+      "text": "Để củng cố kiến thức về JavaScript của mình."
+    },
+    {
+      "id": "S0727",
+      "start": 2882.47,
+      "end": 2889.19,
+      "text": "OK, mình sẽ chuyển sang cái phần tiếp theo đó là về cơ chế bất đồng bộ Asynchronous, đây có thể coi là phần kiến thức."
+    },
+    {
+      "id": "S0728",
+      "start": 2889.21,
+      "end": 2896.49,
+      "text": "Rất quan trọng của ngôn ngữ JavaScript mà anh em cần phải nắm được khi mà xác định muốn sử dụng JavaScript để phát triển các sản phẩm này."
+    },
+    {
+      "id": "S0729",
+      "start": 2896.51,
+      "end": 2902.17,
+      "text": "Hoặc đi sâu hơn với ngôn ngữ này, chuyển tiếp sang làm lập trình web chẳng hạn, và theo mình nhận định thì."
+    },
+    {
+      "id": "S0730",
+      "start": 2902.17,
+      "end": 2909.61,
+      "text": "Những cái kiến thức về bất đồng bộ thì thực ra nó không phải là khó, tuy nhiên thì nó sẽ hơi khó tiếp cận với các bạn mới bắt đầu."
+    },
+    {
+      "id": "S0731",
+      "start": 2909.65,
+      "end": 2915.35,
+      "text": "Mà trước đấy anh em chưa từng học ngôn ngữ lập trình nào, còn nếu anh em nào đã từng tiếp xúc với C hay C++ rồi."
+    },
+    {
+      "id": "S0732",
+      "start": 2915.37,
+      "end": 2920.77,
+      "text": "Các anh em đã hiểu về Multi-thread rồi ấy thì phần bất đồng bộ nó cũng sẽ dễ tiếp cận thôi."
+    },
+    {
+      "id": "S0733",
+      "start": 2920.81,
+      "end": 2927.89,
+      "text": "Ở mức độ nhập môn thì anh em có thể hình dung thế này, tức là một số những lệnh nó sẽ mất thời gian để thực hiện xong."
+    },
+    {
+      "id": "S0734",
+      "start": 2927.89,
+      "end": 2934.77,
+      "text": "Thì những lệnh như vậy có cơ chế là chúng ta không cần đợi nó thực hiện xong và chúng ta có thể thực hiện một cái lệnh khác."
+    },
+    {
+      "id": "S0735",
+      "start": 2934.77,
+      "end": 2938.35,
+      "text": "Và sau khi nó thực hiện xong rồi, nó sẽ quay lại thông báo cho chúng ta."
+    },
+    {
+      "id": "S0736",
+      "start": 2938.35,
+      "end": 2943.01,
+      "text": "Từ đầu buổi học đến giờ thì chủ yếu là các anh em mới làm quen với các lệnh được gọi là đồng bộ thôi."
+    },
+    {
+      "id": "S0737",
+      "start": 2943.01,
+      "end": 2948.43,
+      "text": "Tức là các lệnh sau phải đợi lệnh trước thực hiện xong thì nó mới thực hiện đến lệnh sau."
+    },
+    {
+      "id": "S0738",
+      "start": 2948.43,
+      "end": 2953.31,
+      "text": "Còn đây sẽ là một cái ví dụ về câu lệnh bất đồng bộ này."
+    },
+    {
+      "id": "S0739",
+      "start": 2953.31,
+      "end": 2955.11,
+      "text": "Ví dụ chúng ta có một cái lệnh là setTimeout."
+    },
+    {
+      "id": "S0740",
+      "start": 2955.11,
+      "end": 2960.93,
+      "text": "Tham số thứ nhất là một function."
+    },
+    {
+      "id": "S0741",
+      "start": 2961.45,
+      "end": 2966.83,
+      "text": "Cái tham số thứ hai dễ hiểu hơn, nó sẽ là thời gian mà nó sẽ đếm lùi."
+    },
+    {
+      "id": "S0742",
+      "start": 2966.85,
+      "end": 2972.67,
+      "text": "Ví dụ như mình đếm lùi 3 giây thì anh em phải truyền cho mình là 3000 do đơn vị của nó là mili-giây."
+    },
+    {
+      "id": "S0743",
+      "start": 2972.69,
+      "end": 2979.49,
+      "text": "Rồi quay lại cái tham số thứ nhất, nó sẽ là một function để định nghĩa."
+    },
+    {
+      "id": "S0744",
+      "start": 2979.51,
+      "end": 2986.09,
+      "text": "Cái việc chúng ta sẽ thực hiện khi mà đồng hồ này nó đếm được thành công tức là nó đếm hết về không thì nó làm gì?"
+    },
+    {
+      "id": "S0745",
+      "start": 2986.09,
+      "end": 2990.85,
+      "text": "Anh em có thể viết trực tiếp vào trong cũng được."
+    },
+    {
+      "id": "S0746",
+      "start": 2990.85,
+      "end": 2998.21,
+      "text": "Ở trong này mình sẽ viết cái gì?"
+    },
+    {
+      "id": "S0747",
+      "start": 2998.23,
+      "end": 3001.05,
+      "text": "Mình sẽ in cái thông báo vào cái element lời chào nha."
+    },
+    {
+      "id": "S0748",
+      "start": 3002.22,
+      "end": 3003.9,
+      "text": "Mình ghi câu hết giờ nha."
+    },
+    {
+      "id": "S0749",
+      "start": 3004.89,
+      "end": 3012.99,
+      "text": "Ctrl + S lại nè."
+    },
+    {
+      "id": "S0750",
+      "start": 3013.98,
+      "end": 3018.46,
+      "text": "Đó, anh em đợi khoảng 3 giây sau đó hiện ra hết giờ, đúng không nhỉ?"
+    },
+    {
+      "id": "S0751",
+      "start": 3018.46,
+      "end": 3024.22,
+      "text": "Ở đây mình sẽ copy ở trên."
+    },
+    {
+      "id": "S0752",
+      "start": 3026.09,
+      "end": 3028.09,
+      "text": "Mình ngắt dòng ra cho dễ nhìn nha."
+    },
+    {
+      "id": "S0753",
+      "start": 3031.1,
+      "end": 3032.6,
+      "text": "Ở đây mình ghi là."
+    },
+    {
+      "id": "S0754",
+      "start": 3033.2,
+      "end": 3034.2,
+      "text": "Xin chào các bạn ạ."
+    },
+    {
+      "id": "S0755",
+      "start": 3036.36,
+      "end": 3043.6,
+      "text": "Hay lại in chữ xin chào trước rồi mới in chữ hết giờ?"
+    },
+    {
+      "id": "S0756",
+      "start": 3043.62,
+      "end": 3049.91,
+      "text": "Anh em thấy chưa?"
+    },
+    {
+      "id": "S0757",
+      "start": 3049.91,
+      "end": 3051.76,
+      "text": "Nó in ra chữ xin chào trước."
+    },
+    {
+      "id": "S0758",
+      "start": 3051.76,
+      "end": 3059.64,
+      "text": "Và để các anh em quan sát dễ hơn thì mình sẽ thay cái toán tử bằng thành cái cộng bằng nhé."
+    },
+    {
+      "id": "S0759",
+      "start": 3059.66,
+      "end": 3062.38,
+      "text": "Cộng bằng có nghĩa là nối thêm dữ liệu vào đúng không ạ?"
+    },
+    {
+      "id": "S0760",
+      "start": 3062.38,
+      "end": 3066.06,
+      "text": "Dấu bằng đây là chúng ta gán đè dữ liệu mới vào."
+    },
+    {
+      "id": "S0761",
+      "start": 3066.08,
+      "end": 3073.61,
+      "text": "Đấy anh em thấy không?"
+    },
+    {
+      "id": "S0762",
+      "start": 3073.63,
+      "end": 3080.11,
+      "text": "Nó vẫn in ra chữ xin chào trước, sau đấy mới gọi chữ hết giờ mặc dù cái lệnh setTimeout chúng ta gọi trước đúng không ạ?"
+    },
+    {
+      "id": "S0763",
+      "start": 3080.11,
+      "end": 3085.05,
+      "text": "Để giải thích đơn giản cho hiện tượng này thì anh em có thể hình dung như sau."
+    },
+    {
+      "id": "S0764",
+      "start": 3085.07,
+      "end": 3091.53,
+      "text": "Cái setTimeout nó là một lệnh được thực hiện bởi một thành phần khác trong môi trường trình duyệt người ta sẽ hay gọi là module."
+    },
+    {
+      "id": "S0765",
+      "start": 3091.55,
+      "end": 3096.75,
+      "text": "Mặc dù cái trình dịch mã JavaScript nó là một trình đơn luồng tất cả nó chỉ chạy tuần tự từ trên xuống dưới thôi."
+    },
+    {
+      "id": "S0766",
+      "start": 3096.77,
+      "end": 3103.07,
+      "text": "Thì tuy nhiên thì cái môi trường trình duyệt web của chúng ta ví dụ là cái Google Chrome này nó được code bằng C++."
+    },
+    {
+      "id": "S0767",
+      "start": 3103.07,
+      "end": 3108.69,
+      "text": "Nó là một môi trường đa luồng, C++ thì support đa luồng thế nên là một số những tác vụ mà mất thời gian."
+    },
+    {
+      "id": "S0768",
+      "start": 3108.69,
+      "end": 3115.49,
+      "text": "Chúng ta vẫn có thể gửi sang cái module khác trong cái môi trường đấy, ví dụ là cái setTimeout này nó phải mất đến 3s nó mới đếm xong."
+    },
+    {
+      "id": "S0769",
+      "start": 3115.49,
+      "end": 3117.67,
+      "text": "Sau khi 3s được đếm xong thì sao?"
+    },
+    {
+      "id": "S0770",
+      "start": 3117.69,
+      "end": 3125.43,
+      "text": "Cái thằng trình dịch mã ở trong Google Chrome này."
+    },
+    {
+      "id": "S0771",
+      "start": 3125.45,
+      "end": 3128.62,
+      "text": "Nó có tên là V8 Engine hay đọc tiếng Việt là V8 Engine."
+    },
+    {
+      "id": "S0772",
+      "start": 3128.62,
+      "end": 3133.17,
+      "text": "Đó thì dựa vào những cái từ khóa vừa rồi anh em có thể search để tìm hiểu thêm."
+    },
+    {
+      "id": "S0773",
+      "start": 3133.35,
+      "end": 3138.14,
+      "text": "Và mình cũng sẽ phân tích rõ hơn về cái V8 Engine này trong một cái video khác nha."
+    },
+    {
+      "id": "S0774",
+      "start": 3138.14,
+      "end": 3140.57,
+      "text": "Rồi, trở lại với việc gọi hàm bất đồng bộ."
+    },
+    {
+      "id": "S0775",
+      "start": 3140.59,
+      "end": 3144.66,
+      "text": "Thì cách gọi hàm như thế này người ta gọi là truyền Callback anh em nha."
+    },
+    {
+      "id": "S0776",
+      "start": 3144.66,
+      "end": 3147.93,
+      "text": "Ngoài ra chúng ta còn các cơ chế khác như là kiểu Promise."
+    },
+    {
+      "id": "S0777",
+      "start": 3147.97,
+      "end": 3149.03,
+      "text": "Hay là cơ chế Async/Await."
+    },
+    {
+      "id": "S0778",
+      "start": 3149.03,
+      "end": 3153.65,
+      "text": "Thì cái nội dung kiến thức của cái phần này mình nghĩ nó khá là nặng và nó hoàn toàn có thể là một cái bài giảng."
+    },
+    {
+      "id": "S0779",
+      "start": 3153.67,
+      "end": 3155.45,
+      "text": "Kéo dài đến một đến hai giờ đồng hồ nữa."
+    },
+    {
+      "id": "S0780",
+      "start": 3155.45,
+      "end": 3159.91,
+      "text": "Trong khóa học JavaScript của mình thì cái phần bất đồng bộ này còn kéo dài đến tận 15 bài giảng cơ."
+    },
+    {
+      "id": "S0781",
+      "start": 3159.95,
+      "end": 3165.17,
+      "text": "Thế nên là việc nhồi nhét kiến thức vào thời lượng cuối của cái bài giảng nhập môn này thì có lẽ nó hơi bất khả thi."
+    },
+    {
+      "id": "S0782",
+      "start": 3165.21,
+      "end": 3172.29,
+      "text": "Do vậy mình xin phép để dành phần kiến thức chuyên sâu về bất đồng bộ cũng như là V8 Engine trong một video khác, anh em nha."
+    },
+    {
+      "id": "S0783",
+      "start": 3172.33,
+      "end": 3175.91,
+      "text": "Còn ở mức độ nhập môn thì anh em cần hiểu ý tưởng của nó là nó làm cái gì thôi."
+    },
+    {
+      "id": "S0784",
+      "start": 3176.59,
+      "end": 3179.69,
+      "text": "Rồi, bây giờ mình sẽ chuyển sang phần kiến thức cuối cùng."
+    },
+    {
+      "id": "S0785",
+      "start": 3179.69,
+      "end": 3181.83,
+      "text": "Đó là về Data Storage - Lưu trữ dữ liệu."
+    },
+    {
+      "id": "S0786",
+      "start": 3181.87,
+      "end": 3186.19,
+      "text": "Một trong những chức năng tối thiểu mà bất cứ một app nào cũng cần phải làm được."
+    },
+    {
+      "id": "S0787",
+      "start": 3186.19,
+      "end": 3189.85,
+      "text": "Lưu trữ dữ liệu ở đây không phải là đang đề cập đến biến, variable nhé."
+    },
+    {
+      "id": "S0788",
+      "start": 3189.87,
+      "end": 3193.55,
+      "text": "Biến nó cũng là để lưu trữ dữ liệu nhưng mà chỉ là lưu trữ tạm thời thôi."
+    },
+    {
+      "id": "S0789",
+      "start": 3193.57,
+      "end": 3197.49,
+      "text": "Tức là khi chương trình của anh em mà tắt đi thì cái dữ liệu trong biến nó sẽ bị biến mất."
+    },
+    {
+      "id": "S0790",
+      "start": 3197.51,
+      "end": 3202.47,
+      "text": "Đấy và cái cơ chế Data Storage mình muốn nói là chúng ta sẽ lưu trữ dữ liệu lâu dài hơn."
+    },
+    {
+      "id": "S0791",
+      "start": 3202.49,
+      "end": 3206.15,
+      "text": "Anh em có thể tắt chương trình đi và bật lại thì cái dữ liệu đó vẫn còn nha."
+    },
+    {
+      "id": "S0792",
+      "start": 3206.17,
+      "end": 3211.79,
+      "text": "Ở trong môi trường web browser thì có khá nhiều cách thức khác nhau cho phép chúng ta có thể lưu trữ được data."
+    },
+    {
+      "id": "S0793",
+      "start": 3212.03,
+      "end": 3214.24,
+      "text": "Đơn giản thì có thể kể đến như là Cookie này."
+    },
+    {
+      "id": "S0794",
+      "start": 3214.24,
+      "end": 3215.62,
+      "text": "Chúng ta có Web Storage này."
+    },
+    {
+      "id": "S0795",
+      "start": 3215.62,
+      "end": 3218.27,
+      "text": "Hoặc cao hơn anh em hoàn toàn có thể sử dụng Database."
+    },
+    {
+      "id": "S0796",
+      "start": 3218.51,
+      "end": 3223.27,
+      "text": "Quảng em nào đã học về cơ sở dữ liệu rồi thì biết chúng ta không hoàn toàn có thể tổ chức một cái database riêng."
+    },
+    {
+      "id": "S0797",
+      "start": 3223.43,
+      "end": 3228.67,
+      "text": "Sau đó, anh em sẽ kết nối với database này với app viết bằng JavaScript của anh em chạy trên phía trình duyệt Google Chrome này."
+    },
+    {
+      "id": "S0798",
+      "start": 3228.79,
+      "end": 3232.28,
+      "text": "Nó cũng đã được tích hợp một cái database từng gọi là IndexedDB."
+    },
+    {
+      "id": "S0799",
+      "start": 3232.28,
+      "end": 3234.19,
+      "text": "Nó là một cái tiêu chuẩn của HTML5."
+    },
+    {
+      "id": "S0800",
+      "start": 3234.31,
+      "end": 3240.31,
+      "text": "Cũng khá là dễ dùng và tiện cho việc thực hành, tuy nhiên thì các anh em cần phải biết một chút kiến thức cơ bản về NoSQL Database đã."
+    },
+    {
+      "id": "S0801",
+      "start": 3240.55,
+      "end": 3248.19,
+      "text": "Còn với mức độ nhập môn, cũng như là làm quen với ngôn ngữ JavaScript thì mình đề xuất các anh em sử dụng cái cơ chế localStorage."
+    },
+    {
+      "id": "S0802",
+      "start": 3248.29,
+      "end": 3253.02,
+      "text": "Data của các anh em sẽ được lưu trực tiếp ở trong browser theo kiểu giống như Object."
+    },
+    {
+      "id": "S0803",
+      "start": 3253.02,
+      "end": 3256.59,
+      "text": "Nó cũng có property, cũng có value, đây mình sẽ ví dụ nhanh nha."
+    },
+    {
+      "id": "S0804",
+      "start": 3256.79,
+      "end": 3262.59,
+      "text": "Để gọi đến localStorage thì anh em viết là localStorage như thế này, sau đó anh em sẽ viết cho mình dấu chấm."
+    },
+    {
+      "id": "S0805",
+      "start": 3262.59,
+      "end": 3266.24,
+      "text": "Sau đó sẽ là cái tên thuộc tính mà anh em muốn tạo ra để lưu dữ liệu."
+    },
+    {
+      "id": "S0806",
+      "start": 3266.24,
+      "end": 3268.67,
+      "text": "Ví dụ mình muốn lưu cái thuộc tính là tên đấy."
+    },
+    {
+      "id": "S0807",
+      "start": 3268.67,
+      "end": 3271.41,
+      "text": "Mình ghi là Vũng Tàu Coder chẳng hạn đấy."
+    },
+    {
+      "id": "S0808",
+      "start": 3271.41,
+      "end": 3272.71,
+      "text": "Mình tạo thêm nữa đi."
+    },
+    {
+      "id": "S0809",
+      "start": 3276.71,
+      "end": 3277.71,
+      "text": "Bằng gì?"
+    },
+    {
+      "id": "S0810",
+      "start": 3277.71,
+      "end": 3280.91,
+      "text": "Hà Nội chẳng hạn, anh em Ctrl + S lại cho mình này."
+    },
+    {
+      "id": "S0811",
+      "start": 3281.91,
+      "end": 3286.83,
+      "text": "Khi mà Ctrl + S lại nhé thì cái đoạn script này nó đã được chạy rồi và cái dữ liệu này của chúng ta."
+    },
+    {
+      "id": "S0812",
+      "start": 3289.83,
+      "end": 3295.73,
+      "text": "Để mà kiểm tra cái dữ liệu này được lưu như thế nào thì anh em sẽ bấm F12 trên Google Chrome cho mình."
+    },
+    {
+      "id": "S0813",
+      "start": 3296.76,
+      "end": 3302.84,
+      "text": "Anh em vào cái tab là Application, nó tồn tại dưới dạng một ứng dụng ở phần Storage này."
+    },
+    {
+      "id": "S0814",
+      "start": 3303.0,
+      "end": 3304.18,
+      "text": "Anh em nhìn thấy không?"
+    },
+    {
+      "id": "S0815",
+      "start": 3304.18,
+      "end": 3309.42,
+      "text": "Nó có khá nhiều các cơ chế lưu trữ dữ liệu, thì anh em bấm vào cho mình cái localStorage và anh em mở ra."
+    },
+    {
+      "id": "S0816",
+      "start": 3309.56,
+      "end": 3311.86,
+      "text": "Anh em chọn vào web app mà anh em đang chạy nha."
+    },
+    {
+      "id": "S0817",
+      "start": 3311.86,
+      "end": 3315.8,
+      "text": "Ở đây là mình đang chạy cái app thông qua Live Server thì nó chạy ở cái port 5500."
+    },
+    {
+      "id": "S0818",
+      "start": 3316.0,
+      "end": 3319.04,
+      "text": "Đấy, thì anh em thấy không, đây là cái bảng dữ liệu mà nó lưu."
+    },
+    {
+      "id": "S0819",
+      "start": 3319.72,
+      "end": 3320.45,
+      "text": "Cái key là gì?"
+    },
+    {
+      "id": "S0820",
+      "start": 3320.45,
+      "end": 3322.23,
+      "text": "Key là property name đúng không ạ?"
+    },
+    {
+      "id": "S0821",
+      "start": 3322.23,
+      "end": 3325.24,
+      "text": "Giống trong Object, đúng như mình đã phân tích đúng không ạ?"
+    },
+    {
+      "id": "S0822",
+      "start": 3325.24,
+      "end": 3327.3,
+      "text": "Key chính là property name, đây là value."
+    },
+    {
+      "id": "S0823",
+      "start": 3327.6,
+      "end": 3328.66,
+      "text": "Đấy, địa chỉ và tên."
+    },
+    {
+      "id": "S0824",
+      "start": 3328.66,
+      "end": 3332.64,
+      "text": "Bây giờ mình sẽ tắt cái trình duyệt này đi, mình mở lại cho anh em xem nhé."
+    },
+    {
+      "id": "S0825",
+      "start": 3332.68,
+      "end": 3335.98,
+      "text": "Tắt đi này, ok, mình sẽ mở lại."
+    },
+    {
+      "id": "S0826",
+      "start": 3340.84,
+      "end": 3344.71,
+      "text": "À, nó mở ở bên này, không sao, như nhau cả thôi, F12."
+    },
+    {
+      "id": "S0827",
+      "start": 3344.71,
+      "end": 3350.62,
+      "text": "Anh em nhớ truy cập lại vào cái đường link của cái app của anh em 127.0.0.1:5500."
+    },
+    {
+      "id": "S0828",
+      "start": 3350.84,
+      "end": 3352.73,
+      "text": "Địa chỉ HTML, anh em thấy không?"
+    },
+    {
+      "id": "S0829",
+      "start": 3352.73,
+      "end": 3356.62,
+      "text": "Đây, cái localStorage này nó sẽ lưu theo địa chỉ của từng cái app."
+    },
+    {
+      "id": "S0830",
+      "start": 3356.62,
+      "end": 3358.56,
+      "text": "App của chúng ta đang là web app."
+    },
+    {
+      "id": "S0831",
+      "start": 3358.6,
+      "end": 3362.06,
+      "text": "Thế nên địa chỉ của app sẽ là IP và port anh em nhé!"
+    },
+    {
+      "id": "S0832",
+      "start": 3362.06,
+      "end": 3364.52,
+      "text": "Cái dữ liệu của chúng ta vẫn còn ở đây."
+    },
+    {
+      "id": "S0833",
+      "start": 3364.56,
+      "end": 3367.39,
+      "text": "Đây mình sẽ xoá hai cái đoạn code này đi."
+    },
+    {
+      "id": "S0834",
+      "start": 3367.39,
+      "end": 3368.91,
+      "text": "Xoá đi rồi đúng không?"
+    },
+    {
+      "id": "S0835",
+      "start": 3368.91,
+      "end": 3372.08,
+      "text": "Chạy lại cái điều đó không anh em lại nghĩ là."
+    },
+    {
+      "id": "S0836",
+      "start": 3372.12,
+      "end": 3374.21,
+      "text": "Coi để nó chạy lại thì nó sẽ lưu lại."
+    },
+    {
+      "id": "S0837",
+      "start": 3374.21,
+      "end": 3379.24,
+      "text": "Bây giờ mình đã xoá code đi rồi, mình chạy lại rồi, đúng mà cái dữ liệu chúng ta vẫn còn."
+    },
+    {
+      "id": "S0838",
+      "start": 3379.28,
+      "end": 3385.28,
+      "text": "Bây giờ anh em muốn truy xuất cái dữ liệu ra thì đơn giản cũng chỉ cần gọi localStorage.setItem hoặc là chấm địa chỉ là xong nha."
+    },
+    {
+      "id": "S0839",
+      "start": 3385.4,
+      "end": 3390.88,
+      "text": "Tất nhiên anh em có thể search theo một vài lệnh nữa của localStorage này để phục vụ cho một cái app nào đấy của anh em."
+    },
+    {
+      "id": "S0840",
+      "start": 3390.92,
+      "end": 3392.14,
+      "text": "Nha mà cũng dễ sử dụng thôi."
+    },
+    {
+      "id": "S0841",
+      "start": 3392.14,
+      "end": 3395.48,
+      "text": "Ok, thời lượng của video bài giảng ngày hôm nay cũng đã tương đối là dài rồi."
+    },
+    {
+      "id": "S0842",
+      "start": 3395.52,
+      "end": 3399.72,
+      "text": "Tuy nhiên thì hàm lượng kiến thức nó mới chỉ dừng lại ở mức độ hết sức là cơ bản thôi."
+    },
+    {
+      "id": "S0843",
+      "start": 3399.76,
+      "end": 3405.6,
+      "text": "Tuy nhiên mình vẫn hy vọng là bài giảng sẽ giúp cho các anh em có một cái đà ban đầu, có một cái bệ phóng về kiến thức."
+    },
+    {
+      "id": "S0844",
+      "start": 3405.84,
+      "end": 3411.28,
+      "text": "Để giúp các anh em có thể tự tin hơn khi mà tiếp cận nguồn cái này cũng như là truyền được cảm hứng cho anh em."
+    },
+    {
+      "id": "S0845",
+      "start": 3411.36,
+      "end": 3413.71,
+      "text": "Chúc các anh em tự tin và học tốt nhé."
+    },
+    {
+      "id": "S0846",
+      "start": 3413.71,
+      "end": 3418.72,
+      "text": "Còn anh em nào vẫn muốn đi theo một khóa học mà nó chi tiết hơn, nó đi từng bước."
+    },
+    {
+      "id": "S0847",
+      "start": 3418.76,
+      "end": 3422.84,
+      "text": "Về JavaScript thì có thể tham khảo qua của mình ở channel website www.vungecoder.com."
+    },
+    {
+      "id": "S0848",
+      "start": 3422.84,
+      "end": 3426.72,
+      "text": "Còn bây giờ thì xin chào và hẹn gặp lại các anh em trong những bài giảng kế tiếp."
+    },
+    {
+      "id": "S0849",
+      "start": 3426.76,
+      "end": 3427.36,
+      "text": "Xin chào."
     }
   ]
 }

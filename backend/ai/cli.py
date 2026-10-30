@@ -2,13 +2,14 @@
 
 Hỗ trợ:
 1. Whisper STT nâng cao + Gemini Refiner (mặc định): Whisper bóc băng lấy mốc thời gian chuẩn ➔ Gemini sửa lỗi chính tả, chuẩn hóa thuật ngữ và tách thành từng câu đơn được đánh mã số S0001, S0002...
-2. Gemini API STT trực tiếp: Chạy cloud tốc độ cao.
+2. Bộ đo tiến độ & thời gian thực (Real-time Progress Bar, Tốc độ x-realtime, Thời gian đã chạy Elapsed & Dự kiến hoàn thành ETA).
 3. Chế độ --clean-file: Tự động tách câu, sửa lỗi sai, dọn rác và chuẩn hóa thuật ngữ chuyên ngành trên file transcript có sẵn.
 """
 
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -18,6 +19,7 @@ from .gemini_transcriber import GeminiTranscriber
 from .post_processor import post_process_transcript
 from .models import TranscriptOutput
 from .config_loader import default_ai_config
+from .whisper_service import format_duration
 
 
 def clean_existing_transcript_file(
@@ -28,6 +30,7 @@ def clean_existing_transcript_file(
     start_from_id: str = None
 ):
     """Làm sạch, tách câu đơn và nâng cấp chất lượng một file transcript.json có sẵn."""
+    t0 = time.perf_counter()
     p = Path(file_path)
     if not p.exists():
         print(f"[!] Không tìm thấy tệp: {file_path}")
@@ -60,7 +63,9 @@ def clean_existing_transcript_file(
     with open(out_p, "w", encoding="utf-8") as f:
         f.write(cleaned_transcript.model_dump_json(indent=2, exclude_none=True))
 
+    total_elapsed = time.perf_counter() - t0
     print(f"[+] Đã làm sạch và tách câu: từ {total_before} phân đoạn ➔ tách thành {len(cleaned_transcript.sentences)} câu đơn hoàn chỉnh!")
+    print(f"[+] Thời gian hoàn thành: {format_duration(total_elapsed)} ({total_elapsed:.2f} giây)")
     print(f"[+] File xuất kết quả: {out_p}")
 
 
@@ -110,6 +115,7 @@ def main():
         print("\n[!] Lỗi: Bạn cần cung cấp --input <tệp_video> hoặc dùng --clean-file <transcript.json>")
         return
 
+    pipeline_start = time.perf_counter()
     print(f"[*] Bắt đầu xử lý file: {args.input}")
     print(f"[*] STT Engine: {args.engine.upper()}")
     if use_gemini_refine and args.engine == "whisper":
@@ -123,17 +129,21 @@ def main():
     else:
         transcriber = GeminiTranscriber()
 
+    stt_t0 = time.perf_counter()
     res = transcriber.transcribe(
         media_path=args.input,
         outline_text=outline_text,
         force_recompute=args.force,
         output_file=args.output
     )
+    stt_elapsed = time.perf_counter() - stt_t0
 
+    refine_elapsed = 0.0
     # Dùng Gemini LLM để hiệu đính chính tả, chuẩn hóa thuật ngữ và tách thành từng câu đơn S0001, S0002...
     if use_gemini_refine and args.engine == "whisper" and default_ai_config.gemini_api_key:
         from .transcript_refiner import TranscriptRefiner
         print("\n[*] Đang gửi kết quả sang Gemini LLM để sửa chính tả, chuẩn hóa thuật ngữ & tách thành các câu được đánh mã số...")
+        refine_t0 = time.perf_counter()
         try:
             refiner = TranscriptRefiner()
             res = refiner.refine_transcript(
@@ -144,20 +154,27 @@ def main():
             if args.output:
                 with open(args.output, "w", encoding="utf-8") as f:
                     f.write(res.model_dump_json(indent=2, exclude_none=True))
+            refine_elapsed = time.perf_counter() - refine_t0
             print(f"[+] Đã hoàn tất tách câu & hiệu đính bằng Gemini và lưu vào: {args.output}")
         except Exception as e:
+            refine_elapsed = time.perf_counter() - refine_t0
             print(f"[!] Lỗi khi chạy Gemini Refiner: {e}")
 
-    print("\n" + "=" * 50)
-    print(f"[+] Quy trình hoàn tất!")
-    print(f"[+] Tên file: {res.video}")
-    print(f"[+] Tổng thời lượng: {res.duration:.2f} giây")
-    print(f"[+] Tổng số câu phân đoạn: {len(res.sentences)} câu")
-    if res.sentences:
-        print(f"[+] Câu đầu tiên ({res.sentences[0].id}): [{res.sentences[0].start}s -> {res.sentences[0].end}s] {res.sentences[0].text}")
-        print(f"[+] Câu cuối cùng ({res.sentences[-1].id}): [{res.sentences[-1].start}s -> {res.sentences[-1].end}s] {res.sentences[-1].text}")
-    print(f"[+] Tệp kết quả: {args.output}")
-    print("=" * 50 + "\n")
+    total_elapsed = time.perf_counter() - pipeline_start
+    overall_speed_x = (res.duration / total_elapsed) if total_elapsed > 0 and res.duration > 0 else 0.0
+
+    print("\n" + "=" * 60)
+    print(f"[+] QUY TRÌNH XUẤT TRANSCRIPT HOÀN TẤT!")
+    print(f"[+] Tên file video     : {res.video}")
+    print(f"[+] Thời lượng video   : {format_duration(res.duration)} ({res.duration:.2f} giây)")
+    print(f"[+] Tổng số câu        : {len(res.sentences)} câu đơn ({res.sentences[0].id} -> {res.sentences[-1].id})" if res.sentences else "[+] Tổng số câu: 0")
+    print("-" * 60)
+    print(f"[*] Thời gian bóc băng ({args.engine.upper()}) : {format_duration(stt_elapsed)} ({stt_elapsed:.2f} giây)")
+    if refine_elapsed > 0:
+        print(f"[*] Thời gian Gemini tách câu      : {format_duration(refine_elapsed)} ({refine_elapsed:.2f} giây)")
+    print(f"[*] TỔNG THỜI GIAN HOÀN THÀNH      : {format_duration(total_elapsed)} ({total_elapsed:.2f} giây) — Tốc độ: {overall_speed_x:.1f}x realtime")
+    print(f"[+] Tệp kết quả        : {args.output}")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":

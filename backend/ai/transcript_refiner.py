@@ -5,13 +5,14 @@ Nhiệm vụ trong Pipeline:
 2. Dùng Gemini để đọc hiểu ngữ cảnh, sửa lỗi chính tả tiếng Việt và chuẩn hóa thuật ngữ chuyên ngành (JavaScript, C++, for, while, Object, Primitive, DOM, Asynchronous...).
 3. Tự động TÁCH các đoạn văn bản dài/nhiều ý của Whisper thành từng câu đơn độc lập, rõ ràng.
 4. Tự động chuyển đổi dự phòng (fallback) giữa các model Gemini nếu gặp giới hạn 429/503 Free Tier.
-5. Nội suy mốc thời gian (start, end) chính xác theo tỷ lệ độ dài từng câu và đánh lại mã số câu tuần tự S0001, S0002...
+5. Hiển thị thanh tiến độ, thời gian đã chạy (Elapsed) và thời gian dự kiến còn lại (ETA) theo thời gian thực.
 """
 
 import json
 import logging
+import sys
 import time
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Callable
 
 from google import genai
 from google.genai import types
@@ -19,6 +20,7 @@ from google.genai import types
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import extract_terms_from_outline
 from .config_loader import default_ai_config
+from .whisper_service import format_duration, build_progress_bar
 from .post_processor import (
     split_segment_into_timed_sentences,
     ensure_sentence_casing_and_punctuation,
@@ -90,7 +92,8 @@ class TranscriptRefiner:
         outline_text: Optional[str] = None,
         max_batch_items: int = 25,
         max_batch_chars: int = 6000,
-        start_from_id: Optional[str] = None
+        start_from_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[dict], None]] = None
     ) -> TranscriptOutput:
         """Hiệu đính chính tả và tách các đoạn văn dài thành các câu đơn được đánh mã số S0001, S0002..."""
         if not transcript.sentences:
@@ -110,22 +113,33 @@ class TranscriptRefiner:
             max_items=max_batch_items,
             max_chars=max_batch_chars
         )
+        total_batches = len(batches)
 
         logger.info(
             f"[REFINER] Bắt đầu dùng Gemini hiệu đính & tách câu cho "
-            f"{len(sentences_to_refine)} phân đoạn ({len(batches)} batches)..."
+            f"{len(sentences_to_refine)} phân đoạn ({total_batches} batches)..."
         )
 
         refined_sentences_map: Dict[str, List[str]] = {}
         candidate_models = self._get_candidate_models()
         active_model_idx = 0
+        refine_start_wall = time.perf_counter()
 
         for b_idx, batch in enumerate(batches, start=1):
             batch_data = [{"id": s.id, "text": s.text} for s in batch]
-            logger.info(
-                f"[REFINER] Batch {b_idx}/{len(batches)}: Đang xử lý {batch[0].id} -> {batch[-1].id} "
-                f"({len(batch)} mục)..."
+            elapsed_before = time.perf_counter() - refine_start_wall
+            done_batches = b_idx - 1
+            pct_before = (done_batches / total_batches) * 100.0 if total_batches else 0.0
+            eta_before = (elapsed_before / done_batches) * (total_batches - done_batches) if done_batches > 0 else 0.0
+            bar_before = build_progress_bar(pct_before)
+
+            eta_label = f"~{format_duration(eta_before)}" if done_batches > 0 else "Đang ước tính..."
+            print(
+                f"[Gemini Refiner] [{bar_before}] {pct_before:5.1f}% "
+                f"(Batch {b_idx}/{total_batches}: {batch[0].id} -> {batch[-1].id}) | "
+                f"Đã chạy: {format_duration(elapsed_before)} | Còn lại (ETA): {eta_label}"
             )
+            sys.stdout.flush()
 
             prompt = f"""Bạn là chuyên gia biên tập ngữ liệu bài giảng lập trình tiếng Việt.
 Dưới đây là các phân đoạn văn bản được bóc băng từ giọng nói (Speech-to-Text). Do giảng viên phát âm thuật ngữ tiếng Anh xen lẫn tiếng Việt và nói liền mạch, văn bản thô bị sai chính tả, sai tên thuật ngữ và nhiều câu bị dính liền thành một đoạn dài không có dấu chấm câu.
@@ -215,6 +229,26 @@ DANH SÁCH PHÂN ĐOẠN ĐẦU VÀO:
                     f"Sử dụng bộ tách câu cục bộ cho nhóm này."
                 )
 
+            if progress_callback:
+                elapsed_after = time.perf_counter() - refine_start_wall
+                pct_after = (b_idx / total_batches) * 100.0 if total_batches else 100.0
+                eta_after = (elapsed_after / b_idx) * (total_batches - b_idx)
+                progress_callback({
+                    "stage": "gemini_refiner",
+                    "percent": round(pct_after, 1),
+                    "elapsed_sec": round(elapsed_after, 2),
+                    "eta_sec": round(eta_after, 2)
+                })
+
+        total_refine_elapsed = time.perf_counter() - refine_start_wall
+        if total_batches > 0:
+            bar_done = build_progress_bar(100.0)
+            print(
+                f"[Gemini Refiner] [{bar_done}] 100.0% "
+                f"(Hoàn tất {total_batches}/{total_batches} batches) | "
+                f"Tổng thời gian: {format_duration(total_refine_elapsed)} ({total_refine_elapsed:.2f}s)"
+            )
+
         # Bước cuối: Tách từng phân đoạn thành các câu độc lập kèm nội suy thời gian [start, end]
         # và đánh lại mã định danh câu S0001, S0002... trên toàn bộ transcript.
         expanded_timed_items: List[dict] = []
@@ -241,7 +275,8 @@ DANH SÁCH PHÂN ĐOẠN ĐẦU VÀO:
 
         logger.info(
             f"[REFINER HOÀN TẤT] Đã chuẩn hóa và tách từ {len(transcript.sentences)} phân đoạn "
-            f"thành {len(final_sentences)} câu đơn hoàn chỉnh (S0001 -> S{len(final_sentences):0{digit_count}d})."
+            f"thành {len(final_sentences)} câu đơn hoàn chỉnh (S0001 -> S{len(final_sentences):0{digit_count}d}) "
+            f"trong {format_duration(total_refine_elapsed)} ({total_refine_elapsed:.2f}s)."
         )
         transcript.sentences = final_sentences
         return transcript
