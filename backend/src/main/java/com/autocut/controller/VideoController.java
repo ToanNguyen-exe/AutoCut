@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -110,6 +111,37 @@ public class VideoController {
                 }
             }
         }
+    }
+
+    /**
+     * Lấy danh sách video từ Neon Postgres (P18).
+     * SV4 gọi API này để lấy link video stream R2 và metadata.
+     */
+    @GetMapping("/list")
+    public ResponseEntity<List<VideoEntity>> listVideos() {
+        return ResponseEntity.ok(videoRepository.findAll());
+    }
+
+    /**
+     * Lấy thông tin 1 video cụ thể theo ID hoặc lấy video mới nhất (P18).
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getVideoById(@PathVariable Long id) {
+        return videoRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Lấy video mới nhất để SV4 mở lên xem ngay không cần truyền ID.
+     */
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestVideo() {
+        List<VideoEntity> all = videoRepository.findAll();
+        if (all.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(all.get(all.size() - 1));
     }
 
     /**
