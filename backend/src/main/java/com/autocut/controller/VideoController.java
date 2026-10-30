@@ -2,18 +2,26 @@ package com.autocut.controller;
 
 import com.autocut.dto.Models.SegmentsDTO;
 import com.autocut.dto.Models.TranscriptDTO;
+import com.autocut.entity.VideoEntity;
+import com.autocut.repository.VideoRepository;
 import com.autocut.service.CacheService;
+import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,11 +32,84 @@ public class VideoController {
     private static final Logger log = LoggerFactory.getLogger(VideoController.class);
     private final CacheService cacheService;
     private final ConfigService configService;
+    private final CloudflareR2Service r2Service;
+    private final VideoRepository videoRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public VideoController(CacheService cacheService, ConfigService configService) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
         this.cacheService = cacheService;
         this.configService = configService;
+        this.r2Service = r2Service;
+        this.videoRepository = videoRepository;
+    }
+
+    /**
+     * API tải video mẫu lên Cloudflare R2:
+     * - Tính mã băm SHA-256
+     * - Tự động upload vào thư mục autocut/sample_videos/ trên R2
+     * - Trả về Public URL cho cả nhóm (SV1, SV2, SV4) bấm vào là xem và test chung được ngay!
+     */
+    @PostMapping("/upload-sample")
+    public ResponseEntity<Map<String, Object>> uploadSampleVideo(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File video rỗng!"));
+        }
+
+        Path tempFile = null;
+        try {
+            String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "sample.mp4";
+            Path tempDir = Paths.get("temp");
+            if (!Files.exists(tempDir)) {
+                Files.createDirectories(tempDir);
+            }
+
+            tempFile = tempDir.resolve(System.currentTimeMillis() + "_" + originalFilename);
+            try (InputStream is = file.getInputStream()) {
+                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // Tính mã băm SHA-256
+            String hash = cacheService.computeSha256(tempFile);
+
+            // Upload lên Cloudflare R2 trong folder autocut/sample_videos/
+            String r2Key = "sample_videos/" + hash.substring(0, 12) + "_" + originalFilename;
+            String publicUrl = r2Service.uploadFile(tempFile, r2Key);
+
+            // Lưu thông tin video vào Neon Lakebase Postgres
+            VideoEntity videoEntity = videoRepository.findBySha256Hash(hash).orElse(new VideoEntity());
+            videoEntity.setFileName(originalFilename);
+            videoEntity.setSha256Hash(hash);
+            videoEntity.setFileSize(file.getSize());
+            videoEntity.setR2Key(r2Key);
+            videoEntity.setCloudUrl(publicUrl);
+            videoEntity.setStatus("UPLOADED");
+            videoRepository.save(videoEntity);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
+            response.put("file_name", originalFilename);
+            response.put("file_size", file.getSize());
+            response.put("sha256", hash);
+            response.put("cloud_url", publicUrl);
+            response.put("message", "Video đã được đưa lên Cloudflare R2 thành công cho cả nhóm dùng chung!");
+
+            log.info("Đã upload video mẫu lên Cloudflare R2: {}", publicUrl);
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi upload video lên R2: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Lỗi server: " + e.getMessage()));
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    log.warn("Không thể xóa tệp tạm {}: {}", tempFile, e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -79,11 +160,15 @@ public class VideoController {
         Optional<TranscriptDTO> cached = cacheService.getCachedTranscript(hash);
         if (cached.isPresent()) {
             return ResponseEntity.ok(Map.of(
+                    "status", "HIT",
                     "cached", true,
                     "transcript", cached.get()
             ));
         }
-        return ResponseEntity.ok(Map.of("cached", false));
+        return ResponseEntity.ok(Map.of(
+                "status", "MISS",
+                "cached", false
+        ));
     }
 
     /**
