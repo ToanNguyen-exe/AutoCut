@@ -11,8 +11,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
+import { uploadVideoFile } from "@/lib/api";
 
 export interface NewVideoData {
   url: string;
@@ -21,6 +23,7 @@ export interface NewVideoData {
   isExternalUrl: boolean;
   topicTitle?: string;
   sectionName?: string;
+  sha256?: string;
 }
 
 interface AddVideoModalProps {
@@ -63,6 +66,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,7 +130,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -165,6 +170,31 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         return;
       }
 
+      setIsUploading(true);
+      setUploadProgressMsg("Đang tải video lên máy chủ Spring Boot & mã hóa SHA-256...");
+
+      try {
+        const uploadRes = await uploadVideoFile(selectedFile);
+        if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
+          onAddVideo({
+            url: uploadRes.data.cloud_url,
+            name: uploadRes.data.file_name || selectedFile.name,
+            duration: finalDurationSeconds,
+            isExternalUrl: false,
+            topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
+            sectionName: "01_NoiDungChinh",
+            sha256: uploadRes.data.sha256,
+          });
+          onClose();
+          return;
+        }
+      } catch (uploadErr) {
+        console.warn("Upload lên backend gặp sự cố, sử dụng chế độ phát tệp cục bộ:", uploadErr);
+      } finally {
+        setIsUploading(false);
+      }
+
+      // Fallback nếu backend offline hoặc gặp lỗi
       const fileUrl = URL.createObjectURL(selectedFile);
       onAddVideo({
         url: fileUrl,
@@ -420,20 +450,37 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             </div>
           </div>
 
+          {/* Upload Progress Status */}
+          {isUploading && (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs">
+              <Loader2 className="w-4 h-4 animate-spin text-purple-400 shrink-0" />
+              <span>{uploadProgressMsg || "Đang xử lý tệp..."}</span>
+            </div>
+          )}
+
           {/* Submit Actions */}
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              disabled={isUploading}
+              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:opacity-50"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/25 transition hover:scale-105 active:scale-95"
+              disabled={isUploading}
+              className="px-5 py-2 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/25 transition hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
             >
-              Thêm video & Dựng dự án mới
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang tải lên backend...</span>
+                </>
+              ) : (
+                "Thêm video & Dựng dự án mới"
+              )}
             </button>
           </div>
         </form>

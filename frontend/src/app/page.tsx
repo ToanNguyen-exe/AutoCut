@@ -9,6 +9,10 @@ import {
   fetchMockTranscript,
   fetchConfig,
   submitRenderSegments,
+  checkCache,
+  fetchBackendVideos,
+  analyzeVideoBackend,
+  API_BASE,
   FALLBACK_SEGMENTS,
 } from "@/lib/api";
 
@@ -46,6 +50,7 @@ export default function Home() {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState<boolean>(false);
   const [isAddVideoOpen, setIsAddVideoOpen] = useState<boolean>(false);
   const [externalVideoUrl, setExternalVideoUrl] = useState<string | null>(null);
+  const [currentVideoHash, setCurrentVideoHash] = useState<string>("");
   const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
   const [videoLibrary, setVideoLibrary] = useState<VideoLibraryItem[]>([]);
   const [undoStack, setUndoStack] = useState<Segment[][]>([]);
@@ -100,6 +105,31 @@ export default function Home() {
     const transRes = await fetchMockTranscript();
     if (transRes.data) {
       setTranscript(transRes.data);
+    }
+
+    // Nạp danh sách video từ Database qua Backend Spring Boot (/api/video/list)
+    const backendVidsRes = await fetchBackendVideos();
+    if (backendVidsRes.source === "api" && backendVidsRes.data && backendVidsRes.data.length > 0) {
+      const dbItems: VideoLibraryItem[] = backendVidsRes.data.map((item, idx) => ({
+        id: `backend_vid_${item.id || idx}`,
+        name: item.fileName,
+        lesson: item.fileName.replace(/\.[^/.]+$/, ""),
+        title: item.fileName.replace(/\.[^/.]+$/, ""),
+        url: item.cloudUrl || `${API_BASE}/stream/${item.sha256Hash}`,
+        duration: 180,
+        status: "added",
+        statusLabel: item.status || "Đã lưu DB",
+        category: "Cloud Backend",
+        segmentsCount: 1,
+        updatedAt: item.createdAt ? new Date(item.createdAt).toLocaleTimeString("vi-VN") : "Hôm nay",
+        segments: [],
+      }));
+
+      setVideoLibrary((prev) => {
+        const existingNames = new Set(prev.map((v) => v.name));
+        const newOnes = dbItems.filter((v) => !existingNames.has(v.name));
+        return [...prev, ...newOnes];
+      });
     }
 
     if (isOnline) {
@@ -302,8 +332,13 @@ export default function Home() {
     });
   }, []);
 
-  const handleAddVideo = (newVideo: NewVideoData) => {
+  const handleAddVideo = async (newVideo: NewVideoData) => {
     setExternalVideoUrl(newVideo.url);
+    if (newVideo.sha256) {
+      setCurrentVideoHash(newVideo.sha256);
+    } else {
+      setCurrentVideoHash("");
+    }
 
     const cleanName = newVideo.name.replace(/\.[^/.]+$/, "");
     const lessonTitle = newVideo.topicTitle || (cleanName.length > 40 ? cleanName.slice(0, 40) : cleanName);
@@ -367,11 +402,68 @@ export default function Home() {
     setActiveSegmentId(singleSegment.id);
     setCurrentTime(0);
     setIsPlaying(false);
+
+    // Kiểm tra cache nếu video đã từng được phân tích trên backend (GET /api/video/cache/{hash})
+    if (newVideo.sha256) {
+      try {
+        const cacheRes = await checkCache(newVideo.sha256);
+        if (cacheRes.source === "api" && cacheRes.data?.cached && cacheRes.data?.transcript) {
+          setTranscript(cacheRes.data.transcript);
+          showToast("success", `Đã thêm video: "${lessonTitle}" (Đã nạp bản ghi từ Cache HIT!)`);
+          return;
+        }
+      } catch (cacheErr) {
+        console.warn("Không thể kiểm tra cache:", cacheErr);
+      }
+    }
+
     showToast("success", `Đã thêm video: "${lessonTitle}" (1 đoạn duy nhất). Hãy bấm "Phân Tích AI" để trích xuất nội dung!`);
   };
 
   const handleAnalyzeAI = useCallback(async () => {
     setIsAnalyzing(true);
+    setAnalysisStep("Đang kết nối AI Backend & trích xuất đặc trưng âm thanh...");
+
+    const totalSecs = Math.max(
+      5,
+      data.segments.reduce((max, s) => Math.max(max, s.end), 0)
+    );
+
+    // 1. Thử gọi API Backend Spring Boot (/api/video/analyze)
+    try {
+      const res = await analyzeVideoBackend({
+        videoName: data.video,
+        lesson: data.lesson,
+        hash: currentVideoHash || undefined,
+        duration: totalSecs,
+      });
+
+      if (res.source === "api" && res.data?.segmentsData) {
+        setAnalysisStep("Đang phân tích ngữ nghĩa và đồng bộ các phân đoạn từ Spring Boot...");
+        await new Promise((r) => setTimeout(r, 600));
+
+        const segData = res.data.segmentsData;
+        setData(segData);
+        if (res.data.transcript) {
+          setTranscript(res.data.transcript);
+        }
+        if (segData.segments.length > 0) {
+          setActiveSegmentId(segData.segments[0].id);
+        }
+
+        updateVideoSegmentsInLibrary(data.video, segData.segments);
+        setVideoLibrary(getLibraryVideos());
+        setUndoStack([]);
+        setRedoStack([]);
+        setIsAnalyzing(false);
+        showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công!");
+        return;
+      }
+    } catch (err) {
+      console.warn("Backend AI không phản hồi, chuyển sang phân tích thông minh cục bộ:", err);
+    }
+
+    // 2. Chế độ fallback nếu backend chưa chạy hoặc lỗi
     setAnalysisStep("Đang trích xuất luồng âm thanh & khử nhiễu (Audio Demuxing)...");
 
     await new Promise((res) => setTimeout(res, 800));
@@ -384,11 +476,6 @@ export default function Home() {
     setAnalysisStep("Đang khởi tạo các phân đoạn thông minh và đồng bộ hóa Timeline...");
 
     await new Promise((res) => setTimeout(res, 600));
-
-    const totalSecs = Math.max(
-      5,
-      data.segments.reduce((max, s) => Math.max(max, s.end), 0)
-    );
 
     const isMusicOrTikTok = /remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
       `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
@@ -562,7 +649,7 @@ export default function Home() {
     setIsAnalyzing(false);
     setAnalysisStep("");
     showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
-  }, [data.video, data.lesson, data.segments, externalVideoUrl, showToast]);
+  }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
 
   const totalDuration = Math.max(
     1,

@@ -256,3 +256,137 @@ export async function submitRenderSegments(
     };
   }
 }
+
+export interface UploadVideoResponse {
+  status: string;
+  file_name: string;
+  file_size: number;
+  sha256: string;
+  cloud_url: string;
+  message?: string;
+}
+
+/**
+ * Tải file video lên Backend Spring Boot (POST /api/video/upload-sample)
+ * Tự động tính SHA-256, đẩy lên Cloudflare R2 (hoặc lưu local fallback),
+ * và lưu bản ghi vào Database.
+ */
+export async function uploadVideoFile(
+  file: File
+): Promise<ApiResponse<UploadVideoResponse>> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE}/upload-sample`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = (await res.json()) as { error?: string };
+        if (errJson && typeof errJson.error === "string") {
+          errorMsg = errJson.error;
+        }
+      } catch {
+        const errText = await res.text().catch(() => "");
+        if (errText) errorMsg = errText;
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data: UploadVideoResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Lỗi upload video lên server",
+      source: "fallback",
+    };
+  }
+}
+
+export interface BackendVideoItem {
+  id?: number;
+  fileName: string;
+  sha256Hash: string;
+  status?: string;
+  fileSize?: number;
+  r2Key?: string;
+  cloudUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Lấy danh sách video đã lưu trữ từ Database qua Backend (GET /api/video/list)
+ */
+export async function fetchBackendVideos(): Promise<ApiResponse<BackendVideoItem[]>> {
+  try {
+    const res = await fetch(`${API_BASE}/list`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+
+    const data: BackendVideoItem[] = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể lấy danh sách video từ server",
+      source: "fallback",
+    };
+  }
+}
+
+export interface AnalyzeResponse {
+  status: string;
+  mode: string;
+  segmentsData: SegmentsData;
+  transcript: TranscriptData;
+}
+
+/**
+ * Gọi AI Phân tích Video & Semantic Segmentation từ Backend (POST /api/video/analyze)
+ */
+export async function analyzeVideoBackend(payload: {
+  videoName: string;
+  lesson: string;
+  hash?: string;
+  duration: number;
+}): Promise<ApiResponse<AnalyzeResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = (await res.json()) as { error?: string };
+        if (errJson && typeof errJson.error === "string") {
+          errorMsg = errJson.error;
+        }
+      } catch {
+        const errText = await res.text().catch(() => "");
+        if (errText) errorMsg = errText;
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data: AnalyzeResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Lỗi khi gọi AI phân tích trên backend",
+      source: "fallback",
+    };
+  }
+}
