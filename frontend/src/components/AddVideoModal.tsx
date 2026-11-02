@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { uploadVideoFile } from "@/lib/api";
+import { TranscriptData, SegmentsData } from "@/types";
 
 export interface NewVideoData {
   url: string;
@@ -24,6 +25,9 @@ export interface NewVideoData {
   topicTitle?: string;
   sectionName?: string;
   sha256?: string;
+  transcript?: TranscriptData;
+  segmentsData?: SegmentsData;
+  transcriptFile?: string;
 }
 
 interface AddVideoModalProps {
@@ -171,7 +175,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       }
 
       setIsUploading(true);
-      setUploadProgressMsg("Đang tải video lên máy chủ Spring Boot & mã hóa SHA-256...");
+      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini) lưu vào thư mục transcripts/...");
 
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
@@ -184,6 +188,9 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
             sha256: uploadRes.data.sha256,
+            transcript: uploadRes.data.transcript,
+            segmentsData: uploadRes.data.segmentsData,
+            transcriptFile: uploadRes.data.transcript_file,
           });
           onClose();
           return;

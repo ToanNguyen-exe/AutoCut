@@ -344,6 +344,43 @@ export default function Home() {
     const lessonTitle = newVideo.topicTitle || (cleanName.length > 40 ? cleanName.slice(0, 40) : cleanName);
     const totalSecs = Math.max(5, newVideo.duration || 60);
 
+    // Nếu AI đã phân tích khi upload: nạp ngay transcript và segments
+    if (newVideo.segmentsData && newVideo.segmentsData.segments.length > 0) {
+      setData(newVideo.segmentsData);
+      if (newVideo.transcript) {
+        setTranscript(newVideo.transcript);
+      }
+      setActiveSegmentId(newVideo.segmentsData.segments[0].id);
+
+      const libItem: VideoLibraryItem = {
+        id: `vid_${Date.now()}`,
+        name: newVideo.name,
+        lesson: lessonTitle,
+        title: lessonTitle,
+        url: newVideo.url,
+        duration: totalSecs,
+        status: "edited",
+        statusLabel: "Đã phân tích AI",
+        category: "Dự án mới",
+        segmentsCount: newVideo.segmentsData.segments.length,
+        updatedAt: new Date().toLocaleTimeString("vi-VN"),
+        segments: newVideo.segmentsData.segments,
+        transcript: newVideo.transcript,
+      };
+      const updatedLib = saveVideoToLibrary(libItem);
+      setVideoLibrary(updatedLib);
+      setUndoStack([]);
+      setRedoStack([]);
+      setCurrentTime(0);
+      setIsPlaying(false);
+
+      showToast(
+        "success",
+        `✓ AI đã phân tích video "${lessonTitle}", lưu file transcript tại ${newVideo.transcriptFile || "transcripts/transcript.js"} và đồng bộ vào dự án!`
+      );
+      return;
+    }
+
     // Khi chỉ thêm video mới: KHÔNG tự động chia nhiều đoạn giả lập.
     // Giữ đúng 1 PHÂN ĐOẠN DUY NHẤT bao quát toàn bộ video từ 0 đến hết thời lượng!
     const singleSegment: Segment = {
@@ -376,10 +413,14 @@ export default function Home() {
       segments: [singleSegment],
     });
 
-    // Xóa bỏ transcript giả lập bài giảng lập trình!
-    setTranscript(undefined);
+    // Nạp transcript nếu AI đã bóc băng khi upload
+    if (newVideo.transcript) {
+      setTranscript(newVideo.transcript);
+    } else {
+      setTranscript(undefined);
+    }
 
-    // Lưu video mới vào thư viện video ở trạng thái "added" (Chưa phân tích)
+    // Lưu video mới vào thư viện video
     const libItem: VideoLibraryItem = {
       id: `vid_${Date.now()}`,
       name: newVideo.name,
@@ -387,12 +428,13 @@ export default function Home() {
       title: lessonTitle,
       url: newVideo.url,
       duration: totalSecs,
-      status: "added",
-      statusLabel: "Chưa phân tích",
+      status: newVideo.transcript ? "edited" : "added",
+      statusLabel: newVideo.transcript ? "Đã có transcript" : "Chưa phân tích",
       category: "Video mới thêm",
       segmentsCount: 1,
       updatedAt: new Date().toLocaleTimeString("vi-VN"),
       segments: [singleSegment],
+      transcript: newVideo.transcript,
     };
     const updatedLib = saveVideoToLibrary(libItem);
     setVideoLibrary(updatedLib);
@@ -402,6 +444,14 @@ export default function Home() {
     setActiveSegmentId(singleSegment.id);
     setCurrentTime(0);
     setIsPlaying(false);
+
+    if (newVideo.transcript) {
+      showToast(
+        "success",
+        `✓ Đã thêm video: "${lessonTitle}" & AI đã hoàn tất bóc băng transcript (lưu tại ${newVideo.transcriptFile || "transcripts/"})!`
+      );
+      return;
+    }
 
     // Kiểm tra cache nếu video đã từng được phân tích trên backend (GET /api/video/cache/{hash})
     if (newVideo.sha256) {

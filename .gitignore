@@ -1,49 +1,107 @@
-# Environment & Secrets
+# ==========================================
+# AutoCut Comprehensive .gitignore
+# ==========================================
+
+# 1. Environment & Secrets
 .env
-.env.local
+.env*.local
 *.key
 *.pem
 
-# Java & Spring Boot
+# 2. Python & AI Engine
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+*.egg-info/
+
+# 3. Java & Spring Boot
 target/
 *.class
 .gradle/
 build/
+dist/
 *.jar
 *.war
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
 
-# Node & Next.js
+# 4. Node & Next.js
 node_modules/
 .next/
 out/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+coverage/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# IDE & OS
+# 5. Media, Uploads & Runtime Artifacts
+uploads/
+cache/
+output/
+temp/
+player_test.html
+
+# Media File Extensions
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.flv
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+*.zip
+
+# User Transcripts (Giữ lại các file transcript mẫu chuẩn của dự án)
+transcripts/*
+!transcripts/javascript_transcript.json
+!transcripts/web3-lecture_transcript.json
+!transcripts/.gitkeep
+
+# 6. Logs & Test Dumps
+*.log
+logs/
+*.dump
+*.dumpstream
+
+# 7. IDE & Operating System
 .idea/
 *.iml
+*.iws
+*.ipr
 .vscode/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+nbproject/
 .DS_Store
 Thumbs.db
+*.bak
+*.swp
+*~
 
-# Media & Cache Files
-cache/
-output/
-temp/
-player_test.html
-*.mp4
-*.mkv
-*.avi
-*.mp3
-*.wav
-*.zip
-
-# AI Agents & Skills
+# 8. AI Agents & Local DB Cache
 .agents/
 .neon

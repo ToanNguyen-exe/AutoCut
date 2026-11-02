@@ -2,13 +2,14 @@
 
 Hỗ trợ:
 1. Whisper STT nâng cao + Gemini LLM tách câu đơn (S0001, S0002...) & sửa lỗi chính tả/thuật ngữ.
-2. Gemini API STT: Chạy cloud tốc độ cao.
+2. Tự động lưu mỗi video một file transcript riêng biệt tại thư mục transcripts/<tên_video>_transcript.json và transcripts/<tên_video>/transcript.json.
 3. Chế độ --clean-file: Tự động sửa lỗi sai, tách câu đơn và chuẩn hóa thuật ngữ trên file transcript có sẵn.
-4. Chế độ --analyze-backend: Được gọi trực tiếp từ Spring Boot (/api/video/analyze) để bóc băng, tách câu và phân đoạn chủ đề (SegmentsDTO + TranscriptDTO).
+4. Chế độ --analyze-backend: Được gọi trực tiếp từ Spring Boot (/api/video/analyze) để đọc transcript từ transcripts/ (hoặc bóc băng mới) và phân đoạn chủ đề (SegmentsDTO + TranscriptDTO).
 """
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -24,6 +25,33 @@ from .whisper_service import format_duration
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
+SHA256_PREFIX_RE = re.compile(r"^[0-9a-fA-F]{64}_")
+
+
+def clean_video_filename(raw_name: str) -> str:
+    """Loại bỏ tiền tố mã băm SHA-256 (nếu file nằm trong uploads/<hash>_<name>.mp4) để lấy đúng tên file gốc."""
+    name = Path(raw_name).name
+    return SHA256_PREFIX_RE.sub("", name)
+
+
+def get_dedicated_transcript_path(video_name: str) -> Path:
+    """Trả về đường dẫn chuẩn trong thư mục riêng: transcripts/<tên_video>_transcript.json."""
+    TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
+    clean_name = clean_video_filename(video_name or "video.mp4")
+    stem = Path(clean_name).stem or "video"
+    return TRANSCRIPTS_DIR / f"{stem}_transcript.json"
+
+
+def save_to_dedicated_transcripts_folder(transcript: TranscriptOutput, video_name: Optional[str] = None) -> Path:
+    """Lưu file transcript trực tiếp vào thư mục transcripts/<tên_video>_transcript.json (không tạo thư mục con riêng)."""
+    clean_name = clean_video_filename(video_name or transcript.video)
+    transcript.video = clean_name
+    dedicated_path = get_dedicated_transcript_path(clean_name)
+    with open(dedicated_path, "w", encoding="utf-8") as f:
+        f.write(transcript.model_dump_json(indent=2, exclude_none=True))
+
+    return dedicated_path
 
 
 def clean_existing_transcript_file(
@@ -63,11 +91,14 @@ def clean_existing_transcript_file(
     else:
         cleaned_transcript = post_process_transcript(transcript)
 
+    out_p.parent.mkdir(parents=True, exist_ok=True)
     with open(out_p, "w", encoding="utf-8") as f:
         f.write(cleaned_transcript.model_dump_json(indent=2, exclude_none=True))
 
+    dedicated_p = save_to_dedicated_transcripts_folder(cleaned_transcript)
+
     print(f"[+] Đã làm sạch và tách câu: từ {total_before} đoạn ban đầu ➔ {len(cleaned_transcript.sentences)} câu đơn hoàn chỉnh!")
-    print(f"[+] File xuất kết quả: {out_p}")
+    print(f"[+] File xuất kết quả: {out_p} (Đồng bộ tại: {dedicated_p})")
 
 
 def _find_matching_transcript_or_video(
@@ -76,27 +107,47 @@ def _find_matching_transcript_or_video(
     file_hash: Optional[str],
     duration: float
 ) -> TranscriptOutput:
-    """Tìm kiếm transcript trong cache, hoặc chạy Whisper + Gemini trên file video vật lý nếu có."""
+    """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video vật lý."""
     cache_dir = PROJECT_ROOT / "cache"
     uploads_dir = PROJECT_ROOT / "uploads"
     backend_uploads_dir = PROJECT_ROOT / "backend" / "uploads"
+    clean_vname = clean_video_filename(video_name or "video.mp4")
 
-    # 1. Kiểm tra cache theo SHA-256 hash nếu có
+    # 1. Ưu tiên kiểm tra trong thư mục transcripts/<tên_video>_transcript.json
+    for candidate_name in [clean_vname, lesson]:
+        if candidate_name:
+            dedicated_file = get_dedicated_transcript_path(candidate_name)
+            if dedicated_file.exists():
+                with open(dedicated_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                t_obj = TranscriptOutput.model_validate(data)
+                processed = post_process_transcript(t_obj)
+                processed.video = clean_vname
+                return processed
+
+    # 2. Kiểm tra cache theo SHA-256 hash nếu có
     if file_hash:
         for c_dir in [cache_dir, PROJECT_ROOT / "backend" / "cache"]:
             candidate_cache = c_dir / f"{file_hash}_transcript.json"
             if candidate_cache.exists():
-                with open(candidate_cache, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                t_obj = TranscriptOutput.model_validate(data)
-                return post_process_transcript(t_obj)
+                try:
+                    with open(candidate_cache, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    t_obj = TranscriptOutput.model_validate(data)
+                    processed = post_process_transcript(t_obj)
+                    save_to_dedicated_transcripts_folder(processed, clean_vname)
+                    return processed
+                except Exception:
+                    continue
 
-    # 2. Tìm trong transcript.json gốc, cache/*_transcript.json, hoặc mock-data/transcript_sample.json theo tên video trước khi bóc băng lại
-    norm_video = (video_name or "").strip().lower()
+    # 3. Tìm trong transcripts/*.json, cache/*_transcript.json, transcript.json gốc hoặc mock-data theo tên video
+    norm_video = clean_vname.strip().lower()
     norm_lesson = (lesson or "").strip().lower()
     norm_stem = Path(norm_video).stem.lower() if norm_video else ""
 
     json_candidates = []
+    if TRANSCRIPTS_DIR.exists():
+        json_candidates.extend(sorted(TRANSCRIPTS_DIR.glob("*_transcript.json")))
     if (PROJECT_ROOT / "transcript.json").exists():
         json_candidates.append(PROJECT_ROOT / "transcript.json")
     if cache_dir.exists():
@@ -111,7 +162,7 @@ def _find_matching_transcript_or_video(
             with open(jc, "r", encoding="utf-8") as f:
                 data = json.load(f)
             t_obj = TranscriptOutput.model_validate(data)
-            t_vid = t_obj.video.strip().lower()
+            t_vid = clean_video_filename(t_obj.video).strip().lower()
             t_stem = Path(t_vid).stem.lower()
 
             if jc.name == "transcript.json" and fallback_root_transcript is None:
@@ -123,21 +174,21 @@ def _find_matching_transcript_or_video(
                 or (norm_lesson and (t_stem == norm_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
             ):
                 processed = post_process_transcript(t_obj)
-                processed.video = video_name or processed.video
+                save_to_dedicated_transcripts_folder(processed, clean_vname)
                 return processed
         except Exception:
             continue
 
-    # 3. Nếu chưa có bản ghi cache nào khớp: Kiểm tra file video vật lý trong uploads/ hoặc thư mục gốc để chạy Whisper + Gemini thật
+    # 4. Nếu chưa có bản ghi transcript nào khớp: Kiểm tra file video vật lý trong uploads/ để chạy Whisper + Gemini thật
     video_candidates = []
     for u_dir in [uploads_dir, backend_uploads_dir]:
         if u_dir.exists():
             if file_hash:
                 video_candidates.extend(sorted(u_dir.glob(f"{file_hash}*")))
-            if video_name:
-                video_candidates.extend(sorted(u_dir.glob(f"*{video_name}")))
-    if video_name:
-        root_vid = PROJECT_ROOT / video_name
+            if clean_vname:
+                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}")))
+    if clean_vname:
+        root_vid = PROJECT_ROOT / clean_vname
         if root_vid.exists() and root_vid.is_file():
             video_candidates.append(root_vid)
 
@@ -150,27 +201,27 @@ def _find_matching_transcript_or_video(
                 from .transcript_refiner import TranscriptRefiner
                 refiner = TranscriptRefiner()
                 res = refiner.refine_transcript(res)
-                # Lưu bản đã hiệu đính Gemini vào cache để các lần bấm sau tải tức thì
                 v_hash = file_hash or compute_file_sha256(str(vid_path))
                 c_file = cache_dir / f"{v_hash}_transcript.json"
+                res.video = clean_vname
                 with open(c_file, "w", encoding="utf-8") as f:
                     f.write(res.model_dump_json(indent=2, exclude_none=True))
             except Exception:
                 res = post_process_transcript(res)
-            res.video = video_name or vid_path.name
+            save_to_dedicated_transcripts_folder(res, clean_vname)
             return res
 
-    # 4. Nếu người dùng bấm Phân tích AI mà chưa upload file vật lý nhưng có sẵn transcript.json thật ở thư mục gốc
+    # 5. Nếu có transcript.json gốc
     if fallback_root_transcript is not None and fallback_root_transcript.sentences:
         processed = post_process_transcript(fallback_root_transcript)
-        processed.video = video_name or processed.video
+        save_to_dedicated_transcripts_folder(processed, clean_vname)
         return processed
 
-    # 5. Trường hợp dự phòng cuối cùng (ví dụ khi chạy Unit Test với tên video giả định không có file thật)
+    # 6. Trường hợp dự phòng cuối cùng (ví dụ khi chạy Unit Test với tên video giả định không có file âm thanh thật)
     eff_dur = round(float(duration if duration and duration > 0 else 180.0), 2)
     step = round(eff_dur / 8.0, 2)
     sample_texts = [
-        f"Chào mừng các bạn đến với bài giảng chuyên đề {lesson or video_name}.",
+        f"Chào mừng các bạn đến với bài giảng chuyên đề {lesson or clean_vname}.",
         "Trong phần mở đầu này, chúng ta sẽ điểm qua mục tiêu và cấu trúc tổng thể của bài học.",
         "Tiếp theo, chúng ta đi sâu vào các khái niệm nền tảng và cú pháp cốt lõi cần nắm vững.",
         "Hãy cùng phân tích cơ chế hoạt động chi tiết thông qua sơ đồ luồng dữ liệu.",
@@ -188,7 +239,9 @@ def _find_matching_transcript_or_video(
         )
         for idx, txt in enumerate(sample_texts, start=1)
     ]
-    return TranscriptOutput(video=video_name or "video.mp4", duration=eff_dur, sentences=synth_sentences)
+    synth_output = TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=synth_sentences)
+    save_to_dedicated_transcripts_folder(synth_output, clean_vname)
+    return synth_output
 
 
 def run_backend_analysis(
@@ -211,11 +264,6 @@ def run_backend_analysis(
         refiner = TranscriptRefiner()
         segments_data = refiner.segment_transcript(transcript, lesson_name=lesson or video_name)
     except Exception:
-        fallback_topics = TranscriptRefiner._fallback_segment_from_sentences(
-            transcript.sentences,
-            lesson_name=lesson or video_name
-        )
-        # Dùng tạm instance không cần gọi mạng để chuẩn hóa cấu trúc SegmentsDTO
         dummy_refiner = object.__new__(TranscriptRefiner)
         dummy_refiner.models_to_try = []
         dummy_refiner._generate_with_fallback = lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("No API Key"))
@@ -243,7 +291,7 @@ def main():
     parser.add_argument("--start-from-id", default=None, help="Tiếp tục hiệu đính bằng Gemini từ mã đoạn chỉ định (ví dụ: S0069)")
     parser.add_argument("--outline", "-o", default=None, help="Văn bản đề cương bài giảng")
     parser.add_argument("--outline-file", default=None, help="Đường dẫn tệp văn bản chứa đề cương")
-    parser.add_argument("--output", default="transcript.json", help="Đường dẫn lưu tệp kết quả (mặc định: transcript.json)")
+    parser.add_argument("--output", default=None, help="Đường dẫn lưu tệp kết quả (mặc định: tự động lưu vào transcripts/<tên_video>_transcript.json)")
     parser.add_argument("--engine", choices=["whisper", "gemini"], default="whisper", help="Công nghệ STT sử dụng (mặc định: whisper)")
     parser.add_argument("--model-size", default=None, help="Kích thước model Whisper (base, small, medium, large-v3)")
     parser.add_argument("--force", action="store_true", help="Bắt buộc bóc băng lại, bỏ qua cache SHA-256")
@@ -264,7 +312,7 @@ def main():
             lesson=args.lesson,
             file_hash=args.hash if args.hash else None,
             duration=args.duration,
-            output_path=args.output
+            output_path=args.output or str(PROJECT_ROOT / "cache" / "analyze_result.json")
         )
         return
 
@@ -294,6 +342,10 @@ def main():
         print("\n[!] Lỗi: Bạn cần cung cấp --input <tệp_video> hoặc dùng --clean-file <transcript.json>")
         return
 
+    clean_vname = clean_video_filename(args.input)
+    dedicated_out = get_dedicated_transcript_path(clean_vname)
+    target_output = args.output or str(dedicated_out)
+
     pipeline_start = time.perf_counter()
     print(f"[*] Bắt đầu xử lý file: {args.input}")
     print(f"[*] STT Engine: {args.engine.upper()}")
@@ -311,8 +363,9 @@ def main():
         media_path=args.input,
         outline_text=outline_text,
         force_recompute=args.force,
-        output_file=args.output
+        output_file=target_output
     )
+    res.video = clean_vname
     whisper_elapsed = time.perf_counter() - whisper_start
 
     refine_elapsed = 0.0
@@ -323,13 +376,17 @@ def main():
         try:
             refiner = TranscriptRefiner()
             res = refiner.refine_transcript(res, outline_text=outline_text, start_from_id=args.start_from_id)
-            if args.output:
-                with open(args.output, "w", encoding="utf-8") as f:
-                    f.write(res.model_dump_json(indent=2, exclude_none=True))
-            print(f"[+] Đã hoàn tất hiệu đính & tách câu bằng Gemini và lưu vào: {args.output}")
         except Exception as e:
             print(f"[!] Lỗi khi chạy Gemini Refiner: {e}")
         refine_elapsed = time.perf_counter() - refine_start
+
+    # Luôn lưu vào cả thư mục riêng transcripts/<tên_video>_transcript.json và transcripts/<tên_video>/transcript.json
+    saved_dedicated = save_to_dedicated_transcripts_folder(res, clean_vname)
+    if target_output and Path(target_output).resolve() != saved_dedicated.resolve():
+        out_p = Path(target_output)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_p, "w", encoding="utf-8") as f:
+            f.write(res.model_dump_json(indent=2, exclude_none=True))
 
     total_elapsed = time.perf_counter() - pipeline_start
     print("\n" + "=" * 58)
@@ -344,7 +401,7 @@ def main():
     if res.sentences:
         print(f"[+] Câu đầu tiên ({res.sentences[0].id}): [{res.sentences[0].start}s -> {res.sentences[0].end}s] {res.sentences[0].text}")
         print(f"[+] Câu cuối cùng ({res.sentences[-1].id}): [{res.sentences[-1].start}s -> {res.sentences[-1].end}s] {res.sentences[-1].text}")
-    print(f"[+] Tệp kết quả: {args.output}")
+    print(f"[+] Tệp kết quả trong thư mục riêng: {saved_dedicated}")
     print("=" * 58 + "\n")
 
 

@@ -263,6 +263,9 @@ export interface UploadVideoResponse {
   file_size: number;
   sha256: string;
   cloud_url: string;
+  transcript_file?: string;
+  transcript?: TranscriptData;
+  segmentsData?: SegmentsData;
   message?: string;
 }
 
