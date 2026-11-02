@@ -140,11 +140,52 @@ def _find_matching_transcript_or_video(
                 except Exception:
                     continue
 
-    # 3. Tìm trong transcripts/*.json, cache/*_transcript.json, transcript.json gốc hoặc mock-data theo tên video
+    # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
+    video_candidates = []
     norm_video = clean_vname.strip().lower()
     norm_lesson = (lesson or "").strip().lower()
     norm_stem = Path(norm_video).stem.lower() if norm_video else ""
 
+    for u_dir in [uploads_dir, backend_uploads_dir]:
+        if u_dir.exists():
+            if file_hash:
+                video_candidates.extend(sorted(u_dir.glob(f"{file_hash}*")))
+            if clean_vname:
+                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}")))
+                stem_candidate = Path(clean_vname).stem
+                video_candidates.extend(sorted(u_dir.glob(f"*{stem_candidate}*")))
+    if clean_vname:
+        root_vid = PROJECT_ROOT / clean_vname
+        if root_vid.exists() and root_vid.is_file():
+            video_candidates.append(root_vid)
+
+    # Lọc các file video trùng lặp
+    seen_vids = set()
+    unique_vids = []
+    for vp in video_candidates:
+        if vp.exists() and vp.is_file() and vp.stat().st_size > 0 and str(vp) not in seen_vids:
+            seen_vids.add(str(vp))
+            unique_vids.append(vp)
+
+    for vid_path in unique_vids:
+        from .whisper_service import WhisperTranscriber, compute_file_sha256
+        transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
+        res = transcriber.transcribe(media_path=str(vid_path))
+        try:
+            from .transcript_refiner import TranscriptRefiner
+            refiner = TranscriptRefiner()
+            res = refiner.refine_transcript(res)
+            v_hash = file_hash or compute_file_sha256(str(vid_path))
+            c_file = cache_dir / f"{v_hash}_transcript.json"
+            res.video = clean_vname
+            with open(c_file, "w", encoding="utf-8") as f:
+                f.write(res.model_dump_json(indent=2, exclude_none=True))
+        except Exception:
+            res = post_process_transcript(res)
+        save_to_dedicated_transcripts_folder(res, clean_vname)
+        return res
+
+    # 4. Nếu không có file video vật lý, tìm trong transcripts/*.json hoặc mock-data
     json_candidates = []
     if TRANSCRIPTS_DIR.exists():
         json_candidates.extend(sorted(TRANSCRIPTS_DIR.glob("*_transcript.json")))
@@ -173,43 +214,15 @@ def _find_matching_transcript_or_video(
                 or (norm_stem and t_stem == norm_stem)
                 or (norm_lesson and (t_stem == norm_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
             ):
+                # Bỏ qua nếu là file transcript cũ chứa ca từ mẫu cứng
+                first_text = t_obj.sentences[0].text if t_obj.sentences else ""
+                if "Anh đừng lặng im nếu anh giận lòng em" in first_text and clean_vname != "Download.mp4":
+                    continue
                 processed = post_process_transcript(t_obj)
                 save_to_dedicated_transcripts_folder(processed, clean_vname)
                 return processed
         except Exception:
             continue
-
-    # 4. Nếu chưa có bản ghi transcript nào khớp: Kiểm tra file video vật lý trong uploads/ để chạy Whisper + Gemini thật
-    video_candidates = []
-    for u_dir in [uploads_dir, backend_uploads_dir]:
-        if u_dir.exists():
-            if file_hash:
-                video_candidates.extend(sorted(u_dir.glob(f"{file_hash}*")))
-            if clean_vname:
-                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}")))
-    if clean_vname:
-        root_vid = PROJECT_ROOT / clean_vname
-        if root_vid.exists() and root_vid.is_file():
-            video_candidates.append(root_vid)
-
-    for vid_path in video_candidates:
-        if vid_path.exists() and vid_path.is_file() and vid_path.stat().st_size > 0:
-            from .whisper_service import WhisperTranscriber, compute_file_sha256
-            transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
-            res = transcriber.transcribe(media_path=str(vid_path))
-            try:
-                from .transcript_refiner import TranscriptRefiner
-                refiner = TranscriptRefiner()
-                res = refiner.refine_transcript(res)
-                v_hash = file_hash or compute_file_sha256(str(vid_path))
-                c_file = cache_dir / f"{v_hash}_transcript.json"
-                res.video = clean_vname
-                with open(c_file, "w", encoding="utf-8") as f:
-                    f.write(res.model_dump_json(indent=2, exclude_none=True))
-            except Exception:
-                res = post_process_transcript(res)
-            save_to_dedicated_transcripts_folder(res, clean_vname)
-            return res
 
     # 5. Nếu có transcript.json gốc
     if fallback_root_transcript is not None and fallback_root_transcript.sentences:

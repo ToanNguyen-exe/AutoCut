@@ -188,6 +188,18 @@ class WhisperTranscriber:
         if not media_p.exists():
             raise FileNotFoundError(f"Không tìm thấy tệp phương tiện: {media_path}")
 
+        groq_api_key = (
+            getattr(default_ai_config, "whisper_api_key", None)
+            or os.getenv("WHISPER_API_KEY")
+        )
+        if groq_api_key and groq_api_key.startswith("gsk_"):
+            try:
+                from .groq_service import transcribe_with_groq
+                logger.info(f"[*] Sử dụng Groq Whisper Cloud API cho {media_p.name}...")
+                return transcribe_with_groq(media_path, api_key=groq_api_key, output_file=output_file)
+            except Exception as groq_err:
+                logger.warning(f"[!] Groq API gặp sự cố ({groq_err}), chuyển sang chạy offline Faster-Whisper...")
+
         logger.info(f"Đang tính SHA-256 hash cho tệp {media_p.name}...")
         file_hash = compute_file_sha256(str(media_p))
         cache_file = self.get_cache_path(file_hash)

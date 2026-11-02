@@ -18,6 +18,8 @@ import {
   Music,
   Film,
   AlertCircle,
+  Clock,
+  LayoutList,
 } from "lucide-react";
 
 interface TranscriptScenesPanelProps {
@@ -40,9 +42,15 @@ interface TranscriptScenesPanelProps {
 }
 
 // Helper tạo đồ họa xem trước sinh động tương ứng với nội dung chủ đề bài giảng hoặc âm nhạc
-const renderSceneGraphic = (seg: Segment, idx: number, isRawVideo: boolean = false) => {
+const renderSceneGraphic = (
+  seg: Segment,
+  idx: number,
+  isRawVideo: boolean = false,
+  lessonContext: string = ""
+) => {
   const topicLower = (seg.topic || "").toLowerCase();
   const sectionLower = (seg.section || "").toLowerCase();
+  const contextLower = (lessonContext || "").toLowerCase();
 
   // 0. Phân loại Video Gốc chưa phân tích (Raw Video)
   if (isRawVideo || sectionLower.includes("videogoc") || topicLower.includes("video gốc")) {
@@ -68,32 +76,39 @@ const renderSceneGraphic = (seg: Segment, idx: number, isRawVideo: boolean = fal
     );
   }
 
-  // 1. Phân loại Âm nhạc / TikTok / Remix / Giai điệu / Lời bài hát
-  if (
-    topicLower.includes("remix") ||
-    topicLower.includes("beat") ||
-    topicLower.includes("nhạc") ||
-    topicLower.includes("nhac") ||
-    topicLower.includes("intro") ||
-    topicLower.includes("drop") ||
-    topicLower.includes("outro") ||
-    topicLower.includes("lời") ||
-    topicLower.includes("diep khuc") ||
-    topicLower.includes("điệp khúc") ||
-    topicLower.includes("ca từ") ||
-    topicLower.includes("thiếu em")
-  ) {
+  // 1. Phân loại Âm nhạc / TikTok / Remix / Giai điệu / Lời bài hát / Download
+  const isMusic =
+    /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
+      `${contextLower} ${topicLower} ${sectionLower}`
+    );
+
+  if (isMusic) {
+    const isDrop = topicLower.includes("drop") || sectionLower.includes("drop");
+    const isVocal =
+      topicLower.includes("lời") ||
+      topicLower.includes("vocal") ||
+      topicLower.includes("ca từ") ||
+      sectionLower.includes("loi");
+    const isOutro = topicLower.includes("outro") || sectionLower.includes("outro");
+    const isIntro = idx === 0 || topicLower.includes("intro") || sectionLower.includes("intro");
+
+    const badgeTitle = isDrop
+      ? "Drop Bass"
+      : isVocal
+      ? "Vocal & Ca từ"
+      : isOutro
+      ? "Outro Fade"
+      : isIntro
+      ? "Intro Beat"
+      : `Đoạn #${idx + 1}`;
+
+    const subBadge = isDrop ? "DROP BASS" : isVocal ? "VOCAL" : isIntro ? "INTRO" : "AUDIO";
+
     return (
       <div className="w-full h-full bg-gradient-to-br from-[#1c1228] via-[#150f20] to-[#0d0914] p-1.5 flex flex-col justify-between text-[8px] select-none overflow-hidden border border-pink-900/40">
         <div className="flex items-center justify-between border-b border-pink-900/30 pb-0.5 mb-0.5">
           <span className="text-[7px] text-pink-300 font-bold truncate max-w-[65px] font-sans">
-            {topicLower.includes("drop")
-              ? "Drop Bass"
-              : topicLower.includes("lời") || topicLower.includes("điệp khúc")
-              ? "Vocal & Ca từ"
-              : topicLower.includes("outro")
-              ? "Outro Fade"
-              : "Intro Beat"}
+            {badgeTitle}
           </span>
           <Music className="w-2.5 h-2.5 text-pink-400" />
         </div>
@@ -108,9 +123,7 @@ const renderSceneGraphic = (seg: Segment, idx: number, isRawVideo: boolean = fal
           <div className="w-1 bg-gradient-to-t from-pink-600 to-purple-400 rounded-t h-3" />
         </div>
         <div className="flex items-center justify-between text-[7px] text-slate-500 pt-0.5 border-t border-pink-900/30">
-          <span className="text-pink-400 font-semibold">
-            {topicLower.includes("drop") ? "DROP BASS" : topicLower.includes("lời") ? "VOCAL" : "BEAT"}
-          </span>
+          <span className="text-pink-400 font-semibold">{subBadge}</span>
           <span className="text-slate-400">AUDIO</span>
         </div>
       </div>
@@ -268,6 +281,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   const [titleInput, setTitleInput] = useState(lessonName);
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
   const [editingTopicValue, setEditingTopicValue] = useState("");
+  const [viewMode, setViewMode] = useState<"timeline" | "segments">("timeline");
 
   const isRaw = mode === "raw" || (segments.length === 1 && (!transcript || transcript.sentences.length === 0));
 
@@ -447,7 +461,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                   {/* Simulated Thumbnail Frame with High Fidelity Lecture Mockup */}
                   <div className="aspect-[16/10] bg-slate-900 rounded relative overflow-hidden flex items-center justify-center border border-slate-800">
                     {/* Dynamic Graphic corresponding to lecture/music topic */}
-                    {renderSceneGraphic(seg, idx, isRaw)}
+                    {renderSceneGraphic(seg, idx, isRaw, lessonName)}
 
                     {/* Scene Number Badge in top left */}
                     <span className="absolute top-1 left-1 bg-black/85 backdrop-blur-xs text-[9px] font-mono font-bold text-white px-1.5 py-0.2 rounded shadow-sm z-10 border border-white/10">
@@ -611,118 +625,243 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                 </div>
               )}
 
-              {/* Segments List */}
-              {segments.map((seg, idx) => {
-                const isSelected = (activeSegmentId === seg.id) || (!activeSegmentId && idx === 0);
-                const isCurrentPlaying = currentTime >= seg.start && currentTime <= seg.end;
+              {/* Mode Selector: Detailed Timeline vs Segments */}
+              <div className="flex items-center justify-between p-1 bg-slate-900/90 rounded-xl border border-slate-800 shrink-0 select-none">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("timeline")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition ${
+                    viewMode === "timeline"
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/30 font-bold"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  }`}
+                  title="Hiển thị timeline chi tiết từng câu/lời thoại với mốc thời gian"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>⏱️ Timeline Chi Tiết</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("segments")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition ${
+                    viewMode === "segments"
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/30 font-bold"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  }`}
+                  title="Hiển thị gom nhóm theo phân đoạn chủ đề"
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  <span>📑 Theo Phân Đoạn</span>
+                </button>
+              </div>
 
-                // Find matching transcript sentences if available
-                const segSentences = transcript?.sentences.filter(
-                  (s) => s.start >= seg.start && s.start <= seg.end
-                ) || [];
+              {/* View 1: Detailed Sentence Timeline (No more chunky blocks!) */}
+              {viewMode === "timeline" ? (
+                <div className="space-y-3 relative pl-4 border-l-2 border-purple-900/40 ml-2 mt-1">
+                  {transcript?.sentences && transcript.sentences.length > 0 ? (
+                    transcript.sentences.map((sent, sentIdx) => {
+                      const isWordActive = currentTime >= sent.start && currentTime <= sent.end;
+                      const durationSec = Math.max(0.1, sent.end - sent.start);
 
-                return (
-                  <div
-                    key={seg.id}
-                    id={`seg-block-${seg.id}`}
-                    className={`p-3.5 rounded-xl transition border ${
-                      isSelected
-                        ? "bg-purple-950/20 border-purple-500/40"
-                        : isCurrentPlaying
-                        ? "bg-slate-900/60 border-slate-700/60"
-                        : "bg-transparent border-transparent hover:bg-slate-900/30"
-                    }`}
-                  >
-                    {/* Speaker / Section Tag */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-purple-400">
-                          {seg.section}
-                        </span>
-                        <span className="text-slate-600 text-xs">•</span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          #{idx + 1}
-                        </span>
-                      </div>
-
-                      <span className="text-[11px] font-mono text-slate-500">
-                        {formatTime(seg.start)} - {formatTime(seg.end)}
-                      </span>
-                    </div>
-
-                    {/* Topic Title (Editable) */}
-                    <div className="mb-2">
-                      {editingTopicId === seg.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            value={editingTopicValue}
-                            onChange={(e) => setEditingTopicValue(e.target.value)}
-                            className="bg-slate-900 border border-purple-500 rounded px-2 py-0.5 text-xs text-white focus:outline-none flex-1 font-semibold"
-                            autoFocus
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTopic(idx)}
-                          />
-                          <button
-                            onClick={() => handleSaveTopic(idx)}
-                            className="p-1 rounded bg-purple-600 text-white hover:bg-purple-500"
+                      return (
+                        <div
+                          key={sent.id || `sent-${sentIdx}`}
+                          onClick={() => {
+                            onSeek(sent.start);
+                            if (onPlay) onPlay();
+                          }}
+                          className={`group relative pl-3.5 pr-3 py-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                            isWordActive
+                              ? "bg-purple-950/60 border-purple-500 shadow-lg shadow-purple-950/60 ring-1 ring-purple-500/50"
+                              : "bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700"
+                          }`}
+                        >
+                          {/* Timeline node marker on the vertical track */}
+                          <div
+                            className={`absolute -left-[23px] top-3.5 w-3 h-3 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                              isWordActive
+                                ? "bg-purple-500 border-white ring-4 ring-purple-500/30 scale-125"
+                                : "bg-slate-900 border-purple-700/60 group-hover:border-purple-400 group-hover:scale-110"
+                            }`}
                           >
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => handleStartEditTopic(seg)}
-                          className="group/topic flex items-center gap-1.5 cursor-pointer text-sm font-semibold text-white hover:text-purple-300 transition"
-                          title="Nhấp để sửa tên chủ đề"
-                        >
-                          <span>{seg.topic}</span>
-                          <Edit3 className="w-3 h-3 text-slate-600 group-hover/topic:text-purple-400 transition" />
-                        </div>
-                      )}
-                    </div>
+                            {isWordActive && <div className="w-1 h-1 rounded-full bg-white animate-ping" />}
+                          </div>
 
-                    {/* Sentence transcript text or placeholder */}
-                    <div className="text-xs text-slate-300 leading-relaxed space-y-2 mt-2 font-normal">
-                      {segSentences.length > 0 ? (
-                        segSentences.map((sent) => {
-                          const isWordActive = currentTime >= sent.start && currentTime <= sent.end;
-                          return (
-                            <div
-                              key={sent.id}
-                              onClick={() => onSeek(sent.start)}
-                              className={`cursor-pointer hover:text-white transition p-1.5 rounded ${
-                                isWordActive
-                                  ? "bg-purple-600/20 text-purple-200 border-l-2 border-purple-400"
-                                  : ""
-                              }`}
-                            >
-                              <span className="font-mono text-[10px] text-purple-400 font-semibold mr-1.5">
-                                [{sent.id}]
+                          {/* Header: ID + Timestamp badge + Duration */}
+                          <div className="flex items-center justify-between gap-1 mb-1.5 select-none">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono text-[10px] font-bold text-purple-400 bg-purple-950/70 border border-purple-800/60 px-1.5 py-0.5 rounded shadow-xs">
+                                {sent.id}
                               </span>
-                              <span>{sent.text}</span>
+
+                              <span className="font-mono text-[11px] font-semibold text-cyan-300 bg-slate-950/80 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 text-cyan-400" />
+                                <span>{formatTime(sent.start)}</span>
+                                <span className="text-slate-600">➔</span>
+                                <span>{formatTime(sent.end)}</span>
+                              </span>
+
+                              <span className="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-1.5 py-0.5 rounded">
+                                {durationSec.toFixed(1)}s
+                              </span>
                             </div>
-                          );
-                        })
-                      ) : (
-                        <div
-                          onClick={() => onSeek(seg.start)}
-                          className="cursor-pointer hover:text-white text-slate-400 italic"
-                        >
-                          Đoạn video từ {formatTime(seg.start)} đến {formatTime(seg.end)}. Nhấp để nhảy tới điểm phát.
+
+                            {/* Playing badge */}
+                            {isWordActive ? (
+                              <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded animate-pulse">
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>Đang phát</span>
+                              </span>
+                            ) : (
+                              <div className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 text-[10px] text-purple-300">
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>Phát</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Dialogue or Lyric Sentence text */}
+                          <p
+                            className={`text-xs leading-relaxed transition-colors font-medium ${
+                              isWordActive ? "text-white font-semibold" : "text-slate-300 group-hover:text-white"
+                            }`}
+                          >
+                            {sent.text}
+                          </p>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-4 text-center text-xs text-slate-400 italic">
+                      Chưa có câu transcript nào. Hãy bấm &quot;Phân Tích AI&quot; để bóc băng chi tiết!
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* View 2: Grouped by Segments, with detailed sentence timestamps within each segment */
+                segments.map((seg, idx) => {
+                  const isSelected = activeSegmentId === seg.id || (!activeSegmentId && idx === 0);
+                  const isCurrentPlaying = currentTime >= seg.start && currentTime <= seg.end;
+
+                  // Find matching transcript sentences if available
+                  const segSentences =
+                    transcript?.sentences.filter((s) => s.start >= seg.start && s.start <= seg.end) || [];
+
+                  return (
+                    <div
+                      key={seg.id}
+                      id={`seg-block-${seg.id}`}
+                      className={`p-3.5 rounded-xl transition border ${
+                        isSelected
+                          ? "bg-purple-950/20 border-purple-500/40"
+                          : isCurrentPlaying
+                          ? "bg-slate-900/60 border-slate-700/60"
+                          : "bg-transparent border-transparent hover:bg-slate-900/30"
+                      }`}
+                    >
+                      {/* Speaker / Section Tag */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-purple-400">{seg.section}</span>
+                          <span className="text-slate-600 text-xs">•</span>
+                          <span className="text-xs text-slate-400 font-mono">#{idx + 1}</span>
+                        </div>
+
+                        <span className="text-[11px] font-mono text-cyan-300 bg-slate-950/60 border border-slate-800 px-2 py-0.5 rounded">
+                          {formatTime(seg.start)} - {formatTime(seg.end)}
+                        </span>
+                      </div>
+
+                      {/* Topic Title (Editable) */}
+                      <div className="mb-2">
+                        {editingTopicId === seg.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={editingTopicValue}
+                              onChange={(e) => setEditingTopicValue(e.target.value)}
+                              className="bg-slate-900 border border-purple-500 rounded px-2 py-0.5 text-xs text-white focus:outline-none flex-1 font-semibold"
+                              autoFocus
+                              onKeyDown={(e) => e.key === "Enter" && handleSaveTopic(idx)}
+                            />
+                            <button
+                              onClick={() => handleSaveTopic(idx)}
+                              className="p-1 rounded bg-purple-600 text-white hover:bg-purple-500"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => handleStartEditTopic(seg)}
+                            className="group/topic flex items-center gap-1.5 cursor-pointer text-sm font-semibold text-white hover:text-purple-300 transition"
+                            title="Nhấp để sửa tên chủ đề"
+                          >
+                            <span>{seg.topic}</span>
+                            <Edit3 className="w-3 h-3 text-slate-600 group-hover/topic:text-purple-400 transition" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sentence transcript with detailed timestamp badges */}
+                      <div className="text-xs text-slate-300 leading-relaxed space-y-2 mt-2 font-normal">
+                        {segSentences.length > 0 ? (
+                          segSentences.map((sent) => {
+                            const isWordActive = currentTime >= sent.start && currentTime <= sent.end;
+                            return (
+                              <div
+                                key={sent.id}
+                                onClick={() => {
+                                  onSeek(sent.start);
+                                  if (onPlay) onPlay();
+                                }}
+                                className={`cursor-pointer hover:text-white transition p-2 rounded-lg border ${
+                                  isWordActive
+                                    ? "bg-purple-900/30 text-purple-100 border-purple-500/50 shadow-sm"
+                                    : "bg-slate-900/30 border-slate-800/50 hover:bg-slate-800/40"
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 mb-1 font-mono text-[10px]">
+                                  <span className="text-purple-400 font-bold">[{sent.id}]</span>
+                                  <span className="text-cyan-300 bg-slate-950/80 px-1.5 py-0.2 rounded border border-slate-800">
+                                    {formatTime(sent.start)} ➔ {formatTime(sent.end)}
+                                  </span>
+                                  <span className="text-slate-500">
+                                    ({(sent.end - sent.start).toFixed(1)}s)
+                                  </span>
+                                  {isWordActive && (
+                                    <span className="ml-auto text-[9px] text-emerald-400 font-bold animate-pulse">
+                                      ● Đang phát
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs">{sent.text}</div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div
+                            onClick={() => onSeek(seg.start)}
+                            className="cursor-pointer hover:text-white text-slate-400 italic"
+                          >
+                            Đoạn video từ {formatTime(seg.start)} đến {formatTime(seg.end)}. Nhấp để nhảy tới điểm phát.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subparts note if split > 7 min */}
+                      {seg.parts.length > 1 && (
+                        <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-amber-400 font-mono">
+                          <span>⚡ Vượt 7 phút: Tự tách thành {seg.parts.length} phần</span>
+                          <span className="text-slate-500">
+                            {seg.parts.map((p) => p.file.split("/")[1]).join(", ")}
+                          </span>
                         </div>
                       )}
                     </div>
-
-                    {/* Subparts note if split > 7 min */}
-                    {seg.parts.length > 1 && (
-                      <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-amber-400 font-mono">
-                        <span>⚡ Vượt 7 phút: Tự tách thành {seg.parts.length} phần</span>
-                        <span className="text-slate-500">{seg.parts.map((p) => p.file.split("/")[1]).join(", ")}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </>
           )}
         </div>

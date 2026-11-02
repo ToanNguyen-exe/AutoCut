@@ -66,8 +66,23 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [tab, setTab] = useState<"url" | "file">("url");
   const [urlInput, setUrlInput] = useState("");
   const [titleInput, setTitleInput] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState<string>("");
+  const [durationValue, setDurationValue] = useState<string>("");
+  const [durationUnit, setDurationUnit] = useState<"seconds" | "minutes">("seconds");
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
+
+  const parseDuration = (val: string, unit: "seconds" | "minutes"): number => {
+    const trimmed = val.trim();
+    if (!trimmed) return 0;
+    if (trimmed.includes(":")) {
+      const parts = trimmed.split(":").map(Number);
+      if (parts.some(isNaN)) return 0;
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    const num = parseFloat(trimmed);
+    if (isNaN(num) || num <= 0) return 0;
+    return unit === "minutes" ? Math.round(num * 60) : Math.round(num);
+  };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -86,8 +101,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         if (v.duration && isFinite(v.duration) && v.duration > 0) {
           const secs = Math.round(v.duration);
           setDetectedDuration(secs);
-          const mins = (secs / 60 >= 1 ? (secs / 60).toFixed(1) : (secs / 60).toFixed(2));
-          setDurationMinutes(mins);
+          if (secs < 60) {
+            setDurationUnit("seconds");
+            setDurationValue(String(secs));
+          } else {
+            setDurationUnit("minutes");
+            setDurationValue(String(Number((secs / 60).toFixed(1))));
+          }
         }
       };
       v.src = src;
@@ -99,8 +119,14 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const handleSelectSample = (sample: (typeof SAMPLE_VIDEOS)[0]) => {
     setUrlInput(sample.url);
     setTitleInput(sample.name);
-    setDurationMinutes((sample.durationSeconds / 60).toFixed(1));
     setDetectedDuration(sample.durationSeconds);
+    if (sample.durationSeconds < 60) {
+      setDurationUnit("seconds");
+      setDurationValue(String(sample.durationSeconds));
+    } else {
+      setDurationUnit("minutes");
+      setDurationValue(String(Number((sample.durationSeconds / 60).toFixed(1))));
+    }
     setError(null);
   };
 
@@ -109,12 +135,14 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     const lower = val.trim().toLowerCase();
     if (lower.includes("tiktok.com")) {
       setDetectedDuration(60);
-      setDurationMinutes("1");
+      setDurationUnit("seconds");
+      setDurationValue("60");
       return;
     }
     if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
       setDetectedDuration(300);
-      setDurationMinutes("5");
+      setDurationUnit("minutes");
+      setDurationValue("5");
       return;
     }
     if (val.trim().startsWith("http")) {
@@ -140,9 +168,9 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video)
     let finalDurationSeconds = 60; // Mặc định 1 phút nếu video ngắn không rõ thời lượng
-    const parsedMinutes = parseFloat(durationMinutes);
-    if (!isNaN(parsedMinutes) && parsedMinutes > 0) {
-      finalDurationSeconds = Math.round(parsedMinutes * 60);
+    const parsed = parseDuration(durationValue, durationUnit);
+    if (parsed > 0) {
+      finalDurationSeconds = parsed;
     } else if (detectedDuration && detectedDuration > 0) {
       finalDurationSeconds = detectedDuration;
     }
@@ -269,7 +297,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
+        <form noValidate onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
           {error && (
             <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -410,40 +438,64 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
               </label>
               <span className="text-[11px] font-mono text-purple-400 font-bold">
                 {formatTime(
-                  parseFloat(durationMinutes || "0") > 0
-                    ? parseFloat(durationMinutes) * 60
+                  parseDuration(durationValue, durationUnit) > 0
+                    ? parseDuration(durationValue, durationUnit)
                     : detectedDuration || 60
                 )}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <input
-                type="number"
-                min="0.1"
-                max="600"
-                step="0.1"
-                value={durationMinutes}
-                placeholder={detectedDuration ? (detectedDuration / 60).toFixed(1) : "Tự động"}
-                onChange={(e) => setDurationMinutes(e.target.value)}
+                type="text"
+                inputMode="decimal"
+                value={durationValue}
+                placeholder={
+                  detectedDuration
+                    ? durationUnit === "seconds"
+                      ? String(detectedDuration)
+                      : (detectedDuration / 60).toFixed(1)
+                    : "Tự động"
+                }
+                onChange={(e) => setDurationValue(e.target.value)}
                 className="w-24 px-3 py-1.5 rounded-lg bg-[#0e0f12] border border-slate-700 focus:border-purple-500 text-white text-xs font-mono outline-none"
               />
-              <span className="text-xs text-slate-400">phút</span>
+              <select
+                value={durationUnit}
+                onChange={(e) => {
+                  const newUnit = e.target.value as "seconds" | "minutes";
+                  if (newUnit !== durationUnit && durationValue) {
+                    const currentSecs = parseDuration(durationValue, durationUnit);
+                    if (newUnit === "seconds") {
+                      setDurationValue(String(currentSecs));
+                    } else {
+                      setDurationValue(String(Number((currentSecs / 60).toFixed(1))));
+                    }
+                  }
+                  setDurationUnit(newUnit);
+                }}
+                className="px-2 py-1.5 rounded-lg bg-[#0e0f12] border border-slate-700 focus:border-purple-500 text-slate-300 text-xs font-medium outline-none cursor-pointer"
+              >
+                <option value="seconds">giây</option>
+                <option value="minutes">phút</option>
+              </select>
               <div className="flex-1 text-[11px] text-right">
                 {detectedDuration ? (
                   <div className="flex items-center justify-end gap-1.5 text-emerald-400">
                     <CheckCircle2 className="w-3 h-3 shrink-0" />
                     <span>✓ Tự nhận diện ({formatTime(detectedDuration)})</span>
-                    {durationMinutes &&
-                      Math.abs(parseFloat(durationMinutes) * 60 - detectedDuration) > 1 && (
+                    {durationValue &&
+                      Math.abs(parseDuration(durationValue, durationUnit) - detectedDuration) > 1 && (
                         <button
                           type="button"
-                          onClick={() =>
-                            setDurationMinutes(
-                              detectedDuration / 60 >= 1
-                                ? (detectedDuration / 60).toFixed(1)
-                                : (detectedDuration / 60).toFixed(2)
-                            )
-                          }
+                          onClick={() => {
+                            if (detectedDuration < 60) {
+                              setDurationUnit("seconds");
+                              setDurationValue(String(detectedDuration));
+                            } else {
+                              setDurationUnit("minutes");
+                              setDurationValue(String(Number((detectedDuration / 60).toFixed(1))));
+                            }
+                          }}
                           className="ml-1 text-purple-400 hover:underline text-[10px]"
                         >
                           [Khôi phục]
