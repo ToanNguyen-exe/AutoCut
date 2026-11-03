@@ -92,6 +92,7 @@ class TranscriptRefiner:
                         time.sleep(2)
                         continue
                     break
+        # pyrefly: ignore[bad-raise]
         raise last_err
 
     @staticmethod
@@ -325,12 +326,10 @@ DANH SÁCH ĐẦU VÀO:
 
         # 1. Thử phân đoạn ngữ nghĩa bằng Gemini LLM
         try:
-            # Lấy mẫu tối đa ~120 câu đại diện trải đều hoặc toàn bộ nếu <= 120 câu để prompt gọn nhẹ & nhanh
-            step = max(1, len(sentences) // 120)
-            sampled = [
+            # Đọc toàn bộ 100% câu transcript chi tiết để Gemini phân đoạn chính xác nhất
+            formatted_sentences = [
                 f"{s.id} [{s.start:.1f}s-{s.end:.1f}s]: {s.text}"
-                for idx, s in enumerate(sentences)
-                if idx % step == 0 or idx == len(sentences) - 1
+                for s in sentences
             ]
             first_id = sentences[0].id
             last_id = sentences[-1].id
@@ -363,7 +362,7 @@ QUY TẮC BẮT BUỘC:
 }}
 
 DANH SÁCH CÂU TRANSCRIPT:
-{chr(10).join(sampled)}
+{chr(10).join(formatted_sentences)}
 """
             response = self._generate_with_fallback(prompt)
             raw_text = response.text.strip()
