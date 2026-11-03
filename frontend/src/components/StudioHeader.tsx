@@ -14,6 +14,7 @@ import {
   KeyRound,
   ChevronDown,
   Sparkles,
+  Save,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
 
@@ -24,8 +25,10 @@ interface StudioHeaderProps {
   isRendering: boolean;
   isAnalyzing?: boolean;
   isDemo?: boolean;
+  isSaving?: boolean;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
+  onSave?: () => void;
   onRender: () => void;
   onOpenAddVideo: () => void;
   onAnalyzeAI?: () => void;
@@ -38,7 +41,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   isRendering,
   isAnalyzing = false,
   isDemo = false,
+  isSaving = false,
   onExport,
+  onSave,
   onRender,
   onOpenAddVideo,
   onAnalyzeAI,
@@ -153,19 +158,45 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             </button>
           )}
 
-          {/* Export Button (Render video segments) */}
+          {/* Nút Lưu Dự Án vào thư mục người dùng */}
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              title="Lưu trạng thái phân đoạn vào thư mục riêng của người dùng (Ctrl+S) và đồng bộ Cloud"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-indigo-950/80 hover:bg-indigo-900/90 text-indigo-300 hover:text-white border border-indigo-700/60 hover:border-indigo-400 shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Lưu</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Cắt Video (Render video segments bằng FFmpeg SV1) */}
           <button
             onClick={onRender}
             disabled={isRendering}
-            className="bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs px-4 py-1.5 rounded-full shadow-md transition flex items-center gap-1.5 disabled:opacity-50"
+            title="Thực hiện cắt video vật lý bằng FFmpeg theo mốc thời gian đã duyệt"
+            className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5 disabled:opacity-50 hover:scale-105 active:scale-95"
           >
             {isRendering ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Rendering...</span>
+                <span>Đang cắt video...</span>
               </>
             ) : (
-              <span>Export</span>
+              <>
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Cắt Video (Render)</span>
+              </>
             )}
           </button>
 

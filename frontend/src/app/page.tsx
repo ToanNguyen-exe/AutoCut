@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -9,6 +8,7 @@ import {
   fetchMockTranscript,
   fetchConfig,
   submitRenderSegments,
+  saveProject,
   checkCache,
   fetchBackendVideos,
   analyzeVideoBackend,
@@ -51,7 +51,6 @@ const REAL_DOWNLOAD_LYRICS: Sentence[] = [
 ];
 
 export default function Home() {
-  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<"studio" | "table">("studio");
 
@@ -62,6 +61,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeSegmentId, setActiveSegmentId] = useState<string | undefined>("seg01");
   const [isRendering, setIsRendering] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState<boolean>(false);
   const [isAddVideoOpen, setIsAddVideoOpen] = useState<boolean>(false);
   const [externalVideoUrl, setExternalVideoUrl] = useState<string | null>(null);
@@ -93,15 +93,27 @@ export default function Home() {
     setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  // Check login authentication
+  // Check login authentication: Tự động đăng nhập Admin và vào thẳng Studio
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
-      router.push("/login");
+      const defaultUser = {
+        id: "u01",
+        username: "admin",
+        name: "Nguyễn Văn Toàn",
+        role: "Giảng viên / Trưởng nhóm",
+        email: "toan.nguyen@autocut.ai",
+        avatar: "T",
+        avatarColor: "from-purple-600 to-indigo-600",
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("autocut_user", JSON.stringify(defaultUser));
+      }
+      setCurrentUser(defaultUser);
     } else {
       setCurrentUser(user);
     }
-  }, [router]);
+  }, []);
 
   // Load initial data from Spring Boot Backend
   const loadInitialData = useCallback(async () => {
@@ -140,11 +152,31 @@ export default function Home() {
         segments: [],
       }));
 
-      setVideoLibrary((prev) => {
-        const existingNames = new Set(prev.map((v) => v.name));
-        const newOnes = dbItems.filter((v) => !existingNames.has(v.name));
-        return [...prev, ...newOnes];
-      });
+      // Tự động gán video mới nhất từ Database lên màn hình Studio
+      const latestVideo = backendVidsRes.data[backendVidsRes.data.length - 1];
+      if (latestVideo.cloudUrl) {
+        setExternalVideoUrl(latestVideo.cloudUrl);
+        setData((prev) => ({
+          ...prev,
+          video: latestVideo.fileName,
+          lesson: latestVideo.fileName.replace(/\.[^/.]+$/, ""),
+          mode: "analyzed",
+        }));
+      }
+
+      setVideoLibrary(dbItems);
+    } else {
+      const fallbackList = getLibraryVideos();
+      setVideoLibrary(fallbackList);
+      if (fallbackList.length > 0 && fallbackList[0].url) {
+        setExternalVideoUrl(fallbackList[0].url);
+        setData((prev) => ({
+          ...prev,
+          video: fallbackList[0].name,
+          lesson: fallbackList[0].lesson,
+          mode: "analyzed",
+        }));
+      }
     }
 
     if (isOnline) {
@@ -156,7 +188,6 @@ export default function Home() {
 
   useEffect(() => {
     loadInitialData();
-    setVideoLibrary(getLibraryVideos());
   }, [loadInitialData]);
 
   // Segment modifications with Undo history
@@ -169,6 +200,17 @@ export default function Home() {
       segments: newSegments,
       reviewed: false,
     }));
+
+    // Nếu thời gian phát hiện tại rơi vào khoảng trống/đoạn vừa xóa:
+    // Tự động nhảy sang phân đoạn kế tiếp hợp lệ
+    const isInsideRemaining = newSegments.some((s) => currentTime >= s.start && currentTime < s.end);
+    if (!isInsideRemaining && newSegments.length > 0) {
+      const nextSeg = newSegments.find((s) => s.start >= currentTime) || newSegments[0];
+      if (nextSeg) {
+        handleSeek(nextSeg.start);
+        setActiveSegmentId(nextSeg.id);
+      }
+    }
 
     updateVideoSegmentsInLibrary(data.video, newSegments);
     setVideoLibrary(getLibraryVideos());
@@ -200,12 +242,44 @@ export default function Home() {
     showToast("info", "Đã làm lại bước tiếp theo (Redo)!");
   }, [redoStack, data.segments, showToast]);
 
-  // Keyboard shortcut Ctrl+Z & Ctrl+Y
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const username = currentUser?.username || "admin";
+      const dur = data.segments.reduce((max, s) => Math.max(max, s.end), 0);
+      const res = await saveProject({
+        user: username,
+        userId: currentUser?.id,
+        lesson: data.lesson,
+        video: data.video,
+        segments: data.segments,
+        transcript: transcript,
+        duration: dur,
+        cloudUrl: externalVideoUrl,
+      });
+
+      if (res.success) {
+        showToast(
+          "success",
+          `Đã lưu dự án vào thư mục người dùng [${res.user}]: ${res.directory || ""}`
+        );
+      } else {
+        showToast("error", `Lỗi lưu dự án: ${res.message}`);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentUser, data, transcript, externalVideoUrl, showToast]);
+
+  // Keyboard shortcut Ctrl+Z, Ctrl+Y & Ctrl+S
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) return;
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        handleSave();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
       } else if (
@@ -218,7 +292,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, handleSave]);
 
   const handleSelectLibraryVideo = (video: VideoLibraryItem) => {
     setExternalVideoUrl(video.url);
@@ -298,7 +372,13 @@ export default function Home() {
   const handleRender = async () => {
     setIsRendering(true);
     try {
-      const result = await submitRenderSegments({ ...data, reviewed: true });
+      const username = currentUser?.username || "admin";
+      const result = await submitRenderSegments({
+        ...data,
+        reviewed: true,
+        // Gắn thông tin user để lưu clip đã cắt vào thư mục của user
+        ...({ user: username } as Record<string, unknown>),
+      });
       if (result.success) {
         showToast(
           "success",
@@ -809,8 +889,10 @@ export default function Home() {
         isRendering={isRendering}
         isAnalyzing={isAnalyzing}
         isDemo={isDemo}
+        isSaving={isSaving}
         onRefreshFromBackend={loadInitialData}
         onExport={handleExportJson}
+        onSave={handleSave}
         onRender={handleRender}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
         onAnalyzeAI={handleAnalyzeAI}
@@ -834,6 +916,7 @@ export default function Home() {
             {/* CENTER: Big Video Viewport */}
             <VideoCanvasViewport
               currentSegment={activeSegment}
+              segments={data.segments}
               currentTime={currentTime}
               totalDuration={totalDuration}
               videoTitle={data.video}
@@ -873,6 +956,8 @@ export default function Home() {
               onRenameLesson={handleRenameLesson}
               onOpenAddVideo={() => setIsAddVideoOpen(true)}
               onAnalyzeAI={handleAnalyzeAI}
+              onRender={handleRender}
+              isRendering={isRendering}
             />
           </div>
         ) : (
@@ -905,6 +990,8 @@ export default function Home() {
                   setActiveSegmentId(id);
                   setActiveTab("studio");
                 }}
+                onRender={handleRender}
+                isRendering={isRendering}
               />
             </div>
           </div>

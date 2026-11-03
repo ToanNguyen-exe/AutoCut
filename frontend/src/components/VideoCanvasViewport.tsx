@@ -21,6 +21,7 @@ import {
 
 interface VideoCanvasViewportProps {
   currentSegment?: Segment;
+  segments?: Segment[];
   currentTime: number;
   totalDuration: number;
   videoTitle: string;
@@ -44,6 +45,7 @@ interface VideoCanvasViewportProps {
 
 export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   currentSegment,
+  segments,
   currentTime,
   totalDuration,
   videoTitle,
@@ -197,10 +199,37 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     }
   };
 
-  // Cập nhật currentTime khi video tự chạy
+  // Cập nhật currentTime khi video tự chạy, tự động NHẢY CÓC (skip) qua các đoạn bị xóa / khoảng trống
   const handleTimeUpdate = () => {
-    if (videoRef.current && onSeek && isPlaying) {
-      onSeek(Number(videoRef.current.currentTime.toFixed(1)));
+    if (!videoRef.current) return;
+    const now = Number(videoRef.current.currentTime.toFixed(1));
+
+    if (segments && segments.length > 0 && isPlaying) {
+      const sorted = [...segments].sort((a, b) => a.start - b.start);
+      const inSeg = sorted.find((s) => now >= s.start - 0.1 && now < s.end);
+
+      if (!inSeg) {
+        // Vị trí nằm ngoài các phân đoạn (đoạn đã bị xóa hoặc khoảng trống)
+        const nextSeg = sorted.find((s) => s.start >= now);
+        if (nextSeg) {
+          videoRef.current.currentTime = nextSeg.start;
+          if (onSeek) onSeek(nextSeg.start);
+          if (onSelectSegment) onSelectSegment(nextSeg.id);
+          return;
+        } else {
+          videoRef.current.pause();
+          if (onTogglePlay) onTogglePlay();
+          return;
+        }
+      } else {
+        if (onSelectSegment && currentSegment?.id !== inSeg.id) {
+          onSelectSegment(inSeg.id);
+        }
+      }
+    }
+
+    if (onSeek && isPlaying) {
+      onSeek(now);
     }
   };
 

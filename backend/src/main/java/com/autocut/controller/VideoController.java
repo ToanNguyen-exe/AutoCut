@@ -21,6 +21,11 @@ import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
+import java.io.File;
+import com.autocut.video.VideoCutter;
+import com.autocut.video.VideoProps;
+import com.autocut.video.CutResult;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -83,21 +88,20 @@ public class VideoController {
     private final CloudflareR2Service r2Service;
 
     private final VideoRepository videoRepository;
-
+    private final VideoCutter videoCutter;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()));
+    }
 
+    @Autowired
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
         this.cacheService = cacheService;
-
         this.configService = configService;
-
         this.r2Service = r2Service;
-
         this.videoRepository = videoRepository;
-
+        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
     }
 
 
@@ -526,13 +530,22 @@ public class VideoController {
      */
 
     @GetMapping("/list")
-
     public ResponseEntity<List<VideoEntity>> listVideos() {
-
-        List<VideoEntity> list = videoRepository.findAll();
-
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
         return ResponseEntity.ok(list);
+    }
 
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestVideo() {
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
+        if (list.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(list.get(list.size() - 1));
     }
 
 
@@ -1039,57 +1052,198 @@ public class VideoController {
 
 
     /**
-
-     * Tiếp nhận segments đã duyệt từ Frontend gửi sang để thực hiện cắt video (B10).
-
+     * Lưu trạng thái chỉnh sửa video/dự án của người dùng vào thư mục riêng biệt liên kết với User.
      */
-
-    @PostMapping("/render")
-
-    public ResponseEntity<?> renderSegments(@RequestBody SegmentsDTO segments) {
-
-        log.info("Tiếp nhận yêu cầu cắt video bài giảng: {}, số phân đoạn: {}",
-
-                segments.lesson(), segments.segments().size());
-
-
+    @PostMapping("/save")
+    public ResponseEntity<?> saveProject(@RequestBody Map<String, Object> payload) {
+        String user = (String) payload.getOrDefault("user", "admin");
+        if (user == null || user.isBlank()) {
+            user = "admin";
+        }
+        String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
+        String safeLesson = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_");
 
         try {
-
-            Path outputDir = Paths.get("output");
-
-            if (!Files.exists(outputDir)) {
-
-                Files.createDirectories(outputDir);
-
+            Path userDir = Paths.get("output", "users", safeUser, safeLesson);
+            if (!Files.exists(userDir)) {
+                Files.createDirectories(userDir);
             }
 
-            Path outputFile = outputDir.resolve("segments_" + segments.lesson() + ".json");
+            Path projectFile = userDir.resolve("project.json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), payload);
 
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile.toFile(), segments);
+            Path segmentsFile = userDir.resolve("segments.json");
+            Object segmentsObj = payload.get("segments");
+            if (segmentsObj != null) {
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsObj);
+            }
 
-            log.info("Đã lưu kế hoạch cắt đã duyệt tại: {}", outputFile.toAbsolutePath());
+            String r2Url = null;
+            try {
+                if (r2Service != null) {
+                    String relativeKey = "users/" + safeUser + "/" + safeLesson + "/project.json";
+                    r2Url = r2Service.uploadFile(projectFile, relativeKey);
+                }
+            } catch (Exception r2Ex) {
+                log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
+            }
 
-
+            log.info("Đã lưu dự án của user '{}' tại: {}", safeUser, userDir.toAbsolutePath());
 
             return ResponseEntity.ok(Map.of(
-
-                    "status", "QUEUED",
-
-                    "message", "Đã tiếp nhận và chuẩn bị cắt " + segments.segments().size() + " phân đoạn.",
-
-                    "savedPlan", outputFile.toString()
-
+                "status", "SAVED",
+                "user", safeUser,
+                "lesson", safeLesson,
+                "directory", userDir.toAbsolutePath().toString(),
+                "r2Url", r2Url != null ? r2Url : "",
+                "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
             ));
+        } catch (Exception e) {
+            log.error("Lỗi khi lưu dự án cho user '{}': {}", safeUser, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Không thể lưu dự án: " + e.getMessage()));
+        }
+    }
 
-        } catch (IOException e) {
+    public ResponseEntity<?> renderSegments(SegmentsDTO segments) {
+        if (segments == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Payload segments null"));
+        }
+        Map<String, Object> map = objectMapper.convertValue(segments, Map.class);
+        return renderSegments(map);
+    }
 
-            log.error("Không thể ghi nhận kế hoạch cắt: {}", e.getMessage(), e);
+    /**
+     * Tiếp nhận segments đã duyệt từ Frontend gửi sang để thực hiện cắt video vật lý bằng FFmpeg (B10).
+     */
+    @PostMapping("/render")
+    public ResponseEntity<?> renderSegments(@RequestBody Map<String, Object> payload) {
+        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
+        String videoName = (String) payload.getOrDefault("video", "vibe_short.mp4");
+        List<?> rawSegments = (List<?>) payload.getOrDefault("segments", List.of());
+        String user = (String) payload.get("user");
+        log.info("Tiếp nhận yêu cầu cắt video: user={}, lesson={}, video={}, số phân đoạn={}", user, lesson, videoName, rawSegments.size());
 
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        try {
+            Path outputDir;
+            if (user != null && !user.isBlank()) {
+                String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+                outputDir = Paths.get("output", "users", safeUser, lesson);
+            } else {
+                outputDir = Paths.get("output", lesson);
+            }
 
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+            Path planFile = outputDir.resolve("segments_" + lesson + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(planFile.toFile(), payload);
+            log.info("Đã lưu kế hoạch cắt tại: {}", planFile.toAbsolutePath());
+
+            String sourcePath = resolveVideoSource(videoName);
+            log.info("Nguồn video để cắt: {}", sourcePath);
+
+            List<Map<String, Object>> renderedFiles = new ArrayList<>();
+            int successCount = 0;
+
+            for (Object segObj : rawSegments) {
+                if (!(segObj instanceof Map<?, ?> rawMap)) continue;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> segMap = (Map<String, Object>) rawMap;
+                Object partsObj = segMap.get("parts");
+                if (partsObj instanceof List<?> partsList && !partsList.isEmpty()) {
+                    for (Object pObj : partsList) {
+                        if (!(pObj instanceof Map<?, ?> rawPMap)) continue;
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> pMap = (Map<String, Object>) rawPMap;
+                        String relFile = String.valueOf(pMap.get("file"));
+                        double start = pMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
+                        double end = pMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
+
+                        File outFile = outputDir.resolve(relFile).toFile();
+                        log.info("Đang thực hiện cắt clip: {} [{} -> {}]", relFile, start, end);
+                        CutResult cutResult = videoCutter.cut(sourcePath, outFile, start, end);
+
+                        if (cutResult.success()) {
+                            successCount++;
+                            renderedFiles.add(Map.of(
+                                "file", relFile,
+                                "sizeBytes", cutResult.outputSizeBytes(),
+                                "executionMs", cutResult.executionTimeMs(),
+                                "path", outFile.getAbsolutePath()
+                            ));
+                        }
+                    }
+                } else {
+                    String slug = segMap.get("slug") != null ? String.valueOf(segMap.get("slug")) : "clip";
+                    String section = segMap.get("section") != null ? String.valueOf(segMap.get("section")) : "01_Phan";
+                    double start = segMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
+                    double end = segMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
+                    String relFile = section + "/" + slug + ".mp4";
+
+                    File outFile = outputDir.resolve(relFile).toFile();
+                    CutResult cutResult = videoCutter.cut(sourcePath, outFile, start, end);
+                    if (cutResult.success()) {
+                        successCount++;
+                        renderedFiles.add(Map.of(
+                            "file", relFile,
+                            "sizeBytes", cutResult.outputSizeBytes(),
+                            "executionMs", cutResult.executionTimeMs(),
+                            "path", outFile.getAbsolutePath()
+                        ));
+                    }
+                }
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "status", "COMPLETED",
+                "engine", "FFmpeg libx264 (SV1)",
+                "lesson", lesson,
+                "totalRendered", successCount,
+                "renderedFiles", renderedFiles,
+                "outputDirectory", outputDir.toAbsolutePath().toString(),
+                "message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson
+            ));
+        } catch (Exception e) {
+            log.error("Không thể hoàn tất cắt video: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "status", "ERROR",
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    private String resolveVideoSource(String videoName) {
+        if (videoName != null && (videoName.startsWith("http://") || videoName.startsWith("https://"))) {
+            return videoName;
         }
 
+        if (videoName != null && !videoName.isBlank()) {
+            List<VideoEntity> all = videoRepository.findAll();
+            for (VideoEntity v : all) {
+                if (videoName.equalsIgnoreCase(v.getFileName()) && v.getCloudUrl() != null && !v.getCloudUrl().isBlank()) {
+                    return v.getCloudUrl();
+                }
+            }
+        }
+
+        if (videoName != null && !videoName.isBlank()) {
+            List<Path> candidates = List.of(
+                Paths.get("input", videoName),
+                Paths.get("uploads", videoName),
+                Paths.get("..", "input", videoName),
+                Paths.get("..", "uploads", videoName),
+                Paths.get(videoName)
+            );
+            for (Path p : candidates) {
+                if (Files.exists(p) && Files.isRegularFile(p)) {
+                    return p.toAbsolutePath().toString();
+                }
+            }
+        }
+
+        return "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4";
     }
 
 

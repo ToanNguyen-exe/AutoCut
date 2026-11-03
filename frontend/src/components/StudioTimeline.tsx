@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Segment, TranscriptData } from "@/types";
 import { formatTime, recalculateParts, slugify } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ import {
   Video,
   ChevronDown,
   ChevronUp,
+  Link2,
 } from "lucide-react";
 
 interface StudioTimelineProps {
@@ -47,6 +48,41 @@ interface StudioTimelineProps {
   onVolumeChange?: (vol: number) => void;
   onToggleMute?: () => void;
 }
+
+const generateSegmentWaveform = (
+  start: number,
+  end: number,
+  barCount: number,
+  transcript?: TranscriptData
+) => {
+  const bars: number[] = [];
+  const duration = Math.max(0.1, end - start);
+
+  for (let i = 0; i < barCount; i++) {
+    const t = start + (i / barCount) * duration;
+    let height = 30;
+
+    if (transcript?.sentences && transcript.sentences.length > 0) {
+      const inSentence = transcript.sentences.some((s) => t >= s.start && t <= s.end);
+      if (inSentence) {
+        const wave = Math.sin(i * 0.45) * 22 + Math.cos(i * 0.9) * 16;
+        const noise = Math.abs(Math.sin((i + 1) * 31.7)) * 26;
+        height = Math.min(95, Math.max(35, Math.round(55 + wave + noise)));
+      } else {
+        const noise = Math.abs(Math.sin((i + 1) * 17.3)) * 14;
+        height = Math.min(25, Math.max(12, Math.round(15 + noise)));
+      }
+    } else {
+      const wave = Math.sin(i * 0.35) * 20 + Math.cos(i * 0.7) * 15;
+      const noise = Math.abs(Math.sin((i + 1) * 43.1)) * 25;
+      height = Math.min(92, Math.max(25, Math.round(50 + wave + noise)));
+    }
+
+    if (i === 0 || i === barCount - 1) height = Math.max(height, 50);
+    bars.push(height);
+  }
+  return bars;
+};
 
 export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   segments,
@@ -95,16 +131,17 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
   const timelineContainerRef = useRef<HTMLDivElement>(null);
 
-  // Playback timer (runs when playing and not scrubbing)
+  // Playback timer (CHỈ chạy khi không có player thật ngoài truyền vào)
   useEffect(() => {
+    if (onTogglePlay) return; // Đã có VideoCanvasViewport quản lý phát video, tránh xung đột
+
     let timer: NodeJS.Timeout;
     if (playing && !isScrubbing) {
       timer = setInterval(() => {
         const nextTime = Math.min(totalDuration, currentTime + 0.5);
         onSeek(nextTime);
         if (nextTime >= totalDuration) {
-          if (onTogglePlay) onTogglePlay();
-          else setInternalPlaying(false);
+          setInternalPlaying(false);
         }
       }, 500);
     }
@@ -228,6 +265,103 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     }
   };
 
+  // Segment Drag & Resize state (Kéo đổi điểm đầu/cuối hoặc kéo di chuyển phân đoạn)
+  const [resizingSeg, setResizingSeg] = useState<{
+    id: string;
+    edge: "start" | "end" | "move";
+    startX: number;
+    origStart: number;
+    origEnd: number;
+    currentStart: number;
+    currentEnd: number;
+  } | null>(null);
+
+  const handleStartEdgeDrag = (e: React.PointerEvent, seg: Segment) => {
+    e.stopPropagation();
+    onSelectSegment(seg.id);
+    setResizingSeg({
+      id: seg.id,
+      edge: "start",
+      startX: e.clientX,
+      origStart: seg.start,
+      origEnd: seg.end,
+      currentStart: seg.start,
+      currentEnd: seg.end,
+    });
+  };
+
+  const handleEndEdgeDrag = (e: React.PointerEvent, seg: Segment) => {
+    e.stopPropagation();
+    onSelectSegment(seg.id);
+    setResizingSeg({
+      id: seg.id,
+      edge: "end",
+      startX: e.clientX,
+      origStart: seg.start,
+      origEnd: seg.end,
+      currentStart: seg.start,
+      currentEnd: seg.end,
+    });
+  };
+
+  const handleMoveDrag = (e: React.PointerEvent, seg: Segment) => {
+    e.stopPropagation();
+    onSelectSegment(seg.id);
+    setResizingSeg({
+      id: seg.id,
+      edge: "move",
+      startX: e.clientX,
+      origStart: seg.start,
+      origEnd: seg.end,
+      currentStart: seg.start,
+      currentEnd: seg.end,
+    });
+  };
+
+  const handleEdgePointerMove = (e: React.PointerEvent) => {
+    if (!resizingSeg || !timelineContainerRef.current) return;
+    const rect = timelineContainerRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - resizingSeg.startX;
+    const deltaTime = (deltaX / rect.width) * totalDuration;
+
+    if (resizingSeg.edge === "start") {
+      const newStart = Math.max(0, Math.min(resizingSeg.origEnd - 0.5, Number((resizingSeg.origStart + deltaTime).toFixed(1))));
+      setResizingSeg((prev) => prev ? { ...prev, currentStart: newStart } : null);
+      onSeek(newStart);
+    } else if (resizingSeg.edge === "end") {
+      const newEnd = Math.min(totalDuration, Math.max(resizingSeg.origStart + 0.5, Number((resizingSeg.origEnd + deltaTime).toFixed(1))));
+      setResizingSeg((prev) => prev ? { ...prev, currentEnd: newEnd } : null);
+      onSeek(newEnd);
+    } else if (resizingSeg.edge === "move") {
+      const duration = resizingSeg.origEnd - resizingSeg.origStart;
+      const newStart = Math.max(0, Math.min(totalDuration - duration, Number((resizingSeg.origStart + deltaTime).toFixed(1))));
+      const newEnd = Number((newStart + duration).toFixed(1));
+      setResizingSeg((prev) => prev ? { ...prev, currentStart: newStart, currentEnd: newEnd } : null);
+      onSeek(newStart);
+    }
+  };
+
+  const handleEdgePointerUp = () => {
+    if (!resizingSeg) return;
+    const finalStart = resizingSeg.currentStart;
+    const finalEnd = resizingSeg.currentEnd;
+    const targetId = resizingSeg.id;
+    setResizingSeg(null);
+
+    const updated = segments.map((s) => {
+      if (s.id !== targetId) return s;
+      const sectionFolder = `${s.section_no.toString().padStart(2, "0")}_${slugify(s.section)}`;
+      const newParts = recalculateParts(finalStart, finalEnd, sectionFolder, s.topic_no, s.slug);
+      return {
+        ...s,
+        start: finalStart,
+        end: finalEnd,
+        parts: newParts,
+      };
+    });
+    onUpdateSegments(updated);
+  };
+
   // Compute time from clientX coordinate on timeline
   const calculateTimeFromEvent = useCallback(
     (clientX: number): number => {
@@ -293,55 +427,6 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
       setHoverTime(null);
     }
   };
-
-  // Generate waveform vertical bars ("Dạng kẻ dọc như ảnh 2")
-  const waveformBars = useMemo(() => {
-    const count = 180;
-    const bars: number[] = [];
-
-    if (transcript && transcript.sentences && transcript.sentences.length > 0) {
-      for (let i = 0; i < count; i++) {
-        const t = (i / count) * totalDuration;
-        const inSentence = transcript.sentences.some(
-          (s) => t >= s.start && t <= s.end
-        );
-
-        let height: number;
-        if (inSentence) {
-          const wave = Math.sin(i * 0.4) * 20 + Math.cos(i * 0.8) * 15;
-          const noise = Math.abs(Math.sin((i + 1) * 31.7)) * 28;
-          height = Math.min(95, Math.max(30, Math.round(52 + wave + noise)));
-        } else {
-          const noise = Math.abs(Math.sin((i + 1) * 17.3)) * 12;
-          height = Math.min(22, Math.max(10, Math.round(12 + noise)));
-        }
-
-        if (i === 0) height = 95; // Initial peak accent matching reference image 2
-        bars.push(height);
-      }
-      return bars;
-    }
-
-    // Default lecture audio waveform simulation
-    for (let i = 0; i < count; i++) {
-      const cluster = Math.sin(i * 0.12) * Math.cos(i * 0.04);
-      const speechBurst = Math.sin(i * 0.35) * 0.3 + Math.cos(i * 0.7) * 0.2;
-      const variation = Math.abs(Math.sin((i + 1) * 37.17)) * 0.38;
-      let height =
-        0.2 +
-        Math.abs(cluster) * 0.45 +
-        Math.abs(speechBurst) * 0.3 +
-        variation * 0.2;
-
-      // Realistic speech pauses
-      if (i % 24 >= 21 || i % 47 >= 44) {
-        height = height * 0.26;
-      }
-      if (i === 0) height = 0.95; // Accent first bar like image 2
-      bars.push(Math.min(96, Math.max(10, Math.round(height * 100))));
-    }
-    return bars;
-  }, [transcript, totalDuration]);
 
   // Generate ruler markers
   const rulerTicks = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(
@@ -572,6 +657,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                   <span>V1</span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-500">
+                  <span title="Video & Audio liên kết đồng bộ" className="flex items-center text-purple-400">
+                    <Link2 className="w-3 h-3" />
+                  </span>
                   <Eye className="w-3 h-3 hover:text-white" />
                   <Lock className="w-3 h-3 hover:text-white" />
                 </div>
@@ -584,6 +672,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                   <span>A1</span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-500">
+                  <span title="Video & Audio liên kết đồng bộ" className="flex items-center text-emerald-400">
+                    <Link2 className="w-3 h-3" />
+                  </span>
                   <Volume2 className="w-3 h-3 hover:text-white" />
                   <Lock className="w-3 h-3 hover:text-white" />
                 </div>
@@ -593,13 +684,40 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             {/* Right Interactive Track Timeline Canvas */}
             <div
               ref={timelineContainerRef}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerLeave}
+              onPointerDown={(e) => {
+                if (resizingSeg) return;
+                handlePointerDown(e);
+              }}
+              onPointerMove={(e) => {
+                if (resizingSeg) {
+                  handleEdgePointerMove(e);
+                } else {
+                  handlePointerMove(e);
+                }
+              }}
+              onPointerUp={(e) => {
+                if (resizingSeg) {
+                  handleEdgePointerUp();
+                } else {
+                  handlePointerUp(e);
+                }
+              }}
+              onPointerLeave={() => {
+                if (resizingSeg) {
+                  handleEdgePointerUp();
+                } else {
+                  handlePointerLeave();
+                }
+              }}
               style={{ minWidth: `${Math.max(100, zoomLevel)}%` }}
               className={`flex-1 flex flex-col relative select-none ${
-                isScrubbing ? "cursor-ew-resize" : "cursor-pointer"
+                resizingSeg
+                  ? resizingSeg.edge === "move"
+                    ? "cursor-grabbing"
+                    : "cursor-ew-resize"
+                  : isScrubbing
+                  ? "cursor-ew-resize"
+                  : "cursor-pointer"
               }`}
             >
               {/* Top Ruler Bar with Time Markers */}
@@ -618,10 +736,14 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
               {/* Track 1: Video Segment Clips (V1) - Absolute Time Positioned */}
               <div className="h-14 bg-[#0a0b0e] border-b border-slate-800/80 relative w-full overflow-hidden">
                 {segments.map((seg) => {
-                  const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
+                  const isCurrentResizing = resizingSeg?.id === seg.id;
+                  const curStart = isCurrentResizing ? resizingSeg.currentStart : seg.start;
+                  const curEnd = isCurrentResizing ? resizingSeg.currentEnd : seg.end;
+
+                  const leftPct = (curStart / Math.max(1, totalDuration)) * 100;
                   const widthPct = Math.min(
                     100 - leftPct,
-                    ((seg.end - seg.start) / Math.max(1, totalDuration)) * 100
+                    ((curEnd - curStart) / Math.max(1, totalDuration)) * 100
                   );
                   const isSelected = activeSegmentId === seg.id;
 
@@ -632,22 +754,56 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                         left: `${leftPct}%`,
                         width: `${Math.max(1.2, widthPct)}%`,
                       }}
-                      className={`absolute top-1 bottom-1 rounded-md border-2 overflow-hidden transition-all group flex flex-col justify-between p-1.5 ${
-                        isSelected
-                          ? "border-purple-500 bg-purple-950/70 shadow-lg shadow-purple-500/20 z-10"
+                      className={`absolute top-1 bottom-1 rounded-md border-2 transition-all group flex flex-col justify-between p-1 select-none ${
+                        isSelected || isCurrentResizing
+                          ? "border-purple-400 bg-purple-950/80 shadow-lg shadow-purple-500/30 z-10"
                           : "border-purple-600/60 bg-purple-950/30 hover:border-purple-400 z-0"
                       }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSegment(seg.id);
+                        onSeek(seg.start);
+                      }}
                     >
-                      {/* Clip Title inside track box */}
-                      <div className="flex items-center justify-between z-10 pointer-events-none">
-                        <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-white truncate">
+                      {/* Left Resize Handle (Kéo start) */}
+                      <div
+                        onPointerDown={(e) => handleStartEdgeDrag(e, seg)}
+                        title="Kéo trái/phải để chỉnh điểm bắt đầu (Start)"
+                        className="absolute left-0 top-0 bottom-0 w-3 bg-purple-500/0 hover:bg-purple-500/90 cursor-ew-resize z-20 flex items-center justify-center transition-colors group-hover:bg-purple-500/30 rounded-l"
+                      >
+                        <div className="w-0.5 h-4 bg-white/80 rounded-full" />
+                      </div>
+
+                      {/* Right Resize Handle (Kéo end) */}
+                      <div
+                        onPointerDown={(e) => handleEndEdgeDrag(e, seg)}
+                        title="Kéo trái/phải để chỉnh điểm kết thúc (End)"
+                        className="absolute right-0 top-0 bottom-0 w-3 bg-purple-500/0 hover:bg-purple-500/90 cursor-ew-resize z-20 flex items-center justify-center transition-colors group-hover:bg-purple-500/30 rounded-r"
+                      >
+                        <div className="w-0.5 h-4 bg-white/80 rounded-full" />
+                      </div>
+
+                      {/* Header bar: Kéo di chuyển toàn bộ đoạn */}
+                      <div
+                        onPointerDown={(e) => handleMoveDrag(e, seg)}
+                        title="Bấm giữ và kéo để di chuyển vị trí phân đoạn"
+                        className="flex items-center justify-between z-10 cursor-grab active:cursor-grabbing select-none px-2"
+                      >
+                        <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-white truncate pointer-events-none">
                           <Video className="w-2.5 h-2.5 text-purple-300 shrink-0" />
                           <span className="truncate">{seg.slug}</span>
                         </div>
-                        <span className="text-[9px] font-mono text-purple-300 shrink-0 ml-1">
-                          {formatTime(seg.end - seg.start)}
+                        <span className="text-[9px] font-mono text-purple-300 shrink-0 ml-1 pointer-events-none">
+                          {formatTime(curEnd - curStart)}
                         </span>
                       </div>
+
+                      {/* Live dragging tooltip badge */}
+                      {isCurrentResizing && (
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 border border-purple-400 text-purple-200 px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap shadow-lg z-30 pointer-events-none">
+                          {formatTime(curStart)} &rarr; {formatTime(curEnd)} ({formatTime(curEnd - curStart)})
+                        </div>
+                      )}
 
                       {/* Filmstrip Repeating Thumbnails Simulation */}
                       <div className="absolute inset-0 top-5 opacity-25 group-hover:opacity-40 transition-opacity flex gap-1 pointer-events-none overflow-hidden">
@@ -660,7 +816,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                       </div>
 
                       {/* Topic Name bottom label */}
-                      <div className="text-[10px] text-slate-300 truncate z-10 font-sans pointer-events-none">
+                      <div className="text-[10px] text-slate-300 truncate z-10 font-sans pointer-events-none px-2">
                         {seg.topic}
                       </div>
                     </div>
@@ -668,48 +824,101 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                 })}
               </div>
 
-              {/* Track 2: Audio Waveform Vertical Bars ("Dạng kẻ dọc như ảnh 2" - A1) - Full 100% Width */}
-              <div className="h-14 bg-[#14151b] relative w-full overflow-hidden border-b border-slate-800">
-                {/* Waveform Vertical Bars SVG spanning 100% without getting cut short */}
-                <svg
-                  className="w-full h-full pointer-events-none block"
-                  viewBox={`0 0 ${waveformBars.length * 4} 56`}
-                  preserveAspectRatio="none"
-                >
-                  {waveformBars.map((heightPercent, idx) => {
-                    const barProgressRatio = idx / waveformBars.length;
-                    const currentProgressRatio =
-                      currentTime / Math.max(1, totalDuration);
-                    const isPlayed = barProgressRatio <= currentProgressRatio;
-                    const barH = Math.max(3, (heightPercent / 100) * 48);
-                    const x = idx * 4;
-                    const y = 52 - barH;
+              {/* Track 2: Audio Track (A1) - ĐỒNG BỘ 100% VỚI PHÂN ĐOẠN VIDEO TRACK V1 */}
+              <div className="h-14 bg-[#0a0b0e] relative w-full overflow-hidden border-b border-slate-800">
+                {segments.map((seg) => {
+                  const isCurrentResizing = resizingSeg?.id === seg.id;
+                  const curStart = isCurrentResizing ? resizingSeg.currentStart : seg.start;
+                  const curEnd = isCurrentResizing ? resizingSeg.currentEnd : seg.end;
+                  const segDuration = Math.max(0.1, curEnd - curStart);
 
-                    return (
-                      <rect
-                        key={idx}
-                        x={x + 0.6}
-                        y={y}
-                        width={2.6}
-                        height={barH}
-                        rx={0.8}
-                        fill={isPlayed ? "#f1f5f9" : "#475569"}
-                        fillOpacity={isPlayed ? 1 : 0.65}
-                      />
-                    );
-                  })}
-                  {/* Subtle Baseline at Bottom */}
-                  <line
-                    x1="0"
-                    y1="52"
-                    x2={waveformBars.length * 4}
-                    y2="52"
-                    stroke="#334155"
-                    strokeWidth="1"
-                  />
-                </svg>
+                  const leftPct = (curStart / Math.max(1, totalDuration)) * 100;
+                  const widthPct = Math.min(
+                    100 - leftPct,
+                    (segDuration / Math.max(1, totalDuration)) * 100
+                  );
+                  const isSelected = activeSegmentId === seg.id;
 
-                {/* Reference Image 2 Style Timestamp at Bottom-Right */}
+                  const barCount = Math.max(16, Math.min(80, Math.round(segDuration * 3)));
+                  const bars = generateSegmentWaveform(curStart, curEnd, barCount, transcript);
+
+                  return (
+                    <div
+                      key={`audio-${seg.id}`}
+                      style={{
+                        left: `${leftPct}%`,
+                        width: `${Math.max(1.2, widthPct)}%`,
+                      }}
+                      className={`absolute top-1 bottom-1 rounded-md border-2 transition-all group flex flex-col justify-between p-1 select-none overflow-hidden ${
+                        isSelected || isCurrentResizing
+                          ? "border-emerald-400 bg-emerald-950/80 shadow-lg shadow-emerald-500/30 z-10"
+                          : "border-emerald-600/50 bg-emerald-950/30 hover:border-emerald-400 z-0"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSegment(seg.id);
+                        onSeek(seg.start);
+                      }}
+                    >
+                      {/* Left Resize Handle (Kéo start) */}
+                      <div
+                        onPointerDown={(e) => handleStartEdgeDrag(e, seg)}
+                        title="Kéo trái/phải để chỉnh điểm bắt đầu (Start)"
+                        className="absolute left-0 top-0 bottom-0 w-3 bg-emerald-500/0 hover:bg-emerald-500/90 cursor-ew-resize z-20 flex items-center justify-center transition-colors group-hover:bg-emerald-500/30 rounded-l"
+                      >
+                        <div className="w-0.5 h-4 bg-white/80 rounded-full" />
+                      </div>
+
+                      {/* Right Resize Handle (Kéo end) */}
+                      <div
+                        onPointerDown={(e) => handleEndEdgeDrag(e, seg)}
+                        title="Kéo trái/phải để chỉnh điểm kết thúc (End)"
+                        className="absolute right-0 top-0 bottom-0 w-3 bg-emerald-500/0 hover:bg-emerald-500/90 cursor-ew-resize z-20 flex items-center justify-center transition-colors group-hover:bg-emerald-500/30 rounded-r"
+                      >
+                        <div className="w-0.5 h-4 bg-white/80 rounded-full" />
+                      </div>
+
+                      {/* Header bar: Kéo di chuyển toàn bộ đoạn */}
+                      <div
+                        onPointerDown={(e) => handleMoveDrag(e, seg)}
+                        title="Bấm giữ và kéo để di chuyển vị trí phân đoạn âm thanh & video"
+                        className="flex items-center justify-between z-10 cursor-grab active:cursor-grabbing select-none px-2"
+                      >
+                        <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-300 truncate pointer-events-none">
+                          <Volume2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                          <span className="truncate">{seg.slug}</span>
+                        </div>
+                        <span className="text-[9px] font-mono text-emerald-400 shrink-0 ml-1 pointer-events-none">
+                          {formatTime(segDuration)}
+                        </span>
+                      </div>
+
+                      {/* Waveform Sóng âm động đồng bộ cho phân đoạn */}
+                      <div className="absolute inset-0 top-4 bottom-1 px-1.5 flex items-end gap-[1.5px] pointer-events-none overflow-hidden opacity-85">
+                        {bars.map((bar, bIdx) => {
+                          const barTime = curStart + (bIdx / barCount) * segDuration;
+                          const isPlayed = currentTime >= barTime;
+                          return (
+                            <div
+                              key={bIdx}
+                              style={{ height: `${bar}%` }}
+                              className={`flex-1 min-w-[2px] rounded-t-xs transition-colors duration-75 ${
+                                isPlayed ? "bg-emerald-300" : "bg-emerald-700/60"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* Bottom topic label */}
+                      <div className="text-[9px] text-emerald-200/70 truncate z-10 font-sans pointer-events-none px-2">
+                        {seg.topic}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Reference Timestamp at Bottom-Right */}
                 <div className="absolute bottom-1 right-2 z-10 pointer-events-none font-mono text-[11px] font-bold text-slate-300 bg-black/70 px-1.5 py-0.5 rounded border border-white/10 backdrop-blur-xs">
                   {formatTime(currentTime)}
                 </div>

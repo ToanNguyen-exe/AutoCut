@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Clock,
   LayoutList,
+  Scissors,
 } from "lucide-react";
 
 interface TranscriptScenesPanelProps {
@@ -39,6 +40,8 @@ interface TranscriptScenesPanelProps {
   onRenameLesson: (newName: string) => void;
   onOpenAddVideo?: () => void;
   onAnalyzeAI?: () => void;
+  onRender?: () => void;
+  isRendering?: boolean;
 }
 
 // Helper tạo đồ họa xem trước sinh động tương ứng với nội dung chủ đề bài giảng hoặc âm nhạc
@@ -276,6 +279,8 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   onRenameLesson,
   onOpenAddVideo,
   onAnalyzeAI,
+  onRender,
+  isRendering = false,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(lessonName);
@@ -369,42 +374,66 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
           )}
         </div>
 
-        {/* Action Button: Phân Tích AI / Chạy lại AI / Rewrite */}
-        {isAnalyzing ? (
-          <button
-            disabled
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 cursor-not-allowed shrink-0"
-          >
-            <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-400" />
-            <span>Đang chạy...</span>
-          </button>
-        ) : isRaw && onAnalyzeAI ? (
-          <button
-            onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-600/30 transition hover:scale-105 active:scale-95 shrink-0"
-            title="Khởi chạy Whisper & AI để phân tích video và phân đoạn"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Phân Tích AI</span>
-          </button>
-        ) : onAnalyzeAI ? (
-          <button
-            onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500 transition shrink-0"
-            title="Chạy lại phân tích AI nếu nội dung chưa vừa ý"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Chạy lại AI</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => alert("Tính năng Auto-Segment LLM (B4) đang đồng bộ với transcript!")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Rewrite</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Nút Cắt Video (FFmpeg) */}
+          {onRender && (
+            <button
+              onClick={onRender}
+              disabled={isRendering}
+              title="Thực hiện cắt video vật lý bằng FFmpeg theo danh sách phân cảnh này"
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition hover:scale-105 active:scale-95 shrink-0 disabled:opacity-50"
+            >
+              {isRendering ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang cắt...</span>
+                </>
+              ) : (
+                <>
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>Cắt Video</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Action Button: Phân Tích AI / Chạy lại AI / Rewrite */}
+          {isAnalyzing ? (
+            <button
+              disabled
+              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 cursor-not-allowed shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-400" />
+              <span>Đang chạy...</span>
+            </button>
+          ) : isRaw && onAnalyzeAI ? (
+            <button
+              onClick={onAnalyzeAI}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-600/30 transition hover:scale-105 active:scale-95 shrink-0"
+              title="Khởi chạy Whisper & AI để phân tích video và phân đoạn"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Phân Tích AI</span>
+            </button>
+          ) : onAnalyzeAI ? (
+            <button
+              onClick={onAnalyzeAI}
+              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500 transition shrink-0"
+              title="Chạy lại phân tích AI nếu nội dung chưa vừa ý"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Chạy lại AI</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => alert("Tính năng Auto-Segment LLM (B4) đang đồng bộ với transcript!")}
+              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Rewrite</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main split: Thumbnails column on left + Script text column on right */}

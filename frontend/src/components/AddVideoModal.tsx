@@ -36,25 +36,19 @@ interface AddVideoModalProps {
   onAddVideo: (video: NewVideoData) => void;
 }
 
-// Danh sách URL video mẫu với các độ dài khác nhau để test ngay
+// Danh sách URL video mẫu lấy chuẩn từ Cloudflare R2 đã upload
 const SAMPLE_VIDEOS = [
   {
-    name: "Bài giảng Lập trình Web Full khóa (2 Giờ)",
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    durationSeconds: 7140, // 1 giờ 59 phút
-    durationText: "01:59:00 (~2 giờ)",
+    name: "Bài giảng Lập trình Web Full khóa (2 Giờ) • Cloudflare R2",
+    url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4",
+    durationSeconds: 7200,
+    durationText: "02:00:00 (1.1GB Faststart)",
   },
   {
-    name: "Cấu trúc dữ liệu & Giải thuật (45 Phút)",
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    durationSeconds: 2700,
-    durationText: "45:00",
-  },
-  {
-    name: "Tech Intro & Algorithm Demo (15 Phút)",
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    durationSeconds: 900,
-    durationText: "15:00",
+    name: "Bài giảng mẫu ngắn 2 Phút • Cloudflare R2",
+    url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
+    durationSeconds: 120,
+    durationText: "02:00 (12MB Stream)",
   },
 ];
 

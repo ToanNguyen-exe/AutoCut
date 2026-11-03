@@ -42,7 +42,7 @@ public class VideoCutter {
     ) {}
 
     /**
-     * Cắt video chính xác theo đường dẫn String.
+     * Cắt video chính xác theo đường dẫn String hoặc HTTP/HTTPS Stream URL.
      */
     public CutResult cut(String inputPath, String outputPath, double start, double end) {
         if (inputPath == null || inputPath.isBlank()) {
@@ -53,7 +53,89 @@ public class VideoCutter {
             return CutResult.failure(inputPath, "", start, end, 0L,
                 ErrorCode.UNKNOWN_ERROR, "Đường dẫn tệp video đích không được để trống");
         }
-        return cut(new File(inputPath), new File(outputPath), start, end);
+        return cut(inputPath, new File(outputPath), start, end);
+    }
+
+    /**
+     * Cắt video nhận nguồn là File hoặc URL Stream.
+     */
+    public CutResult cut(String inputPath, File outputFile, double start, double end) {
+        if (inputPath == null || inputPath.isBlank()) {
+            return CutResult.failure("", outputFile != null ? outputFile.getAbsolutePath() : "", start, end, 0L,
+                ErrorCode.FILE_NOT_FOUND, "Đường dẫn tệp video nguồn không được để trống");
+        }
+        if (inputPath.startsWith("http://") || inputPath.startsWith("https://")) {
+            return cutUrl(inputPath, outputFile, start, end);
+        }
+        return cut(new File(inputPath), outputFile, start, end);
+    }
+
+    /**
+     * Cắt video trực tiếp từ luồng HTTP/HTTPS URL (Cloudflare R2 stream).
+     */
+    public CutResult cutUrl(String url, File outputFile, double start, double end) {
+        long startTime = System.currentTimeMillis();
+        String outputPathStr = outputFile != null ? outputFile.getAbsolutePath() : "";
+
+        if (outputFile == null) {
+            return CutResult.failure(url, "", start, end, 0L, ErrorCode.UNKNOWN_ERROR, "Tệp đích không được null");
+        }
+        if (start < 0 || end <= start) {
+            return CutResult.failure(url, outputPathStr, start, end, 0L, ErrorCode.INVALID_TIME_RANGE, "Mốc thời gian không hợp lệ");
+        }
+
+        File parentDir = outputFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        String startStr = String.format(Locale.US, "%.3f", start);
+        String endStr = String.format(Locale.US, "%.3f", end);
+
+        List<String> command = List.of(
+            videoProps.getFfmpegPath(),
+            "-y",
+            "-ss", startStr,
+            "-to", endStr,
+            "-i", url,
+            "-c:v", "libx264",
+            "-preset", "fast",
+            "-crf", "22",
+            "-c:a", "aac",
+            "-avoid_negative_ts", "make_zero",
+            outputFile.getAbsolutePath()
+        );
+
+        log.info("Bắt đầu cắt stream từ URL [{} -> {}]: start={}, end={}", url, outputFile.getName(), startStr, endStr);
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process process = pb.start();
+
+            CompletableFuture<String> stderrFuture = StreamUtil.readStreamAsync(process.getErrorStream());
+            CompletableFuture<String> stdoutFuture = StreamUtil.readStreamAsync(process.getInputStream());
+
+            int timeoutSec = videoProps.getCutTimeoutSeconds() > 0 ? videoProps.getCutTimeoutSeconds() : 300;
+            boolean finished = process.waitFor(timeoutSec, TimeUnit.SECONDS);
+            long executionTimeMs = System.currentTimeMillis() - startTime;
+
+            if (!finished) {
+                process.destroyForcibly();
+                return CutResult.failure(url, outputPathStr, start, end, executionTimeMs, ErrorCode.TIMEOUT, "Timeout khi cắt stream");
+            }
+
+            String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
+            int exitCode = process.exitValue();
+
+            if (exitCode != 0 || !outputFile.exists() || outputFile.length() == 0) {
+                return CutResult.failure(url, outputPathStr, start, end, executionTimeMs, ErrorCode.CUT_FAILED, "FFmpeg lỗi: " + stderr);
+            }
+
+            return CutResult.success(url, outputPathStr, start, end, executionTimeMs, outputFile.length());
+        } catch (Exception e) {
+            long executionTimeMs = System.currentTimeMillis() - startTime;
+            return CutResult.failure(url, outputPathStr, start, end, executionTimeMs, ErrorCode.UNKNOWN_ERROR, e.getMessage());
+        }
     }
 
     /**

@@ -12,6 +12,7 @@ import {
   Plus,
   Folder,
   FileVideo,
+  Scissors,
 } from "lucide-react";
 
 interface ReviewTableProps {
@@ -19,6 +20,8 @@ interface ReviewTableProps {
   activeSegmentId?: string;
   onUpdateSegments: (newSegments: Segment[]) => void;
   onPreviewSegment: (start: number, segmentId: string) => void;
+  onRender?: () => void;
+  isRendering?: boolean;
 }
 
 const SECTION_OPTIONS = [
@@ -36,6 +39,8 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
   activeSegmentId,
   onUpdateSegments,
   onPreviewSegment,
+  onRender,
+  isRendering,
 }) => {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
@@ -176,13 +181,27 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleAddNewSegment}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Thêm phân đoạn</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onRender && (
+            <button
+              onClick={onRender}
+              disabled={isRendering}
+              title="Thực hiện cắt video vật lý bằng FFmpeg theo bảng mốc thời gian này"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition disabled:opacity-50 hover:scale-105 active:scale-95"
+            >
+              <Scissors className="w-3.5 h-3.5" />
+              <span>{isRendering ? "Đang cắt video..." : "Cắt Video (Render)"}</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleAddNewSegment}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm phân đoạn</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Table */}
