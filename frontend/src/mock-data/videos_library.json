@@ -6,69 +6,29 @@
     "title": "Bài giảng mẫu 2 phút (Cloudflare R2)",
     "url": "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
     "duration": 120,
-    "status": "edited",
-    "statusLabel": "Sẵn sàng phát",
+    "status": "added",
+    "statusLabel": "Chưa phân tích",
     "category": "Cloudflare R2 Streaming",
-    "segmentsCount": 3,
-    "updatedAt": "30/10/2026 17:15",
+    "segmentsCount": 1,
+    "updatedAt": "Hôm nay",
     "segments": [
       {
-        "id": "seg01",
+        "id": "raw_vibe_short",
         "section_no": 1,
-        "section": "01_GioiThieu",
+        "section": "01_VideoGoc",
         "topic_no": 1,
-        "topic": "Giới thiệu phương pháp Vibe Coding",
-        "slug": "gioi-thieu",
+        "topic": "Toàn bộ video gốc (Chưa phân tích)",
+        "slug": "vibe-short",
         "start_id": "S0001",
-        "end_id": "S0015",
+        "end_id": "S0001",
         "start": 0.0,
-        "end": 45.0,
-        "parts": [
-          {
-            "part": 1,
-            "start": 0.0,
-            "end": 45.0,
-            "file": "01_GioiThieu/01_gioi-thieu.mp4"
-          }
-        ]
-      },
-      {
-        "id": "seg02",
-        "section_no": 2,
-        "section": "02_ThucHanh",
-        "topic_no": 2,
-        "topic": "Thực hành tương tác AI Agent",
-        "slug": "thuc-hanh-ai",
-        "start_id": "S0016",
-        "end_id": "S0030",
-        "start": 45.0,
-        "end": 90.0,
-        "parts": [
-          {
-            "part": 1,
-            "start": 45.0,
-            "end": 90.0,
-            "file": "02_ThucHanh/02_thuc-hanh-ai.mp4"
-          }
-        ]
-      },
-      {
-        "id": "seg03",
-        "section_no": 3,
-        "section": "03_TongKet",
-        "topic_no": 3,
-        "topic": "Tổng kết và đánh giá kết quả",
-        "slug": "tong-ket",
-        "start_id": "S0031",
-        "end_id": "S0045",
-        "start": 90.0,
         "end": 120.0,
         "parts": [
           {
             "part": 1,
-            "start": 90.0,
+            "start": 0.0,
             "end": 120.0,
-            "file": "03_TongKet/03_tong-ket.mp4"
+            "file": "01_VideoGoc/01_vibe_short.mp4"
           }
         ]
       }
@@ -81,29 +41,64 @@
     "title": "Bài giảng Lập trình Web Full khóa (2 Giờ) • Cloudflare R2 Faststart",
     "url": "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4",
     "duration": 7200,
-    "status": "edited",
-    "statusLabel": "Faststart Stream",
+    "status": "added",
+    "statusLabel": "Chưa phân tích",
     "category": "Cloudflare R2 Streaming",
+    "segmentsCount": 1,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "raw_vibe_coding_4",
+        "section_no": 1,
+        "section": "01_VideoGoc",
+        "topic_no": 1,
+        "topic": "Toàn bộ video gốc (Chưa phân tích)",
+        "slug": "vibe-coding-4",
+        "start_id": "S0001",
+        "end_id": "S0001",
+        "start": 0.0,
+        "end": 7200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 7200.0,
+            "file": "01_VideoGoc/01_vibe-coding-4.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mock_vid_03",
+    "name": "Bai05_VongLap.mp4",
+    "lesson": "Bai05_VongLap",
+    "title": "Bài 05: Cấu trúc lặp For, While và Do-While (Bài mẫu Tuần 1)",
+    "url": "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
+    "duration": 1080,
+    "status": "edited",
+    "statusLabel": "Bài mẫu đã duyệt",
+    "category": "Bài Mẫu Kiểm Thử",
     "segmentsCount": 4,
-    "updatedAt": "30/10/2026 17:15",
+    "updatedAt": "Tuần 1",
     "segments": [
       {
         "id": "seg01",
         "section_no": 1,
         "section": "01_LyThuyet",
         "topic_no": 1,
-        "topic": "Tổng quan kiến trúc ứng dụng Fullstack",
-        "slug": "tong-quan-kien-truc",
+        "topic": "Vòng lặp for",
+        "slug": "for",
         "start_id": "S0001",
         "end_id": "S0040",
         "start": 0.0,
-        "end": 350.2,
+        "end": 270.0,
         "parts": [
           {
             "part": 1,
             "start": 0.0,
-            "end": 350.2,
-            "file": "01_LyThuyet/01_tong-quan.mp4"
+            "end": 270.0,
+            "file": "01_LyThuyet/01_for.mp4"
           }
         ]
       },
@@ -112,58 +107,58 @@
         "section_no": 1,
         "section": "01_LyThuyet",
         "topic_no": 2,
-        "topic": "Cấu trúc dữ liệu và xử lý bất đồng bộ",
-        "slug": "xu-ly-bat-dong-bo",
+        "topic": "Vòng lặp while",
+        "slug": "while",
         "start_id": "S0041",
         "end_id": "S0078",
-        "start": 350.2,
-        "end": 620.0,
+        "start": 270.0,
+        "end": 540.0,
         "parts": [
           {
             "part": 1,
-            "start": 350.2,
-            "end": 620.0,
-            "file": "01_LyThuyet/02_bat-dong-bo.mp4"
+            "start": 270.0,
+            "end": 540.0,
+            "file": "01_LyThuyet/02_while.mp4"
           }
         ]
       },
       {
         "id": "seg03",
-        "section_no": 2,
-        "section": "02_ThucHanh",
+        "section_no": 1,
+        "section": "01_LyThuyet",
         "topic_no": 3,
-        "topic": "Xây dựng REST API Spring Boot và kết nối PostgreSQL",
-        "slug": "rest-api-postgres",
+        "topic": "Vòng lặp do...while",
+        "slug": "do-while",
         "start_id": "S0079",
-        "end_id": "S0150",
-        "start": 620.0,
-        "end": 1850.5,
+        "end_id": "S0095",
+        "start": 540.0,
+        "end": 810.0,
         "parts": [
           {
             "part": 1,
-            "start": 620.0,
-            "end": 1850.5,
-            "file": "02_ThucHanh/03_rest-api.mp4"
+            "start": 540.0,
+            "end": 810.0,
+            "file": "01_LyThuyet/03_do-while.mp4"
           }
         ]
       },
       {
         "id": "seg04",
-        "section_no": 3,
-        "section": "03_ThucHanh",
+        "section_no": 2,
+        "section": "02_ThucHanh",
         "topic_no": 4,
-        "topic": "Tích hợp giao diện người dùng Next.js và kiểm thử luồng",
-        "slug": "tich-hop-nextjs",
-        "start_id": "S0151",
+        "topic": "Thực hành in bảng cửu chương",
+        "slug": "in-bang-cuu-chuong",
+        "start_id": "S0096",
         "end_id": "S0210",
-        "start": 1850.5,
-        "end": 5700.0,
+        "start": 810.0,
+        "end": 1080.0,
         "parts": [
           {
             "part": 1,
-            "start": 1850.5,
-            "end": 5700.0,
-            "file": "03_ThucHanh/04_nextjs.mp4"
+            "start": 810.0,
+            "end": 1080.0,
+            "file": "02_ThucHanh/04_in-bang-cuu-chuong.mp4"
           }
         ]
       }

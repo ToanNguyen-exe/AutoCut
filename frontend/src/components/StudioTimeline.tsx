@@ -352,10 +352,29 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
       if (s.id !== targetId) return s;
       const sectionFolder = `${s.section_no.toString().padStart(2, "0")}_${slugify(s.section)}`;
       const newParts = recalculateParts(finalStart, finalEnd, sectionFolder, s.topic_no, s.slug);
+
+      // Đồng bộ chuẩn mã câu S0001, S0002... từ transcript của SV2
+      let newStartId = s.start_id;
+      let newEndId = s.end_id;
+      if (transcript?.sentences && transcript.sentences.length > 0) {
+        const startSentence =
+          transcript.sentences.find((sent) => finalStart <= sent.end) ||
+          transcript.sentences[0];
+        const endSentence =
+          [...transcript.sentences]
+            .reverse()
+            .find((sent) => finalEnd >= sent.start) ||
+          transcript.sentences[transcript.sentences.length - 1];
+        if (startSentence) newStartId = startSentence.id;
+        if (endSentence) newEndId = endSentence.id;
+      }
+
       return {
         ...s,
         start: finalStart,
         end: finalEnd,
+        start_id: newStartId,
+        end_id: newEndId,
         parts: newParts,
       };
     });

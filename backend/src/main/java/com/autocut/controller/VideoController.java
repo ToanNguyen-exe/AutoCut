@@ -894,104 +894,66 @@ public class VideoController {
 
 
         if (Files.exists(candidateTranscript)) {
-
             try {
-
                 TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
-
                 if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
+                    double transDur = existingDto.duration();
+                    // Chỉ sử dụng transcript nếu khớp tên video hoặc thời lượng tương đương
+                    // Tránh gán nhầm transcript 2 tiếng của video dài cho video ngắn 2 phút
+                    boolean matchesVideo = (duration > 0 && transDur > 0 && Math.abs(transDur - duration) / Math.max(transDur, duration) < 0.3)
+                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())));
 
-                    List<Sentence> sents = existingDto.sentences();
+                    if (matchesVideo) {
+                        List<Sentence> sents = existingDto.sentences();
+                        double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
+                        int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                        int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
+                        List<Segment> segList = new ArrayList<>();
 
-                    double totalDur = existingDto.duration() > 0 ? existingDto.duration() : duration;
+                        for (int i = 0; i < segCount; i++) {
+                            int sIdx = i * chunkSize;
+                            if (sIdx >= sents.size()) break;
+                            int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
+                            Sentence fSent = sents.get(sIdx);
+                            Sentence lSent = sents.get(eIdx);
+                            double sStart = (i == 0) ? 0.0 : fSent.start();
+                            double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
+                            String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
+                            String topName = "Đoạn " + (i + 1);
+                            segList.add(new Segment(
+                                    "seg_ai_" + (i + 1),
+                                    i + 1,
+                                    secFolder,
+                                    i + 1,
+                                    topName,
+                                    "doan-" + (i + 1),
+                                    fSent.id(),
+                                    lSent.id(),
+                                    Math.round(sStart * 10.0) / 10.0,
+                                    Math.round(sEnd * 10.0) / 10.0,
+                                    List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                            ));
+                        }
 
-                    int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                        SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
+                        if (!hash.isBlank()) {
+                            cacheService.saveTranscriptCache(hash, existingDto);
+                        }
 
-                    int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-
-                    List<Segment> segList = new ArrayList<>();
-
-
-
-                    for (int i = 0; i < segCount; i++) {
-
-                        int sIdx = i * chunkSize;
-
-                        if (sIdx >= sents.size()) break;
-
-                        int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-
-                        Sentence fSent = sents.get(sIdx);
-
-                        Sentence lSent = sents.get(eIdx);
-
-                        double sStart = (i == 0) ? 0.0 : fSent.start();
-
-                        double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
-
-                        String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-
-                        String topName = "Đoạn " + (i + 1);
-
-                        segList.add(new Segment(
-
-                                "seg_ai_" + (i + 1),
-
-                                i + 1,
-
-                                secFolder,
-
-                                i + 1,
-
-                                topName,
-
-                                "doan-" + (i + 1),
-
-                                fSent.id(),
-
-                                lSent.id(),
-
-                                Math.round(sStart * 10.0) / 10.0,
-
-                                Math.round(sEnd * 10.0) / 10.0,
-
-                                List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
-
+                        return ResponseEntity.ok(Map.of(
+                                "status", "SUCCESS",
+                                "mode", "analyzed",
+                                "segmentsData", segsDto,
+                                "transcript", existingDto
                         ));
-
+                    } else {
+                        log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",
+                                candidateTranscript.getFileName(), transDur, videoName, duration);
                     }
-
-
-
-                    SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
-
-                    if (!hash.isBlank()) {
-
-                        cacheService.saveTranscriptCache(hash, existingDto);
-                    try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), existingDto); } catch (Exception ignored) {}
-
-                    }
-
-                    return ResponseEntity.ok(Map.of(
-
-                            "status", "SUCCESS",
-
-                            "mode", "analyzed",
-
-                            "segmentsData", segsDto,
-
-                            "transcript", existingDto
-
-                    ));
-
                 }
-
             } catch (Exception ex) {
-
                 log.warn("Không thể parse transcript {}: {}", candidateTranscript, ex.getMessage());
-
             }
-
         }
 
 

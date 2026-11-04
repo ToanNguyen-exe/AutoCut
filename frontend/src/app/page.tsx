@@ -4,8 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { SegmentsData, Segment, Sentence, TranscriptData, User } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
 import {
-  fetchMockSegments,
-  fetchMockTranscript,
   fetchConfig,
   submitRenderSegments,
   saveProject,
@@ -115,23 +113,60 @@ export default function Home() {
     }
   }, []);
 
+  // Helper lưu trữ bền vững trạng thái đang làm việc (không bị mất khi bấm F5)
+  const persistActiveProject = (
+    projectData: SegmentsData,
+    trans?: TranscriptData,
+    url?: string | null,
+    segId?: string
+  ) => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          "autocut_active_project",
+          JSON.stringify({
+            data: projectData,
+            transcript: trans,
+            externalVideoUrl: url,
+            activeSegmentId: segId,
+          })
+        );
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   // Load initial data from Spring Boot Backend
   const loadInitialData = useCallback(async () => {
     const configRes = await fetchConfig();
     const isOnline = configRes.source === "api";
     setBackendOnline(isOnline);
 
-    const segRes = await fetchMockSegments();
-    if (segRes.data) {
-      setData(segRes.data);
-      if (segRes.data.segments.length > 0) {
-        setActiveSegmentId(segRes.data.segments[0].id);
+    // 1. Kiểm tra xem người dùng có phiên làm việc đã lưu trong LocalStorage không
+    let hasRestoredState = false;
+    if (typeof window !== "undefined") {
+      try {
+        const savedProjectStr = localStorage.getItem("autocut_active_project");
+        if (savedProjectStr) {
+          const savedProject = JSON.parse(savedProjectStr);
+          if (savedProject && savedProject.data && Array.isArray(savedProject.data.segments) && savedProject.data.segments.length > 0) {
+            setData(savedProject.data);
+            if (savedProject.transcript) {
+              setTranscript(savedProject.transcript);
+            }
+            if (savedProject.externalVideoUrl) {
+              setExternalVideoUrl(savedProject.externalVideoUrl);
+            }
+            if (savedProject.activeSegmentId) {
+              setActiveSegmentId(savedProject.activeSegmentId);
+            }
+            hasRestoredState = true;
+          }
+        }
+      } catch (err) {
+        console.warn("Lỗi đọc autocut_active_project từ localStorage:", err);
       }
-    }
-
-    const transRes = await fetchMockTranscript();
-    if (transRes.data) {
-      setTranscript(transRes.data);
     }
 
     // Nạp danh sách video từ Database qua Backend Spring Boot (/api/video/list)
@@ -152,37 +187,40 @@ export default function Home() {
         segments: [],
       }));
 
-      // Tự động gán video mới nhất từ Database lên màn hình Studio
-      const latestVideo = backendVidsRes.data[backendVidsRes.data.length - 1];
-      if (latestVideo.cloudUrl) {
-        setExternalVideoUrl(latestVideo.cloudUrl);
-        setData((prev) => ({
-          ...prev,
-          video: latestVideo.fileName,
-          lesson: latestVideo.fileName.replace(/\.[^/.]+$/, ""),
-          mode: "analyzed",
-        }));
-      }
-
       setVideoLibrary(dbItems);
     } else {
       const fallbackList = getLibraryVideos();
       setVideoLibrary(fallbackList);
-      if (fallbackList.length > 0 && fallbackList[0].url) {
-        setExternalVideoUrl(fallbackList[0].url);
-        setData((prev) => ({
-          ...prev,
-          video: fallbackList[0].name,
-          lesson: fallbackList[0].lesson,
-          mode: "analyzed",
-        }));
+    }
+
+    // Nếu chưa từng có phiên làm việc nào được lưu, nạp video đầu tiên từ thư viện
+    if (!hasRestoredState) {
+      const fallbackList = getLibraryVideos();
+      const firstVid = fallbackList[0];
+      if (firstVid) {
+        setExternalVideoUrl(firstVid.url);
+        setData({
+          video: firstVid.name,
+          lesson: firstVid.lesson,
+          mode: firstVid.status === "added" ? "raw" : "analyzed",
+          reviewed: firstVid.status === "edited",
+          segments: firstVid.segments || [],
+        });
+        if (firstVid.segments && firstVid.segments.length > 0) {
+          setActiveSegmentId(firstVid.segments[0].id);
+        }
+        if (firstVid.transcript) {
+          setTranscript(firstVid.transcript);
+        } else {
+          setTranscript(undefined);
+        }
       }
     }
 
     if (isOnline) {
-      showToast("success", "Đã kết nối thành công với máy chủ xử lý!");
+      showToast("success", hasRestoredState ? "Đã khôi phục các phân đoạn đang làm việc!" : "Đã kết nối thành công với máy chủ xử lý!");
     } else {
-      showToast("info", "Đang sử dụng dữ liệu Mock Studio cục bộ.");
+      showToast("info", hasRestoredState ? "Đã khôi phục các phân đoạn đang làm việc!" : "Đang sử dụng dữ liệu Mock Studio cục bộ.");
     }
   }, [showToast]);
 
@@ -195,11 +233,15 @@ export default function Home() {
     setUndoStack((prev) => [...prev.slice(-30), data.segments]);
     setRedoStack([]);
 
-    setData((prev) => ({
-      ...prev,
+    const updatedData: SegmentsData = {
+      ...data,
       segments: newSegments,
       reviewed: false,
-    }));
+    };
+    setData(updatedData);
+
+    // Lưu ngay trạng thái mới vào localStorage để chống mất khi bấm F5
+    persistActiveProject(updatedData, transcript, externalVideoUrl, activeSegmentId);
 
     // Nếu thời gian phát hiện tại rơi vào khoảng trống/đoạn vừa xóa:
     // Tự động nhảy sang phân đoạn kế tiếp hợp lệ
@@ -222,12 +264,14 @@ export default function Home() {
     setUndoStack((prev) => prev.slice(0, prev.length - 1));
     setRedoStack((prev) => [...prev.slice(-30), data.segments]);
 
-    setData((prev) => ({
-      ...prev,
+    const updatedData: SegmentsData = {
+      ...data,
       segments: previous,
-    }));
+    };
+    setData(updatedData);
+    persistActiveProject(updatedData, transcript, externalVideoUrl, activeSegmentId);
     showToast("info", "Đã quay lại bước trước (Undo)!");
-  }, [undoStack, data.segments, showToast]);
+  }, [undoStack, data, transcript, externalVideoUrl, activeSegmentId, showToast]);
 
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
@@ -235,12 +279,14 @@ export default function Home() {
     setRedoStack((prev) => prev.slice(0, prev.length - 1));
     setUndoStack((prev) => [...prev.slice(-30), data.segments]);
 
-    setData((prev) => ({
-      ...prev,
+    const updatedData: SegmentsData = {
+      ...data,
       segments: next,
-    }));
+    };
+    setData(updatedData);
+    persistActiveProject(updatedData, transcript, externalVideoUrl, activeSegmentId);
     showToast("info", "Đã làm lại bước tiếp theo (Redo)!");
-  }, [redoStack, data.segments, showToast]);
+  }, [redoStack, data, transcript, externalVideoUrl, activeSegmentId, showToast]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -341,6 +387,19 @@ export default function Home() {
     setCurrentTime(0);
     setIsPlaying(true);
     setIsLibraryOpen(false);
+
+    persistActiveProject(
+      {
+        video: video.name,
+        lesson: video.lesson,
+        mode: mode,
+        reviewed: video.status === "edited",
+        segments: video.segments,
+      },
+      video.transcript,
+      video.url,
+      video.segments?.[0]?.id
+    );
 
     showToast("success", `Đang phát video: "${video.title}"`);
   };
@@ -588,6 +647,21 @@ export default function Home() {
   };
 
   const handleAnalyzeAI = useCallback(async () => {
+    // Chỉ hỏi xác nhận nếu người dùng đã thực sự có các phân đoạn đã chia trước đó (> 1 đoạn và không phải video gốc thô)
+    const hasExistingSplit = data.mode !== "raw" && data.segments && data.segments.length > 1;
+    if (hasExistingSplit) {
+      const confirmed = window.confirm(
+        "Video này đã có các phân đoạn được chia trước đó. Bạn có chắc muốn AI phân tích lại không?\n(Các phân đoạn cũ sẽ được lưu vào lịch sử, bạn có thể nhấn Ctrl+Z để hoàn tác bất cứ lúc nào)."
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    // Lưu các phân đoạn hiện tại vào undoStack trước khi chạy AI để có thể Ctrl+Z quay lại
+    setUndoStack((prev) => [...prev.slice(-30), data.segments]);
+    setRedoStack([]);
+
     setIsAnalyzing(true);
     setAnalysisStep("Đang kết nối AI Backend & trích xuất đặc trưng âm thanh...");
 
@@ -620,10 +694,9 @@ export default function Home() {
 
         updateVideoSegmentsInLibrary(data.video, segData.segments);
         setVideoLibrary(getLibraryVideos());
-        setUndoStack([]);
-        setRedoStack([]);
+        persistActiveProject(segData, res.data.transcript || transcript, externalVideoUrl, segData.segments[0]?.id);
         setIsAnalyzing(false);
-        showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công!");
+        showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công! (Nhấn Ctrl+Z nếu muốn hoàn tác)");
         return;
       }
     } catch (err) {
@@ -652,13 +725,12 @@ export default function Home() {
           }
           updateVideoSegmentsInLibrary(data.video, groqJson.segmentsData.segments);
           setVideoLibrary(getLibraryVideos());
-          setUndoStack([]);
-          setRedoStack([]);
+          persistActiveProject(groqJson.segmentsData, groqJson.transcript, externalVideoUrl, groqJson.segmentsData.segments[0]?.id);
           setIsAnalyzing(false);
           setAnalysisStep("");
           showToast(
             "success",
-            `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline.`
+            `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline. (Nhấn Ctrl+Z nếu muốn hoàn tác)`
           );
           return;
         }
@@ -681,10 +753,6 @@ export default function Home() {
 
     await new Promise((res) => setTimeout(res, 600));
 
-    const isMusicOrAudio = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-      `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
-    );
-
     const cut1 = Number((totalSecs * 0.16).toFixed(1));
     const cut2 = Number((totalSecs * 0.48).toFixed(1));
     const cut3 = Number((totalSecs * 0.82).toFixed(1));
@@ -693,81 +761,87 @@ export default function Home() {
     let analyzedSegments: Segment[];
     let analyzedTranscript: TranscriptData;
 
-    if (isMusicOrAudio) {
+    const existingSentences = transcript?.sentences || [];
+
+    if (existingSentences.length >= 4) {
+      // 1. Phân đoạn thông minh từ chính Transcript SV2 bóc băng
+      const totalSents = existingSentences.length;
+      const idx1 = Math.max(0, Math.floor(totalSents * 0.2));
+      const idx2 = Math.max(idx1 + 1, Math.floor(totalSents * 0.5));
+      const idx3 = Math.max(idx2 + 1, Math.floor(totalSents * 0.8));
+      const idx4 = totalSents - 1;
+
+      const s1Start = existingSentences[0];
+      const s1End = existingSentences[idx1];
+      const s2Start = existingSentences[Math.min(idx1 + 1, totalSents - 1)];
+      const s2End = existingSentences[idx2];
+      const s3Start = existingSentences[Math.min(idx2 + 1, totalSents - 1)];
+      const s3End = existingSentences[idx3];
+      const s4Start = existingSentences[Math.min(idx3 + 1, totalSents - 1)];
+      const s4End = existingSentences[idx4];
+
       analyzedSegments = [
         {
           id: `seg_${Date.now()}_01`,
           section_no: 1,
-          section: "01_IntroBeat",
+          section: "01_TongQuan",
           topic_no: 1,
-          topic: "Dạo đầu & Giai điệu mở màn (Intro Beat)",
-          slug: "intro-beat",
-          start_id: "S0001",
-          end_id: "S0001",
-          start: 0,
-          end: 60.0,
-          parts: recalculateParts(0, 60.0, "01_IntroBeat", 1, "intro-beat"),
+          topic: `Tổng quan & Giới thiệu: ${data.lesson}`,
+          slug: "tong-quan",
+          start_id: s1Start.id,
+          end_id: s1End.id,
+          start: s1Start.start,
+          end: s1End.end,
+          parts: recalculateParts(s1Start.start, s1End.end, "01_TongQuan", 1, "tong-quan"),
         },
         {
           id: `seg_${Date.now()}_02`,
           section_no: 2,
-          section: "02_LoiCaTu_1",
+          section: "02_LyThuyet",
           topic_no: 2,
-          topic: `Lời ca từ 1 & Điệp khúc đầu (${data.lesson})`,
-          slug: "loi-ca-tu-1",
-          start_id: "S0001",
-          end_id: "S0006",
-          start: 60.0,
-          end: 96.0,
-          parts: recalculateParts(60.0, 96.0, "02_LoiCaTu_1", 2, "loi-ca-tu-1"),
+          topic: "Lý thuyết & Khái niệm cốt lõi",
+          slug: "ly-thuyet",
+          start_id: s2Start.id,
+          end_id: s2End.id,
+          start: s2Start.start,
+          end: s2End.end,
+          parts: recalculateParts(s2Start.start, s2End.end, "02_LyThuyet", 2, "ly-thuyet"),
         },
         {
           id: `seg_${Date.now()}_03`,
           section_no: 3,
-          section: "03_DropBassRemix",
+          section: "03_ThucHanh",
           topic_no: 3,
-          topic: "Cao trào Drop Bass Remix (Nonstop Beat)",
-          slug: "drop-bass-remix",
-          start_id: "S0006",
-          end_id: "S0007",
-          start: 96.0,
-          end: 233.0,
-          parts: recalculateParts(96.0, 233.0, "03_DropBassRemix", 3, "drop-bass-remix"),
+          topic: "Thực hành ví dụ & Viết code demo",
+          slug: "thuc-hanh",
+          start_id: s3Start.id,
+          end_id: s3End.id,
+          start: s3Start.start,
+          end: s3End.end,
+          parts: recalculateParts(s3Start.start, s3End.end, "03_ThucHanh", 3, "thuc-hanh"),
         },
         {
           id: `seg_${Date.now()}_04`,
           section_no: 4,
-          section: "04_LoiCaTu_2",
+          section: "04_TongKet",
           topic_no: 4,
-          topic: "Lời ca từ 2 & Điệp khúc cao trào",
-          slug: "loi-ca-tu-2",
-          start_id: "S0007",
-          end_id: "S0011",
-          start: 233.0,
-          end: 266.0,
-          parts: recalculateParts(233.0, 266.0, "04_LoiCaTu_2", 4, "loi-ca-tu-2"),
-        },
-        {
-          id: `seg_${Date.now()}_05`,
-          section_no: 5,
-          section: "05_OutroFade",
-          topic_no: 5,
-          topic: "Đoạn kết & Giai điệu Outro Fade Out",
-          slug: "outro-fade",
-          start_id: "S0011",
-          end_id: "S0011",
-          start: 266.0,
-          end: totalSecs,
-          parts: recalculateParts(266.0, totalSecs, "05_OutroFade", 5, "outro-fade"),
+          topic: "Tóm tắt kiến thức & Bài tập về nhà",
+          slug: "tong-ket",
+          start_id: s4Start.id,
+          end_id: s4End.id,
+          start: s4Start.start,
+          end: s4End.end,
+          parts: recalculateParts(s4Start.start, s4End.end, "04_TongKet", 4, "tong-ket"),
         },
       ];
 
       analyzedTranscript = {
         video: data.video,
-        duration: totalSecs,
-        sentences: REAL_DOWNLOAD_LYRICS,
+        duration: Math.max(totalSecs, s4End.end),
+        sentences: existingSentences,
       };
     } else {
+      // 2. Chế độ phân đoạn bài giảng lập trình chuẩn theo mã câu SV2
       analyzedSegments = [
         {
           id: `seg_${Date.now()}_01`,
@@ -785,35 +859,35 @@ export default function Home() {
         {
           id: `seg_${Date.now()}_02`,
           section_no: 2,
-          section: "02_NoiDungChinh",
+          section: "02_LyThuyet",
           topic_no: 2,
-          topic: "Nội dung cốt lõi & Cơ chế hoạt động",
-          slug: "noi-dung-chinh",
+          topic: "Lý thuyết cốt lõi & Cú pháp",
+          slug: "ly-thuyet",
           start_id: "S0003",
           end_id: "S0004",
           start: cut1,
           end: cut2,
-          parts: recalculateParts(cut1, cut2, "02_NoiDungChinh", 2, "noi-dung-chinh"),
+          parts: recalculateParts(cut1, cut2, "02_LyThuyet", 2, "ly-thuyet"),
         },
         {
           id: `seg_${Date.now()}_03`,
           section_no: 3,
           section: "03_ThucHanh",
           topic_no: 3,
-          topic: "Thực hành ví dụ & Phân tích chuyên sâu",
-          slug: "thuc-hanh-vi-du",
+          topic: "Thực hành ví dụ & Chạy thử nghiệm",
+          slug: "thuc-hanh",
           start_id: "S0005",
           end_id: "S0006",
           start: cut2,
           end: cut3,
-          parts: recalculateParts(cut2, cut3, "03_ThucHanh", 3, "thuc-hanh-vi-du"),
+          parts: recalculateParts(cut2, cut3, "03_ThucHanh", 3, "thuc-hanh"),
         },
         {
           id: `seg_${Date.now()}_04`,
           section_no: 4,
           section: "04_TongKet",
           topic_no: 4,
-          topic: "Tổng kết & Đánh giá kết quả",
+          topic: "Tổng kết & Bài tập ôn tập",
           slug: "tong-ket",
           start_id: "S0007",
           end_id: "S0008",
@@ -829,8 +903,8 @@ export default function Home() {
         sentences: [
           { id: "S0001", start: 0, end: Number((cut1 * 0.5).toFixed(1)), text: `Chào các bạn, hôm nay chúng ta cùng tìm hiểu về chuyên đề: "${data.lesson}".` },
           { id: "S0002", start: Number((cut1 * 0.5).toFixed(1)), end: cut1, text: "Điểm qua bối cảnh ứng dụng và mục tiêu tổng quát của bài học." },
-          { id: "S0003", start: cut1, end: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), text: "Khám phá các nguyên lý trọng tâm và cấu trúc cốt lõi." },
-          { id: "S0004", start: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), end: cut2, text: "Làm rõ các luận điểm chính và cú pháp cần ghi nhớ." },
+          { id: "S0003", start: cut1, end: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), text: "Khám phá các nguyên lý trọng tâm và cấu trúc cú pháp cốt lõi." },
+          { id: "S0004", start: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), end: cut2, text: "Làm rõ các luận điểm chính và quy tắc định dạng cần ghi nhớ." },
           { id: "S0005", start: cut2, end: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), text: "Áp dụng kiến thức vừa học vào ví dụ thực tế và chạy kiểm thử." },
           { id: "S0006", start: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), end: cut3, text: "Đánh giá kết quả đầu ra và so sánh các trường hợp tối ưu." },
           { id: "S0007", start: cut3, end: Number((cut3 + (cut4 - cut3) * 0.5).toFixed(1)), text: "Tóm lược các kinh nghiệm then chốt và lỗi phổ biến cần tránh." },
@@ -839,23 +913,25 @@ export default function Home() {
       };
     }
 
-    setData((prev) => ({
-      ...prev,
+    const nextData: SegmentsData = {
+      ...data,
       mode: "analyzed",
       reviewed: false,
       segments: analyzedSegments,
-    }));
+    };
+    setData(nextData);
     setTranscript(analyzedTranscript);
     setActiveSegmentId(analyzedSegments[0].id);
 
-    // Cập nhật vào thư viện video
+    // Cập nhật vào thư viện video và lưu bền vững trạng thái
     updateVideoSegmentsInLibrary(data.video, analyzedSegments);
     setVideoLibrary(getLibraryVideos());
+    persistActiveProject(nextData, analyzedTranscript, externalVideoUrl, analyzedSegments[0]?.id);
 
     setIsAnalyzing(false);
     setAnalysisStep("");
-    showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
-  }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
+    showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video. (Nhấn Ctrl+Z nếu muốn hoàn tác)`);
+  }, [data, externalVideoUrl, currentVideoHash, showToast, transcript]);
 
   const totalDuration = Math.max(
     1,
@@ -983,6 +1059,7 @@ export default function Home() {
               />
               <ReviewTable
                 segments={data.segments}
+                transcript={transcript}
                 activeSegmentId={activeSegmentId}
                 onUpdateSegments={handleUpdateSegments}
                 onPreviewSegment={(start, id) => {

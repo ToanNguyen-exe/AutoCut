@@ -426,11 +426,12 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => alert("Tính năng Auto-Segment LLM (B4) đang đồng bộ với transcript!")}
-              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition shrink-0"
+              onClick={onAnalyzeAI ? onAnalyzeAI : () => {}}
+              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500 transition shrink-0"
+              title="Phân tích lại phân đoạn bài giảng bằng AI (Whisper + Gemini)"
             >
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span>Rewrite</span>
+              <span>Phân Tích AI</span>
             </button>
           )}
         </div>
@@ -733,6 +734,20 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                               <span className="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-1.5 py-0.5 rounded">
                                 {durationSec.toFixed(1)}s
                               </span>
+
+                              {(() => {
+                                const matchedSeg = segments.find(
+                                  (seg) => sent.start >= seg.start && sent.start <= seg.end
+                                );
+                                if (matchedSeg) {
+                                  return (
+                                    <span className="text-[9px] font-medium text-purple-300/80 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-800/40 truncate max-w-[130px]" title={matchedSeg.topic}>
+                                      {matchedSeg.topic}
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
 
                             {/* Playing badge */}

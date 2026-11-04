@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Segment } from "@/types";
+import { Segment, TranscriptData } from "@/types";
 import { formatTime, parseTime, slugify, recalculateParts } from "@/lib/utils";
 import {
   Play,
@@ -17,6 +17,7 @@ import {
 
 interface ReviewTableProps {
   segments: Segment[];
+  transcript?: TranscriptData;
   activeSegmentId?: string;
   onUpdateSegments: (newSegments: Segment[]) => void;
   onPreviewSegment: (start: number, segmentId: string) => void;
@@ -36,6 +37,7 @@ const SECTION_OPTIONS = [
 
 export const ReviewTable: React.FC<ReviewTableProps> = ({
   segments,
+  transcript,
   activeSegmentId,
   onUpdateSegments,
   onPreviewSegment,
@@ -68,6 +70,17 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
       const numVal = typeof value === "number" ? value : parseTime(String(value));
       if (field === "start") item.start = numVal;
       if (field === "end") item.end = numVal;
+
+      // Đồng bộ mã câu SV2 S0001, S0002...
+      if (transcript?.sentences && transcript.sentences.length > 0) {
+        if (field === "start") {
+          const match = transcript.sentences.find((s) => item.start <= s.end);
+          if (match) item.start_id = match.id;
+        } else if (field === "end") {
+          const match = [...transcript.sentences].reverse().find((s) => item.end >= s.start);
+          if (match) item.end_id = match.id;
+        }
+      }
     }
 
     // Tự động tính lại B8: số phần và mảng parts
