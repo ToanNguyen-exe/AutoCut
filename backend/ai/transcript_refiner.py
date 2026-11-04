@@ -30,10 +30,10 @@ from .whisper_service import format_duration, build_progress_bar
 logger = logging.getLogger("AutoCut.AI.Refiner")
 
 FALLBACK_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
     "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash-lite",
+    "gemini-flash-latest",
 ]
 
 
@@ -59,7 +59,7 @@ class TranscriptRefiner:
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-2.5-flash")
+        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
         self.client = genai.Client(
@@ -339,24 +339,58 @@ Bạn là chuyên gia phân tích cấu trúc bài giảng video tự động (S
 Dưới đây là bản bóc băng (transcript) của video "{transcript.video}" (Chủ đề: "{lesson_name}", thời lượng: {total_duration}s), gồm các câu từ {first_id} đến {last_id}.
 
 NHIỆM VỤ:
-Hãy chia toàn bộ nội dung từ câu đầu tiên ({first_id}) đến câu cuối cùng ({last_id}) thành từ 4 đến 8 phân đoạn (topics) liên tiếp nhau theo mạch kiến thức thực tế trong lời giảng.
+1. Tự động nhận diện chủ đề và thể loại nội dung video (ví dụ: bài giảng lập trình, khóa học kiến thức, thuyết trình chuyên đề...).
+2. Phân tích cấu trúc video thành các phần lớn (sections) có ý nghĩa như: "Giới thiệu", "Lý thuyết", "Thực hành ví dụ", "Tổng kết"...
+3. Trong mỗi phần lớn (section), BẮT BUỘC phân chia chi tiết thành các bài học / chủ đề cụ thể (topics) theo từng đơn vị kiến thức mà người nói giảng dạy (ví dụ đối với lập trình: thiết lập môi trường & lệnh đầu tiên, biến & kiểu dữ liệu, toán tử, rẽ nhánh if-else, vòng lặp for, object, function, array, string, DOM, bất đồng bộ, lưu trữ dữ liệu...). Tuyệt đối không được gộp bài giảng dài thành 1-2 đoạn chung chung.
 
 QUY TẮC BẮT BUỘC:
-1. Phân đoạn đầu tiên PHẢI có "start_id": "{first_id}".
-2. Phân đoạn cuối cùng PHẢI có "end_id": "{last_id}".
-3. Các phân đoạn phải nối tiếp nhau liên tục (end_id của đoạn trước liền kề với start_id của đoạn sau).
-4. Đặt tên "section" (nhãn phần lớn, ví dụ: "01_GioiThieu", "02_LyThuyetCoBan", "03_ThucHanh", "04_TongKet") và "topic" (tiêu đề cụ thể, sát với nội dung câu nói thực tế).
-5. Chỉ trả về JSON thuần túy theo đúng định dạng sau:
+1. Chủ đề (topic) đầu tiên của section đầu tiên PHẢI có "start_id": "{first_id}".
+2. Chủ đề (topic) cuối cùng của section cuối cùng PHẢI có "end_id": "{last_id}".
+3. Các topics phải nối tiếp nhau liên tục theo thứ tự thời gian tăng dần (end_id của topic trước liền kề với start_id của topic sau).
+4. CẢNH BÁO QUAN TRỌNG VỀ MÃ CÂU: "start_id" và "end_id" BẮT BUỘC phải là mã câu ID thực tế có trong danh sách bên dưới (chỉ từ {first_id} đến {last_id}). TUYỆT ĐỐI KHÔNG lấy số giây thời gian (như 828s hay 1330s) để ghép thành mã câu giả (như S0828 hay S1330)!
+5. "slug" phải là chuỗi không dấu, cách nhau bằng dấu gạch ngang (ví dụ: "bien-va-khoi-tao", "cau-truc-if-else").
+6. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
 
 {{
-  "segments": [
+  "sections": [
     {{
-      "section_no": 1,
-      "section": "01_GioiThieu",
-      "topic_no": 1,
-      "topic": "Tên chủ đề cụ thể của đoạn 1",
-      "start_id": "{first_id}",
-      "end_id": "S0020"
+      "label": "Giới thiệu",
+      "topics": [
+        {{
+          "title": "Tổng quan và mục lục bài giảng",
+          "slug": "tong-quan-va-muc-luc",
+          "start_id": "{first_id}",
+          "end_id": "S0017"
+        }}
+      ]
+    }},
+    {{
+      "label": "Lý thuyết",
+      "topics": [
+        {{
+          "title": "Thiết lập môi trường & Lệnh đầu tiên",
+          "slug": "moi-truong-va-lenh-dau-tien",
+          "start_id": "S0018",
+          "end_id": "S0046"
+        }},
+        {{
+          "title": "Khai báo và khởi tạo biến",
+          "slug": "bien-va-khoi-tao",
+          "start_id": "S0047",
+          "end_id": "S0059"
+        }}
+      ]
+    }},
+    {{
+      "label": "Tổng kết",
+      "topics": [
+        {{
+          "title": "Tổng kết và định hướng học tập",
+          "slug": "tong-ket-bai-giang",
+          "start_id": "S0680",
+          "end_id": "{last_id}"
+        }}
+      ]
     }}
   ]
 }}
@@ -373,10 +407,37 @@ DANH SÁCH CÂU TRANSCRIPT:
             if raw_text.endswith("```"):
                 raw_text = raw_text[:-3]
             parsed = json.loads(raw_text.strip())
-            candidate_segs = parsed.get("segments", [])
-            if isinstance(candidate_segs, list) and len(candidate_segs) >= 2:
-                raw_topics = candidate_segs
-                logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(raw_topics)} phân đoạn ngữ nghĩa.")
+
+            # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
+            if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
+                try:
+                    llm_raw_path = Path("cache") / "llm_raw.json"
+                    llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
+                        json.dump(parsed, f_raw, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
+
+                raw_topics = []
+                for sec_idx, sec in enumerate(parsed["sections"], start=1):
+                    sec_label = str(sec.get("label", f"Phần {sec_idx}")).strip()
+                    sec_slug = slugify_vi(sec_label)
+                    for top_idx, top in enumerate(sec.get("topics", []), start=1):
+                        raw_topics.append({
+                            "section_no": sec_idx,
+                            "section": f"{sec_idx:02d}_{sec_slug}",
+                            "topic_no": top_idx,
+                            "topic": str(top.get("title", f"Chủ đề {top_idx}")).strip(),
+                            "slug": str(top.get("slug") or slugify_vi(top.get("title", ""))).strip(),
+                            "start_id": str(top.get("start_id", "")),
+                            "end_id": str(top.get("end_id", ""))
+                        })
+                logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(parsed['sections'])} phần lớn với {len(raw_topics)} bài học cụ thể.")
+            else:
+                candidate_segs = parsed.get("segments", [])
+                if isinstance(candidate_segs, list) and len(candidate_segs) >= 2:
+                    raw_topics = candidate_segs
+                    logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(raw_topics)} phân đoạn ngữ nghĩa.")
         except Exception as e:
             logger.warning(f"[SEGMENTER] Không thể gọi Gemini để chia đoạn ({e}). Chuyển sang chia đoạn thông minh từ câu transcript.")
 
@@ -388,15 +449,47 @@ DANH SÁCH CÂU TRANSCRIPT:
         segments_out: List[Dict[str, Any]] = []
         running_start = 0.0
 
+        def resolve_sentence(candidate_id: Any, default_sent: Sentence) -> Sentence:
+            if not candidate_id:
+                return default_sent
+            cid = str(candidate_id).strip()
+            if cid in sentence_map:
+                return sentence_map[cid]
+            norm_cid = cid.upper()
+            if norm_cid in sentence_map:
+                return sentence_map[norm_cid]
+            num_match = re.search(r"\d+", norm_cid)
+            if num_match:
+                val = int(num_match.group(0))
+                padded = f"S{val:04d}"
+                if padded in sentence_map:
+                    return sentence_map[padded]
+                padded5 = f"S{val:05d}"
+                if padded5 in sentence_map:
+                    return sentence_map[padded5]
+                # Nếu LLM nhầm số giây thời gian thành mã câu (ví dụ S0828 -> time ~828s)
+                if 0 <= val <= total_duration and sentences:
+                    return min(sentences, key=lambda s: abs(s.start - val))
+            return default_sent
+
         for idx, item in enumerate(raw_topics, start=1):
             start_id = str(item.get("start_id", sentences[0].id))
             end_id = str(item.get("end_id", sentences[-1].id))
 
-            s_obj = sentence_map.get(start_id) or sentences[min(idx - 1, len(sentences) - 1)]
-            e_obj = sentence_map.get(end_id) or sentences[-1]
+            s_obj = resolve_sentence(start_id, sentences[min(idx - 1, len(sentences) - 1)])
+            e_obj = resolve_sentence(end_id, sentences[-1])
 
             seg_start = 0.0 if idx == 1 else round(max(running_start, float(s_obj.start)), 2)
-            seg_end = total_duration if idx == len(raw_topics) else round(max(seg_start + 1.0, float(e_obj.end)), 2)
+            if idx == len(raw_topics):
+                seg_end = total_duration
+            else:
+                raw_end = float(e_obj.end)
+                if raw_end >= total_duration or raw_end <= seg_start:
+                    remaining_count = max(1, len(raw_topics) - idx + 1)
+                    raw_end = seg_start + (total_duration - seg_start) / remaining_count
+                max_allowed = total_duration - (len(raw_topics) - idx)
+                seg_end = round(max(seg_start + 1.0, min(max_allowed, raw_end)), 2)
+
             if seg_end > total_duration:
                 seg_end = total_duration
             if seg_end <= seg_start:

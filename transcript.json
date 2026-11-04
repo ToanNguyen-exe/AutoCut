@@ -16,4547 +16,4217 @@
   }, {
     "id" : "S0003",
     "start" : 15.85,
-    "end" : 21.41,
-    "text" : "Và cộng đồng các lập trình viên biết sử dụng ngôn ngữ JavaScript cũng rất là lớn.",
+    "end" : 24.91,
+    "text" : "Và cộng đồng các lập trình viên biết sử dụng ngôn ngữ JavaScript cũng rất là lớn, họ đã cùng nhau xây dựng một kho thư viện khổng lồ.",
     "words" : null
   }, {
     "id" : "S0004",
-    "start" : 21.41,
-    "end" : 24.91,
-    "text" : "Họ đã cùng nhau xây dựng một kho thư viện khổng lồ.",
-    "words" : null
-  }, {
-    "id" : "S0005",
     "start" : 24.91,
     "end" : 32.81,
     "text" : "Và chắc chắn rồi, anh em chúng ta có thể tận dụng kho thư viện này để phục vụ cho công việc copy-paste của chúng ta.",
     "words" : null
   }, {
-    "id" : "S0006",
+    "id" : "S0005",
     "start" : 32.81,
-    "end" : 39.68,
-    "text" : "Có một điều rất là quan trọng, đó là nhu cầu tuyển dụng về ngôn ngữ JavaScript ở Việt Nam rất là lớn.",
-    "words" : null
-  }, {
-    "id" : "S0007",
-    "start" : 39.68,
     "end" : 42.68,
-    "text" : "Có thể coi là dẫn đầu thị trường ở Việt Nam.",
+    "text" : "Có một điều rất là quan trọng đó là nhu cầu tuyển dụng về ngôn ngữ JavaScript ở Việt Nam rất là lớn, có thể coi là dẫn đầu thị trường ở Việt Nam.",
     "words" : null
   }, {
-    "id" : "S0008",
+    "id" : "S0006",
     "start" : 42.68,
     "end" : 47.18,
     "text" : "Do vậy, anh em nào biết về JavaScript thì sẽ không lo thất nghiệp.",
     "words" : null
   }, {
-    "id" : "S0009",
+    "id" : "S0007",
     "start" : 47.18,
     "end" : 49.63,
     "text" : "Nghe qua đã hấp dẫn chưa anh em nhỉ?",
     "words" : null
   }, {
-    "id" : "S0010",
+    "id" : "S0008",
     "start" : 49.63,
     "end" : 57.05,
     "text" : "Trong video ngày hôm nay sẽ là một bài giảng nhập môn về ngôn ngữ JavaScript dành cho các anh em mới bắt đầu.",
     "words" : null
   }, {
-    "id" : "S0011",
+    "id" : "S0009",
     "start" : 57.05,
     "end" : 57.74,
     "text" : "OK anh em!",
     "words" : null
   }, {
-    "id" : "S0012",
+    "id" : "S0010",
     "start" : 57.74,
     "end" : 62.1,
     "text" : "Mục lục của video bài giảng này thì sẽ gồm một số nội dung sau.",
     "words" : null
   }, {
-    "id" : "S0013",
+    "id" : "S0011",
     "start" : 62.1,
     "end" : 66.32,
     "text" : "Đầu tiên, mình sẽ hướng dẫn anh em cách thiết lập môi trường.",
     "words" : null
   }, {
-    "id" : "S0014",
+    "id" : "S0012",
     "start" : 66.32,
     "end" : 80.14,
     "text" : "Sau đó, chúng ta sẽ bắt đầu làm quen với một số khái niệm cơ bản trong lập trình, ví dụ như là biến, nhập xuất dữ liệu, các kiểu dữ liệu như thế nào, có các phép toán gì, rồi thì các cấu trúc điều khiển.",
     "words" : null
   }, {
-    "id" : "S0015",
+    "id" : "S0013",
     "start" : 80.14,
     "end" : 86.41,
     "text" : "Sau đó, mình sẽ đi sang một số kiểu dữ liệu nâng cao như là Object, Array, String, Function.",
     "words" : null
   }, {
-    "id" : "S0016",
+    "id" : "S0014",
     "start" : 86.41,
     "end" : 89.81,
     "text" : "Rồi đến là một số cơ chế DOM và xử lý bất đồng bộ.",
     "words" : null
   }, {
-    "id" : "S0017",
+    "id" : "S0015",
     "start" : 89.81,
     "end" : 99.28,
     "text" : "Nhìn chung cũng nhiều đấy, nhưng mà mình sẽ cố gắng hết sức gói tóm được cái tinh thần của ngôn ngữ này trong khoảng 1 giờ đồng hồ trở lại.",
     "words" : null
   }, {
-    "id" : "S0018",
+    "id" : "S0016",
     "start" : 99.28,
     "end" : 107.8,
     "text" : "Nghe cũng có vẻ hơi lâu đấy, nhưng mà các anh em cứ hình dung nó chỉ ngang một tiết học mà các anh em học ở trên trường thôi.",
     "words" : null
   }, {
-    "id" : "S0019",
+    "id" : "S0017",
     "start" : 107.8,
     "end" : 110.52,
     "text" : "Nghĩ vậy cho nó thoải mái, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0020",
+    "id" : "S0018",
     "start" : 111.57,
     "end" : 114.83,
-    "text" : "Rồi, chúng ta bắt đầu luôn để tiết kiệm thời gian nhé.",
+    "text" : "Rồi, chúng ta bắt đầu luôn để tiết kiệm thời gian nhá.",
     "words" : null
   }, {
-    "id" : "S0021",
+    "id" : "S0019",
     "start" : 114.83,
     "end" : 123.42,
     "text" : "Thì JavaScript cũng giống như các ngôn ngữ lập trình khác, nó cần có một cái môi trường để mà hoạt động, tiếng Anh gọi là runtime environment.",
     "words" : null
   }, {
-    "id" : "S0022",
+    "id" : "S0020",
     "start" : 123.42,
     "end" : 126.99,
     "text" : "Môi trường thì thực ra nó chỉ là một chương trình máy tính.",
     "words" : null
   }, {
-    "id" : "S0023",
+    "id" : "S0021",
     "start" : 126.99,
     "end" : 131.58,
     "text" : "Chương trình này nó hiểu được các đoạn mã được viết bằng ngôn ngữ lập trình.",
     "words" : null
   }, {
-    "id" : "S0024",
+    "id" : "S0022",
     "start" : 131.58,
     "end" : 134.48,
     "text" : "Giờ thì nói nhiều hơn về ngôn ngữ JavaScript đi.",
     "words" : null
   }, {
-    "id" : "S0025",
+    "id" : "S0023",
     "start" : 134.48,
-    "end" : 138.62,
-    "text" : "Ban đầu sinh ra là để phục vụ cho môi trường trình duyệt web thôi.",
+    "end" : 146.03,
+    "text" : "Bắt đầu sinh ra là để phục vụ cho môi trường trình duyệt web thôi, bây giờ JavaScript đã được mở rộng ra ở trên rất nhiều các loại môi trường khác nữa, trong đó nổi bật nhất là thằng Node.js.",
+    "words" : null
+  }, {
+    "id" : "S0024",
+    "start" : 146.03,
+    "end" : 157.94,
+    "text" : "Tuy nhiên, ở mức độ nhập môn thì mình sẽ chỉ hướng dẫn các anh em viết code JavaScript ở trên môi trường trình duyệt thôi, kiểu như chúng ta sẽ viết những cái app nhỏ nhỏ chạy trên trình duyệt web.",
+    "words" : null
+  }, {
+    "id" : "S0025",
+    "start" : 157.94,
+    "end" : 158.5,
+    "text" : "Xít quên!",
     "words" : null
   }, {
     "id" : "S0026",
-    "start" : 138.62,
-    "end" : 146.03,
-    "text" : "Bây giờ JavaScript đã được mở rộng ra ở trên rất nhiều các loại môi trường khác nữa, trong đó nổi bật nhất là Node.js.",
-    "words" : null
-  }, {
-    "id" : "S0027",
-    "start" : 146.03,
-    "end" : 153.44,
-    "text" : "Tuy nhiên, ở mức độ nhập môn thì mình sẽ chỉ hướng dẫn các anh em viết code JavaScript ở trên môi trường trình duyệt thôi.",
-    "words" : null
-  }, {
-    "id" : "S0028",
-    "start" : 153.44,
-    "end" : 157.94,
-    "text" : "Kiểu như chúng ta sẽ viết những cái app nhỏ nhỏ chạy trên trình duyệt web.",
-    "words" : null
-  }, {
-    "id" : "S0029",
-    "start" : 157.94,
-    "end" : 158.54,
-    "text" : "Suýt quên!",
-    "words" : null
-  }, {
-    "id" : "S0030",
-    "start" : 158.54,
+    "start" : 158.5,
     "end" : 160.42,
     "text" : "Anh em đợi mình lắp cái webcam.",
     "words" : null
   }, {
-    "id" : "S0031",
+    "id" : "S0027",
     "start" : 160.42,
     "end" : 167.31,
     "text" : "Bình thường mình không giảng bài thì mình sẽ bỏ cái cam ra bởi vì nó bị che mất phần viền trên, nhìn rất khó chịu.",
     "words" : null
   }, {
-    "id" : "S0032",
+    "id" : "S0028",
     "start" : 167.31,
     "end" : 175.53,
-    "text" : "Thì trong môi trường trình duyệt web, anh em cần phải biết thêm một cái ngôn ngữ nữa gọi là HTML, hay nói thuần Việt là HTML đi.",
+    "text" : "Thì trong môi trường trình duyệt web, anh em cần phải biết thêm một cái ngôn ngữ nữa gọi là HTML, hay nói thuần Việt là hát-tê-mê-lờ đi.",
     "words" : null
   }, {
-    "id" : "S0033",
+    "id" : "S0029",
     "start" : 175.53,
     "end" : 178.26,
     "text" : "Cái này cũng dễ học thôi, anh em yên tâm nha.",
     "words" : null
   }, {
-    "id" : "S0034",
+    "id" : "S0030",
     "start" : 178.26,
     "end" : 183.15,
     "text" : "Nôm na nó dùng để dựng phần khung của trang văn bản hiển thị lên trình duyệt web.",
     "words" : null
   }, {
-    "id" : "S0035",
+    "id" : "S0031",
     "start" : 183.15,
-    "end" : 186.93,
-    "text" : "Và mình đã có hẳn một video riêng để nói về ngôn ngữ HTML này.",
-    "words" : null
-  }, {
-    "id" : "S0036",
-    "start" : 186.93,
     "end" : 189.62,
-    "text" : "Anh em nào chưa biết thì có thể xem lại nha.",
+    "text" : "Và mình đã có hẳn một video riêng để nói về ngôn ngữ HTML này, anh em nào chưa biết thì có thể xem lại nha.",
     "words" : null
   }, {
-    "id" : "S0037",
+    "id" : "S0032",
     "start" : 189.62,
     "end" : 193.61,
-    "text" : "Trong video đấy, mình cũng đã hướng dẫn cách setup môi trường luôn.",
+    "text" : "Trong video đấy mình cũng đã hướng dẫn cách setup môi trường luôn.",
     "words" : null
   }, {
-    "id" : "S0038",
+    "id" : "S0033",
     "start" : 193.61,
     "end" : 208.3,
     "text" : "Tóm tắt nhanh lại, các anh em cần cài cho mình 3 cái công cụ: 1 là VS Code để mà soạn thảo code này, 2 là một trình duyệt web (ở đây mình chọn Google Chrome), thứ ba là một plugin của VS Code, nôm na là để liên kết VS Code với trình duyệt web.",
     "words" : null
   }, {
-    "id" : "S0039",
+    "id" : "S0034",
     "start" : 208.3,
     "end" : 208.48,
     "text" : "OK!",
     "words" : null
   }, {
-    "id" : "S0040",
+    "id" : "S0035",
     "start" : 208.48,
     "end" : 215.56,
     "text" : "Anh em nào nghe những thứ vừa rồi mà cảm thấy nó lạ lạ thì tốt nhất là nên xem lại video cũ của mình về HTML đã nhé.",
     "words" : null
   }, {
-    "id" : "S0041",
+    "id" : "S0036",
     "start" : 215.56,
     "end" : 222.45,
-    "text" : "Ở đây mình đã tạo sẵn 1 file văn bản HTML, và các đoạn code JavaScript của chúng ta sẽ được nhúng vào văn bản này.",
+    "text" : "Ở đây mình đã tạo sẵn một file văn bản HTML, và các đoạn code JavaScript của chúng ta sẽ được nhúng vào văn bản này.",
     "words" : null
   }, {
-    "id" : "S0042",
+    "id" : "S0037",
     "start" : 222.45,
     "end" : 226.38,
     "text" : "Đấy, code của anh em sẽ viết vào giữa cặp thẻ mở và thẻ đóng này.",
     "words" : null
   }, {
-    "id" : "S0043",
+    "id" : "S0038",
     "start" : 226.38,
     "end" : 229.38,
     "text" : "Rồi, mình sẽ bắt đầu với một câu lệnh JavaScript đơn giản đầu tiên.",
     "words" : null
   }, {
-    "id" : "S0044",
+    "id" : "S0039",
     "start" : 229.38,
     "end" : 229.61,
     "text" : "Nha!",
     "words" : null
   }, {
-    "id" : "S0045",
+    "id" : "S0040",
     "start" : 229.61,
     "end" : 234.64,
     "text" : "Đó là in một cái dòng thông báo ra phần trang web thì anh em gọi cho mình document.write.",
     "words" : null
   }, {
-    "id" : "S0046",
+    "id" : "S0041",
     "start" : 234.64,
     "end" : 238.39,
     "text" : "Sau đó là một cái dòng thông báo, ví dụ như mình viết là \"Kimochi\".",
     "words" : null
   }, {
-    "id" : "S0047",
+    "id" : "S0042",
     "start" : 238.39,
     "end" : 241.92,
     "text" : "Anh em nhớ bọc nó vào một cặp dấu nháy rồi anh em bấm Ctrl + S.",
     "words" : null
   }, {
-    "id" : "S0048",
+    "id" : "S0043",
     "start" : 241.92,
     "end" : 245.67,
     "text" : "Đó, thì cái dòng dữ liệu của chúng ta đã được in ra phần trang web.",
     "words" : null
   }, {
-    "id" : "S0049",
+    "id" : "S0044",
     "start" : 245.67,
     "end" : 254.07,
     "text" : "Ngoài ra, nếu anh em không muốn in dữ liệu ra trang web thì anh em cũng có thể chuyển nó vào phần console thông qua lệnh là console.log, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0050",
+    "id" : "S0045",
     "start" : 254.07,
     "end" : 256.92,
     "text" : "Console có thể hiểu nó là một môi trường dòng lệnh.",
     "words" : null
   }, {
-    "id" : "S0051",
+    "id" : "S0046",
     "start" : 256.92,
     "end" : 262.24,
     "text" : "Dữ liệu khi mà đẩy ra console thì thường để phục vụ mục đích là phân tích cũng như là quan sát.",
     "words" : null
   }, {
-    "id" : "S0052",
+    "id" : "S0047",
     "start" : 262.24,
     "end" : 267.39,
     "text" : "Để mà mở được console trên trình duyệt thì anh em bấm cho mình F12 nhé, chọn tab là Console.",
     "words" : null
   }, {
-    "id" : "S0053",
+    "id" : "S0048",
     "start" : 267.39,
     "end" : 267.56,
     "text" : "OK!",
     "words" : null
   }, {
-    "id" : "S0054",
+    "id" : "S0049",
     "start" : 267.56,
     "end" : 269.63,
     "text" : "Bây giờ mình chạy lại anh em xem nè.",
     "words" : null
   }, {
-    "id" : "S0055",
+    "id" : "S0050",
     "start" : 269.63,
-    "end" : 272.04,
-    "text" : "Đó, lúc này nó đã hiển thị Kimochi ở đây.",
+    "end" : 269.81,
+    "text" : "Đó.",
     "words" : null
   }, {
-    "id" : "S0056",
+    "id" : "S0051",
+    "start" : 269.81,
+    "end" : 272.04,
+    "text" : "Lúc này nó đã hiển thị Kimochi ở đây.",
+    "words" : null
+  }, {
+    "id" : "S0052",
     "start" : 272.04,
     "end" : 276.24,
     "text" : "Tuy nhiên, để cho dễ nhìn thì mình sẽ chủ yếu dùng lệnh document.write nhé.",
     "words" : null
   }, {
-    "id" : "S0057",
+    "id" : "S0053",
     "start" : 276.24,
     "end" : 282.06,
     "text" : "Rồi, bây giờ tôi sẽ giới thiệu với anh em về khái niệm biến, thuật ngữ tiếng Anh của nó gọi là variable.",
     "words" : null
   }, {
-    "id" : "S0058",
+    "id" : "S0054",
     "start" : 282.06,
     "end" : 288.83,
     "text" : "Có thể hiểu nó là một cái để lưu trữ dữ liệu tạm thời trong khi chương trình đang hoạt động và nó cần có một cái tên nhé.",
     "words" : null
   }, {
-    "id" : "S0059",
+    "id" : "S0055",
     "start" : 288.83,
     "end" : 296.95,
     "text" : "Ví dụ mình muốn tạo ra một biến để lưu trữ thông tin về độ tuổi của một em gái nào đấy chẳng hạn thì anh em có thể gõ lại như sau: var tuổi = 18.",
     "words" : null
   }, {
-    "id" : "S0060",
+    "id" : "S0056",
     "start" : 296.95,
     "end" : 301.15,
     "text" : "Thì ở đây, cái biến của chúng ta có tên là tuổi và var là từ khóa của lệnh.",
     "words" : null
   }, {
-    "id" : "S0061",
+    "id" : "S0057",
     "start" : 301.15,
     "end" : 304.9,
     "text" : "Ngoài ra, chúng ta cũng có thể sử dụng từ khóa là let hoặc là const.",
     "words" : null
   }, {
-    "id" : "S0062",
+    "id" : "S0058",
     "start" : 304.9,
     "end" : 308.26,
     "text" : "Còn chúng khác nhau như thế nào thì tí nữa mình nói sau nha.",
     "words" : null
   }, {
-    "id" : "S0063",
+    "id" : "S0059",
     "start" : 308.26,
-    "end" : 314.4,
-    "text" : "Đó, thì việc chúng ta tạo ra một biến như thế này sẽ được gọi một cách kỹ thuật hơn là khai báo biến.",
-    "words" : null
-  }, {
-    "id" : "S0064",
-    "start" : 314.4,
     "end" : 316.77,
-    "text" : "Thuật ngữ tiếng Anh gọi là declaration.",
+    "text" : "Đó, thì cái việc mà chúng ta tạo ra một biến như thế này sẽ được gọi một cách kỹ thuật hơn là khai báo biến, thuật ngữ tiếng Anh gọi là declaration.",
     "words" : null
   }, {
-    "id" : "S0065",
+    "id" : "S0060",
     "start" : 316.77,
     "end" : 321.25,
-    "text" : "Và chi tiết hơn nữa, việc declare ở đây thì nó chỉ nằm ở lệnh var tuổi thôi.",
+    "text" : "Và chi tiết hơn nữa, cái việc declare ở đây thì nó chỉ nằm ở lệnh var tuổi thôi.",
     "words" : null
   }, {
-    "id" : "S0066",
+    "id" : "S0061",
     "start" : 321.25,
     "end" : 326.84,
-    "text" : "Còn việc chúng ta tạo một giá trị ban đầu cho nó sẽ được gọi là initialization, tức là khởi tạo.",
+    "text" : "Còn cái việc chúng ta tạo một giá trị ban đầu cho nó sẽ được gọi là initialization, tức là khởi tạo.",
     "words" : null
   }, {
-    "id" : "S0067",
+    "id" : "S0062",
     "start" : 326.84,
     "end" : 329.64,
     "text" : "Chúng ta có thể gán những giá trị gì cho một biến?",
     "words" : null
   }, {
-    "id" : "S0068",
+    "id" : "S0063",
     "start" : 329.64,
-    "end" : 331.35,
-    "text" : "Thì chúng ta sẽ có 2 kiểu nhé.",
-    "words" : null
-  }, {
-    "id" : "S0069",
-    "start" : 331.35,
-    "end" : 333.85,
-    "text" : "Một là anh em sẽ cho nó một giá trị cố định.",
-    "words" : null
-  }, {
-    "id" : "S0070",
-    "start" : 333.85,
     "end" : 336.92,
-    "text" : "Hai là lấy một giá trị từ một biến khác, đúng không ạ?",
+    "text" : "Thì chúng ta sẽ có 2 kiểu nhé: một là anh em sẽ cho nó một giá trị cố định, hai là lấy một giá trị từ một biến khác, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0071",
+    "id" : "S0064",
     "start" : 336.92,
-    "end" : 341.0,
-    "text" : "Thì ở đây, trường hợp này là chúng ta đang lấy một giá trị cố định số 18.",
-    "words" : null
-  }, {
-    "id" : "S0072",
-    "start" : 341.0,
     "end" : 347.31,
-    "text" : "Thuật ngữ tiếng Anh gọi trường hợp này là Literal hoặc là Fixed Value, tức là giá trị cố định, nó không thay đổi.",
+    "text" : "Thì ở đây, trường hợp này là chúng ta đang lấy một giá trị cố định số 18, thuật ngữ tiếng Anh gọi trường hợp này là Literal hoặc là Fixed Value, tức là giá trị cố định, nó không thay đổi.",
     "words" : null
   }, {
-    "id" : "S0073",
+    "id" : "S0065",
     "start" : 347.31,
-    "end" : 352.04,
-    "text" : "Còn trường hợp thứ hai là chúng ta khai báo ra một biến, ví dụ là tuổi 2 chẳng hạn.",
-    "words" : null
-  }, {
-    "id" : "S0074",
-    "start" : 352.04,
     "end" : 357.69,
-    "text" : "Và chúng ta có thể khởi tạo một giá trị ban đầu cho nó lấy từ biến tuổi, đúng không ạ, như thế này.",
+    "text" : "Còn trường hợp thứ hai là chúng ta khai báo ra một biến, ví dụ là tuổi 2 chẳng hạn, và chúng ta có thể khởi tạo một giá trị ban đầu cho nó lấy từ cái biến tuổi, đúng không ạ, như thế này.",
     "words" : null
   }, {
-    "id" : "S0075",
+    "id" : "S0066",
     "start" : 357.69,
     "end" : 360.8,
-    "text" : "Rồi, vấn đề tiếp theo đó là về kiểu dữ liệu (Data type).",
+    "text" : "Rồi, vấn đề tiếp theo đó là về kiểu dữ liệu (Data Type).",
     "words" : null
   }, {
-    "id" : "S0076",
+    "id" : "S0067",
     "start" : 360.8,
     "end" : 363.97,
     "text" : "Nó sẽ thể hiện dạng thức dữ liệu mà cái biến đấy lưu trữ.",
     "words" : null
   }, {
-    "id" : "S0077",
+    "id" : "S0068",
     "start" : 363.97,
-    "end" : 366.11,
-    "text" : "Và chúng ta sẽ có 2 nhóm kiểu dữ liệu.",
-    "words" : null
-  }, {
-    "id" : "S0078",
-    "start" : 366.11,
-    "end" : 369.09,
-    "text" : "Một là kiểu nguyên thủy (tiếng Anh gọi là Primitive).",
-    "words" : null
-  }, {
-    "id" : "S0079",
-    "start" : 369.09,
     "end" : 373.08,
-    "text" : "Loại thứ hai là phi nguyên thủy, hay nó có một cái tên riêng là Object.",
+    "text" : "Và chúng ta sẽ có 2 nhóm kiểu dữ liệu: một là kiểu nguyên thủy (tiếng Anh gọi là Primitive), loại thứ hai là phi nguyên thủy, hay nó có một cái tên riêng là Object.",
     "words" : null
   }, {
-    "id" : "S0080",
+    "id" : "S0069",
     "start" : 373.08,
     "end" : 378.58,
     "text" : "Với kiểu nguyên thủy, anh em có thể hình dung nó là những dạng dữ liệu đơn giản, những loại cơ bản.",
     "words" : null
   }, {
-    "id" : "S0081",
+    "id" : "S0070",
     "start" : 378.58,
     "end" : 382.19,
     "text" : "Ví dụ như là kiểu số, như số 18 đây là một ví dụ của kiểu Number.",
     "words" : null
   }, {
-    "id" : "S0082",
+    "id" : "S0071",
     "start" : 382.19,
     "end" : 386.58,
     "text" : "Chúng ta có kiểu String, hay còn gọi là chuỗi ký tự, dùng để lưu các đoạn text.",
     "words" : null
   }, {
-    "id" : "S0083",
+    "id" : "S0072",
     "start" : 386.58,
     "end" : 393.01,
     "text" : "Ví dụ mình muốn lưu tên của một em gái nào đấy mà mình crush chẳng hạn thì mình sẽ tạo 1 biến là tên, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0084",
+    "id" : "S0073",
     "start" : 393.01,
     "end" : 393.74,
     "text" : "Sau đó là gì?",
     "words" : null
   }, {
-    "id" : "S0085",
+    "id" : "S0074",
     "start" : 393.74,
     "end" : 394.46,
     "text" : "\"Eimi Fukada\".",
     "words" : null
   }, {
-    "id" : "S0086",
+    "id" : "S0075",
     "start" : 394.46,
     "end" : 399.46,
     "text" : "Và các đoạn text anh em cần bọc trong một dấu nháy, có thể là nháy đơn hay nháy kép đều được nha.",
     "words" : null
   }, {
-    "id" : "S0087",
+    "id" : "S0076",
     "start" : 399.46,
     "end" : 402.32,
     "text" : "Rồi thì kiểu logic này, tiếng Anh anh em gọi là Boolean.",
     "words" : null
   }, {
-    "id" : "S0088",
+    "id" : "S0077",
     "start" : 402.32,
     "end" : 405.53,
     "text" : "Anh em nào học môn toán logic rồi sẽ biết cái kiểu dữ liệu này.",
     "words" : null
   }, {
-    "id" : "S0089",
+    "id" : "S0078",
     "start" : 405.53,
     "end" : 409.11,
     "text" : "Nó chỉ nhận 1 trong 2 giá trị là true hoặc false, tức là đúng hay sai.",
     "words" : null
   }, {
-    "id" : "S0090",
+    "id" : "S0079",
     "start" : 409.11,
     "end" : 414.67,
     "text" : "Ví dụ mình tạo ra một biến là conZin để thể hiện thông tin là em gái crush đấy còn zin hay không, đúng không?",
     "words" : null
   }, {
-    "id" : "S0091",
+    "id" : "S0080",
     "start" : 414.67,
-    "end" : 416.38,
-    "text" : "Nếu là đúng thì mình ghi là true.",
-    "words" : null
-  }, {
-    "id" : "S0092",
-    "start" : 416.38,
     "end" : 418.45,
-    "text" : "Còn nếu là sai thì mình sẽ ghi là false.",
+    "text" : "Nếu là đúng thì mình ghi là true, còn nếu là sai thì mình sẽ ghi là false.",
     "words" : null
   }, {
-    "id" : "S0093",
+    "id" : "S0081",
     "start" : 418.45,
-    "end" : 422.1,
-    "text" : "Ê anh em chú ý nhé, chỉ có đúng hoặc là sai, tức là còn hoặc không còn.",
-    "words" : null
-  }, {
-    "id" : "S0094",
-    "start" : 422.1,
     "end" : 425.75,
-    "text" : "Không có kiểu nửa vời nhé, kiểu như là \"không còn nhưng mà mang đi vá\".",
+    "text" : "Ê anh em chú ý nhé, chỉ có đúng hoặc là sai, tức là còn hoặc không còn, không có kiểu nửa vời nhé, kiểu như là \"không còn nhưng mà mang đi vá\".",
     "words" : null
   }, {
-    "id" : "S0095",
+    "id" : "S0082",
     "start" : 425.75,
     "end" : 426.16,
     "text" : "Kìa thế!",
     "words" : null
   }, {
-    "id" : "S0096",
+    "id" : "S0083",
     "start" : 426.16,
     "end" : 431.21,
     "text" : "Ngoài ra có một cái kiểu đặc biệt gọi là null, nó thể hiện rằng là nó chẳng lưu cái dữ liệu gì cả.",
     "words" : null
   }, {
-    "id" : "S0097",
+    "id" : "S0084",
     "start" : 431.21,
     "end" : 433.41,
     "text" : "Rồi, cái nhóm kiểu dữ liệu thứ hai là Object.",
     "words" : null
   }, {
-    "id" : "S0098",
+    "id" : "S0085",
     "start" : 433.41,
     "end" : 437.75,
     "text" : "Có thể hiểu nó là kết hợp từ các dữ liệu có kiểu nguyên thủy hoặc là các Object khác.",
     "words" : null
   }, {
-    "id" : "S0099",
+    "id" : "S0086",
     "start" : 437.75,
     "end" : 445.15,
     "text" : "Ví dụ mình muốn tạo ra một cái biến gọi là crush để lưu được tổng hợp đủ các loại thông tin mà mình vừa tạo ở trên ấy, gộp chung vào một biến thôi.",
     "words" : null
   }, {
-    "id" : "S0100",
+    "id" : "S0087",
     "start" : 445.15,
     "end" : 447.55,
     "text" : "Đấy, thì lúc đó chúng ta sẽ sử dụng đến Object.",
     "words" : null
   }, {
-    "id" : "S0101",
+    "id" : "S0088",
     "start" : 447.55,
     "end" : 450.92,
     "text" : "Thì cái này nó phức tạp hơn một chút, chúng ta sẽ bàn đến sau nha.",
     "words" : null
   }, {
-    "id" : "S0102",
+    "id" : "S0089",
     "start" : 450.94,
     "end" : 454.63,
     "text" : "Bây giờ có vài đồ chơi đơn giản như thế này, chúng ta cứ tập sử dụng đã.",
     "words" : null
   }, {
-    "id" : "S0103",
+    "id" : "S0090",
     "start" : 454.63,
     "end" : 457.5,
     "text" : "OK, mình vừa nói đến việc là sử dụng biến, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0104",
+    "id" : "S0091",
     "start" : 457.52,
     "end" : 461.43,
     "text" : "Sử dụng ở đây tức là chúng ta đưa các biến này vào các câu lệnh.",
     "words" : null
   }, {
-    "id" : "S0105",
+    "id" : "S0092",
     "start" : 461.43,
     "end" : 464.42,
     "text" : "Bởi vì các biến nó mang dữ liệu mà, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0106",
+    "id" : "S0093",
     "start" : 464.42,
     "end" : 469.73,
     "text" : "Ví dụ ở đây thay vì mình in ra một chuỗi cố định, cái này gọi là cái gì mình vừa nói nhỉ?",
     "words" : null
   }, {
-    "id" : "S0107",
+    "id" : "S0094",
     "start" : 469.73,
     "end" : 471.09,
     "text" : "Literal, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0108",
+    "id" : "S0095",
     "start" : 471.09,
     "end" : 474.67,
     "text" : "Thế bây giờ mình sẽ in một cái dữ liệu từ một cái biến ra nha.",
     "words" : null
   }, {
-    "id" : "S0109",
+    "id" : "S0096",
     "start" : 474.67,
     "end" : 476.38,
     "text" : "Ví dụ mình in tên chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0110",
+    "id" : "S0097",
     "start" : 476.38,
     "end" : 478.52,
-    "text" : "Đấy, OK, Save lại này: Eimi Fukada.",
+    "text" : "Đấy, OK, save lại này: Eimi Fukada.",
     "words" : null
   }, {
-    "id" : "S0111",
+    "id" : "S0098",
     "start" : 478.52,
     "end" : 484.01,
     "text" : "Đó, thì lúc này mình nói rằng cái document.write này nó lấy dữ liệu từ biến có tên là tên.",
     "words" : null
   }, {
-    "id" : "S0112",
+    "id" : "S0099",
     "start" : 484.01,
     "end" : 487.24,
     "text" : "OK, thì đó là xuất dữ liệu từ biến ra phần trang web.",
     "words" : null
   }, {
-    "id" : "S0113",
+    "id" : "S0100",
     "start" : 487.24,
     "end" : 489.44,
     "text" : "Bây giờ cái chiều ngược lại thì sao?",
     "words" : null
   }, {
-    "id" : "S0114",
+    "id" : "S0101",
     "start" : 489.48,
     "end" : 494.59,
     "text" : "Tức là từ phía trang web, chúng ta nhập một cái dữ liệu gì đấy và nó đi vào biến để lưu trữ.",
     "words" : null
   }, {
-    "id" : "S0115",
+    "id" : "S0102",
     "start" : 494.59,
     "end" : 496.14,
     "text" : "Sẽ có nhiều cách anh em nha.",
     "words" : null
   }, {
-    "id" : "S0116",
+    "id" : "S0103",
     "start" : 496.14,
     "end" : 503.97,
     "text" : "Tuy nhiên, cách đơn giản nhất mà mình nghĩ là nó phù hợp với các anh em mới bắt đầu là chúng ta sẽ sử dụng một cái lệnh gọi là window.prompt.",
     "words" : null
   }, {
-    "id" : "S0117",
+    "id" : "S0104",
     "start" : 503.97,
     "end" : 510.08,
     "text" : "Mở đóng ngoặc tròn này, sau đó sẽ là một cái thông báo gì đấy để yêu cầu anh em nhập dữ liệu ấy, ví dụ như là.",
     "words" : null
   }, {
-    "id" : "S0118",
+    "id" : "S0105",
     "start" : 513.68,
     "end" : 516.57,
     "text" : "Đó, sau khi anh em gọi cái lệnh này nha, mình Ctrl + S lại này.",
     "words" : null
   }, {
-    "id" : "S0119",
+    "id" : "S0106",
     "start" : 516.57,
     "end" : 517.58,
     "text" : "Đó, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0120",
+    "id" : "S0107",
     "start" : 517.68,
     "end" : 523.07,
     "text" : "Ở trên trình duyệt của chúng ta sẽ mở ra một cửa sổ cho phép anh em mình nhập dữ liệu vào đây, ví dụ.",
     "words" : null
   }, {
-    "id" : "S0121",
+    "id" : "S0108",
     "start" : 523.07,
     "end" : 523.23,
     "text" : "OK.",
     "words" : null
   }, {
-    "id" : "S0122",
+    "id" : "S0109",
     "start" : 523.23,
     "end" : 525.58,
     "text" : "Nhưng sau đó thì cái dữ liệu đấy nó đi đâu?",
     "words" : null
   }, {
-    "id" : "S0123",
+    "id" : "S0110",
     "start" : 525.58,
-    "end" : 527.04,
-    "text" : "Nó không được lưu ở đâu cả.",
-    "words" : null
-  }, {
-    "id" : "S0124",
-    "start" : 527.04,
     "end" : 529.04,
-    "text" : "Do là chúng ta chỉ gọi lệnh đấy thôi.",
+    "text" : "Nó không được lưu ở đâu cả, do là chúng ta chỉ gọi lệnh đấy thôi.",
     "words" : null
   }, {
-    "id" : "S0125",
+    "id" : "S0111",
     "start" : 529.04,
     "end" : 534.65,
     "text" : "Cho nên là anh em sẽ cần phải tạo ra một biến để hứng lấy cái giá trị mà anh em vừa nhập bằng cách là gì?",
     "words" : null
   }, {
-    "id" : "S0126",
+    "id" : "S0112",
     "start" : 534.65,
     "end" : 536.83,
     "text" : "Mình sẽ sử dụng luôn cái biến ở trên nha.",
     "words" : null
   }, {
-    "id" : "S0127",
+    "id" : "S0113",
     "start" : 536.83,
     "end" : 538.7,
-    "text" : "Anh em viết là ten = window.prompt.",
+    "text" : "Anh em viết là tên = window.prompt.",
     "words" : null
   }, {
-    "id" : "S0128",
+    "id" : "S0114",
     "start" : 538.7,
-    "end" : 541.4,
-    "text" : "Thì cái Yua Mikami đó sẽ được lưu vào cái tên này.",
-    "words" : null
-  }, {
-    "id" : "S0129",
-    "start" : 541.4,
     "end" : 542.97,
-    "text" : "Nó sẽ đè vào cái Eimi Fukada.",
+    "text" : "Thì cái Yua Mikami đó sẽ được lưu vào cái tên này, nó sẽ đè vào cái Eimi Fukada.",
     "words" : null
   }, {
-    "id" : "S0130",
+    "id" : "S0115",
     "start" : 542.97,
     "end" : 545.74,
     "text" : "Và đây sẽ được gọi là một câu lệnh gán (Assignment).",
     "words" : null
   }, {
-    "id" : "S0131",
+    "id" : "S0116",
     "start" : 545.74,
     "end" : 549.8,
     "text" : "Lệnh này thì cũng dùng dấu bằng, giống với phép khai báo biến, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0132",
+    "id" : "S0117",
     "start" : 549.84,
     "end" : 551.42,
     "text" : "Bây giờ anh em cùng xem này.",
     "words" : null
   }, {
-    "id" : "S0133",
+    "id" : "S0118",
     "start" : 551.42,
-    "end" : 552.68,
-    "text" : "Mình Ctrl + S lại nhé.",
-    "words" : null
-  }, {
-    "id" : "S0134",
-    "start" : 552.68,
     "end" : 554.46,
-    "text" : "Sau đó mình nhập là Yua Mikami.",
+    "text" : "Mình Ctrl + S lại nhé, sau đó mình nhập là Yua Mikami.",
     "words" : null
   }, {
-    "id" : "S0135",
+    "id" : "S0119",
     "start" : 554.46,
     "end" : 554.63,
     "text" : "OK!",
     "words" : null
   }, {
-    "id" : "S0136",
+    "id" : "S0120",
     "start" : 554.63,
-    "end" : 556.07,
-    "text" : "Đó thì anh em thấy không?",
-    "words" : null
-  }, {
-    "id" : "S0137",
-    "start" : 556.07,
-    "end" : 560.61,
-    "text" : "Sau khi lệnh này được thực hiện xong thì nó thực hiện tiếp lệnh document.write.",
-    "words" : null
-  }, {
-    "id" : "S0138",
-    "start" : 560.61,
     "end" : 562.51,
-    "text" : "Đó là nó in cái tên ra trang web.",
+    "text" : "Đó thì anh em thấy không, sau khi lệnh này được thực hiện xong thì nó thực hiện tiếp lệnh document.write, đó là nó in cái tên ra trang web.",
     "words" : null
   }, {
-    "id" : "S0139",
+    "id" : "S0121",
     "start" : 562.51,
     "end" : 570.45,
     "text" : "Do biến tên của chúng ta đã được gán lại bằng Yua Mikami mà anh em vừa nhập, do đó khi mình in ra trang web thì nó sẽ in ra giá trị sau cùng.",
     "words" : null
   }, {
-    "id" : "S0140",
+    "id" : "S0122",
     "start" : 570.45,
     "end" : 573.94,
     "text" : "Sau cùng tức là lệnh nào được gọi sau thì lệnh đấy có giá trị.",
     "words" : null
   }, {
-    "id" : "S0141",
+    "id" : "S0123",
     "start" : 573.94,
     "end" : 585.54,
     "text" : "Ngoài cách chúng ta dùng lệnh window.prompt để mở một cửa sổ trên trình duyệt ra, thì chúng ta cũng có thể sử dụng các cặp thẻ HTML thuộc nhóm Form, tức là các ô nhập liệu trực tiếp trên phần trang web này.",
     "words" : null
   }, {
-    "id" : "S0142",
+    "id" : "S0124",
     "start" : 585.54,
-    "end" : 590.7,
-    "text" : "Tuy nhiên, các anh em sẽ cần phải hiểu một chút về kiểu Function cũng như là cơ chế DOM.",
-    "words" : null
-  }, {
-    "id" : "S0143",
-    "start" : 590.7,
     "end" : 592.58,
-    "text" : "Phần đó chúng ta sẽ bàn sau nha.",
+    "text" : "Tuy nhiên, các anh em sẽ cần phải hiểu một chút về kiểu Function cũng như là cơ chế DOM, thì phần đó chúng ta sẽ bàn sau nha.",
     "words" : null
   }, {
-    "id" : "S0144",
+    "id" : "S0125",
     "start" : 592.58,
     "end" : 598.77,
-    "text" : "OK, thì những thao tác nhập dữ liệu vào rồi xuất dữ liệu ra như vậy người ta gọi tương ứng là Input và Output.",
+    "text" : "OK, thì những thao tác nhập dữ liệu vào rồi xuất dữ liệu ra như vậy người ta gọi tương ứng là input và output.",
     "words" : null
   }, {
-    "id" : "S0145",
+    "id" : "S0126",
     "start" : 598.77,
     "end" : 603.61,
     "text" : "Đó có thể coi là một cái luồng hoạt động cơ bản của một chương trình phần mềm rồi đấy.",
     "words" : null
   }, {
-    "id" : "S0146",
+    "id" : "S0127",
     "start" : 603.61,
     "end" : 610.99,
-    "text" : "Tuy nhiên thì việc nhập dữ liệu vào rồi in ra luôn như thế này thì nó không mang ý nghĩa mấy, đoạn chương trình chả xử lý gì cả.",
+    "text" : "Tuy nhiên thì việc nhập dữ liệu vào rồi in ra luôn như thế này thì nó không mang ý nghĩa mấy, đoạn chương trình chưa xử lý gì cả.",
     "words" : null
   }, {
-    "id" : "S0147",
+    "id" : "S0128",
     "start" : 610.99,
     "end" : 615.78,
     "text" : "Thực tế là thường nó sẽ có một cái công đoạn ở giữa nữa, được gọi là xử lý (Process).",
     "words" : null
   }, {
-    "id" : "S0148",
+    "id" : "S0129",
     "start" : 615.78,
     "end" : 625.18,
-    "text" : "Ví dụ sau khi cái tên mình nhập vào, mình muốn in ra một câu là \"I love \" cộng với cái tên đó, thì mình sẽ phải xử lý để thay đổi dữ liệu của cái tên này, đúng không ạ?",
+    "text" : "Ví dụ sau khi cái tên mình nhập vào, mình muốn in ra một câu là \"I love\" cộng với cái tên đó, thì mình sẽ phải xử lý để thay đổi dữ liệu của cái tên này, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0149",
+    "id" : "S0130",
     "start" : 625.34,
     "end" : 626.24,
     "text" : "Bằng cách như sau.",
     "words" : null
   }, {
-    "id" : "S0150",
+    "id" : "S0131",
     "start" : 626.26,
     "end" : 627.63,
-    "text" : "Ten = \"I love \" + ten.",
+    "text" : "Tên = \"I love \" + tên.",
     "words" : null
   }, {
-    "id" : "S0151",
+    "id" : "S0132",
     "start" : 627.63,
-    "end" : 628.77,
-    "text" : "Đây, chạy lại nha.",
-    "words" : null
-  }, {
-    "id" : "S0152",
-    "start" : 628.77,
     "end" : 631.05,
-    "text" : "Mình viết ngắn gọn thôi nha: Mikami.",
+    "text" : "Đây, chạy lại nha, mình viết ngắn gọn thôi nha: Mikami.",
     "words" : null
   }, {
-    "id" : "S0153",
+    "id" : "S0133",
     "start" : 631.05,
     "end" : 632.36,
     "text" : "OK, anh em thấy chưa?",
     "words" : null
   }, {
-    "id" : "S0154",
+    "id" : "S0134",
     "start" : 632.36,
     "end" : 637.89,
     "text" : "Đây là một chương trình đơn giản: nhập tên của idol và in ra một lời tỏ tình với idol đó.",
     "words" : null
   }, {
-    "id" : "S0155",
+    "id" : "S0135",
     "start" : 637.89,
     "end" : 639.14,
     "text" : "Có thể hiểu như vậy.",
     "words" : null
   }, {
-    "id" : "S0156",
+    "id" : "S0136",
     "start" : 639.14,
     "end" : 643.55,
-    "text" : "Và thao tác như vừa rồi, người ta gọi là một phép toán (operation).",
+    "text" : "Và cái thao tác như vừa rồi, người ta gọi là một phép toán (operation).",
     "words" : null
   }, {
-    "id" : "S0157",
+    "id" : "S0137",
     "start" : 643.55,
     "end" : 647.97,
-    "text" : "Nó thể hiện sự phối hợp giữa các dữ liệu để tạo ra một dữ liệu mới.",
+    "text" : "Nó thể hiện sự phối hợp giữa các dữ liệu để tạo ra một cái dữ liệu mới.",
     "words" : null
   }, {
-    "id" : "S0158",
+    "id" : "S0138",
     "start" : 647.97,
     "end" : 652.08,
     "text" : "Các dữ liệu tham gia ở đây người ta sẽ gọi là toán hạng (operand).",
     "words" : null
   }, {
-    "id" : "S0159",
+    "id" : "S0139",
     "start" : 652.08,
     "end" : 657.37,
     "text" : "Toán hạng có thể là một giá trị cố định (literal) như ở đây, hoặc là biến (variable).",
     "words" : null
   }, {
-    "id" : "S0160",
+    "id" : "S0140",
     "start" : 657.37,
     "end" : 660.72,
     "text" : "Dấu cộng ở đây người ta gọi là một toán tử (operator).",
     "words" : null
   }, {
-    "id" : "S0161",
+    "id" : "S0141",
     "start" : 660.72,
     "end" : 664.27,
     "text" : "Nó thể hiện cách thức mà hai toán hạng phối hợp với nhau.",
     "words" : null
   }, {
-    "id" : "S0162",
+    "id" : "S0142",
     "start" : 664.27,
     "end" : 670.8,
     "text" : "Tương ứng với các kiểu dữ liệu của các toán hạng tham gia thì nó cũng sẽ có các kiểu phép toán tương ứng.",
     "words" : null
   }, {
-    "id" : "S0163",
+    "id" : "S0143",
     "start" : 670.8,
     "end" : 674.66,
     "text" : "Chẳng hạn như đây là một phép toán kết hợp giữa hai chuỗi ký tự.",
     "words" : null
   }, {
-    "id" : "S0164",
+    "id" : "S0144",
     "start" : 674.66,
     "end" : 678.21,
-    "text" : "Hai string, và cụ thể là nó mang ý nghĩa là nối hai string này lại.",
+    "text" : "Hai String, và cụ thể là nó mang ý nghĩa là nối hai String này lại.",
     "words" : null
   }, {
-    "id" : "S0165",
+    "id" : "S0145",
     "start" : 678.21,
     "end" : 680.85,
     "text" : "Từ tiếng Anh chuyên ngành của nó là concatenation.",
     "words" : null
   }, {
-    "id" : "S0166",
+    "id" : "S0146",
     "start" : 680.85,
     "end" : 685.09,
     "text" : "Còn nếu là phép toán giữa các số với nhau thì nó sẽ gọi là arithmetic operation.",
     "words" : null
   }, {
-    "id" : "S0167",
+    "id" : "S0147",
     "start" : 685.09,
     "end" : 688.74,
     "text" : "Ví dụ như là tuổi, mình sẽ cho tuổi cộng 1 chẳng hạn, đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0168",
+    "id" : "S0148",
     "start" : 688.76,
     "end" : 690.71,
     "text" : "Sau đó mình sẽ in ra cái tuổi này.",
     "words" : null
   }, {
-    "id" : "S0169",
+    "id" : "S0149",
     "start" : 690.71,
-    "end" : 692.86,
-    "text" : "Lúc này mình chỉ in ra cái tuổi thôi.",
-    "words" : null
-  }, {
-    "id" : "S0170",
-    "start" : 692.86,
     "end" : 695.77,
-    "text" : "Thế nên là cái tên mình nhập vào gì cũng được nha!",
+    "text" : "Lúc này mình chỉ in ra cái tuổi thôi, thế nên là cái tên mình nhập vào gì cũng được nha!",
     "words" : null
   }, {
-    "id" : "S0171",
+    "id" : "S0150",
     "start" : 695.79,
     "end" : 696.7,
     "text" : "Mình để rỗng đi.",
     "words" : null
   }, {
-    "id" : "S0172",
+    "id" : "S0151",
     "start" : 696.7,
     "end" : 699.39,
     "text" : "Các phép toán anh em có thể thực hiện nối tiếp.",
     "words" : null
   }, {
-    "id" : "S0173",
+    "id" : "S0152",
     "start" : 699.39,
     "end" : 704.63,
     "text" : "Mình sẽ thực hiện cộng biến tuổi lên 1 trực tiếp trong câu lệnh document.write, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0174",
+    "id" : "S0153",
     "start" : 704.63,
-    "end" : 707.02,
-    "text" : "Thì nó sẽ thực hiện cái tuổi cộng 1 trước.",
-    "words" : null
-  }, {
-    "id" : "S0175",
-    "start" : 707.02,
     "end" : 710.26,
-    "text" : "Sau đó nó lấy kết quả đấy nó đưa vào lệnh document.write.",
+    "text" : "Thì nó sẽ thực hiện cái tuổi cộng 1 trước, sau đó nó lấy kết quả đấy nó đưa vào lệnh document.write.",
     "words" : null
   }, {
-    "id" : "S0176",
+    "id" : "S0154",
     "start" : 710.26,
     "end" : 711.67,
     "text" : "Bây giờ nó sẽ là... à gì?",
     "words" : null
   }, {
-    "id" : "S0177",
+    "id" : "S0155",
     "start" : 711.69,
     "end" : 713.23,
     "text" : "Là 20, đúng không anh em?",
     "words" : null
   }, {
-    "id" : "S0178",
+    "id" : "S0156",
     "start" : 713.23,
-    "end" : 715.34,
-    "text" : "Ở đây mình đã ví dụ phép cộng rồi.",
-    "words" : null
-  }, {
-    "id" : "S0179",
-    "start" : 715.34,
     "end" : 718.57,
-    "text" : "Chúng ta cũng có phép nhân, phép chia, đúng không ạ?",
+    "text" : "Ở đây mình đã ví dụ phép cộng rồi, chúng ta cũng có phép nhân, phép chia, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0180",
+    "id" : "S0157",
     "start" : 718.57,
     "end" : 722.26,
     "text" : "Phép nhân thì là dấu sao (*), phép chia thì là dấu gạch (/).",
     "words" : null
   }, {
-    "id" : "S0181",
+    "id" : "S0158",
     "start" : 722.26,
     "end" : 727.54,
     "text" : "Hồi tiểu học, kể cả quy tắc nhân chia trước cộng trừ sau, trong lập trình nó cũng vậy.",
     "words" : null
   }, {
-    "id" : "S0182",
+    "id" : "S0159",
     "start" : 727.54,
     "end" : 730.36,
     "text" : "Ví dụ như ở đây là tuổi + 1 * 3, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0183",
+    "id" : "S0160",
     "start" : 730.36,
     "end" : 734.54,
     "text" : "Thì nó sẽ ưu tiên phép nhân trước, sau đó nó mới cộng, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0184",
+    "id" : "S0161",
     "start" : 734.54,
     "end" : 740.44,
     "text" : "Còn nếu anh em muốn ưu tiên phép cộng trước thì anh em phải cho nó thêm một cái dấu ngoặc ở đây.",
     "words" : null
   }, {
-    "id" : "S0185",
+    "id" : "S0162",
     "start" : 740.44,
     "end" : 747.01,
     "text" : "Rồi, ngoài nhóm phép toán số học thì chúng ta còn một nhóm phép toán gọi là quan hệ (relational operation).",
     "words" : null
   }, {
-    "id" : "S0186",
+    "id" : "S0163",
     "start" : 747.01,
     "end" : 749.16,
     "text" : "Nghe từ quan hệ có vẻ hơi nhạy cảm.",
     "words" : null
   }, {
-    "id" : "S0187",
+    "id" : "S0164",
     "start" : 749.16,
     "end" : 751.92,
     "text" : "Có cách gọi khác gọi là comparison operation.",
     "words" : null
   }, {
-    "id" : "S0188",
+    "id" : "S0165",
     "start" : 751.92,
     "end" : 755.61,
     "text" : "Nó là các phép toán dùng để so sánh, ví dụ như là tuổi < 30.",
     "words" : null
   }, {
-    "id" : "S0189",
+    "id" : "S0166",
     "start" : 755.61,
     "end" : 761.38,
     "text" : "Đấy, thì đây là một phép toán so sánh, và toán tử nhỏ hơn này người ta gọi là toán tử so sánh.",
     "words" : null
   }, {
-    "id" : "S0190",
+    "id" : "S0167",
     "start" : 761.38,
     "end" : 766.67,
     "text" : "Kết quả trả về của những phép toán này sẽ là những giá trị logic như là đúng hoặc sai.",
     "words" : null
   }, {
-    "id" : "S0191",
+    "id" : "S0168",
     "start" : 766.67,
     "end" : 769.37,
     "text" : "Ví dụ như ở đây là tuổi có nhỏ hơn 30 không?",
     "words" : null
   }, {
-    "id" : "S0192",
+    "id" : "S0169",
     "start" : 769.37,
     "end" : 771.81,
     "text" : "Tuổi của mình đang là 19, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0193",
+    "id" : "S0170",
     "start" : 771.81,
     "end" : 773.18,
     "text" : "19 nhỏ hơn 30 là đúng.",
     "words" : null
   }, {
-    "id" : "S0194",
+    "id" : "S0171",
     "start" : 773.18,
     "end" : 775.88,
-    "text" : "Ngược lại, nếu mà anh em viết 1 mệnh đề sai.",
+    "text" : "Ngược lại, nếu mà anh em viết một mệnh đề sai.",
     "words" : null
   }, {
-    "id" : "S0195",
+    "id" : "S0172",
     "start" : 775.88,
     "end" : 780.3,
     "text" : "Ngoài ra các phép toán khác nhau cũng có thể phối hợp lại được với nhau.",
     "words" : null
   }, {
-    "id" : "S0196",
+    "id" : "S0173",
     "start" : 780.3,
     "end" : 784.42,
     "text" : "Ví dụ như ở đây chúng ta đang có phép toán quan hệ, đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0197",
+    "id" : "S0174",
     "start" : 784.62,
     "end" : 787.37,
     "text" : "Thì bây giờ mình sẽ cộng thêm một cái dấu cộng nữa.",
     "words" : null
   }, {
-    "id" : "S0198",
+    "id" : "S0175",
     "start" : 787.37,
     "end" : 790.45,
     "text" : "Chuyên ngành người ta hay gọi là biểu thức, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0199",
+    "id" : "S0176",
     "start" : 790.45,
     "end" : 797.9,
     "text" : "Đó, thì trong cái biểu thức mà gồm nhiều các phép toán như thế này thì nó sẽ dựa trên một tính chất là precedence, tạm dịch là độ ưu tiên.",
     "words" : null
   }, {
-    "id" : "S0200",
+    "id" : "S0177",
     "start" : 797.9,
     "end" : 802.11,
     "text" : "Ở đây thì các phép toán số học sẽ có độ ưu tiên cao hơn các phép toán quan hệ.",
     "words" : null
   }, {
-    "id" : "S0201",
+    "id" : "S0178",
     "start" : 802.11,
     "end" : 808.05,
     "text" : "Thế nên là nó sẽ thực hiện 30 + 1 trước, sau đó nó sẽ lấy kết quả đấy đưa vào phép toán quan hệ với biến tuổi.",
     "words" : null
   }, {
-    "id" : "S0202",
+    "id" : "S0179",
     "start" : 808.05,
     "end" : 816.37,
     "text" : "OK, xâu chuỗi lại các khái niệm vừa rồi: chúng ta có các toán tử, các toán hạng, thì chúng kết hợp lại với nhau để tạo nên một cái biểu thức (expression).",
     "words" : null
   }, {
-    "id" : "S0203",
+    "id" : "S0180",
     "start" : 816.37,
     "end" : 820.36,
     "text" : "OK, vừa rồi là một số những kiến thức cơ bản liên quan đến phần phép toán.",
     "words" : null
   }, {
-    "id" : "S0204",
+    "id" : "S0181",
     "start" : 820.36,
     "end" : 826.84,
-    "text" : "Vậy bây giờ hỏi anh em 1 câu nha: Nếu cho các anh em cộng với 1 cô gái mới lớn như thế này, hỏi kết quả trả về sẽ là gì?",
+    "text" : "Vậy bây giờ hỏi anh em một câu nha: Nếu cho các anh em cộng với một cô gái mới lớn như thế này, hỏi kết quả trả về sẽ là gì?",
     "words" : null
   }, {
-    "id" : "S0205",
+    "id" : "S0182",
     "start" : 827.0,
     "end" : 828.28,
     "text" : "Ê... tỉnh táo vào nha!",
     "words" : null
   }, {
-    "id" : "S0206",
+    "id" : "S0183",
     "start" : 828.28,
     "end" : 833.9,
-    "text" : "Đầu tiên nên thực hiện 1 cái lệnh gọi là kiểm tra cho mình xem có hợp lệ, có đủ tiêu chuẩn không.",
+    "text" : "Đầu tiên nên thực hiện một cái lệnh gọi là kiểm tra cho mình xem có hợp lệ, có đủ tiêu chuẩn không.",
     "words" : null
   }, {
-    "id" : "S0207",
+    "id" : "S0184",
     "start" : 833.9,
     "end" : 841.44,
     "text" : "Sau đó dựa vào cái kết quả là true hay là false thì mình tính đến phép toán tiếp theo là giao hay là hợp, bất phương trình gì đấy.",
     "words" : null
   }, {
-    "id" : "S0208",
+    "id" : "S0185",
     "start" : 841.76,
     "end" : 843.61,
     "text" : "Cuộc đời nó nhiều biến cố lắm anh em.",
     "words" : null
   }, {
-    "id" : "S0209",
+    "id" : "S0186",
     "start" : 843.61,
     "end" : 849.75,
-    "text" : "Cùng 1 cái hành vi đấy, thế nhưng mà tuổi của cô bé đó mà trên 16 lại khác, còn dưới 16 các anh em sẽ rẽ sang một ngả khác.",
+    "text" : "Cùng một cái hành vi đấy, thế nhưng mà tuổi của cô bé đó mà trên 16 lại khác, còn dưới 16 các anh em sẽ rẽ sang một ngả khác.",
     "words" : null
   }, {
-    "id" : "S0210",
+    "id" : "S0187",
     "start" : 849.75,
     "end" : 851.4,
     "text" : "Trong lập trình nó cũng vậy thôi.",
     "words" : null
   }, {
-    "id" : "S0211",
+    "id" : "S0188",
     "start" : 851.4,
-    "end" : 856.44,
-    "text" : "Code của các anh em ấy không bao giờ đi theo một đường thẳng trôi tuột từ trên xuống dưới đâu.",
-    "words" : null
-  }, {
-    "id" : "S0212",
-    "start" : 856.44,
     "end" : 860.19,
-    "text" : "Nó có thể rẽ sang những hướng khác nhau dựa trên một điều kiện gì đấy.",
+    "text" : "Code của các anh em ấy, không bao giờ nó đi theo một đường thẳng trôi tuột từ trên xuống dưới đâu, mà nó có thể rẽ sang những cái hướng khác nhau dựa trên một cái điều kiện gì đấy.",
     "words" : null
   }, {
-    "id" : "S0213",
+    "id" : "S0189",
     "start" : 860.19,
     "end" : 864.78,
     "text" : "Đó, và cái cơ chế hoạt động như vậy người ta gọi là cấu trúc điều khiển (control statement).",
     "words" : null
   }, {
-    "id" : "S0214",
+    "id" : "S0190",
     "start" : 864.78,
     "end" : 868.77,
     "text" : "Chúng ta sẽ có hai nhóm cấu trúc điều khiển chính, đó là rẽ nhánh và cấu trúc lặp.",
     "words" : null
   }, {
-    "id" : "S0215",
+    "id" : "S0191",
     "start" : 868.77,
     "end" : 876.86,
-    "text" : "Trong cái nhóm rẽ nhánh thì sẽ có một cấu trúc gọi là if-else, tạm dịch là \"nếu như thế này tôi sẽ thực hiện như vậy, còn không thì tôi sẽ thực hiện kiểu khác\".",
+    "text" : "Trong cái nhóm rẽ nhánh thì sẽ có một cái cấu trúc gọi là if-else, tạm dịch là \"nếu như thế này tôi sẽ thực hiện như vậy, còn không thì tôi sẽ thực hiện kiểu khác\".",
     "words" : null
   }, {
-    "id" : "S0216",
+    "id" : "S0192",
     "start" : 876.86,
     "end" : 883.61,
-    "text" : "Bây giờ lấy ví dụ chúng ta sẽ làm một cái chương trình đơn giản đi, đó là nhập tuổi của một em gái nào đấy mà anh em crush chẳng hạn.",
+    "text" : "Bây giờ lấy ví dụ chúng ta sẽ làm một cái chương trình đơn giản đi, đó là nhập tuổi của một cái em gái nào đấy mà anh em crush chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0217",
+    "id" : "S0193",
     "start" : 883.61,
     "end" : 887.6,
     "text" : "Sau đó, chương trình sẽ đưa ra một cái nhận định là chúng ta có thể A-A hay không?",
     "words" : null
   }, {
-    "id" : "S0218",
+    "id" : "S0194",
     "start" : 887.6,
     "end" : 889.51,
     "text" : "Còn A-A là gì thì tùy anh em nghĩ nha.",
     "words" : null
   }, {
-    "id" : "S0219",
+    "id" : "S0195",
     "start" : 889.51,
     "end" : 893.22,
     "text" : "Thì mình sẽ sửa lại code một chút như sau để phù hợp với bài toán bây giờ.",
     "words" : null
   }, {
-    "id" : "S0220",
+    "id" : "S0196",
     "start" : 893.52,
     "end" : 895.37,
     "text" : "Bây giờ sẽ là nhập tuổi thôi.",
     "words" : null
   }, {
-    "id" : "S0221",
+    "id" : "S0197",
     "start" : 895.37,
-    "end" : 897.7,
-    "text" : "Đơn giản phần này sẽ không nhập tên.",
-    "words" : null
-  }, {
-    "id" : "S0222",
-    "start" : 897.7,
     "end" : 899.78,
-    "text" : "Mình sẽ gán nó là nhập tuổi nha!",
+    "text" : "Đơn giản phần này sẽ không nhập tên, mình sẽ gán nó là nhập tuổi nha!",
     "words" : null
   }, {
-    "id" : "S0223",
+    "id" : "S0198",
     "start" : 901.18,
     "end" : 909.26,
     "text" : "Rồi, mình chỉ cần dùng đến biến tuổi thế nên là mình sẽ xóa hai biến tên và biến conZin đi.",
     "words" : null
   }, {
-    "id" : "S0224",
+    "id" : "S0199",
     "start" : 909.26,
     "end" : 910.99,
     "text" : "Cái này sẽ là tuổi.",
     "words" : null
   }, {
-    "id" : "S0225",
+    "id" : "S0200",
     "start" : 910.99,
     "end" : 915.44,
     "text" : "Rồi sau đó cấu trúc if-else mình sẽ viết như sau.",
     "words" : null
   }, {
-    "id" : "S0226",
+    "id" : "S0201",
     "start" : 915.44,
-    "end" : 923.49,
-    "text" : "Mình sẽ diễn giải theo kiểu văn xuôi trước, sau đó giải thích theo cách kỹ thuật sau nha.",
-    "words" : null
-  }, {
-    "id" : "S0227",
-    "start" : 923.49,
     "end" : 935.06,
-    "text" : "Nếu (if) tuổi mà lớn hơn hoặc bằng 16, thì mình sẽ in ra một thông báo là \"Quất luôn\", else có nghĩa là \"còn không thì rút lui\".",
+    "text" : "Mình sẽ diễn giải theo kiểu văn xuôi trước, sau đó giải thích theo cách kỹ thuật sau nha: Nếu (if) tuổi mà lớn hơn hoặc bằng 16, thì mình sẽ in ra một thông báo là \"Quất luôn\", else có nghĩa là \"còn không thì rút lui\".",
     "words" : null
   }, {
-    "id" : "S0228",
+    "id" : "S0202",
     "start" : 935.16,
     "end" : 936.66,
     "text" : "Anh em hiểu ý đồ của mình chứ?",
     "words" : null
   }, {
-    "id" : "S0229",
+    "id" : "S0203",
     "start" : 936.76,
-    "end" : 937.71,
-    "text" : "Mưu này dễ đoán mà.",
-    "words" : null
-  }, {
-    "id" : "S0230",
-    "start" : 937.71,
     "end" : 939.2,
-    "text" : "Mình nghĩ anh em đã hiểu thôi.",
+    "text" : "Mưu này dễ đoán mà, mình nghĩ anh em đã hiểu thôi.",
     "words" : null
   }, {
-    "id" : "S0231",
+    "id" : "S0204",
     "start" : 939.2,
     "end" : 941.26,
     "text" : "Thì khi mà đưa vào if-else thì nó như thế.",
     "words" : null
   }, {
-    "id" : "S0232",
+    "id" : "S0205",
     "start" : 941.26,
     "end" : 946.54,
     "text" : "Thế bây giờ phân tích dưới góc độ lập trình một chút thì cái if này anh em thấy là nó đi kèm với cái gì nhỉ?",
     "words" : null
   }, {
-    "id" : "S0233",
+    "id" : "S0206",
     "start" : 946.78,
     "end" : 948.16,
     "text" : "Một biểu thức logic nha.",
     "words" : null
   }, {
-    "id" : "S0234",
+    "id" : "S0207",
     "start" : 948.16,
     "end" : 951.43,
     "text" : "Cái lớn hơn và cái bằng này thì đọc là lớn hơn hoặc bằng.",
     "words" : null
   }, {
-    "id" : "S0235",
+    "id" : "S0208",
     "start" : 951.43,
     "end" : 954.87,
     "text" : "Anh em học toán chắc là biết cái phép toán này đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0236",
+    "id" : "S0209",
     "start" : 954.87,
-    "end" : 961.04,
-    "text" : "Nếu cái biểu thức này là true thì nó sẽ thực hiện các câu lệnh nằm trong khối ngoặc nhọn đi kèm với cái if.",
-    "words" : null
-  }, {
-    "id" : "S0237",
-    "start" : 961.04,
     "end" : 965.14,
-    "text" : "Và ngược lại, tức là cái này là false thì nó sẽ đi sang cái nhánh else.",
+    "text" : "Nếu cái biểu thức này là true thì nó sẽ thực hiện các câu lệnh nằm trong khối ngoặc nhọn đi kèm với cái if, và ngược lại, tức là cái này là false thì nó sẽ đi sang cái nhánh else.",
     "words" : null
   }, {
-    "id" : "S0238",
+    "id" : "S0210",
     "start" : 965.14,
-    "end" : 968.68,
-    "text" : "Tuy nhiên ở đây có một cái anh em cần đặc biệt lưu ý cho mình.",
-    "words" : null
-  }, {
-    "id" : "S0239",
-    "start" : 968.68,
     "end" : 976.55,
-    "text" : "Đó là cái phép toán này là một phép toán so sánh số học, do vậy là cái biến tuổi này của chúng ta cũng cần phải có kiểu dữ liệu là số học.",
+    "text" : "Tuy nhiên ở đây có một cái anh em cần đặc biệt lưu ý cho mình: đó là cái phép toán này là một phép toán so sánh số học, do vậy là cái biến tuổi này của chúng ta cũng cần phải có kiểu dữ liệu là Number.",
     "words" : null
   }, {
-    "id" : "S0240",
+    "id" : "S0211",
     "start" : 976.55,
     "end" : 982.06,
-    "text" : "Trong khi đó, cái lệnh window.prompt thì dữ liệu nhập vào của nó sẽ luôn tồn tại ở dạng là String.",
+    "text" : "Trong khi đó, cái lệnh window.prompt thì dữ liệu nhập vào của nó sẽ luôn tồn tại dạng là String.",
     "words" : null
   }, {
-    "id" : "S0241",
+    "id" : "S0212",
     "start" : 982.06,
     "end" : 986.02,
-    "text" : "Do vậy, anh em sẽ cần phải thêm một cái lệnh trung gian nữa, đó là gì?",
+    "text" : "Do vậy anh em sẽ cần phải thêm một cái lệnh trung gian nữa, đó là gì?",
     "words" : null
   }, {
-    "id" : "S0242",
+    "id" : "S0213",
     "start" : 986.1,
     "end" : 987.01,
     "text" : "Là parseInt nha!",
     "words" : null
   }, {
-    "id" : "S0243",
+    "id" : "S0214",
     "start" : 987.01,
-    "end" : 988.67,
-    "text" : "Parse có nghĩa là chuyển đổi.",
-    "words" : null
-  }, {
-    "id" : "S0244",
-    "start" : 988.67,
     "end" : 991.6,
-    "text" : "Int có nghĩa là integer (số nguyên) nha anh em nha.",
+    "text" : "Parse có nghĩa là chuyển đổi, Int có nghĩa là integer (số nguyên) nha anh em nha.",
     "words" : null
   }, {
-    "id" : "S0245",
+    "id" : "S0215",
     "start" : 991.6,
     "end" : 993.11,
     "text" : "Anh em kéo nó vào cho mình.",
     "words" : null
   }, {
-    "id" : "S0246",
+    "id" : "S0216",
     "start" : 993.11,
     "end" : 993.74,
     "text" : "OK không ạ?",
     "words" : null
   }, {
-    "id" : "S0247",
+    "id" : "S0217",
     "start" : 993.74,
     "end" : 997.15,
     "text" : "Đây chính là khả năng thực hiện nối tiếp các lệnh đó anh em.",
     "words" : null
   }, {
-    "id" : "S0248",
+    "id" : "S0218",
     "start" : 997.15,
-    "end" : 1000.5,
-    "text" : "Chúng ta nhập dữ liệu vào, sau đó đưa nó vào lệnh parseInt.",
-    "words" : null
-  }, {
-    "id" : "S0249",
-    "start" : 1000.5,
     "end" : 1002.88,
-    "text" : "Được bao nhiêu lại gán tiếp vào biến tuổi.",
+    "text" : "Chúng ta nhập dữ liệu vào, sau đó đưa nó vào lệnh parseInt, được bao nhiêu lại gán tiếp vào biến tuổi.",
     "words" : null
   }, {
-    "id" : "S0250",
+    "id" : "S0219",
     "start" : 1002.88,
     "end" : 1007.76,
     "text" : "Tiện cũng nhắc lại luôn là cái dữ liệu mà anh em nhập vào sẽ đè cái giá trị 18 này nhé.",
     "words" : null
   }, {
-    "id" : "S0251",
+    "id" : "S0220",
     "start" : 1007.76,
-    "end" : 1012.08,
-    "text" : "Do vậy là cái số 18 ở đây nó chỉ mang tính là khởi tạo giá trị ban đầu thôi.",
-    "words" : null
-  }, {
-    "id" : "S0252",
-    "start" : 1012.08,
-    "end" : 1014.3,
-    "text" : "Anh em có thể viết bao nhiêu cũng được.",
-    "words" : null
-  }, {
-    "id" : "S0253",
-    "start" : 1014.3,
     "end" : 1017.02,
-    "text" : "Khởi tạo bằng 0 cũng không sao cả, đúng không ạ?",
+    "text" : "Do vậy là cái số 18 ở đây nó chỉ mang tính là khởi tạo giá trị ban đầu thôi, anh em có thể viết bao nhiêu cũng được, khởi tạo bằng 0 cũng không sao cả, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0254",
+    "id" : "S0221",
     "start" : 1017.02,
     "end" : 1019.26,
     "text" : "Bây giờ mình sẽ chạy cho anh em xem này.",
     "words" : null
   }, {
-    "id" : "S0255",
+    "id" : "S0222",
     "start" : 1019.26,
     "end" : 1022.8,
-    "text" : "Nhập tuổi: Ê, cô gái của chúng ta 18 tuổi thì có ấy được không?",
+    "text" : "Nhập tuổi: ê, cô gái của chúng ta 18 tuổi thì có ấy được không?",
     "words" : null
   }, {
-    "id" : "S0256",
+    "id" : "S0223",
     "start" : 1022.8,
     "end" : 1023.58,
     "text" : "\"Quất luôn!\".",
     "words" : null
   }, {
-    "id" : "S0257",
+    "id" : "S0224",
     "start" : 1023.58,
     "end" : 1023.82,
     "text" : "Đấy!",
     "words" : null
   }, {
-    "id" : "S0258",
+    "id" : "S0225",
     "start" : 1023.82,
-    "end" : 1026.34,
-    "text" : "Thử một trường hợp khác nhỏ hơn 16 xem nào.",
+    "end" : 1027.17,
+    "text" : "Thử một trường hợp khác nhỏ hơn 16 xem nào, chọn số 13 đi.",
     "words" : null
   }, {
-    "id" : "S0259",
-    "start" : 1026.34,
-    "end" : 1027.16,
-    "text" : "Chọn số 13 đi.",
-    "words" : null
-  }, {
-    "id" : "S0260",
-    "start" : 1027.16,
+    "id" : "S0226",
+    "start" : 1027.17,
     "end" : 1027.4,
     "text" : "Hmm.",
     "words" : null
   }, {
-    "id" : "S0261",
+    "id" : "S0227",
     "start" : 1027.42,
     "end" : 1028.14,
     "text" : "Tuổi đẹp đấy!",
     "words" : null
   }, {
-    "id" : "S0262",
+    "id" : "S0228",
     "start" : 1028.14,
     "end" : 1031.57,
     "text" : "Tuổi này tuổi trăng tròn mới nhú, vừa hồng vừa thơm anh em ơi.",
     "words" : null
   }, {
-    "id" : "S0263",
+    "id" : "S0229",
     "start" : 1031.57,
     "end" : 1034.46,
     "text" : "Thế nhưng chương trình của chúng ta bảo là \"rút lui\".",
     "words" : null
   }, {
-    "id" : "S0264",
+    "id" : "S0230",
     "start" : 1034.46,
-    "end" : 1037.71,
-    "text" : "Anh em nhé, biết hấp dẫn đấy thế nhưng mà phải tỉnh táo nè.",
-    "words" : null
-  }, {
-    "id" : "S0265",
-    "start" : 1037.71,
     "end" : 1040.63,
-    "text" : "Đừng để 1 phút yếu lòng đánh mất bản thân anh em nhá.",
+    "text" : "Anh em nhé, biết hấp dẫn đấy thế nhưng mà phải tỉnh táo nè, đừng để 1 phút yếu lòng đánh mất bản thân anh em nhá.",
     "words" : null
   }, {
-    "id" : "S0266",
+    "id" : "S0231",
     "start" : 1040.63,
-    "end" : 1045.19,
-    "text" : "Tuy nhiên mình thấy con gái 13 tuổi nó lớn lắm, nhiều khi không phân biệt được đâu.",
-    "words" : null
-  }, {
-    "id" : "S0267",
-    "start" : 1045.19,
     "end" : 1048.0,
-    "text" : "Nên anh em càng phải check căn cước công dân trước.",
+    "text" : "Tuy nhiên mình thấy con gái 13 tuổi nó lớn lắm, nhiều khi không phân biệt được đâu, nên anh em càng phải check căn cước công dân trước.",
     "words" : null
   }, {
-    "id" : "S0268",
+    "id" : "S0232",
     "start" : 1048.0,
     "end" : 1049.42,
     "text" : "OK, trở lại bài giảng nha.",
     "words" : null
   }, {
-    "id" : "S0269",
+    "id" : "S0233",
     "start" : 1049.42,
     "end" : 1052.1,
     "text" : "Thì anh em thấy mình giảng có bị nhanh quá không?",
     "words" : null
   }, {
-    "id" : "S0270",
+    "id" : "S0234",
     "start" : 1052.3,
-    "end" : 1056.68,
-    "text" : "Tất nhiên trong thời lượng có hạn, mình khó có thể dạy với tốc độ quá chậm được.",
-    "words" : null
-  }, {
-    "id" : "S0271",
-    "start" : 1056.68,
     "end" : 1059.63,
-    "text" : "Và nó cũng sẽ không thể đầy đủ hết các phần kiến thức.",
+    "text" : "Tất nhiên trong thời lượng có hạn, mình khó có thể dạy với tốc độ quá chậm được và nó cũng sẽ không thể đầy đủ hết các phần kiến thức.",
     "words" : null
   }, {
-    "id" : "S0272",
+    "id" : "S0235",
     "start" : 1059.63,
     "end" : 1062.26,
     "text" : "Bài giảng này vẫn chỉ mang tính định hướng thôi.",
     "words" : null
   }, {
-    "id" : "S0273",
+    "id" : "S0236",
     "start" : 1062.26,
     "end" : 1066.64,
     "text" : "Dựa trên bài giảng này anh em vẫn phải triển khai ra những kiến thức xung quanh.",
     "words" : null
   }, {
-    "id" : "S0274",
+    "id" : "S0237",
     "start" : 1066.64,
     "end" : 1071.02,
     "text" : "Ví dụ như phần if-else này, nó sẽ còn 1 cơ chế rẽ nhánh khác gọi là switch-case.",
     "words" : null
   }, {
-    "id" : "S0275",
+    "id" : "S0238",
     "start" : 1071.02,
-    "end" : 1073.73,
-    "text" : "Thì cách thức hoạt động của nó cũng gần tương tự.",
-    "words" : null
-  }, {
-    "id" : "S0276",
-    "start" : 1073.73,
     "end" : 1075.34,
-    "text" : "Anh em nên tìm hiểu thêm nhé.",
+    "text" : "Thì cách thức hoạt động của nó cũng gần tương tự, anh em nên tìm hiểu thêm nhé.",
     "words" : null
   }, {
-    "id" : "S0277",
+    "id" : "S0239",
     "start" : 1075.34,
     "end" : 1089.46,
-    "text" : "Đó, còn trong những trường hợp mà anh em không thể tự học được vì một số lý do như là về ngoại ngữ hay là khả năng tin học vẫn còn yếu, thì cũng có thể tham khảo 1 lớp học của mình dành riêng cho các anh em mới bắt đầu, những ai chưa quen với việc lập trình.",
+    "text" : "Đó, còn trong những trường hợp mà anh em không thể tự học được vì một số lý do như là về ngoại ngữ hay là khả năng tin học vẫn còn yếu, thì cũng có thể tham khảo một lớp học của mình dành riêng cho các anh em mới bắt đầu, những ai chưa quen với việc lập trình.",
     "words" : null
   }, {
-    "id" : "S0278",
+    "id" : "S0240",
     "start" : 1089.46,
     "end" : 1097.18,
     "text" : "Và không chỉ riêng với ngôn ngữ JavaScript mà mình cũng có một số những khóa khác về C++ hay là Python, anh em cũng có thể tham khảo nữa nha.",
     "words" : null
   }, {
-    "id" : "S0279",
+    "id" : "S0241",
     "start" : 1097.18,
     "end" : 1104.95,
-    "text" : "OK, bây giờ thì mình sẽ chuyển sang cái cấu trúc điều khiển (control statement) thứ 2, đó là cấu trúc lặp, tiếng Anh người ta hay gọi là Loop.",
+    "text" : "OK, bây giờ thì mình sẽ chuyển sang cái cấu trúc điều khiển (control statement) thứ hai, đó là cấu trúc lặp, tiếng Anh người ta hay gọi là Loop.",
     "words" : null
   }, {
-    "id" : "S0280",
+    "id" : "S0242",
     "start" : 1104.95,
     "end" : 1110.64,
-    "text" : "Thì cấu trúc lặp nó sẽ cho phép các anh em thực hiện lặp đi lặp lại 1 tập các câu lệnh nào đó nhiều lần.",
+    "text" : "Thì cấu trúc lặp nó sẽ cho phép các anh em thực hiện lặp đi lặp lại một tập các câu lệnh nào đó nhiều lần.",
     "words" : null
   }, {
-    "id" : "S0281",
+    "id" : "S0243",
     "start" : 1110.64,
     "end" : 1115.95,
     "text" : "Ví dụ như ở đây, mình muốn in ra câu là \"Năm nay em 18 tuổi\", mình muốn in ra cái câu đấy 10 lần.",
     "words" : null
   }, {
-    "id" : "S0282",
+    "id" : "S0244",
     "start" : 1115.95,
     "end" : 1118.64,
     "text" : "Mình sẽ sửa lại cái lệnh in trước: \"Năm nay em \".",
     "words" : null
   }, {
-    "id" : "S0283",
+    "id" : "S0245",
     "start" : 1118.64,
     "end" : 1127.94,
     "text" : "Bây giờ mình muốn lấy cái giá trị tuổi từ cái biến tuổi này thì chúng ta sẽ ngắt cái chuỗi ký tự ra và anh em điền cho mình dấu phẩy, sau đó sẽ là tên biến, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0284",
+    "id" : "S0246",
     "start" : 1127.96,
     "end" : 1134.43,
     "text" : "Sau đó nếu như anh em vẫn tiếp tục muốn nối tiếp một chuỗi ký tự khác, anh em lại điền dấu phẩy cho mình.",
     "words" : null
   }, {
-    "id" : "S0285",
+    "id" : "S0247",
     "start" : 1134.43,
     "end" : 1138.44,
     "text" : "Ví dụ như ở đây mình sẽ điền nốt cái chữ là \"tuổi\", đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0286",
+    "id" : "S0248",
     "start" : 1138.44,
     "end" : 1140.35,
-    "text" : "Chạy thử 1 cái lệnh này đã nhá.",
+    "text" : "Chạy thử một cái lệnh này đã nhá.",
     "words" : null
   }, {
-    "id" : "S0287",
+    "id" : "S0249",
     "start" : 1140.35,
     "end" : 1142.31,
     "text" : "Ví dụ như mình nhập là 19 tuổi.",
     "words" : null
   }, {
-    "id" : "S0288",
+    "id" : "S0250",
     "start" : 1142.31,
     "end" : 1143.0,
     "text" : "OK không ạ?",
     "words" : null
   }, {
-    "id" : "S0289",
+    "id" : "S0251",
     "start" : 1143.02,
     "end" : 1144.35,
     "text" : "\"Năm nay em 19 tuổi\".",
     "words" : null
   }, {
-    "id" : "S0290",
+    "id" : "S0252",
     "start" : 1144.35,
     "end" : 1150.23,
-    "text" : "Thì cái chữ \"Năm nay em \" và cái chữ \"tuổi\" nó được gọi là 2 Literal hay còn gọi fixed value.",
+    "text" : "Thì cái chữ \"Năm nay em \" và cái chữ \"tuổi\" nó được gọi là hai literal hay còn gọi fixed value.",
     "words" : null
   }, {
-    "id" : "S0291",
+    "id" : "S0253",
     "start" : 1150.23,
-    "end" : 1153.68,
-    "text" : "Còn cái 19 này nó được lấy từ variable có tên là tuổi.",
-    "words" : null
-  }, {
-    "id" : "S0292",
-    "start" : 1153.68,
     "end" : 1155.92,
-    "text" : "Đó, nhắc lại phần kiến thức cũ nha.",
+    "text" : "Còn cái 19 này nó được lấy từ variable có tên là tuổi, đó, nhắc lại phần kiến thức cũ nha.",
     "words" : null
   }, {
-    "id" : "S0293",
+    "id" : "S0254",
     "start" : 1156.02,
     "end" : 1165.23,
-    "text" : "Rồi, còn bây giờ anh em muốn lặp câu lệnh này khoảng 10 lần thì chúng ta cần đưa nó vào 1 cụm cấu trúc có từ khóa lặp for, mở đóng ngoặc như thế này.",
+    "text" : "Rồi, còn bây giờ anh em muốn lặp câu lệnh này khoảng 10 lần thì chúng ta cần đưa nó vào một cụm cấu trúc có từ khóa lặp for, mở đóng ngoặc như thế này.",
     "words" : null
   }, {
-    "id" : "S0294",
+    "id" : "S0255",
     "start" : 1165.23,
-    "end" : 1169.53,
-    "text" : "Trong phần for này, anh em sẽ cần phải chỉ định một số biểu thức sau.",
-    "words" : null
-  }, {
-    "id" : "S0295",
-    "start" : 1169.53,
     "end" : 1172.52,
-    "text" : "Đầu tiên là phép khởi tạo 1 biến lặp, var i = 0.",
+    "text" : "Trong phần for này, anh em sẽ cần phải chỉ định một số biểu thức sau: Đầu tiên là phép khởi tạo một biến lặp, var i = 0.",
     "words" : null
   }, {
-    "id" : "S0296",
+    "id" : "S0256",
     "start" : 1172.52,
     "end" : 1175.61,
     "text" : "Biến này có thể hiểu là nó dùng để đếm số lần lặp.",
     "words" : null
   }, {
-    "id" : "S0297",
+    "id" : "S0257",
     "start" : 1175.61,
     "end" : 1176.24,
     "text" : "Chấm phẩy.",
     "words" : null
   }, {
-    "id" : "S0298",
+    "id" : "S0258",
     "start" : 1176.24,
     "end" : 1180.12,
     "text" : "Chúng ta sẽ đếm i chạy đến 9 thì anh em có thể viết là i < 10.",
     "words" : null
   }, {
-    "id" : "S0299",
+    "id" : "S0259",
     "start" : 1180.12,
     "end" : 1184.45,
-    "text" : "Tiếp tục là chấm phẩy, đến thành phần thứ 3 là một phép tăng biến lặp.",
+    "text" : "Tiếp tục là chấm phẩy, đến thành phần thứ ba là một phép tăng biến lặp.",
     "words" : null
   }, {
-    "id" : "S0300",
+    "id" : "S0260",
     "start" : 1184.45,
     "end" : 1190.07,
-    "text" : "Phép tăng biến lặp là 1 phép toán thể hiện cách thức mà biến i nó thay đổi sau mỗi lần đếm.",
+    "text" : "Phép tăng biến lặp là một phép toán thể hiện cách thức mà biến i nó thay đổi sau mỗi lần đếm.",
     "words" : null
   }, {
-    "id" : "S0301",
+    "id" : "S0261",
     "start" : 1190.07,
     "end" : 1193.53,
     "text" : "Ví dụ ở đây là chúng ta đếm từ 0, 1, 2, 3, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0302",
+    "id" : "S0262",
     "start" : 1193.55,
     "end" : 1197.44,
     "text" : "Mỗi lần i nó tăng lên 1 thì anh em sẽ viết là i = i + 1.",
     "words" : null
   }, {
-    "id" : "S0303",
+    "id" : "S0263",
     "start" : 1197.44,
     "end" : 1201.06,
     "text" : "Tuy nhiên còn một cách viết ngắn gọn hơn, đó là i++.",
     "words" : null
   }, {
-    "id" : "S0304",
+    "id" : "S0264",
     "start" : 1201.06,
     "end" : 1201.35,
     "text" : "Nhé!",
     "words" : null
   }, {
-    "id" : "S0305",
+    "id" : "S0265",
     "start" : 1201.35,
     "end" : 1203.63,
     "text" : "OK, mình save lại này, Ctrl + S.",
     "words" : null
   }, {
-    "id" : "S0306",
+    "id" : "S0266",
     "start" : 1203.63,
     "end" : 1205.44,
     "text" : "Nhập lại số tuổi là 20 đi.",
     "words" : null
   }, {
-    "id" : "S0307",
+    "id" : "S0267",
     "start" : 1205.44,
     "end" : 1208.64,
     "text" : "OK, \"Năm nay em 20 tuổi\", nó bị dính vào nhau.",
     "words" : null
   }, {
-    "id" : "S0308",
+    "id" : "S0268",
     "start" : 1208.64,
     "end" : 1213.79,
     "text" : "Lý do là vì chúng ta chưa tạo ra sự ngắt dòng cho mỗi lần in xong một câu.",
     "words" : null
   }, {
-    "id" : "S0309",
+    "id" : "S0269",
     "start" : 1213.79,
     "end" : 1224.57,
-    "text" : "Cách khắc phục như sau: ở cuối lệnh document.write, sau khi in xong chữ \"tuổi\" thì anh em có thể viết cho mình dấu chấm này, kèm theo 1 cái dấu xuống dòng.",
+    "text" : "Cách khắc phục như sau: ở cuối lệnh document.write, sau khi in xong chữ \"tuổi\" thì anh em có thể viết cho mình dấu chấm này, kèm theo một cái dấu xuống dòng.",
     "words" : null
   }, {
-    "id" : "S0310",
+    "id" : "S0270",
     "start" : 1224.57,
     "end" : 1231.59,
-    "text" : "Thì trong văn bản HTML, để mà xuống dòng được thì chúng ta cần phải điền 1 thẻ, 1 tag có tên là <br>.",
+    "text" : "Thì trong văn bản HTML, để mà xuống dòng được thì chúng ta cần phải điền một thẻ, một tag có tên là <br>.",
     "words" : null
   }, {
-    "id" : "S0311",
+    "id" : "S0271",
     "start" : 1231.59,
-    "end" : 1235.79,
-    "text" : "Đây là 1 thẻ đơn nên anh em sẽ không cần phải viết thẻ đóng.",
+    "end" : 1235.87,
+    "text" : "Đây là một thẻ đơn nên anh em sẽ không cần phải viết thẻ đóng.",
     "words" : null
   }, {
-    "id" : "S0312",
-    "start" : 1235.79,
+    "id" : "S0272",
+    "start" : 1235.87,
     "end" : 1240.28,
     "text" : "<br> là viết tắt của từ break, thường mang ý nghĩa là ngắt dòng.",
     "words" : null
   }, {
-    "id" : "S0313",
+    "id" : "S0273",
     "start" : 1240.28,
     "end" : 1241.95,
     "text" : "OK, bây giờ save lại nè.",
     "words" : null
   }, {
-    "id" : "S0314",
+    "id" : "S0274",
     "start" : 1241.95,
     "end" : 1245.5,
     "text" : "Đây, \"Năm nay em 20 tuổi\", mình sẽ thu nhỏ lại nha.",
     "words" : null
   }, {
-    "id" : "S0315",
+    "id" : "S0275",
     "start" : 1245.5,
     "end" : 1247.03,
     "text" : "Đó, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0316",
+    "id" : "S0276",
     "start" : 1247.05,
     "end" : 1247.2,
     "text" : "OK!",
     "words" : null
   }, {
-    "id" : "S0317",
+    "id" : "S0277",
     "start" : 1247.2,
     "end" : 1256.56,
     "text" : "Cùng nhìn lại cái cú pháp một chút này: Cấu trúc của chúng ta là for, và bên trong sẽ có thể hiểu là các thành phần để điều khiển cái cấu trúc lặp, nó sẽ được nằm giữa cặp ngoặc tròn.",
     "words" : null
   }, {
-    "id" : "S0318",
+    "id" : "S0278",
     "start" : 1256.56,
     "end" : 1262.31,
     "text" : "Đấy, và cái phần nằm giữa cặp ngoặc nhọn thì sẽ được coi là cái nội dung mà chúng ta sẽ thực hiện lặp đi lặp lại.",
     "words" : null
   }, {
-    "id" : "S0319",
+    "id" : "S0279",
     "start" : 1262.31,
     "end" : 1270.75,
-    "text" : "Thì ở đây mình chỉ thực hiện đúng 1 câu lệnh thôi, nếu anh em viết thêm nhiều các câu lệnh khác thì tập các câu lệnh đấy sẽ được thực hiện đi thực hiện lại nhiều lần.",
+    "text" : "Thì ở đây mình chỉ thực hiện đúng một câu lệnh thôi, nếu anh em viết thêm nhiều các câu lệnh khác thì tập các câu lệnh đấy sẽ được thực hiện đi thực hiện lại nhiều lần.",
     "words" : null
   }, {
-    "id" : "S0320",
+    "id" : "S0280",
     "start" : 1271.05,
     "end" : 1276.84,
-    "text" : "Nói thêm một chút về cái biến lặp i này, thì thật ra nó cũng không khác gì 1 cái biến bình thường cả.",
+    "text" : "Nói thêm một chút về cái biến lặp i này, thì thật ra nó cũng không khác gì một cái biến bình thường cả.",
     "words" : null
   }, {
-    "id" : "S0321",
+    "id" : "S0281",
     "start" : 1276.84,
     "end" : 1282.4,
     "text" : "Anh em hoàn toàn có thể thực hiện thao tác các phép toán với biến này ở trong khối code được lặp.",
     "words" : null
   }, {
-    "id" : "S0322",
+    "id" : "S0282",
     "start" : 1282.4,
     "end" : 1286.41,
     "text" : "Ví dụ như ở đây, phần tuổi mình sẽ cộng thêm biến i đấy, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0323",
+    "id" : "S0283",
     "start" : 1286.41,
     "end" : 1292.83,
     "text" : "Thì cái giá trị tuổi lúc này của mình sẽ không phải là cố định 20 tuổi nữa mà nó sẽ tăng dần đều lên một đơn vị.",
     "words" : null
   }, {
-    "id" : "S0324",
+    "id" : "S0284",
     "start" : 1292.83,
     "end" : 1293.97,
     "text" : "Anh em cùng xem nhé.",
     "words" : null
   }, {
-    "id" : "S0325",
+    "id" : "S0285",
     "start" : 1293.97,
     "end" : 1302.97,
     "text" : "Về phần cấu trúc lặp này thì chúng ta có một từ khóa là while nữa, thế nhưng mà ý tưởng của nó thì cũng tương tự thôi, thế nên là anh em hãy tự tìm hiểu nha.",
     "words" : null
   }, {
-    "id" : "S0326",
+    "id" : "S0286",
     "start" : 1303.97,
     "end" : 1304.12,
     "text" : "OK!",
     "words" : null
   }, {
-    "id" : "S0327",
+    "id" : "S0287",
     "start" : 1304.12,
     "end" : 1308.97,
-    "text" : "Thì đến đây cũng có thể coi là đã khép lại 1 số đồ chơi hết sức cơ bản về ngôn ngữ JavaScript này.",
+    "text" : "Thì đến đây cũng có thể coi là đã khép lại một số đồ chơi hết sức cơ bản về ngôn ngữ JavaScript này.",
     "words" : null
   }, {
-    "id" : "S0328",
+    "id" : "S0288",
     "start" : 1309.97,
     "end" : 1316.97,
-    "text" : "Đấy, thì mình tin chắc là 1 số anh em khi mà học qua những phần vừa rồi thì cảm thấy là nó cũng khá là tương đồng với 1 số các ngôn ngữ lập trình khác.",
+    "text" : "Đấy, thì mình tin chắc là một số anh em khi mà học qua những phần vừa rồi thì cảm thấy là nó cũng khá là tương đồng với một số các ngôn ngữ lập trình khác.",
     "words" : null
   }, {
-    "id" : "S0329",
+    "id" : "S0289",
     "start" : 1316.97,
     "end" : 1325.29,
     "text" : "Tương đồng với một số các ngôn ngữ lập trình khác: chúng có kiểu dữ liệu nguyên thủy, các cấu trúc điều khiển if-else rồi thì for, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0330",
+    "id" : "S0290",
     "start" : 1325.49,
     "end" : 1331.7,
     "text" : "Và bây giờ mình sẽ chuyển qua giới thiệu về kiểu dữ liệu Object, một trong những đặc trưng của ngôn ngữ JavaScript.",
     "words" : null
   }, {
-    "id" : "S0331",
+    "id" : "S0291",
     "start" : 1331.7,
     "end" : 1338.07,
     "text" : "Kiểu Object thì như lúc đầu mình có chia sẻ, nó có một cái tên khác gọi là Non-primitive, có nghĩa là phi nguyên thủy.",
     "words" : null
   }, {
-    "id" : "S0332",
+    "id" : "S0292",
     "start" : 1338.07,
     "end" : 1344.39,
-    "text" : "Có thể hiểu đơn giản nó là tập hợp của nhiều loại dữ liệu có kiểu khác nhau được tập hợp vào trong 1 biến để quản lý.",
+    "text" : "Có thể hiểu đơn giản nó là tập hợp của nhiều loại dữ liệu có kiểu khác nhau được tập hợp vào trong một biến để quản lý.",
     "words" : null
   }, {
-    "id" : "S0333",
+    "id" : "S0293",
     "start" : 1344.39,
     "end" : 1349.25,
     "text" : "Thì các thành phần dữ liệu có thể là kiểu nguyên thủy hoặc cũng có thể là các Object khác.",
     "words" : null
   }, {
-    "id" : "S0334",
+    "id" : "S0294",
     "start" : 1349.27,
     "end" : 1358.83,
     "text" : "Ví dụ như mình đang có một số thông tin dữ liệu liên quan đến tên, tuổi, tình trạng hôn nhân của một em hàng xóm, em crush nào đó của mình chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0335",
+    "id" : "S0295",
     "start" : 1358.83,
     "end" : 1368.46,
-    "text" : "Bây giờ, thay vì mình lưu trữ các thông tin này vào các biến rời rạc thì mình có thể tạo ra một biến có kiểu Object và lưu được tất cả các dữ liệu này.",
+    "text" : "Bây giờ thay vì mình lưu trữ các thông tin này vào các biến rời rạc thì mình có thể tạo ra một biến có kiểu Object và lưu được tất cả các dữ liệu này.",
     "words" : null
   }, {
-    "id" : "S0336",
+    "id" : "S0296",
     "start" : 1368.46,
-    "end" : 1369.37,
-    "text" : "Ví dụ như sau.",
-    "words" : null
-  }, {
-    "id" : "S0337",
-    "start" : 1369.37,
     "end" : 1371.39,
-    "text" : "Đây, mình sẽ xóa cái này đi đã.",
+    "text" : "Ví dụ như sau, đây mình sẽ xóa cái này đi đã.",
     "words" : null
   }, {
-    "id" : "S0338",
+    "id" : "S0297",
     "start" : 1371.39,
     "end" : 1375.62,
-    "text" : "Mình sẽ tạo ra một biến có tên là \"cô hàng xóm\" và gán bằng cái gì?",
+    "text" : "Mình sẽ tạo ra một biến có tên là cô hàng xóm và gán bằng cái gì?",
     "words" : null
   }, {
-    "id" : "S0339",
+    "id" : "S0298",
     "start" : 1375.62,
     "end" : 1381.74,
     "text" : "Cú pháp để tạo ra một Object sẽ là một cặp mở đóng ngoặc nhọn, anh em có thể xuống dòng cũng được.",
     "words" : null
   }, {
-    "id" : "S0340",
+    "id" : "S0299",
     "start" : 1381.74,
     "end" : 1386.75,
-    "text" : "Sau đó, anh em cần phải khai báo từng thành phần thông tin theo định dạng sau.",
+    "text" : "Sau đó anh em cần phải khai báo từng thành phần thông tin theo định dạng sau.",
     "words" : null
   }, {
-    "id" : "S0341",
+    "id" : "S0300",
     "start" : 1386.75,
-    "end" : 1392.69,
-    "text" : "Ví dụ như chúng ta có tên, sau đó là dấu hai chấm, đúng rồi, ví dụ như là Lan, đúng không ạ?",
-    "words" : null
-  }, {
-    "id" : "S0342",
-    "start" : 1392.69,
     "end" : 1395.4,
-    "text" : "Phẩy, tuổi 18, hôn nhân cho kiểu logic đi.",
+    "text" : "Ví dụ như chúng ta có tên, sau đó là dấu hai chấm, đúng rồi, ví dụ như là Lan, đúng không ạ, phẩy, tuổi 18, hôn nhân cho kiểu Boolean đi.",
     "words" : null
   }, {
-    "id" : "S0343",
+    "id" : "S0301",
     "start" : 1395.4,
     "end" : 1401.84,
     "text" : "Vâng, anh em có thể tự liệt kê tiếp, kiểu như là chúng ta đi thu thập thông tin của em hàng xóm ấy.",
     "words" : null
   }, {
-    "id" : "S0344",
+    "id" : "S0302",
     "start" : 1401.88,
-    "end" : 1405.1,
-    "text" : "Bên trong Object này cũng có một cái Object con khác nữa.",
-    "words" : null
-  }, {
-    "id" : "S0345",
-    "start" : 1405.1,
     "end" : 1412.96,
-    "text" : "Ví dụ như mình có một cái thông tin liên quan đến địa chỉ, nó sẽ gồm các trường thông tin con như quê quán, quận huyện ở đâu, đúng không ạ?",
+    "text" : "Bên trong Object này cũng có một cái Object con khác nữa, ví dụ như mình có một cái thông tin liên quan đến địa chỉ, nó sẽ gồm các trường thông tin con như quê quán, quận huyện ở đâu, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0346",
+    "id" : "S0303",
     "start" : 1412.96,
     "end" : 1413.64,
     "text" : "Thì làm sao?",
     "words" : null
   }, {
-    "id" : "S0347",
+    "id" : "S0304",
     "start" : 1413.68,
-    "end" : 1423.54,
-    "text" : "Anh em sẽ lại tạo một cặp mở đóng ngoặc nhọn nữa, và trong này chúng ta tiếp tục điền các trường thông tin con, ví dụ như quận là gì: Cầu Giấy, Phùng Khoang, ví dụ thế chẳng hạn.",
-    "words" : null
-  }, {
-    "id" : "S0348",
-    "start" : 1423.54,
     "end" : 1425.2,
-    "text" : "Anh em tự hoàn thiện luôn nha.",
+    "text" : "Anh em sẽ lại tạo một cặp mở đóng ngoặc nhọn nữa, và trong này chúng ta tiếp tục điền các trường thông tin con, ví dụ như quận là gì, Cầu Giấy, Phùng Khoang, ví dụ thế chẳng hạn, anh em tự hoàn thiện luôn nha.",
     "words" : null
   }, {
-    "id" : "S0349",
+    "id" : "S0305",
     "start" : 1425.2,
     "end" : 1430.27,
     "text" : "Có thể thực tế hơn bằng cách là anh em đi thu thập những thông tin cá nhân của em hàng xóm.",
     "words" : null
   }, {
-    "id" : "S0350",
+    "id" : "S0306",
     "start" : 1430.27,
     "end" : 1436.84,
     "text" : "Đó, thì trở lại cú pháp của việc khai báo Object một chút, anh em thấy các thông tin được ngăn cách nhau bởi dấu phẩy.",
     "words" : null
   }, {
-    "id" : "S0351",
+    "id" : "S0307",
     "start" : 1436.84,
     "end" : 1441.07,
     "text" : "Đấy, thì các thông tin này người ta gọi là property, tạm dịch là thuộc tính.",
     "words" : null
   }, {
-    "id" : "S0352",
+    "id" : "S0308",
     "start" : 1441.07,
-    "end" : 1446.23,
-    "text" : "Các property thì anh em có thể viết ở các dòng tách biệt hoặc viết chung một dòng nếu nó ngắn.",
-    "words" : null
-  }, {
-    "id" : "S0353",
-    "start" : 1446.23,
     "end" : 1449.25,
-    "text" : "Tuy nhiên, mình sẽ viết cách dòng ra để cho nó dễ nhìn.",
+    "text" : "Các property thì anh em có thể viết ở các dòng tách biệt hoặc viết chung một dòng nếu nó ngắn, tuy nhiên mình sẽ viết cách dòng ra để cho nó dễ nhìn.",
     "words" : null
   }, {
-    "id" : "S0354",
+    "id" : "S0309",
     "start" : 1449.25,
     "end" : 1456.54,
-    "text" : "Và trong mỗi một property thì nó có hai phần: một phần là phần name (tên của property), hay một cách gọi khác là key nữa, đúng không ạ?",
+    "text" : "Và trong mỗi một property thì nó có hai phần, một phần là phần name (tên của property), hay một cách gọi khác là key nữa, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0355",
+    "id" : "S0310",
     "start" : 1456.58,
     "end" : 1461.4,
     "text" : "Phần thứ hai là phần value, tức là phần giá trị thực tế mà thông tin này nó đang có, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0356",
+    "id" : "S0311",
     "start" : 1461.4,
     "end" : 1463.66,
     "text" : "Và chúng được ngăn cách nhau bởi dấu hai chấm.",
     "words" : null
   }, {
-    "id" : "S0357",
+    "id" : "S0312",
     "start" : 1463.66,
     "end" : 1469.7,
     "text" : "OK, sau khi đóng gói thông tin dữ liệu vào trong một Object rồi, bây giờ chúng ta lại muốn truy xuất nó ra thì làm thế nào?",
     "words" : null
   }, {
-    "id" : "S0358",
+    "id" : "S0313",
     "start" : 1469.7,
     "end" : 1474.32,
     "text" : "Giả sử là anh em muốn in ra trang web, anh em sẽ viết cho mình như sau: document.write đã này.",
     "words" : null
   }, {
-    "id" : "S0359",
+    "id" : "S0314",
     "start" : 1474.32,
     "end" : 1478.55,
     "text" : "Rồi sau đó chúng ta cần phải chỉ định tên của Object đã nhé, cô hàng xóm đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0360",
+    "id" : "S0315",
     "start" : 1478.55,
     "end" : 1482.58,
-    "text" : "Sau đó, anh em viết cho mình một cái gọi là dấu chấm, sau đó là tên của thuộc tính.",
+    "text" : "Sau đó anh em viết cho mình một cái gọi là dấu chấm, sau đó là tên của thuộc tính.",
     "words" : null
   }, {
-    "id" : "S0361",
+    "id" : "S0316",
     "start" : 1482.58,
-    "end" : 1485.27,
-    "text" : "Ví dụ mình muốn in ra tên thì anh em bây giờ chấm tên.",
-    "words" : null
-  }, {
-    "id" : "S0362",
-    "start" : 1485.27,
     "end" : 1486.61,
-    "text" : "Ctrl + S lại nè, in ra rồi.",
+    "text" : "Ví dụ mình muốn in ra tên thì anh em bây giờ chấm tên, Ctrl + S lại nè, in ra rồi.",
     "words" : null
   }, {
-    "id" : "S0363",
+    "id" : "S0317",
     "start" : 1486.61,
     "end" : 1489.36,
     "text" : "Tương tự với các thuộc tính khác, anh em có thể thử nhé.",
     "words" : null
   }, {
-    "id" : "S0364",
+    "id" : "S0318",
     "start" : 1489.36,
     "end" : 1492.31,
     "text" : "Với thuộc tính là địa chỉ thì nó lại là một Object khác nữa.",
     "words" : null
   }, {
-    "id" : "S0365",
+    "id" : "S0319",
     "start" : 1492.31,
     "end" : 1495.65,
     "text" : "Thế nên là anh em cần thêm một phép truy cập đến thuộc tính con nữa.",
     "words" : null
   }, {
-    "id" : "S0366",
+    "id" : "S0320",
     "start" : 1495.65,
-    "end" : 1497.44,
-    "text" : "Ví dụ như ở đây mình viết là diaChi.",
-    "words" : null
-  }, {
-    "id" : "S0367",
-    "start" : 1497.44,
     "end" : 1501.11,
-    "text" : "Sau đó chúng ta muốn truy xuất ra quận thì anh em lại chấm quan, Cầu Giấy.",
+    "text" : "Ví dụ như ở đây mình viết là diaChi, sau đó chúng ta muốn truy xuất ra quận thì anh em lại chấm quan, Cầu Giấy.",
     "words" : null
   }, {
-    "id" : "S0368",
+    "id" : "S0321",
     "start" : 1501.11,
     "end" : 1503.42,
     "text" : "OK, anh em đã hình dung được cách sử dụng chưa?",
     "words" : null
   }, {
-    "id" : "S0369",
+    "id" : "S0322",
     "start" : 1503.42,
     "end" : 1507.5,
     "text" : "Bây giờ mình sẽ chuyển sang một kiểu dữ liệu được gọi là Function, tạm dịch là hàm.",
     "words" : null
   }, {
-    "id" : "S0370",
+    "id" : "S0323",
     "start" : 1507.52,
-    "end" : 1509.6,
-    "text" : "Function là một kiểu Object đặc biệt.",
-    "words" : null
-  }, {
-    "id" : "S0371",
-    "start" : 1509.6,
     "end" : 1514.87,
-    "text" : "Tức là nó sẽ vẫn dựa trên kiểu dữ liệu Object nhưng được tích hợp thêm một số cơ chế đặc biệt.",
+    "text" : "Function là một kiểu Object đặc biệt, tức là nó sẽ vẫn dựa trên kiểu dữ liệu Object nhưng được tích hợp thêm một số cơ chế đặc biệt.",
     "words" : null
   }, {
-    "id" : "S0372",
+    "id" : "S0324",
     "start" : 1514.87,
-    "end" : 1518.46,
-    "text" : "Nó đặc biệt ở chỗ là cái dữ liệu mà nó lưu trữ là một đoạn code.",
-    "words" : null
-  }, {
-    "id" : "S0373",
-    "start" : 1518.46,
     "end" : 1521.6,
-    "text" : "Hay nói cách khác thì nó là một tập các câu lệnh nào đó.",
+    "text" : "Nó đặc biệt ở chỗ là cái dữ liệu mà nó lưu trữ là một đoạn code, hay nói cách khác thì nó là một tập các câu lệnh nào đó.",
     "words" : null
   }, {
-    "id" : "S0374",
+    "id" : "S0325",
     "start" : 1521.6,
-    "end" : 1525.02,
-    "text" : "Do vậy, một số tài liệu còn gọi Function là chương trình con.",
-    "words" : null
-  }, {
-    "id" : "S0375",
-    "start" : 1525.02,
     "end" : 1529.89,
-    "text" : "Tức là bản thân có thể lưu trữ một chương trình nho nhỏ phục vụ trong chương trình lớn.",
+    "text" : "Do vậy, một số tài liệu còn gọi Function là chương trình con, tức là bản thân có thể lưu trữ một chương trình nho nhỏ phục vụ trong chương trình lớn.",
     "words" : null
   }, {
-    "id" : "S0376",
+    "id" : "S0326",
     "start" : 1529.89,
     "end" : 1536.51,
     "text" : "Ví dụ bây giờ mình sẽ tạo ra một chương trình con là nhập năm sinh, in ra số tuổi chẳng hạn thì anh em sẽ viết thế nào?",
     "words" : null
   }, {
-    "id" : "S0377",
+    "id" : "S0327",
     "start" : 1536.51,
     "end" : 1538.29,
     "text" : "Đoạn này mình sẽ code nhanh nhé.",
     "words" : null
   }, {
-    "id" : "S0378",
+    "id" : "S0328",
     "start" : 1538.29,
     "end" : 1540.69,
     "text" : "Mình sẽ tạo ra một biến là namSinh bằng gì?",
     "words" : null
   }, {
-    "id" : "S0379",
+    "id" : "S0329",
     "start" : 1540.69,
-    "end" : 1542.22,
-    "text" : "Window.prompt đúng không ạ?",
-    "words" : null
-  }, {
-    "id" : "S0380",
-    "start" : 1542.22,
     "end" : 1543.75,
-    "text" : "Để nhập vào từ trình duyệt.",
+    "text" : "Window.prompt đúng không ạ, để nhập vào từ trình duyệt.",
     "words" : null
   }, {
-    "id" : "S0381",
+    "id" : "S0330",
     "start" : 1543.75,
     "end" : 1547.92,
     "text" : "Giả sử năm hiện tại là năm 2023 thì tuổi của chúng ta sẽ là 2023 - namSinh.",
     "words" : null
   }, {
-    "id" : "S0382",
+    "id" : "S0331",
     "start" : 1547.92,
     "end" : 1553.99,
     "text" : "Trong thực tế thì cái số 2023 này nên được lấy từ một cái lệnh của hệ thống để mà in ra được số năm hiện tại.",
     "words" : null
   }, {
-    "id" : "S0383",
+    "id" : "S0332",
     "start" : 1553.99,
     "end" : 1557.44,
     "text" : "Tuy nhiên thì mình viết cố định số 2023 ở đây cho nó đơn giản.",
     "words" : null
   }, {
-    "id" : "S0384",
+    "id" : "S0333",
     "start" : 1557.44,
     "end" : 1562.17,
     "text" : "Đó, thì đại khái chương trình con của chúng ta sẽ gồm 2-3 dòng code ngắn gọn như vậy.",
     "words" : null
   }, {
-    "id" : "S0385",
+    "id" : "S0334",
     "start" : 1562.17,
     "end" : 1566.79,
     "text" : "Bây giờ mình sẽ tạo ra một biến có kiểu là Function để lưu trữ 3 dòng code này nha.",
     "words" : null
   }, {
-    "id" : "S0386",
+    "id" : "S0335",
     "start" : 1566.79,
     "end" : 1568.57,
     "text" : "Anh em sẽ viết cho mình như sau.",
     "words" : null
   }, {
-    "id" : "S0387",
+    "id" : "S0336",
     "start" : 1568.57,
-    "end" : 1570.21,
-    "text" : "Đầu tiên nó cũng là một biến.",
-    "words" : null
-  }, {
-    "id" : "S0388",
-    "start" : 1570.21,
     "end" : 1572.52,
-    "text" : "Chúng ta cũng dùng lệnh var đúng không ạ?",
+    "text" : "Đầu tiên nó cũng là một biến, chúng ta cũng dùng lệnh var đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0389",
+    "id" : "S0337",
     "start" : 1572.54,
     "end" : 1574.72,
     "text" : "Sau đó sẽ là tên của biến, được không ạ?",
     "words" : null
   }, {
-    "id" : "S0390",
+    "id" : "S0338",
     "start" : 1574.74,
     "end" : 1577.18,
     "text" : "Mình có thể viết là tính tuổi, sau đó là dấu bằng.",
     "words" : null
   }, {
-    "id" : "S0391",
+    "id" : "S0339",
     "start" : 1577.18,
     "end" : 1580.65,
-    "text" : "Sau đó là một từ khóa function, mở đóng ngoặc tròn, mở đóng ngoặc nhọn.",
+    "text" : "Sau đó là một từ khóa Function, mở đóng ngoặc tròn, mở đóng ngoặc nhọn.",
     "words" : null
   }, {
-    "id" : "S0392",
+    "id" : "S0340",
     "start" : 1580.65,
     "end" : 1583.18,
     "text" : "Cấu trúc này nhìn giống với cấu trúc if level 4 nhỉ?",
     "words" : null
   }, {
-    "id" : "S0393",
+    "id" : "S0341",
     "start" : 1583.18,
     "end" : 1583.97,
     "text" : "Đúng rồi anh em!",
     "words" : null
   }, {
-    "id" : "S0394",
+    "id" : "S0342",
     "start" : 1583.97,
     "end" : 1586.65,
     "text" : "Chúng ta cũng sẽ viết code vào giữa cặp ngoặc nhọn này.",
     "words" : null
   }, {
-    "id" : "S0395",
+    "id" : "S0343",
     "start" : 1586.65,
     "end" : 1591.34,
     "text" : "Nè, thì anh em phải chuyển cho mình ba cái dòng code ở dưới này lên trên, đi vào giữa cặp ngoặc.",
     "words" : null
   }, {
-    "id" : "S0396",
+    "id" : "S0344",
     "start" : 1591.34,
     "end" : 1594.8,
-    "text" : "Đó, thì cái phần function nó là một từ khóa bắt buộc cho kiểu Function.",
+    "text" : "Đó, thì cái phần function nó là một từ khóa bắt buộc cho kiểu function.",
     "words" : null
   }, {
-    "id" : "S0397",
+    "id" : "S0345",
     "start" : 1594.8,
     "end" : 1598.22,
     "text" : "Cái cặp ngoặc tròn này là nơi chúng ta định nghĩa ra các biến tham số.",
     "words" : null
   }, {
-    "id" : "S0398",
+    "id" : "S0346",
     "start" : 1598.22,
     "end" : 1600.37,
     "text" : "Nó làm gì thì tí nữa mình sẽ giải thích sau.",
     "words" : null
   }, {
-    "id" : "S0399",
+    "id" : "S0347",
     "start" : 1600.37,
     "end" : 1602.9,
     "text" : "Bây giờ mình sẽ chạy cái chương trình con này trước.",
     "words" : null
   }, {
-    "id" : "S0400",
+    "id" : "S0348",
     "start" : 1602.9,
     "end" : 1604.32,
     "text" : "Chạy chương trình con là sao?",
     "words" : null
   }, {
-    "id" : "S0401",
+    "id" : "S0349",
     "start" : 1604.32,
     "end" : 1610.53,
     "text" : "Tức là các lệnh ở bên trong function lúc này mới chỉ mang tính định nghĩa thôi, nó chưa thực sự được thực hiện nha.",
     "words" : null
   }, {
-    "id" : "S0402",
+    "id" : "S0350",
     "start" : 1610.53,
     "end" : 1614.69,
     "text" : "Để mà thực hiện thì anh em sẽ phải thông qua một thao tác gọi là gọi hàm đấy.",
     "words" : null
   }, {
-    "id" : "S0403",
+    "id" : "S0351",
     "start" : 1614.69,
     "end" : 1620.14,
     "text" : "Tiếng Anh người ta hay gọi là Call Function hoặc là Invoke Function, kèm theo cặp mở đóng ngoặc tròn.",
     "words" : null
   }, {
-    "id" : "S0404",
+    "id" : "S0352",
     "start" : 1620.14,
     "end" : 1622.19,
     "text" : "Anh em cùng xem chương trình chạy nha.",
     "words" : null
   }, {
-    "id" : "S0405",
+    "id" : "S0353",
     "start" : 1622.19,
     "end" : 1623.92,
     "text" : "Có vẻ là nó không chạy anh em ạ.",
     "words" : null
   }, {
-    "id" : "S0406",
+    "id" : "S0354",
     "start" : 1623.92,
     "end" : 1629.05,
     "text" : "Đó, thì cái việc mà viết code xong và chương trình không chạy nó là chuyện hết sức bình thường.",
     "words" : null
   }, {
-    "id" : "S0407",
+    "id" : "S0355",
     "start" : 1629.05,
     "end" : 1633.59,
     "text" : "Và tiện đây mình sẽ giới thiệu anh em về cái cách thức để check ra cái lỗi đó là gì.",
     "words" : null
   }, {
-    "id" : "S0408",
+    "id" : "S0356",
     "start" : 1633.59,
     "end" : 1638.29,
     "text" : "Thì ở trên trình duyệt Google Chrome, anh em bấm cho mình F12 để nó mở ra phần Console.",
     "words" : null
   }, {
-    "id" : "S0409",
+    "id" : "S0357",
     "start" : 1638.29,
     "end" : 1643.8,
     "text" : "Console sẽ là nơi mà nó sẽ check ra được cái lỗi trong quá trình anh em viết các đoạn code JavaScript.",
     "words" : null
   }, {
-    "id" : "S0410",
+    "id" : "S0358",
     "start" : 1643.8,
     "end" : 1647.79,
     "text" : "Ví dụ ở đây anh em thấy nó có một dòng báo đỏ là TypeError - kiểu dữ liệu.",
     "words" : null
   }, {
-    "id" : "S0411",
+    "id" : "S0359",
     "start" : 1647.79,
     "end" : 1650.49,
     "text" : "Nó báo ở cái lệnh window.prompt is not a function.",
     "words" : null
   }, {
-    "id" : "S0412",
+    "id" : "S0360",
     "start" : 1650.49,
     "end" : 1656.49,
-    "text" : "À đây này, cái lệnh window.prompt là mình viết sai chính tả, mình viết thiếu một chữ p thành promt anh em nhé.",
+    "text" : "À đây này, cái lệnh window.prompt là mình viết sai chính tả, mình viết thiếu một chữ p thành prompt anh em nhé.",
     "words" : null
   }, {
-    "id" : "S0413",
+    "id" : "S0361",
     "start" : 1656.49,
     "end" : 1664.42,
     "text" : "Và mình cũng vừa chợt nhận ra là cái năm sinh này của mình cũng cần phải chuyển về kiểu số nguyên, đấy là parseInt, nếu không nó sẽ là kiểu String.",
     "words" : null
   }, {
-    "id" : "S0414",
+    "id" : "S0362",
     "start" : 1664.42,
     "end" : 1665.77,
     "text" : "Bây giờ Ctrl + S lại này.",
     "words" : null
   }, {
-    "id" : "S0415",
+    "id" : "S0363",
     "start" : 1665.77,
     "end" : 1669.77,
     "text" : "Đó, anh em thấy không, chương trình nó chạy được bình thường đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0416",
+    "id" : "S0364",
     "start" : 1669.79,
     "end" : 1672.07,
     "text" : "Ví dụ mình nhập là năm sinh 2000 chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0417",
+    "id" : "S0365",
     "start" : 1672.07,
     "end" : 1678.22,
     "text" : "Ồ, in ra kết quả... à đúng rồi, bởi vì cái document.write này của mình vẫn in ra cái địa chỉ của cô hàng xóm ở trên.",
     "words" : null
   }, {
-    "id" : "S0418",
+    "id" : "S0366",
     "start" : 1678.22,
     "end" : 1682.09,
-    "text" : "Đó, OK, tạm thời bây giờ chúng ta không quan tâm đến cô hàng xóm nữa nhé.",
+    "text" : "Đó, ok, tạm thời bây giờ chúng ta không quan tâm đến cô hàng xóm nữa nhé.",
     "words" : null
   }, {
-    "id" : "S0419",
+    "id" : "S0367",
     "start" : 1682.09,
     "end" : 1686.17,
     "text" : "Chúng ta sẽ quan tâm đến chương trình con là chúng ta in được cái tuổi đó nè.",
     "words" : null
   }, {
-    "id" : "S0420",
+    "id" : "S0368",
     "start" : 1686.17,
     "end" : 1689.03,
     "text" : "Mình chạy lại này: 2000 này, 2000 thì năm nay 23 tuổi.",
     "words" : null
   }, {
-    "id" : "S0421",
+    "id" : "S0369",
     "start" : 1689.03,
     "end" : 1696.5,
-    "text" : "Đó, OK, vậy thì việc mà chúng ta tách các câu lệnh này ra và đưa vào function ấy thì nó có khác gì với việc chúng ta gọi nó một cách độc lập?",
+    "text" : "Đó, ok, vậy thì việc mà chúng ta tách các câu lệnh này ra và đưa vào function ấy thì nó có khác gì với việc chúng ta gọi nó một cách độc lập?",
     "words" : null
   }, {
-    "id" : "S0422",
+    "id" : "S0370",
     "start" : 1696.5,
     "end" : 1701.33,
     "text" : "Ví dụ như mình đưa cái lệnh này ra ngoài chẳng hạn, như thế này thì nó vẫn chạy anh em nha.",
     "words" : null
   }, {
-    "id" : "S0423",
+    "id" : "S0371",
     "start" : 1701.33,
     "end" : 1708.64,
     "text" : "Tuy nhiên, khi mà chúng ta đưa nó vào function thì nó sẽ giúp chúng ta có thể tái sử dụng cái function đấy trong những tình huống kế tiếp.",
     "words" : null
   }, {
-    "id" : "S0424",
+    "id" : "S0372",
     "start" : 1708.64,
     "end" : 1714.47,
     "text" : "Ví dụ như nếu mình muốn thực hiện công việc là tính tuổi nhiều lần chẳng hạn, mình sẽ lại chuyển nó vào trong.",
     "words" : null
   }, {
-    "id" : "S0425",
+    "id" : "S0373",
     "start" : 1714.47,
     "end" : 1720.3,
     "text" : "Và bây giờ, mình có thể thực hiện lại cái việc tính tuổi bằng cách gọi lại function đấy là xong, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0426",
+    "id" : "S0374",
     "start" : 1720.3,
     "end" : 1725.23,
     "text" : "Anh em chỉ cần gọi thêm một cái tính tuổi nữa thì nó sẽ thực hiện 2 lần tính tuổi cho anh em.",
     "words" : null
   }, {
-    "id" : "S0427",
+    "id" : "S0375",
     "start" : 1725.23,
     "end" : 1727.94,
     "text" : "Ví dụ ở đây, mình sẽ in ra 1 cái ngắt dòng nữa này.",
     "words" : null
   }, {
-    "id" : "S0428",
+    "id" : "S0376",
     "start" : 1727.94,
     "end" : 1730.96,
-    "text" : "Mình nhập nhé: 2000, rồi nhập năm sinh của mình đi: 1992.",
+    "text" : "Mình nhập nhá: 2000, rồi nhập năm sinh của mình đi: 1992.",
     "words" : null
   }, {
-    "id" : "S0429",
+    "id" : "S0377",
     "start" : 1730.96,
     "end" : 1732.71,
     "text" : "Đấy, 23 và 31, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0430",
+    "id" : "S0378",
     "start" : 1732.71,
     "end" : 1734.78,
     "text" : "Nó thực hiện 2 lần công việc tính tuổi.",
     "words" : null
   }, {
-    "id" : "S0431",
+    "id" : "S0379",
     "start" : 1734.78,
     "end" : 1739.23,
     "text" : "Thì khi anh em không có function, anh em sẽ phải gọi lại 3 dòng code này đúng không?",
     "words" : null
   }, {
-    "id" : "S0432",
+    "id" : "S0380",
     "start" : 1739.23,
     "end" : 1743.36,
     "text" : "Và khi số lần yêu cầu nó tăng lên, cái số dòng code của anh em cũng sẽ dài ra.",
     "words" : null
   }, {
-    "id" : "S0433",
+    "id" : "S0381",
     "start" : 1743.36,
     "end" : 1750.52,
     "text" : "Đấy, thì cái việc mà sử dụng function nó sẽ rút ngắn code của chúng ta và tăng tính tái sử dụng trong logic một đoạn tính toán nào đấy.",
     "words" : null
   }, {
-    "id" : "S0434",
+    "id" : "S0382",
     "start" : 1750.52,
     "end" : 1759.37,
-    "text" : "OK, một phần kiến thức khác cũng rất là quan trọng đối với phần function mà anh em cần nắm được, có thể kể đến như là phần parameter, tức là phần tham số của function.",
+    "text" : "Ok, một phần kiến thức khác cũng rất là quan trọng đối với phần function mà anh em cần nắm được, có thể kể đến như là phần parameter, tức là phần tham số của function.",
     "words" : null
   }, {
-    "id" : "S0435",
+    "id" : "S0383",
     "start" : 1759.47,
-    "end" : 1763.08,
-    "text" : "Có thể hiểu nó là các biến được định nghĩa ở trong cái phần ngoặc tròn này.",
-    "words" : null
-  }, {
-    "id" : "S0436",
-    "start" : 1763.08,
     "end" : 1767.94,
-    "text" : "Thì tham số ấy có thể hiểu nó là cái nơi tiếp nhận input, tức là cái đầu vào cho chương trình con đó.",
+    "text" : "Có thể hiểu nó là các biến được định nghĩa ở trong cái phần ngoặc tròn này, thì tham số ấy có thể hiểu nó là cái nơi tiếp nhận input, tức là cái đầu vào cho chương trình con đó.",
     "words" : null
   }, {
-    "id" : "S0437",
+    "id" : "S0384",
     "start" : 1767.94,
     "end" : 1777.94,
     "text" : "Ví dụ như là cái chương trình tính tuổi này của mình, thay vì là mình nhận thông tin năm sinh từ phần window.prompt, thì mình sẽ nhận từ 1 lệnh nào khác chẳng hạn, thì anh em sẽ cần liệt kê biến tham số ở đây.",
     "words" : null
   }, {
-    "id" : "S0438",
+    "id" : "S0385",
     "start" : 1777.94,
     "end" : 1780.19,
     "text" : "Ví dụ nhé, mình sẽ chuyển cái năm sinh lên đây.",
     "words" : null
   }, {
-    "id" : "S0439",
+    "id" : "S0386",
     "start" : 1780.19,
     "end" : 1781.82,
     "text" : "Phần này thì mình sẽ tạm ẩn nó đi.",
     "words" : null
   }, {
-    "id" : "S0440",
+    "id" : "S0387",
     "start" : 1781.82,
     "end" : 1789.09,
     "text" : "Anh em có thể dùng 2 dấu gạch chéo, cái này người ta gọi là comment, tức là cái dòng code này sẽ bị vô hiệu hóa đi, nó không thực hiện cái dòng code đó.",
     "words" : null
   }, {
-    "id" : "S0441",
+    "id" : "S0388",
     "start" : 1789.09,
     "end" : 1792.92,
     "text" : "Ngoài ra, anh em có thể dùng comment để mà chú thích cho các đoạn code của mình.",
     "words" : null
   }, {
-    "id" : "S0442",
+    "id" : "S0389",
     "start" : 1792.92,
     "end" : 1797.51,
     "text" : "Rồi khi mà function của chúng ta đã định nghĩa có 1 cái input như thế này, thì anh em sẽ làm gì?",
     "words" : null
   }, {
-    "id" : "S0443",
+    "id" : "S0390",
     "start" : 1797.53,
     "end" : 1805.34,
     "text" : "Thì khi mà anh em gọi cái hàm đó, anh em sẽ phải truyền cho nó một cái giá trị đấy đúng không ạ, ví dụ như 2000 này, một cái là 1992 này.",
     "words" : null
   }, {
-    "id" : "S0444",
+    "id" : "S0391",
     "start" : 1805.34,
-    "end" : 1806.96,
-    "text" : "Bây giờ anh em cùng xem nha.",
-    "words" : null
-  }, {
-    "id" : "S0445",
-    "start" : 1806.96,
     "end" : 1809.27,
-    "text" : "Nó sẽ chạy ra chương trình chuẩn như cũ.",
+    "text" : "Bây giờ anh em cùng xem nha, nó sẽ chạy ra chương trình chuẩn như cũ.",
     "words" : null
   }, {
-    "id" : "S0446",
+    "id" : "S0392",
     "start" : 1809.27,
     "end" : 1815.83,
     "text" : "Nhưng mà nó sẽ không tạo ra cửa sổ Chrome để cho chúng ta nhập dữ liệu nữa, và nó sẽ lấy trực tiếp cái giá trị này.",
     "words" : null
   }, {
-    "id" : "S0447",
+    "id" : "S0393",
     "start" : 1815.85,
     "end" : 1820.55,
     "text" : "Các cái giá trị này có thể được tạo ra bởi một lệnh nào đấy mà anh em lập trình sau này, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0448",
+    "id" : "S0394",
     "start" : 1820.57,
     "end" : 1825.43,
     "text" : "Ở đây, theo mình nghĩ thì có một cách hình dung nó dễ liên tưởng hơn về khái niệm tham số này.",
     "words" : null
   }, {
-    "id" : "S0449",
+    "id" : "S0395",
     "start" : 1825.43,
     "end" : 1830.09,
     "text" : "Anh em có thể nhớ về cái khái niệm hàm số f(x) mà anh em học ở cấp 2, cấp 3, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0450",
+    "id" : "S0396",
     "start" : 1830.09,
     "end" : 1832.83,
     "text" : "Chữ f đó là viết tắt của từ Function, đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0451",
+    "id" : "S0397",
     "start" : 1832.85,
     "end" : 1833.95,
     "text" : "Còn x là gì?",
     "words" : null
   }, {
-    "id" : "S0452",
+    "id" : "S0398",
     "start" : 1833.97,
     "end" : 1835.41,
     "text" : "X là biến số, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0453",
+    "id" : "S0399",
     "start" : 1835.41,
     "end" : 1839.57,
     "text" : "Với mỗi một giá trị của biến thì nó sẽ có những kết quả khác nhau, đúng không?",
     "words" : null
   }, {
-    "id" : "S0454",
+    "id" : "S0400",
     "start" : 1839.59,
     "end" : 1842.65,
     "text" : "Thì ở đây tham số nó không khác gì là biến số trong hàm số cả.",
     "words" : null
   }, {
-    "id" : "S0455",
+    "id" : "S0401",
     "start" : 1842.67,
     "end" : 1847.95,
     "text" : "Đúng không ạ, với mỗi một giá trị khác nhau như 2000 hay 1992 thì nó sẽ cho ra những kết quả khác nhau.",
     "words" : null
   }, {
-    "id" : "S0456",
+    "id" : "S0402",
     "start" : 1847.95,
     "end" : 1855.73,
     "text" : "Và trong lập trình thì những cái giá trị mà chúng ta truyền cho phần tham số parameter này còn được gọi là đối số, tiếng Anh gọi là argument anh em nha.",
     "words" : null
   }, {
-    "id" : "S0457",
+    "id" : "S0403",
     "start" : 1855.73,
     "end" : 1857.98,
     "text" : "OK, thế là xong cái phần input của function.",
     "words" : null
   }, {
-    "id" : "S0458",
+    "id" : "S0404",
     "start" : 1857.98,
     "end" : 1860.6,
     "text" : "Đúng rồi, còn phần output, phần đầu ra thì làm sao?",
     "words" : null
   }, {
-    "id" : "S0459",
+    "id" : "S0405",
     "start" : 1860.6,
     "end" : 1864.49,
     "text" : "Ở đây anh em thấy là cái function này nó tạo ra những số 23 và 31, đúng chứ?",
     "words" : null
   }, {
-    "id" : "S0460",
+    "id" : "S0406",
     "start" : 1864.49,
     "end" : 1866.95,
     "text" : "Nó được thực hiện thông qua lệnh document.write.",
     "words" : null
   }, {
-    "id" : "S0461",
+    "id" : "S0407",
     "start" : 1866.95,
     "end" : 1873.04,
     "text" : "Tuy nhiên, cái lệnh này là làm việc trực tiếp với phần trang web chứ nó không thể hiện phần output đầu ra của function.",
     "words" : null
   }, {
-    "id" : "S0462",
+    "id" : "S0408",
     "start" : 1873.04,
     "end" : 1880.93,
     "text" : "Trong thực tế là cái function này của chúng ta có thể là nó sẽ tạo ra một kết quả và giá trị gì đấy để phục vụ cho những cái lệnh tiếp theo, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0463",
+    "id" : "S0409",
     "start" : 1880.95,
     "end" : 1884.33,
     "text" : "Thì trong trường hợp đó, anh em phải sử dụng một cái lệnh gọi là return.",
     "words" : null
   }, {
-    "id" : "S0464",
+    "id" : "S0410",
     "start" : 1884.33,
     "end" : 1887.06,
     "text" : "Đây là một cái lệnh được sử dụng ở bên trong cái function.",
     "words" : null
   }, {
-    "id" : "S0465",
+    "id" : "S0411",
     "start" : 1887.06,
     "end" : 1888.94,
     "text" : "Return có nghĩa là trả về, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0466",
+    "id" : "S0412",
     "start" : 1888.94,
     "end" : 1893.17,
     "text" : "Ví dụ ở đây mình tính ra cái tuổi bằng bao nhiêu đấy, mình sẽ return cái biến tuổi đấy ra.",
     "words" : null
   }, {
-    "id" : "S0467",
+    "id" : "S0413",
     "start" : 1893.17,
     "end" : 1895.19,
     "text" : "Nó return ra đâu, nó sẽ trả kết quả về đâu?",
     "words" : null
   }, {
-    "id" : "S0468",
+    "id" : "S0414",
     "start" : 1895.51,
     "end" : 1899.0,
     "text" : "Đây, anh em cùng nhìn xuống cái chỗ mà anh em mới gọi function nè.",
     "words" : null
   }, {
-    "id" : "S0469",
+    "id" : "S0415",
     "start" : 1899.0,
     "end" : 1903.27,
     "text" : "Đấy, thì tại thời điểm anh em gọi function này, nó sẽ tính ra một kết quả gì đấy.",
     "words" : null
   }, {
-    "id" : "S0470",
+    "id" : "S0416",
     "start" : 1903.27,
     "end" : 1908.66,
     "text" : "Và để lấy được cái giá trị đấy, anh em sẽ phải dùng một biến để hứng lấy cái giá trị đó, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0471",
+    "id" : "S0417",
     "start" : 1908.66,
     "end" : 1910.62,
     "text" : "Ví dụ như mình sẽ dùng cái biến tuổi.",
     "words" : null
   }, {
-    "id" : "S0472",
+    "id" : "S0418",
     "start" : 1910.62,
     "end" : 1915.47,
     "text" : "Thì lúc này, cái tính tuổi nó sẽ tạo ra một kết quả gì đấy và nó sẽ gán cho biến tuổi ở đây.",
     "words" : null
   }, {
-    "id" : "S0473",
+    "id" : "S0419",
     "start" : 1915.47,
     "end" : 1919.33,
     "text" : "Bây giờ mình sẽ thử chuyển cái lệnh document.write này đi xuống dưới nha.",
     "words" : null
   }, {
-    "id" : "S0474",
+    "id" : "S0420",
     "start" : 1919.33,
     "end" : 1923.08,
-    "text" : "Anh em xem mình vừa Save lại đấy, các kết quả vẫn như cũ, đúng không ạ?",
+    "text" : "Anh em xem mình vừa save lại đấy, các kết quả vẫn như cũ, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0475",
+    "id" : "S0421",
     "start" : 1923.08,
     "end" : 1929.56,
     "text" : "Ngoài ra, để mà ngắn gọn hơn thì anh em cũng có thể gọi trực tiếp function tính tuổi này ở bên trong cái lệnh document.write nha, như sau.",
     "words" : null
   }, {
-    "id" : "S0476",
+    "id" : "S0422",
     "start" : 1933.13,
     "end" : 1939.07,
     "text" : "Đây chẳng qua là cách gọi nối tiếp các câu lệnh mà mình đã chia sẻ ở đầu bài học, gọn hơn rất nhiều đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0477",
+    "id" : "S0423",
     "start" : 1939.07,
     "end" : 1944.03,
     "text" : "Nếu như function không có lệnh return thì mặc định nó sẽ return về một giá trị gọi là undefined.",
     "words" : null
   }, {
-    "id" : "S0478",
+    "id" : "S0424",
     "start" : 1944.03,
     "end" : 1950.39,
     "text" : "OK, chắc là về function thì mình xin phép được tạm dừng tại đây để cho nó phù hợp với tinh thần nhập môn của bài giảng này.",
     "words" : null
   }, {
-    "id" : "S0479",
+    "id" : "S0425",
     "start" : 1950.39,
     "end" : 1956.49,
     "text" : "Đấy, các anh em có thể tìm hiểu thêm một số những vấn đề khác, ví dụ như là các cách thức để khai báo ra một function.",
     "words" : null
   }, {
-    "id" : "S0480",
+    "id" : "S0426",
     "start" : 1956.49,
     "end" : 1960.57,
     "text" : "Như ở đây, cái cách khai báo này nó giống với cách khai báo biến, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0481",
+    "id" : "S0427",
     "start" : 1960.73,
     "end" : 1967.78,
     "text" : "Tuy nhiên thì chúng ta cũng có thể khai báo một function theo cách truyền thống giống một số ngôn ngữ lập trình như là C hay là Java đã làm.",
     "words" : null
   }, {
-    "id" : "S0482",
+    "id" : "S0428",
     "start" : 1967.78,
     "end" : 1973.22,
-    "text" : "Ngoài ra thì nó có một cách khai báo hiện đại hơn, đó là cú pháp Arrow Function, nó dùng ký hiệu mũi tên ấy.",
+    "text" : "Ngoài ra thì nó có một cách khai báo hiện đại hơn, đó là cú pháp arrow function, nó dùng ký hiệu mũi tên ấy.",
     "words" : null
   }, {
-    "id" : "S0483",
+    "id" : "S0429",
     "start" : 1973.22,
     "end" : 1981.48,
     "text" : "Tuy nhiên thì với các anh em nhập môn, mình nghĩ là việc sử dụng quá nhiều ký hiệu sẽ hơi rối và khó hình dung, thế nên mình cũng không đề xuất trong bài giảng này.",
     "words" : null
   }, {
-    "id" : "S0484",
+    "id" : "S0430",
     "start" : 1981.48,
     "end" : 1988.08,
-    "text" : "Đấy, ngoài ra có một vấn đề nữa đó là khi mà anh em truyền tham số thì nó sẽ có sự khác nhau giữa kiểu dữ liệu Primitive và Object.",
+    "text" : "Đấy, ngoài ra có một vấn đề nữa đó là khi mà anh em truyền tham số thì nó sẽ có sự khác nhau giữa kiểu dữ liệu primitive và Object.",
     "words" : null
   }, {
-    "id" : "S0485",
+    "id" : "S0431",
     "start" : 1988.08,
     "end" : 1991.05,
     "text" : "Thì anh em có thể chủ động tìm hiểu thêm về vấn đề này nha.",
     "words" : null
   }, {
-    "id" : "S0486",
+    "id" : "S0432",
     "start" : 1992.02,
     "end" : 1997.88,
     "text" : "OK, mình xin phép được chuyển qua cái kiểu dữ liệu tiếp theo được gọi là Array, tạm dịch là mảng.",
     "words" : null
   }, {
-    "id" : "S0487",
+    "id" : "S0433",
     "start" : 1997.88,
     "end" : 2011.42,
     "text" : "Nó cũng là một Object đặc biệt, và nó đặc biệt ở chỗ là các dữ liệu mà anh em tổ chức trong Array thì không thông qua các key hay là property name, mà nó sẽ thông qua một cái khái niệm gọi là index, tạm hiểu là số thứ tự đi.",
     "words" : null
   }, {
-    "id" : "S0488",
+    "id" : "S0434",
     "start" : 2011.42,
     "end" : 2014.68,
     "text" : "OK, mình sẽ lấy một cái ví dụ anh em sẽ hiểu ngay nha.",
     "words" : null
   }, {
-    "id" : "S0489",
+    "id" : "S0435",
     "start" : 2014.68,
     "end" : 2019.88,
     "text" : "Giả sử mình có một vài thông tin như là Lan, Thảo, Eimi Fukada, Maria Ozawa chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0490",
+    "id" : "S0436",
     "start" : 2019.88,
     "end" : 2024.84,
     "text" : "Nếu mà muốn lưu nhiều dữ liệu như này, anh em vẫn hoàn toàn có thể sử dụng Object.",
     "words" : null
   }, {
-    "id" : "S0491",
+    "id" : "S0437",
     "start" : 2024.84,
     "end" : 2032.63,
     "text" : "Tuy nhiên, trong trường hợp này khi chúng ta không biết rõ được các tên của thuộc tính là gì thì anh em có thể sử dụng Array nha.",
     "words" : null
   }, {
-    "id" : "S0492",
+    "id" : "S0438",
     "start" : 2032.63,
     "end" : 2042.0,
     "text" : "Thì anh em có thể liệt kê các giá trị ra ngăn cách nhau bởi dấu phẩy và bọc nó trong một cặp ngoặc vuông, sau đó gán nó cho một biến, mình tạm gọi là a đi.",
     "words" : null
   }, {
-    "id" : "S0493",
+    "id" : "S0439",
     "start" : 2042.0,
     "end" : 2044.78,
     "text" : "Lúc này, a chính là một biến có kiểu là Array.",
     "words" : null
   }, {
-    "id" : "S0494",
+    "id" : "S0440",
     "start" : 2044.78,
     "end" : 2052.57,
     "text" : "Và lúc này cái việc truy cập các phần tử trong Array sẽ thông qua các số thứ tự người ta gọi là index và được tính từ 0.",
     "words" : null
   }, {
-    "id" : "S0495",
+    "id" : "S0441",
     "start" : 2052.57,
     "end" : 2058.42,
     "text" : "Ví dụ ở đây cái Lan xuất hiện đầu tiên thì nó sẽ là số 0, anh em sẽ viết cho mình là a[0].",
     "words" : null
   }, {
-    "id" : "S0496",
+    "id" : "S0442",
     "start" : 2058.42,
     "end" : 2066.02,
     "text" : "Anh em lưu ý nhé, lúc này cái toán tử ngoặc vuông nó đóng vai trò là truy cập đến một phần tử theo cái số thứ tự đây!",
     "words" : null
   }, {
-    "id" : "S0497",
+    "id" : "S0443",
     "start" : 2066.02,
     "end" : 2071.11,
     "text" : "Mình sẽ in cho anh em xem này: Lan, mình sẽ tạm xóa 2 cái trên đi cho nó đỡ vướng nha.",
     "words" : null
   }, {
-    "id" : "S0498",
+    "id" : "S0444",
     "start" : 2071.11,
     "end" : 2075.97,
     "text" : "Ví dụ anh em muốn in phần tử số 1, có nghĩa là Thảo, thì anh em điền số 1 vào đây.",
     "words" : null
   }, {
-    "id" : "S0499",
+    "id" : "S0445",
     "start" : 2075.97,
     "end" : 2081.14,
     "text" : "Cho nên cái cơ chế đặc biệt mà thằng Array này nó có, suy cho cùng thì nó vẫn là một Object anh em nhé.",
     "words" : null
   }, {
-    "id" : "S0500",
+    "id" : "S0446",
     "start" : 2081.14,
     "end" : 2085.96,
     "text" : "Như lúc đầu mình có nói Array nó là một Object đặc biệt, nó vẫn là kiểu dữ liệu dựa trên Object.",
     "words" : null
   }, {
-    "id" : "S0501",
+    "id" : "S0447",
     "start" : 2085.96,
     "end" : 2089.63,
     "text" : "Thế nên là nó vẫn có thể quản lý các thuộc tính, các property anh em nhé.",
     "words" : null
   }, {
-    "id" : "S0502",
+    "id" : "S0448",
     "start" : 2089.63,
     "end" : 2094.8,
     "text" : "Ví dụ như là với Array thì nó có một thuộc tính đặc biệt gọi là length được tích hợp sẵn ở trong Array.",
     "words" : null
   }, {
-    "id" : "S0503",
+    "id" : "S0449",
     "start" : 2094.8,
     "end" : 2100.78,
     "text" : "Anh em lưu ý nhé, với thuộc tính thì chúng ta sẽ vẫn dùng dấu chấm, thuộc tính length sẽ thể hiện cái độ dài của Array.",
     "words" : null
   }, {
-    "id" : "S0504",
+    "id" : "S0450",
     "start" : 2100.78,
     "end" : 2104.97,
     "text" : "Độ dài ở đây là số lượng phần tử, ví dụ ở đây chúng ta có 4 phần tử đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0505",
+    "id" : "S0451",
     "start" : 2105.17,
     "end" : 2107.38,
     "text" : "Length này nó trả ra là 4 anh em nha.",
     "words" : null
   }, {
-    "id" : "S0506",
+    "id" : "S0452",
     "start" : 2107.38,
     "end" : 2116.42,
     "text" : "Ngoài ra thì nó còn một số thuộc tính khác có kiểu là function dùng để bổ trợ cho Array, như hàm push để thêm dữ liệu vào và hàm pop để xóa dữ liệu đi.",
     "words" : null
   }, {
-    "id" : "S0507",
+    "id" : "S0453",
     "start" : 2116.42,
     "end" : 2123.67,
     "text" : "Ví dụ như sau: a.push, nó là một function và anh em cần phải truyền một tham số thể hiện cái phần tử mà anh em muốn thêm.",
     "words" : null
   }, {
-    "id" : "S0508",
+    "id" : "S0454",
     "start" : 2123.67,
     "end" : 2130.73,
     "text" : "Ví dụ mình muốn thêm một thông tin là Yua Mikami, thì lúc này anh em xem là cái length này nó có tăng lên 1 không nhé?",
     "words" : null
   }, {
-    "id" : "S0509",
+    "id" : "S0455",
     "start" : 2130.73,
     "end" : 2132.21,
     "text" : "Đó, lên là 5 đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0510",
+    "id" : "S0456",
     "start" : 2132.21,
     "end" : 2139.17,
     "text" : "Để mà in được cái Array a này ra phần trang web, anh em có thể truyền trực tiếp cái a này vào câu lệnh document.write nha.",
     "words" : null
   }, {
-    "id" : "S0511",
+    "id" : "S0457",
     "start" : 2139.17,
     "end" : 2146.12,
     "text" : "Nó sẽ hiển thị các phần tử trong Array phân cách nhau bởi dấu phẩy, và anh em lưu ý là nó sẽ không có cặp dấu ngoặc vuông.",
     "words" : null
   }, {
-    "id" : "S0512",
+    "id" : "S0458",
     "start" : 2146.12,
     "end" : 2149.6,
     "text" : "Lệnh push này anh em thấy là nó sẽ thêm một phần tử vào cuối.",
     "words" : null
   }, {
-    "id" : "S0513",
+    "id" : "S0459",
     "start" : 2149.6,
     "end" : 2156.15,
     "text" : "Để mà xóa cái phần tử ở cuối đi thì chúng ta có một cái lệnh gọi là pop, đây, ví dụ như thế này, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0514",
+    "id" : "S0460",
     "start" : 2156.15,
     "end" : 2160.87,
     "text" : "Lúc này thì nó sẽ đẩy cái Yua Mikami ra, đấy, nó chỉ còn đến Maria Ozawa thôi.",
     "words" : null
   }, {
-    "id" : "S0515",
+    "id" : "S0461",
     "start" : 2160.87,
     "end" : 2163.6,
     "text" : "Có thêm, có xóa thì phải có sửa đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0516",
+    "id" : "S0462",
     "start" : 2163.6,
     "end" : 2169.53,
     "text" : "Ví dụ như mình muốn sửa phần tử Eimi Fukada này rút gọn lại còn Fukada thôi, thì anh em sẽ làm gì?",
     "words" : null
   }, {
-    "id" : "S0517",
+    "id" : "S0463",
     "start" : 2169.53,
     "end" : 2174.98,
     "text" : "Đơn giản thôi, chúng ta sẽ truy cập vào phần tử đấy thông qua cái toán tử ngoặc vuông nhé.",
     "words" : null
   }, {
-    "id" : "S0518",
+    "id" : "S0464",
     "start" : 2174.98,
     "end" : 2178.39,
     "text" : "Là a ngoặc vuông: 0 này, 1 này, 2 này, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0519",
+    "id" : "S0465",
     "start" : 2178.41,
     "end" : 2181.41,
     "text" : "Thì ở đây sẽ là a[2] bằng gì: \"Fukada\", đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0520",
+    "id" : "S0466",
     "start" : 2181.41,
     "end" : 2183.91,
     "text" : "Để anh em in lại này, đó, chỉ còn là Fukada.",
     "words" : null
   }, {
-    "id" : "S0521",
+    "id" : "S0467",
     "start" : 2183.91,
     "end" : 2186.97,
     "text" : "Đó, thì vừa rồi mình đã ví dụ nhanh 4 thao tác cơ bản.",
     "words" : null
   }, {
-    "id" : "S0522",
+    "id" : "S0468",
     "start" : 2186.99,
     "end" : 2189.07,
     "text" : "Đó là thêm xóa sửa truy cập.",
     "words" : null
   }, {
-    "id" : "S0523",
+    "id" : "S0469",
     "start" : 2189.09,
     "end" : 2197.86,
-    "text" : "Trong lập trình, nó có một thuật ngữ là CRUD, viết tắt của Create, Read, Update và Delete để chỉ 4 thao tác cơ bản này khi làm việc với một cấu trúc dữ liệu.",
+    "text" : "Trong lập trình, nó có một thuật ngữ là CRUD, viết tắt của Create, Read, Update và Delete để chỉ bốn thao tác cơ bản này khi làm việc với một cấu trúc dữ liệu.",
     "words" : null
   }, {
-    "id" : "S0524",
+    "id" : "S0470",
     "start" : 2197.86,
     "end" : 2206.07,
     "text" : "Thì anh em có thể tra cứu thêm một số function khác nhé, ví dụ như là chúng ta có thể xóa phần tử ở giữa này hoặc là thêm vào giữa thì làm thế nào?",
     "words" : null
   }, {
-    "id" : "S0525",
+    "id" : "S0471",
     "start" : 2206.09,
     "end" : 2213.42,
     "text" : "Với Array thì mình còn một lưu ý nữa đối với anh em, đó là các phần tử trong Array có thể không cần giống nhau về kiểu dữ liệu nhé.",
     "words" : null
   }, {
-    "id" : "S0526",
+    "id" : "S0472",
     "start" : 2213.42,
     "end" : 2223.55,
     "text" : "Ví dụ như ở đây có thể là 1, 2, 3, rồi đây là chuỗi, bất cứ kiểu gì mà anh em đã được học từ đầu đến giờ, kể cả là Object, kể cả là một Array khác nữa vẫn hoàn toàn được anh em nha.",
     "words" : null
   }, {
-    "id" : "S0527",
+    "id" : "S0473",
     "start" : 2223.55,
     "end" : 2230.44,
     "text" : "Nó có thể sẽ hơi khác một chút với cách nghĩ của anh em về Array trong một số ngôn ngữ lập trình khác như là C hay là Java.",
     "words" : null
   }, {
-    "id" : "S0528",
+    "id" : "S0474",
     "start" : 2230.44,
     "end" : 2235.65,
     "text" : "Đó, mình vừa chèn xong các giá trị khác kiểu dữ liệu nhau nhưng vẫn lưu được bình thường nha.",
     "words" : null
   }, {
-    "id" : "S0529",
+    "id" : "S0475",
     "start" : 2235.65,
     "end" : 2241.97,
     "text" : "OK, cái kiểu dữ liệu tiếp theo mà anh em cũng sẽ làm việc rất thường xuyên đó là String, tạm dịch là chuỗi ký tự.",
     "words" : null
   }, {
-    "id" : "S0530",
+    "id" : "S0476",
     "start" : 2241.97,
     "end" : 2245.78,
     "text" : "Ví dụ như Maria ở đây hay Fukada ở đây, nó chính là các chuỗi ký tự.",
     "words" : null
   }, {
-    "id" : "S0531",
+    "id" : "S0477",
     "start" : 2245.78,
     "end" : 2250.81,
     "text" : "String cũng là một kiểu dữ liệu rất đặc biệt, nó thuộc nhóm Primitive là kiểu nguyên thủy.",
     "words" : null
   }, {
-    "id" : "S0532",
+    "id" : "S0478",
     "start" : 2250.81,
     "end" : 2254.45,
     "text" : "Thế nhưng mà nó có thể thực hiện một số thao tác giống với Array.",
     "words" : null
   }, {
-    "id" : "S0533",
+    "id" : "S0479",
     "start" : 2254.45,
     "end" : 2259.04,
-    "text" : "Đây, để anh em rõ hơn thì mình sẽ tách string Fukada này ra một cái biến khác nha.",
+    "text" : "Đây, để anh em rõ hơn thì mình sẽ tách String Fukada này ra một cái biến khác nha.",
     "words" : null
   }, {
-    "id" : "S0534",
+    "id" : "S0480",
     "start" : 2259.04,
     "end" : 2261.45,
     "text" : "Mình sẽ tạm gọi nó là biến S, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0535",
+    "id" : "S0481",
     "start" : 2261.47,
     "end" : 2262.93,
     "text" : "Mình xóa cái trên này đi.",
     "words" : null
   }, {
-    "id" : "S0536",
+    "id" : "S0482",
     "start" : 2262.93,
     "end" : 2268.82,
     "text" : "Chúng ta có thể coi biến S này là một Array với các phần tử là các ký tự, các chữ cái hoặc là chữ số.",
     "words" : null
   }, {
-    "id" : "S0537",
+    "id" : "S0483",
     "start" : 2268.82,
     "end" : 2274.36,
     "text" : "Ví dụ có thể 1, 2, 3 như thế này, nó cũng là ký tự mà, thậm chí dấu cách này cũng là một ký tự.",
     "words" : null
   }, {
-    "id" : "S0538",
+    "id" : "S0484",
     "start" : 2274.36,
     "end" : 2277.1,
     "text" : "Anh em chú ý nha, nó giống với Array ở chỗ nào?",
     "words" : null
   }, {
-    "id" : "S0539",
+    "id" : "S0485",
     "start" : 2277.1,
     "end" : 2280.25,
     "text" : "Chúng ta có thể truy cập đến các ký tự này theo index.",
     "words" : null
   }, {
-    "id" : "S0540",
+    "id" : "S0486",
     "start" : 2280.25,
     "end" : 2288.53,
     "text" : "Ví dụ như chữ cái đầu tiên là F đúng không nhỉ, thì anh em sẽ dùng toán tử ngoặc vuông, sau đó điền số 0 vào giữa là nó sẽ truy cập đến chữ F.",
     "words" : null
   }, {
-    "id" : "S0541",
+    "id" : "S0487",
     "start" : 2288.53,
     "end" : 2293.49,
     "text" : "Anh em xem này, ở đây mình đang dùng biến a, mình phải thay bằng chữ S, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0542",
+    "id" : "S0488",
     "start" : 2293.49,
     "end" : 2295.61,
     "text" : "Đó là chữ F, đúng không?",
     "words" : null
   }, {
-    "id" : "S0543",
+    "id" : "S0489",
     "start" : 2295.61,
     "end" : 2297.62,
     "text" : "Rồi nó cũng có thuộc tính length.",
     "words" : null
   }, {
-    "id" : "S0544",
+    "id" : "S0490",
     "start" : 2297.62,
     "end" : 2301.34,
     "text" : "Đây, anh em dùng dấu chấm gọi đến length thì nó sẽ ra cái gì?",
     "words" : null
   }, {
-    "id" : "S0545",
+    "id" : "S0491",
     "start" : 2301.34,
     "end" : 2306.09,
     "text" : "Nó sẽ ra độ dài của cái chuỗi ký tự này, nó có 11 ký tự như anh em thấy ở đây.",
     "words" : null
   }, {
-    "id" : "S0546",
+    "id" : "S0492",
     "start" : 2306.09,
     "end" : 2311.76,
     "text" : "Mặc dù cách sử dụng nó có vẻ giống Array, thế nhưng mà nó lại không phải là Array anh em nha.",
     "words" : null
   }, {
-    "id" : "S0547",
+    "id" : "S0493",
     "start" : 2311.76,
     "end" : 2319.62,
     "text" : "Trong JavaScript có một nhóm các kiểu dữ liệu mà nó cũng hoạt động giống với Array như thế này, nó được gọi là Array-like Object.",
     "words" : null
   }, {
-    "id" : "S0548",
+    "id" : "S0494",
     "start" : 2319.62,
     "end" : 2325.41,
     "text" : "Tức là nó cũng sẽ dùng các toán tử ngoặc vuông, thuộc tính length để thể hiện số lượng phần tử.",
     "words" : null
   }, {
-    "id" : "S0549",
+    "id" : "S0495",
     "start" : 2325.43,
     "end" : 2332.85,
     "text" : "Tuy nhiên thì nó không có một số cơ chế đặc biệt mà Array có, ví dụ như map, filter hay reduce, anh em có thể tìm hiểu thêm nhé!",
     "words" : null
   }, {
-    "id" : "S0550",
+    "id" : "S0496",
     "start" : 2332.87,
     "end" : 2342.41,
     "text" : "OK, trở lại cái dòng code ở đây, liệu có anh em nào phát hiện ra là cái biến S của chúng ta nó là kiểu Primitive (kiểu nguyên thủy), nhưng tại sao lại có thể truy cập được vào thuộc tính hay không?",
     "words" : null
   }, {
-    "id" : "S0551",
+    "id" : "S0497",
     "start" : 2342.43,
     "end" : 2346.89,
     "text" : "Thuộc tính (property) đó là của Object thôi mà, chỉ có Object mới có thuộc tính đúng không?",
     "words" : null
   }, {
-    "id" : "S0552",
+    "id" : "S0498",
     "start" : 2346.89,
     "end" : 2351.21,
     "text" : "Còn nguyên thủy là nó như kiểu đơn vị dữ liệu nhỏ nhất rồi, không chia nhỏ hơn được nữa.",
     "words" : null
   }, {
-    "id" : "S0553",
+    "id" : "S0499",
     "start" : 2351.23,
     "end" : 2354.23,
     "text" : "Nhưng tại sao biến S này của chúng ta lại truy cập đến cái length được?",
     "words" : null
   }, {
-    "id" : "S0554",
+    "id" : "S0500",
     "start" : 2354.25,
     "end" : 2358.69,
     "text" : "Đó là bởi vì ở trong JavaScript nó có một cái cơ chế gọi là Type Coercion.",
     "words" : null
   }, {
-    "id" : "S0555",
+    "id" : "S0501",
     "start" : 2358.69,
     "end" : 2364.08,
     "text" : "Có thể tạm hiểu nôm na đó là một cái cơ chế tự động chuyển đổi kiểu dữ liệu khi cần thiết.",
     "words" : null
   }, {
-    "id" : "S0556",
+    "id" : "S0502",
     "start" : 2364.08,
     "end" : 2381.89,
     "text" : "Thì ở đây, tại thời điểm dòng 20 thì biến S nó vẫn là một String, nhưng đến dòng 21 khi chúng ta gọi cái chấm length này này, thì cái S này nó sẽ được trình dịch tự động chuyển đổi thành một cái Object, sau đó trong cái Object nó có thuộc tính là length để lưu thông tin độ dài của cái Object đấy.",
     "words" : null
   }, {
-    "id" : "S0557",
+    "id" : "S0503",
     "start" : 2381.91,
     "end" : 2386.85,
     "text" : "Do vậy có thể nói chúng ta có hai loại string, đó là string nguyên thủy và string object nha!",
     "words" : null
   }, {
-    "id" : "S0558",
+    "id" : "S0504",
     "start" : 2386.89,
     "end" : 2392.3,
     "text" : "OK, về phần kiểu dữ liệu (Data type) thì mình nghĩ là chúng ta có thể tạm dừng ở đây.",
     "words" : null
   }, {
-    "id" : "S0559",
+    "id" : "S0505",
     "start" : 2392.3,
     "end" : 2397.27,
     "text" : "Thì mình nghĩ với ngần này cũng đã đủ đồ chơi để các anh em có thể nghịch rồi.",
     "words" : null
   }, {
-    "id" : "S0560",
+    "id" : "S0506",
     "start" : 2397.27,
     "end" : 2402.24,
     "text" : "Bây giờ chúng ta sẽ chuyển qua cơ chế DOM, viết tắt của Document Object Model.",
     "words" : null
   }, {
-    "id" : "S0561",
+    "id" : "S0507",
     "start" : 2402.24,
     "end" : 2407.97,
     "text" : "Có thể hiểu nó là thành phần cầu nối giữa các đoạn code JavaScript với trang văn bản HTML.",
     "words" : null
   }, {
-    "id" : "S0562",
+    "id" : "S0508",
     "start" : 2407.97,
     "end" : 2415.8,
     "text" : "Chẳng hạn như đơn giản là lệnh document.write này, nó đẩy dữ liệu từ trong code của anh em ra phần trang web, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0563",
+    "id" : "S0509",
     "start" : 2415.92,
     "end" : 2419.83,
     "text" : "Đấy, thì cái document này nó chính là cái Object đại diện cho cầu nối đó.",
     "words" : null
   }, {
-    "id" : "S0564",
+    "id" : "S0510",
     "start" : 2419.83,
     "end" : 2421.92,
     "text" : "Cái cơ chế cầu nối này được gọi là DOM.",
     "words" : null
   }, {
-    "id" : "S0565",
+    "id" : "S0511",
     "start" : 2421.92,
     "end" : 2428.93,
     "text" : "Nhờ có DOM mà cái trang văn bản HTML của chúng ta không còn là trang văn bản tĩnh nữa, mà nó có thể hoạt động được như một cái app.",
     "words" : null
   }, {
-    "id" : "S0566",
+    "id" : "S0512",
     "start" : 2428.93,
     "end" : 2432.89,
     "text" : "App ở đây là application, tức là phần mềm ứng dụng, nó là chương trình mà.",
     "words" : null
   }, {
-    "id" : "S0567",
+    "id" : "S0513",
     "start" : 2432.89,
     "end" : 2440.12,
     "text" : "Đúng rồi, đã là chương trình thì nó sẽ có phần input đầu vào là gì, nó sẽ xử lý tính toán cái gì đấy để cho ra một cái đầu ra (output).",
     "words" : null
   }, {
-    "id" : "S0568",
+    "id" : "S0514",
     "start" : 2440.12,
     "end" : 2446.06,
     "text" : "Thì ở đây anh em mới thấy là chúng ta mới chỉ có chiều output (chiều đi ra) thôi, còn chiều đi vào thì thế nào?",
     "words" : null
   }, {
-    "id" : "S0569",
+    "id" : "S0515",
     "start" : 2446.08,
     "end" : 2452.66,
     "text" : "Giả sử ở đây nha, mình sẽ tạo cho nó một cái input element, chỗ này sẽ là một cái nhập tên như thế này.",
     "words" : null
   }, {
-    "id" : "S0570",
+    "id" : "S0516",
     "start" : 2452.66,
     "end" : 2457.2,
     "text" : "Mình sẽ zoom nhỏ lại một chút, rồi mình sẽ cho thêm một cái button nữa.",
     "words" : null
   }, {
-    "id" : "S0571",
+    "id" : "S0517",
     "start" : 2457.2,
     "end" : 2465.51,
     "text" : "Đấy, thì ở đây mình đang giả sử một chương trình rất đơn giản, đó là nhập tên của ai đấy vào đây, sau đó bấm nút OK, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0572",
+    "id" : "S0518",
     "start" : 2465.51,
     "end" : 2472.22,
     "text" : "Sau đó chương trình nó sẽ in ra một lời chào tương ứng với cái tên đó, thì chúng ta cần phải làm thế nào?",
     "words" : null
   }, {
-    "id" : "S0573",
+    "id" : "S0519",
     "start" : 2472.22,
     "end" : 2485.9,
     "text" : "Trong HTML nha, khi mà chúng ta tác động một cái gì đấy vào các element, các phần tử trên trang web thì phần tử đó nó sẽ phát ra một tín hiệu, có thể tạm hiểu như vậy, còn thuật ngữ tiếng Anh người ta gọi là event.",
     "words" : null
   }, {
-    "id" : "S0574",
+    "id" : "S0520",
     "start" : 2485.9,
     "end" : 2495.49,
     "text" : "Và nó sẽ cho phép chúng ta định nghĩa hay là chỉ ra hành động mà chúng ta sẽ làm khi mà event nó xảy ra thông qua một thuộc tính gọi là event handler.",
     "words" : null
   }, {
-    "id" : "S0575",
+    "id" : "S0521",
     "start" : 2495.49,
     "end" : 2501.37,
     "text" : "Và cái thuộc tính này, nó là thuộc tính của HTML element, tên tiếng Anh của nó là attribute.",
     "words" : null
   }, {
-    "id" : "S0576",
+    "id" : "S0522",
     "start" : 2501.37,
     "end" : 2506.36,
     "text" : "Và nó được định nghĩa ở trong thẻ mở của element, ví dụ như thế này là button.",
     "words" : null
   }, {
-    "id" : "S0577",
+    "id" : "S0523",
     "start" : 2506.36,
     "end" : 2511.47,
     "text" : "Cụ thể ở đây, cái event của chúng ta cần quan tâm đó là click, tức là bấm chuột.",
     "words" : null
   }, {
-    "id" : "S0578",
+    "id" : "S0524",
     "start" : 2511.47,
     "end" : 2515.63,
     "text" : "Thì cái event handler attribute của nó sẽ là onclick như thế này.",
     "words" : null
   }, {
-    "id" : "S0579",
+    "id" : "S0525",
     "start" : 2515.63,
     "end" : 2518.76,
     "text" : "Đấy, VS Code của mình nó đã gợi ý ra như thế này.",
     "words" : null
   }, {
-    "id" : "S0580",
+    "id" : "S0526",
     "start" : 2518.76,
     "end" : 2527.32,
     "text" : "Thì ở giữa dấu nháy này, chúng ta sẽ viết các đoạn code JavaScript để thực hiện các thao tác xử lý phản hồi lại việc chúng ta bấm nút.",
     "words" : null
   }, {
-    "id" : "S0581",
+    "id" : "S0527",
     "start" : 2527.32,
     "end" : 2531.92,
     "text" : "Thì đây cũng có thể coi là cái thể hiện của cầu nối trong cái cơ chế đó.",
     "words" : null
   }, {
-    "id" : "S0582",
+    "id" : "S0528",
     "start" : 2531.92,
     "end" : 2534.29,
     "text" : "OK, đi vào cụ thể thì sẽ như thế nào?",
     "words" : null
   }, {
-    "id" : "S0583",
+    "id" : "S0529",
     "start" : 2534.29,
     "end" : 2545.61,
     "text" : "Ở đây thì thay vì viết trực tiếp code JavaScript vào đây, chúng ta sẽ định nghĩa một cái function gì đấy ở cái script element, sau đó chúng ta sẽ gọi hàm trong này thôi nha, như vậy nó sẽ ngắn gọn hơn.",
     "words" : null
   }, {
-    "id" : "S0584",
+    "id" : "S0530",
     "start" : 2545.61,
     "end" : 2549.44,
     "text" : "Đây, mình sẽ xóa hết cái code cũ đi nhé cho nó đỡ rối, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0585",
+    "id" : "S0531",
     "start" : 2549.44,
     "end" : 2553.05,
     "text" : "Rồi, mình sẽ khai báo ra một cái function tạm gọi là XinChào đi.",
     "words" : null
   }, {
-    "id" : "S0586",
+    "id" : "S0532",
     "start" : 2553.05,
     "end" : 2559.41,
     "text" : "Trong thực tế thì anh em nên đặt tiếng Anh nhé, mình dùng tiếng Việt để cho nó dễ gần và cho anh em dễ hình dung.",
     "words" : null
   }, {
-    "id" : "S0587",
+    "id" : "S0533",
     "start" : 2559.41,
     "end" : 2562.85,
     "text" : "Rồi, trong cái function XinChào này chúng ta sẽ xử lý cái gì?",
     "words" : null
   }, {
-    "id" : "S0588",
+    "id" : "S0534",
     "start" : 2562.85,
     "end" : 2569.04,
     "text" : "Đầu tiên là anh em sẽ cần phải lấy được cái thông tin hay là cái dữ liệu mà anh em điền vào cái input này này.",
     "words" : null
   }, {
-    "id" : "S0589",
+    "id" : "S0535",
     "start" : 2569.04,
     "end" : 2577.94,
     "text" : "Đấy, sau đó thì chúng ta sẽ nối nó, nối cái tên này với một cái chuỗi ký tự là 'Xin chào' ở đây đi để ghép thành cái câu 'Xin chào Eimi Fukada', đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0590",
+    "id" : "S0536",
     "start" : 2577.96,
     "end" : 2586.84,
     "text" : "Đấy, kết hợp được một cái kết quả như vậy, cuối cùng là anh em sẽ in nó ra phần trang web, có thể in ở phía dưới này chẳng hạn, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0591",
+    "id" : "S0537",
     "start" : 2586.84,
     "end" : 2590.18,
     "text" : "Đó, đi từng bước một nhé, đầu tiên là lấy dữ liệu ra.",
     "words" : null
   }, {
-    "id" : "S0592",
+    "id" : "S0538",
     "start" : 2590.18,
     "end" : 2596.17,
     "text" : "Thì trước hết anh em cần phải ở trên cái input element, anh em cho nó một cái ID, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0593",
+    "id" : "S0539",
     "start" : 2596.17,
     "end" : 2603.6,
     "text" : "Sau khi nó có ID rồi, thì trong phần function XinChào này, anh em sẽ gọi cho mình cái lệnh là document.getElementById.",
     "words" : null
   }, {
-    "id" : "S0594",
+    "id" : "S0540",
     "start" : 2603.6,
     "end" : 2609.33,
     "text" : "Đó lại là một thể hiện của cơ chế DOM đây, nó bắc cầu sang phần trang văn bản của chúng ta.",
     "words" : null
   }, {
-    "id" : "S0595",
+    "id" : "S0541",
     "start" : 2609.33,
     "end" : 2615.51,
     "text" : "Nó truy cập được vào element có id là input thông qua lệnh là document.getElementById như thế này.",
     "words" : null
   }, {
-    "id" : "S0596",
+    "id" : "S0542",
     "start" : 2615.51,
     "end" : 2624.89,
     "text" : "Nó là một function với tham số là gì: anh em truyền đúng id mà anh em vừa tạo ở trên input này, thì cái lệnh này nó sẽ truy cập được vào element này.",
     "words" : null
   }, {
-    "id" : "S0597",
+    "id" : "S0543",
     "start" : 2624.89,
     "end" : 2634.85,
     "text" : "Tuy nhiên thì đây mới chỉ là truy cập vào element thôi, anh em muốn lấy ra giá trị mà chúng ta nhập vào đây nè, thì anh em cần thêm một cái nữa là chấm value.",
     "words" : null
   }, {
-    "id" : "S0598",
+    "id" : "S0544",
     "start" : 2634.85,
     "end" : 2641.59,
     "text" : "Cái value ở đây nó sẽ tương ứng với thuộc tính ở bên trong thẻ HTML này, nó có một cái thuộc tính là value.",
     "words" : null
   }, {
-    "id" : "S0599",
+    "id" : "S0545",
     "start" : 2641.59,
     "end" : 2650.22,
     "text" : "Thì cái thuộc tính này nó sẽ lưu cái giá trị mà anh em nhập vào phần input, và chúng ta sẽ truy cập cái value đấy thông qua cái dấu chấm.",
     "words" : null
   }, {
-    "id" : "S0600",
+    "id" : "S0546",
     "start" : 2650.22,
     "end" : 2654.44,
     "text" : "Các cái attribute khác của HTML element cũng như vậy, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0601",
+    "id" : "S0547",
     "start" : 2654.46,
     "end" : 2662.8,
     "text" : "Rồi, sau khi chúng ta gọi lệnh này xong, anh em sẽ gán nó cho một biến nào đấy, mình tạm gọi là biến tên chẳng hạn, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0602",
+    "id" : "S0548",
     "start" : 2662.8,
     "end" : 2666.61,
     "text" : "Rồi bước thứ hai, thể hiện việc xử lý dữ liệu đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0603",
+    "id" : "S0549",
     "start" : 2666.61,
     "end" : 2672.55,
     "text" : "Đơn giản ở đây thì mình chỉ là ghép cái câu \"Xin chào \" sau đó cộng với cái tên ở trên thôi.",
     "words" : null
   }, {
-    "id" : "S0604",
+    "id" : "S0550",
     "start" : 2672.55,
     "end" : 2678.56,
     "text" : "Sau đó anh em xử lý xong, anh em cập nhật lại cho biến tên này, một bước gán lại dữ liệu nha.",
     "words" : null
   }, {
-    "id" : "S0605",
+    "id" : "S0551",
     "start" : 2678.56,
     "end" : 2680.5,
     "text" : "Cuối cùng là anh em sẽ làm gì?",
     "words" : null
   }, {
-    "id" : "S0606",
+    "id" : "S0552",
     "start" : 2680.5,
     "end" : 2682.55,
     "text" : "Chúng ta sẽ in ra phần trang web.",
     "words" : null
   }, {
-    "id" : "S0607",
+    "id" : "S0553",
     "start" : 2682.55,
     "end" : 2689.93,
     "text" : "In ra trang web thì đơn giản rồi, suốt từ đầu đến giờ chúng ta làm việc với cái lệnh là document.write, được không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0608",
+    "id" : "S0554",
     "start" : 2689.93,
     "end" : 2695.33,
     "text" : "Anh em in cái tên ở đây ra, cái này mình có thể đổi thành lờiChào thì đúng ý nghĩa hơn.",
     "words" : null
   }, {
-    "id" : "S0609",
+    "id" : "S0555",
     "start" : 2695.33,
     "end" : 2697.13,
     "text" : "OK, anh em in ra cái lờiChào.",
     "words" : null
   }, {
-    "id" : "S0610",
+    "id" : "S0556",
     "start" : 2697.13,
     "end" : 2702.96,
     "text" : "Đây là mình làm kiểu chậm từng bước một để các anh em dễ hình dung thì mình viết như thế thôi.",
     "words" : null
   }, {
-    "id" : "S0611",
+    "id" : "S0557",
     "start" : 2702.96,
     "end" : 2709.78,
     "text" : "Thực tế thì anh em có thể gộp 3 câu lệnh này làm 1 cũng được, không sao cả, tuy nhiên thì nó hơi khó theo dõi.",
     "words" : null
   }, {
-    "id" : "S0612",
+    "id" : "S0558",
     "start" : 2709.78,
     "end" : 2710.96,
     "text" : "Sẽ như thế nào nhỉ?",
     "words" : null
   }, {
-    "id" : "S0613",
+    "id" : "S0559",
     "start" : 2711.0,
     "end" : 2711.9,
     "text" : "Ctrl + S lại nè.",
     "words" : null
   }, {
-    "id" : "S0614",
+    "id" : "S0560",
     "start" : 2711.9,
     "end" : 2713.98,
     "text" : "Chưa có gì xảy ra, đúng không anh em?",
     "words" : null
   }, {
-    "id" : "S0615",
+    "id" : "S0561",
     "start" : 2713.98,
     "end" : 2718.08,
     "text" : "Vì cái function này như mình nói đấy, nó mới chỉ là phần định nghĩa thôi.",
     "words" : null
   }, {
-    "id" : "S0616",
+    "id" : "S0562",
     "start" : 2718.08,
     "end" : 2721.79,
     "text" : "Chúng ta phải thực hiện một thao tác gọi là gọi hàm, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0617",
+    "id" : "S0563",
     "start" : 2721.79,
     "end" : 2723.7,
     "text" : "Thì cái hàm đó mới được thực hiện.",
     "words" : null
   }, {
-    "id" : "S0618",
+    "id" : "S0564",
     "start" : 2723.7,
     "end" : 2725.16,
     "text" : "Thì chúng ta sẽ gọi ở đâu?",
     "words" : null
   }, {
-    "id" : "S0619",
+    "id" : "S0565",
     "start" : 2725.16,
     "end" : 2726.84,
     "text" : "Chúng ta sẽ gọi hàm ở đây này.",
     "words" : null
   }, {
-    "id" : "S0620",
+    "id" : "S0566",
     "start" : 2726.84,
     "end" : 2730.1,
     "text" : "Đây là nơi sẽ được thực hiện khi mà anh em bấm cái nút OK.",
     "words" : null
   }, {
-    "id" : "S0621",
+    "id" : "S0567",
     "start" : 2730.1,
     "end" : 2731.45,
     "text" : "Anh em sẽ gọi hàm ở đây.",
     "words" : null
   }, {
-    "id" : "S0622",
+    "id" : "S0568",
     "start" : 2731.45,
     "end" : 2732.35,
     "text" : "Gọi như thế nào?",
     "words" : null
   }, {
-    "id" : "S0623",
+    "id" : "S0569",
     "start" : 2732.35,
     "end" : 2736.73,
     "text" : "Gọi như gọi hàm bình thường thôi, tên hàm cộng với cặp mở đóng ngoặc tròn nha!",
     "words" : null
   }, {
-    "id" : "S0624",
+    "id" : "S0570",
     "start" : 2736.73,
     "end" : 2738.92,
     "text" : "Hàm này không có tham số, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0625",
+    "id" : "S0571",
     "start" : 2738.92,
     "end" : 2740.78,
     "text" : "Rồi, bây giờ anh em cùng xem này.",
     "words" : null
   }, {
-    "id" : "S0626",
+    "id" : "S0572",
     "start" : 2740.78,
     "end" : 2741.68,
     "text" : "Ctrl + S lại nè.",
     "words" : null
   }, {
-    "id" : "S0627",
+    "id" : "S0573",
     "start" : 2741.68,
     "end" : 2743.87,
     "text" : "Bây giờ mình nhập nhé: Eimi Fukada, OK.",
     "words" : null
   }, {
-    "id" : "S0628",
+    "id" : "S0574",
     "start" : 2743.87,
     "end" : 2744.88,
     "text" : "Anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0629",
+    "id" : "S0575",
     "start" : 2744.92,
     "end" : 2747.6,
     "text" : "Nó in ra một câu là: \"Xin chào Eimi Fukada\".",
     "words" : null
   }, {
-    "id" : "S0630",
+    "id" : "S0576",
     "start" : 2747.6,
     "end" : 2752.85,
     "text" : "Tuy nhiên, ở đây anh em thấy toàn bộ các element khác của mình biến mất là bởi vì sao?",
     "words" : null
   }, {
-    "id" : "S0631",
+    "id" : "S0577",
     "start" : 2752.85,
     "end" : 2757.55,
     "text" : "Bởi vì lệnh document.write sẽ ghi đè toàn bộ nội dung của trang văn bản HTML.",
     "words" : null
   }, {
-    "id" : "S0632",
+    "id" : "S0578",
     "start" : 2757.55,
     "end" : 2763.16,
     "text" : "Nếu như anh em muốn giữ nguyên các element khác trên trang văn bản thì chúng ta phải làm gì?",
     "words" : null
   }, {
-    "id" : "S0633",
+    "id" : "S0579",
     "start" : 2763.16,
     "end" : 2769.01,
     "text" : "Tạo một element khác, sau đó dùng DOM để thay thế nội dung hoặc là text ở bên trong element đấy.",
     "words" : null
   }, {
-    "id" : "S0634",
+    "id" : "S0580",
     "start" : 2769.01,
     "end" : 2775.48,
     "text" : "Đại khái như thế này này, mình sẽ tạo ra một element thẻ div thôi, element chung chung thôi, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0635",
+    "id" : "S0581",
     "start" : 2775.5,
     "end" : 2783.49,
     "text" : "Thẻ div này mình cũng sẽ cho nó một cái ID, mình đặt nó là \"lời chào\" chẳng hạn, thể hiện là cái element này dùng để in ra lời chào.",
     "words" : null
   }, {
-    "id" : "S0636",
+    "id" : "S0582",
     "start" : 2783.49,
     "end" : 2789.3,
     "text" : "Thì bây giờ, thay vì là mình gọi document.write ở đây, thì mình sẽ tiếp tục truy cập đến cái gì?",
     "words" : null
   }, {
-    "id" : "S0637",
+    "id" : "S0583",
     "start" : 2789.3,
     "end" : 2796.86,
     "text" : "Truy cập đến cái element \"lời chào\" mà anh em vừa định nghĩa đây nè thông qua câu lệnh document.getElementById, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0638",
+    "id" : "S0584",
     "start" : 2796.88,
     "end" : 2798.86,
     "text" : "Anh em nhập id \"lời chào\" vào.",
     "words" : null
   }, {
-    "id" : "S0639",
+    "id" : "S0585",
     "start" : 2798.86,
     "end" : 2801.96,
     "text" : "Sau đó chúng ta truy cập đến cái gì anh em nhỉ?",
     "words" : null
   }, {
-    "id" : "S0640",
+    "id" : "S0586",
     "start" : 2801.96,
     "end" : 2809.54,
     "text" : "Cái mà chúng ta đang muốn bây giờ là String \"Xin chào Eimi Fukada\" nó phải chui vào giữa cặp thẻ div, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0641",
+    "id" : "S0587",
     "start" : 2809.54,
     "end" : 2813.63,
     "text" : "Đấy, thì thuộc tính mà lưu dữ liệu đấy nó có tên là innerHTML.",
     "words" : null
   }, {
-    "id" : "S0642",
+    "id" : "S0588",
     "start" : 2813.63,
     "end" : 2819.3,
     "text" : "Nên khi chúng ta get element xong, anh em gọi cho mình câu lệnh innerHTML như thế này.",
     "words" : null
   }, {
-    "id" : "S0643",
+    "id" : "S0589",
     "start" : 2819.3,
     "end" : 2827.15,
     "text" : "Inner có nghĩa là bên trong, toàn bộ các đoạn code HTML bên trong của element là phần này, đấy, chúng ta truy cập được.",
     "words" : null
   }, {
-    "id" : "S0644",
+    "id" : "S0590",
     "start" : 2827.15,
     "end" : 2832.03,
     "text" : "Và sau đó anh em sẽ dùng phép gán để mà cập nhật, thay đổi dữ liệu cho nó.",
     "words" : null
   }, {
-    "id" : "S0645",
+    "id" : "S0591",
     "start" : 2832.03,
     "end" : 2839.02,
     "text" : "Đấy thì đơn giản là chúng ta sẽ gán nó cho cái lời chào ở trên thôi, cái biến lời chào ở trên là xong nha!",
     "words" : null
   }, {
-    "id" : "S0646",
+    "id" : "S0592",
     "start" : 2839.02,
     "end" : 2842.51,
     "text" : "OK, bây giờ mình chạy lại chương trình anh em xem nè.",
     "words" : null
   }, {
-    "id" : "S0647",
+    "id" : "S0593",
     "start" : 2842.51,
     "end" : 2845.41,
     "text" : "Nhập tên Eimi Fukada khác đi, Yua Mikami đi.",
     "words" : null
   }, {
-    "id" : "S0648",
+    "id" : "S0594",
     "start" : 2845.41,
     "end" : 2846.93,
     "text" : "Đấy, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0649",
+    "id" : "S0595",
     "start" : 2846.97,
     "end" : 2848.27,
     "text" : "Xin chào Yua Mikami!",
     "words" : null
   }, {
-    "id" : "S0650",
+    "id" : "S0596",
     "start" : 2848.27,
     "end" : 2851.13,
     "text" : "Anh em hiểu cái bản chất của vấn đề không ạ?",
     "words" : null
   }, {
-    "id" : "S0651",
+    "id" : "S0597",
     "start" : 2851.37,
     "end" : 2865.35,
     "text" : "Đấy, khi mà anh em thông được phần Document Object Model này rồi thì anh em hoàn toàn có thể chủ động tìm hiểu sang các loại input element khác, các loại event khác nhau ứng với mỗi element đó và tự xây dựng ra những cái app tùy theo sở thích của anh em.",
     "words" : null
   }, {
-    "id" : "S0652",
+    "id" : "S0598",
     "start" : 2865.35,
     "end" : 2874.99,
     "text" : "Chẳng hạn như ở trong khóa học thì mình còn hướng dẫn anh em làm một số app khác như kiểu là đếm từ, đếm chữ này, hoặc là lập trình ra một cái app máy tính cộng trừ nhân chia.",
     "words" : null
   }, {
-    "id" : "S0653",
+    "id" : "S0599",
     "start" : 2874.99,
     "end" : 2881.87,
     "text" : "Đó là những cái app rất đơn giản mà mình nghĩ là anh em có thể tự thực hành được để củng cố kiến thức về JavaScript của mình.",
     "words" : null
   }, {
-    "id" : "S0654",
+    "id" : "S0600",
     "start" : 2882.49,
     "end" : 2887.56,
     "text" : "OK, mình sẽ chuyển sang phần tiếp theo, đó là về cơ chế bất đồng bộ (Asynchronous).",
     "words" : null
   }, {
-    "id" : "S0655",
+    "id" : "S0601",
     "start" : 2887.56,
     "end" : 2902.67,
     "text" : "Đây có thể coi là phần kiến thức rất quan trọng của ngôn ngữ JavaScript mà anh em cần phải nắm được khi xác định muốn sử dụng JavaScript để phát triển các sản phẩm, hoặc đi sâu hơn với ngôn ngữ này như chuyển tiếp sang làm lập trình web chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0656",
+    "id" : "S0602",
     "start" : 2902.67,
     "end" : 2914.22,
     "text" : "Theo mình nhận định thì những kiến thức về bất đồng bộ thực ra không phải là khó, tuy nhiên nó sẽ hơi khó tiếp cận với các bạn mới bắt đầu mà trước đấy chưa từng học ngôn ngữ lập trình nào.",
     "words" : null
   }, {
-    "id" : "S0657",
+    "id" : "S0603",
     "start" : 2914.22,
     "end" : 2922.66,
     "text" : "Còn nếu anh em nào đã từng tiếp xúc với C hay C++ và đã hiểu về đa luồng (Multi-thread) rồi thì phần bất đồng bộ cũng sẽ dễ tiếp cận thôi.",
     "words" : null
   }, {
-    "id" : "S0658",
+    "id" : "S0604",
     "start" : 2922.66,
     "end" : 2929.33,
     "text" : "Ở mức độ nhập môn thì anh em có thể hình dung thế này: tức là một số lệnh sẽ mất thời gian để thực hiện xong.",
     "words" : null
   }, {
-    "id" : "S0659",
+    "id" : "S0605",
     "start" : 2929.33,
     "end" : 2936.05,
     "text" : "Những lệnh như vậy sẽ có cơ chế là chúng ta không cần đợi nó thực hiện xong mà có thể thực hiện một lệnh khác.",
     "words" : null
   }, {
-    "id" : "S0660",
+    "id" : "S0606",
     "start" : 2936.05,
     "end" : 2940.45,
     "text" : "Và sau khi nó thực hiện xong rồi, nó sẽ quay lại thông báo cho chúng ta.",
     "words" : null
   }, {
-    "id" : "S0661",
+    "id" : "S0607",
     "start" : 2940.45,
     "end" : 2949.93,
     "text" : "Từ đầu buổi học đến giờ thì chủ yếu anh em mới làm quen với các lệnh đồng bộ thôi, tức là lệnh sau phải đợi lệnh trước thực hiện xong thì nó mới thực hiện.",
     "words" : null
   }, {
-    "id" : "S0662",
+    "id" : "S0608",
     "start" : 2949.93,
     "end" : 2953.11,
     "text" : "Còn đây sẽ là một ví dụ về câu lệnh bất đồng bộ này.",
     "words" : null
   }, {
-    "id" : "S0663",
+    "id" : "S0609",
     "start" : 2953.11,
     "end" : 2955.92,
     "text" : "Ví dụ, chúng ta có một lệnh gọi là setTimeout.",
     "words" : null
   }, {
-    "id" : "S0664",
+    "id" : "S0610",
     "start" : 2955.92,
     "end" : 2959.96,
     "text" : "Lệnh này sẽ tạo ra một cái đồng hồ đếm ngược, nó cần có 2 tham số.",
     "words" : null
   }, {
-    "id" : "S0665",
+    "id" : "S0611",
     "start" : 2959.96,
     "end" : 2964.42,
     "text" : "Mình sẽ giải thích tham số thứ hai trước, tham số thứ hai sẽ dễ hiểu hơn.",
     "words" : null
   }, {
-    "id" : "S0666",
+    "id" : "S0612",
     "start" : 2964.42,
     "end" : 2966.74,
     "text" : "Nó sẽ là thời gian mà đồng hồ đếm lùi.",
     "words" : null
   }, {
-    "id" : "S0667",
+    "id" : "S0613",
     "start" : 2966.74,
     "end" : 2971.02,
     "text" : "Ví dụ như mình đếm lùi 3 giây thì anh em phải truyền cho mình là 3000.",
     "words" : null
   }, {
-    "id" : "S0668",
+    "id" : "S0614",
     "start" : 2971.02,
     "end" : 2976.04,
     "text" : "Do đơn vị của nó là mili giây, thế nên anh em truyền 3000 sẽ tương ứng với 3 giây.",
     "words" : null
   }, {
-    "id" : "S0669",
+    "id" : "S0615",
     "start" : 2976.04,
     "end" : 2986.86,
     "text" : "Quay lại tham số thứ nhất, nó cũng sẽ là một function để định nghĩa việc chúng ta sẽ thực hiện khi cái đồng hồ này đếm ngược thành công, tức là nó đếm hết về 0 thì nó sẽ làm gì.",
     "words" : null
   }, {
-    "id" : "S0670",
+    "id" : "S0616",
     "start" : 2986.86,
     "end" : 2990.1,
     "text" : "Ở đây mình sẽ khai báo tách ra để anh em dễ nhìn nhé.",
     "words" : null
   }, {
-    "id" : "S0671",
+    "id" : "S0617",
     "start" : 2990.1,
     "end" : 2996.4,
     "text" : "Anh em có thể viết trực tiếp vào trong cũng được, nhưng mình sẽ khai báo tách ra để anh em dễ nhìn hơn.",
     "words" : null
   }, {
-    "id" : "S0672",
+    "id" : "S0618",
     "start" : 2996.4,
     "end" : 2998.97,
     "text" : "Khai báo biến thông báo bằng một function.",
     "words" : null
   }, {
-    "id" : "S0673",
+    "id" : "S0619",
     "start" : 2998.97,
     "end" : 3003.68,
     "text" : "Trong này mình sẽ viết gì, mình sẽ in một thông báo vào element lời chào nhé.",
     "words" : null
   }, {
-    "id" : "S0674",
+    "id" : "S0620",
     "start" : 3003.68,
     "end" : 3005.33,
-    "text" : "Mình in câu 'Hết giờ!' nhé.",
+    "text" : "Mình in câu \"Hết giờ!\" nhé.",
     "words" : null
   }, {
-    "id" : "S0675",
+    "id" : "S0621",
     "start" : 3005.33,
     "end" : 3010.89,
     "text" : "Sau đó, mình sẽ truyền biến thông báo này vào làm đối số cho lệnh setTimeout, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0676",
+    "id" : "S0622",
     "start" : 3010.91,
     "end" : 3012.15,
     "text" : "OK, chạy thử nhé!",
     "words" : null
   }, {
-    "id" : "S0677",
+    "id" : "S0623",
     "start" : 3012.15,
     "end" : 3013.75,
     "text" : "Nhấn Ctrl + S lại này.",
     "words" : null
   }, {
-    "id" : "S0678",
+    "id" : "S0624",
     "start" : 3013.75,
     "end" : 3015.06,
     "text" : "Đợi khoảng 3 giây.",
     "words" : null
   }, {
-    "id" : "S0679",
+    "id" : "S0625",
     "start" : 3015.06,
     "end" : 3016.66,
     "text" : "Đó, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0680",
+    "id" : "S0626",
     "start" : 3016.66,
     "end" : 3021.51,
     "text" : "Khoảng 3 giây sau nó hiện ra chữ \"Hết giờ!\" đúng không nhỉ?",
     "words" : null
   }, {
-    "id" : "S0681",
+    "id" : "S0627",
     "start" : 3021.51,
     "end" : 3027.43,
     "text" : "Bây giờ đằng sau lệnh setTimeout này, mình sẽ gọi thêm một cái lệnh nữa.",
     "words" : null
   }, {
-    "id" : "S0682",
+    "id" : "S0628",
     "start" : 3027.43,
     "end" : 3035.82,
     "text" : "Đây, mình sẽ copy dòng ở trên, mình ngắt dòng ra cho dễ nhìn nha, ở đây mình in là \"Xin chào các bạn\".",
     "words" : null
   }, {
-    "id" : "S0683",
+    "id" : "S0629",
     "start" : 3035.82,
     "end" : 3046.67,
     "text" : "OK, đến đây thì theo anh em là nó sẽ đếm hết 3 giây, in ra chữ \"Hết giờ!\" rồi mới in chữ \"Xin chào\", hay là in chữ \"Xin chào\" trước?",
     "words" : null
   }, {
-    "id" : "S0684",
+    "id" : "S0630",
     "start" : 3046.67,
     "end" : 3049.96,
     "text" : "Chạy thử thì biết nhé, anh em thấy chưa?",
     "words" : null
   }, {
-    "id" : "S0685",
+    "id" : "S0631",
     "start" : 3049.96,
     "end" : 3054.57,
     "text" : "Nó in ra chữ \"Xin chào\" trước, sau đó 3 giây sau nó đè chữ \"Hết giờ!\" vào.",
     "words" : null
   }, {
-    "id" : "S0686",
+    "id" : "S0632",
     "start" : 3054.57,
     "end" : 3062.91,
     "text" : "Để các anh em quan sát dễ hơn, mình sẽ thay cái toán tử bằng (=) thành cộng bằng (+=), có nghĩa là nối thêm dữ liệu vào, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0687",
+    "id" : "S0633",
     "start" : 3062.91,
     "end" : 3064.46,
     "text" : "Thay vì ghi đè đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0688",
+    "id" : "S0634",
     "start" : 3064.46,
     "end" : 3067.97,
     "text" : "Dấu bằng ở đây là chúng ta ghi đè dữ liệu mới vào đấy.",
     "words" : null
   }, {
-    "id" : "S0689",
+    "id" : "S0635",
     "start" : 3067.97,
     "end" : 3071.22,
     "text" : "Mình sẽ thêm cái xuống dòng nữa cho anh em dễ nhìn.",
     "words" : null
   }, {
-    "id" : "S0690",
+    "id" : "S0636",
     "start" : 3071.22,
     "end" : 3072.69,
     "text" : "Đấy, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0691",
+    "id" : "S0637",
     "start" : 3072.69,
     "end" : 3076.81,
     "text" : "Nó vẫn in ra chữ \"Xin chào\" trước, sau đấy mới gọi chữ \"Hết giờ!\".",
     "words" : null
   }, {
-    "id" : "S0692",
+    "id" : "S0638",
     "start" : 3076.81,
     "end" : 3081.39,
     "text" : "Mặc dù cái lệnh setTimeout chúng ta gọi trước đúng không ạ, cái \"Xin chào\" chúng ta gọi sau.",
     "words" : null
   }, {
-    "id" : "S0693",
+    "id" : "S0639",
     "start" : 3081.39,
     "end" : 3091.95,
     "text" : "Để giải thích đơn giản cho hiện tượng này thì anh em có thể hình dung như sau: cái setTimeout nó là một lệnh được thực hiện bởi một cái thành phần khác trong môi trường trình duyệt, người ta sẽ hay gọi là Module.",
     "words" : null
   }, {
-    "id" : "S0694",
+    "id" : "S0640",
     "start" : 3091.95,
     "end" : 3097.63,
     "text" : "Mặc dù cái trình dịch mã JavaScript đó là một trình đơn luồng, tức là nó chỉ chạy tuần tự từ trên xuống dưới thôi.",
     "words" : null
   }, {
-    "id" : "S0695",
+    "id" : "S0641",
     "start" : 3097.63,
     "end" : 3106.35,
     "text" : "Thế tuy nhiên thì cái môi trường trình duyệt web của chúng ta, ví dụ là cái Google Chrome này, nó được code bằng C++, nó là một môi trường đa luồng (C++ thì support đa luồng).",
     "words" : null
   }, {
-    "id" : "S0696",
+    "id" : "S0642",
     "start" : 3106.35,
     "end" : 3112.23,
     "text" : "Thế nên là một số những tác vụ mà mất thời gian ấy, chúng ta vẫn có thể gửi sang module khác trong cái môi trường đấy.",
     "words" : null
   }, {
-    "id" : "S0697",
+    "id" : "S0643",
     "start" : 3112.23,
     "end" : 3115.42,
     "text" : "Ví dụ là setTimeout này, nó phải mất đến 3 giây nó mới đếm xong.",
     "words" : null
   }, {
-    "id" : "S0698",
+    "id" : "S0644",
     "start" : 3115.42,
     "end" : 3117.61,
-    "text" : "Sau khi 3 giây nó được đếm xong thì làm sao?",
+    "text" : "Sau khi ba giây nó được đếm xong thì làm sao?",
     "words" : null
   }, {
-    "id" : "S0699",
+    "id" : "S0645",
     "start" : 3117.63,
     "end" : 3122.62,
     "text" : "Thì cái function này sẽ lại được gửi về cái thằng trình dịch mã JavaScript để nó thực hiện.",
     "words" : null
   }, {
-    "id" : "S0700",
+    "id" : "S0646",
     "start" : 3122.62,
     "end" : 3126.41,
     "text" : "Cái thằng trình dịch mã ở trong Google Chrome nó có tên là V8 Engine.",
     "words" : null
   }, {
-    "id" : "S0701",
+    "id" : "S0647",
     "start" : 3126.41,
     "end" : 3135.02,
     "text" : "Đó, thì dựa vào những cái từ khóa vừa rồi, anh em có thể search để tìm hiểu thêm, và mình cũng sẽ phân tích rõ hơn về cái V8 Engine này trong một video khác.",
     "words" : null
   }, {
-    "id" : "S0702",
+    "id" : "S0648",
     "start" : 3135.02,
     "end" : 3141.11,
     "text" : "Rồi, trở lại với việc gọi hàm bất đồng bộ: cách gọi hàm như thế này người ta gọi là truyền Callback anh em nha.",
     "words" : null
   }, {
-    "id" : "S0703",
+    "id" : "S0649",
     "start" : 3141.11,
     "end" : 3145.72,
     "text" : "Ngoài ra chúng ta còn các cơ chế khác như là kiểu Promise hay là cơ chế Async/Await.",
     "words" : null
   }, {
-    "id" : "S0704",
+    "id" : "S0650",
     "start" : 3145.72,
     "end" : 3153.51,
-    "text" : "Thì cái nội dung kiến thức của phần này mình nghĩ nó khá là nặng, và nó hoàn toàn có thể là một cái bài giảng kéo dài đến 1-2 giờ đồng hồ nữa.",
+    "text" : "Thì cái nội dung kiến thức của phần này mình nghĩ nó khá là nặng, và nó hoàn toàn có thể là một cái bài giảng kéo dài đến một đến hai giờ đồng hồ nữa.",
     "words" : null
   }, {
-    "id" : "S0705",
+    "id" : "S0651",
     "start" : 3153.51,
     "end" : 3158.99,
-    "text" : "Trong khóa học JavaScript của mình thì cái phần bất đồng bộ này còn kéo dài đến tận 15 bài giảng cơ.",
+    "text" : "Trong khóa học JavaScript của mình thì cái phần bất đồng bộ này còn kéo dài đến tận mười lăm bài giảng cơ.",
     "words" : null
   }, {
-    "id" : "S0706",
+    "id" : "S0652",
     "start" : 3158.99,
     "end" : 3165.13,
     "text" : "Thế nên là việc nhồi nhét kiến thức vào thời lượng cuối của cái bài giảng nhập môn này có lẽ nó hơi bất khả thi.",
     "words" : null
   }, {
-    "id" : "S0707",
+    "id" : "S0653",
     "start" : 3165.13,
     "end" : 3172.21,
     "text" : "Do vậy, mình xin phép để dành cái phần kiến thức chuyên sâu về bất đồng bộ cũng như là V8 Engine trong một video khác anh em nhé.",
     "words" : null
   }, {
-    "id" : "S0708",
+    "id" : "S0654",
     "start" : 3172.21,
     "end" : 3176.49,
     "text" : "Còn ở mức độ nhập môn thì anh em cần hiểu ý tưởng của nó là nó làm cái gì rồi.",
     "words" : null
   }, {
-    "id" : "S0709",
+    "id" : "S0655",
     "start" : 3176.49,
     "end" : 3186.15,
     "text" : "Bây giờ mình sẽ chuyển sang cái phần kiến thức cuối cùng, đó là về Data Storage (lưu trữ dữ liệu), một trong những chức năng tối thiểu mà bất cứ một cái app nào cũng cần phải làm được.",
     "words" : null
   }, {
-    "id" : "S0710",
+    "id" : "S0656",
     "start" : 3186.23,
     "end" : 3189.83,
     "text" : "Lưu trữ dữ liệu ở đây không phải là đang đề cập đến biến (variable) nha.",
     "words" : null
   }, {
-    "id" : "S0711",
+    "id" : "S0657",
     "start" : 3189.87,
     "end" : 3197.99,
     "text" : "Biến nó cũng là để lưu trữ dữ liệu nhưng mà chỉ là lưu trữ tạm thời thôi, tức là khi chương trình của anh em mà tắt đi thì cái dữ liệu trong biến nó sẽ bị biến mất.",
     "words" : null
   }, {
-    "id" : "S0712",
+    "id" : "S0658",
     "start" : 3197.99,
     "end" : 3206.21,
     "text" : "Đấy, và cái cơ chế Data Storage mình muốn nói là chúng ta sẽ lưu trữ dữ liệu lâu dài hơn, anh em có thể tắt chương trình đi và bật lại thì cái dữ liệu đó vẫn còn nha.",
     "words" : null
   }, {
-    "id" : "S0713",
+    "id" : "S0659",
     "start" : 3206.21,
     "end" : 3211.71,
     "text" : "Ở trong môi trường web browser thì có khá nhiều cách thức khác nhau cho phép chúng ta có thể lưu trữ được data.",
     "words" : null
   }, {
-    "id" : "S0714",
+    "id" : "S0660",
     "start" : 3211.95,
     "end" : 3214.45,
     "text" : "Đơn giản thì có thể kể đến như là Cookies này.",
     "words" : null
   }, {
-    "id" : "S0715",
+    "id" : "S0661",
     "start" : 3214.47,
     "end" : 3219.85,
     "text" : "Chúng ta còn Web Storage này, hoặc ở mức cao hơn thì anh em hoàn toàn có thể sử dụng Database.",
     "words" : null
   }, {
-    "id" : "S0716",
+    "id" : "S0662",
     "start" : 3219.85,
     "end" : 3229.63,
     "text" : "Anh em nào đã học về cơ sở dữ liệu rồi thì biết là chúng ta tổ chức một cái database riêng, sau đó sẽ kết nối cái database này với cái app viết bằng JavaScript của anh em.",
     "words" : null
   }, {
-    "id" : "S0717",
+    "id" : "S0663",
     "start" : 3229.63,
     "end" : 3235.06,
     "text" : "Bản thân trình duyệt Google Chrome này cũng đã được tích hợp một cái database gọi là IndexedDB.",
     "words" : null
   }, {
-    "id" : "S0718",
+    "id" : "S0664",
     "start" : 3235.06,
     "end" : 3239.81,
     "text" : "Nó là một cái tiêu chuẩn của HTML5, cũng khá là dễ dùng và tiện cho việc thực hành.",
     "words" : null
   }, {
-    "id" : "S0719",
+    "id" : "S0665",
     "start" : 3239.81,
     "end" : 3244.73,
     "text" : "Tuy nhiên thì các anh em cần phải biết một chút kiến thức cơ bản về NoSQL Database đã.",
     "words" : null
   }, {
-    "id" : "S0720",
+    "id" : "S0666",
     "start" : 3244.73,
     "end" : 3251.7,
     "text" : "Còn với mức độ nhập môn cũng như là làm quen với ngôn ngữ JavaScript, mình đề xuất các anh em sử dụng cơ chế localStorage.",
     "words" : null
   }, {
-    "id" : "S0721",
+    "id" : "S0667",
     "start" : 3251.7,
     "end" : 3258.62,
     "text" : "Data của các anh em sẽ được lưu trực tiếp ở trong browser theo kiểu giống như object: nó cũng có property, cũng có value.",
     "words" : null
   }, {
-    "id" : "S0722",
+    "id" : "S0668",
     "start" : 3258.62,
     "end" : 3260.28,
     "text" : "Đây, mình sẽ ví dụ nhanh nha.",
     "words" : null
   }, {
-    "id" : "S0723",
+    "id" : "S0669",
     "start" : 3260.28,
     "end" : 3264.17,
     "text" : "Để gọi đến localStorage thì anh em viết là localStorage như thế này.",
     "words" : null
   }, {
-    "id" : "S0724",
+    "id" : "S0670",
     "start" : 3264.17,
     "end" : 3270.69,
     "text" : "Sau đó, anh em sẽ viết cho mình dấu chấm, tiếp theo sẽ là cái tên thuộc tính mà anh em muốn tạo ra để lưu dữ liệu.",
     "words" : null
   }, {
-    "id" : "S0725",
+    "id" : "S0671",
     "start" : 3270.69,
     "end" : 3275.44,
     "text" : "Ví dụ mình muốn lưu cái thuộc tính là tên, mình gán là 'Vũ Nguyễn Coder' chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0726",
+    "id" : "S0672",
     "start" : 3275.44,
     "end" : 3277.67,
     "text" : "Đó, mình tạo thêm nữa: địa chỉ bằng gì?",
     "words" : null
   }, {
-    "id" : "S0727",
+    "id" : "S0673",
     "start" : 3277.67,
     "end" : 3278.86,
     "text" : "'Hà Nội' chẳng hạn.",
     "words" : null
   }, {
-    "id" : "S0728",
+    "id" : "S0674",
     "start" : 3278.86,
     "end" : 3281.23,
     "text" : "Anh em nhấn Ctrl + S lại cho mình này.",
     "words" : null
   }, {
-    "id" : "S0729",
+    "id" : "S0675",
     "start" : 3281.23,
     "end" : 3289.66,
     "text" : "Khi mà nhấn Ctrl + S lại nhé, đoạn script này nó đã được chạy rồi và cái dữ liệu này của chúng ta đã được lưu ở trong localStorage rồi.",
     "words" : null
   }, {
-    "id" : "S0730",
+    "id" : "S0676",
     "start" : 3289.66,
     "end" : 3295.84,
     "text" : "Để mà kiểm tra cái dữ liệu này được lưu như thế nào, anh em sẽ bấm F12 trên Google Chrome cho mình.",
     "words" : null
   }, {
-    "id" : "S0731",
+    "id" : "S0677",
     "start" : 3295.84,
     "end" : 3297.53,
     "text" : "Anh em vào tab Application.",
     "words" : null
   }, {
-    "id" : "S0732",
+    "id" : "S0678",
     "start" : 3297.53,
     "end" : 3302.34,
     "text" : "Nó tồn tại dưới dạng một ứng dụng ở phần Storage này, anh em nhìn thấy không?",
     "words" : null
   }, {
-    "id" : "S0733",
+    "id" : "S0679",
     "start" : 3302.34,
     "end" : 3307.9,
     "text" : "Nó có khá nhiều các cơ chế lưu trữ dữ liệu, thì anh em bấm vào cho mình cái localStorage.",
     "words" : null
   }, {
-    "id" : "S0734",
+    "id" : "S0680",
     "start" : 3307.9,
     "end" : 3308.89,
     "text" : "Anh em mở ra nè.",
     "words" : null
   }, {
-    "id" : "S0735",
+    "id" : "S0681",
     "start" : 3308.89,
     "end" : 3311.95,
     "text" : "Anh em chọn vào web app của anh em đang chạy nhé.",
     "words" : null
   }, {
-    "id" : "S0736",
+    "id" : "S0682",
     "start" : 3311.95,
     "end" : 3316.58,
     "text" : "Ở đây là mình đang chạy app thông qua Live Server thì nó chạy ở port 5500.",
     "words" : null
   }, {
-    "id" : "S0737",
+    "id" : "S0683",
     "start" : 3316.58,
     "end" : 3318.01,
     "text" : "Đấy, anh em thấy không?",
     "words" : null
   }, {
-    "id" : "S0738",
+    "id" : "S0684",
     "start" : 3318.01,
     "end" : 3320.39,
     "text" : "Đây là cái bảng dữ liệu mà nó lưu này.",
     "words" : null
   }, {
-    "id" : "S0739",
+    "id" : "S0685",
     "start" : 3320.39,
     "end" : 3321.26,
     "text" : "Cái key là gì?",
     "words" : null
   }, {
-    "id" : "S0740",
+    "id" : "S0686",
     "start" : 3321.26,
     "end" : 3323.26,
     "text" : "Key là property name, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0741",
+    "id" : "S0687",
     "start" : 3323.26,
     "end" : 3327.92,
     "text" : "Giống trong Object lúc nãy mình đã phân tích đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0742",
+    "id" : "S0688",
     "start" : 3327.92,
     "end" : 3332.51,
     "text" : "Key chính là property name, đây là value: địa chỉ và tên.",
     "words" : null
   }, {
-    "id" : "S0743",
+    "id" : "S0689",
     "start" : 3332.51,
     "end" : 3338.22,
     "text" : "Bây giờ mình sẽ tắt cái trình duyệt này đi, mình mở lại anh em xem nhé.",
     "words" : null
   }, {
-    "id" : "S0744",
+    "id" : "S0690",
     "start" : 3338.22,
     "end" : 3344.17,
     "text" : "Tắt đi nè, OK, mình sẽ mở ở bên này, không sao, như nhau cả thôi, bấm F12.",
     "words" : null
   }, {
-    "id" : "S0745",
+    "id" : "S0691",
     "start" : 3344.17,
     "end" : 3350.76,
     "text" : "Anh em nhớ truy cập lại vào cái đường link của cái app của anh em: 127.0.0.1:5500.",
     "words" : null
   }, {
-    "id" : "S0746",
+    "id" : "S0692",
     "start" : 3350.76,
     "end" : 3361.45,
     "text" : "Cái localStorage nó sẽ lưu theo địa chỉ của từng cái app; app của chúng ta đang là web app, thế nên địa chỉ của app sẽ là IP và port.",
     "words" : null
   }, {
-    "id" : "S0747",
+    "id" : "S0693",
     "start" : 3361.45,
     "end" : 3364.91,
     "text" : "Đó, cái dữ liệu của chúng ta vẫn còn ở đây.",
     "words" : null
   }, {
-    "id" : "S0748",
+    "id" : "S0694",
     "start" : 3364.91,
     "end" : 3367.94,
     "text" : "Đây, mình sẽ xóa hai dòng code này đi.",
     "words" : null
   }, {
-    "id" : "S0749",
+    "id" : "S0695",
     "start" : 3367.94,
     "end" : 3373.92,
     "text" : "Xóa đi rồi không anh em lại nghĩ là code đấy nó chạy lại thì nó sẽ lưu lại.",
     "words" : null
   }, {
-    "id" : "S0750",
+    "id" : "S0696",
     "start" : 3373.92,
     "end" : 3378.82,
     "text" : "Bây giờ mình đã xóa code đi rồi, mình chạy lại, đúng không ạ?",
     "words" : null
   }, {
-    "id" : "S0751",
+    "id" : "S0697",
     "start" : 3378.82,
     "end" : 3385.26,
-    "text" : "Bây giờ anh em muốn truy xuất cái dữ liệu ra thì đơn giản cũng chỉ cần gọi localStorage.Ten hoặc là chấm địa chỉ là xong nha!",
+    "text" : "Bây giờ anh em muốn truy xuất cái dữ liệu ra thì đơn giản cũng chỉ cần gọi localStorage.Ten hoặc là chấm địa chỉ là xong, nha!",
     "words" : null
   }, {
-    "id" : "S0752",
+    "id" : "S0698",
     "start" : 3385.28,
-    "end" : 3391.26,
-    "text" : "Tất nhiên anh em có thể search thêm một vài lệnh nữa của localStorage này để phục vụ cho một app nào đấy của anh em nha.",
-    "words" : null
-  }, {
-    "id" : "S0753",
-    "start" : 3391.26,
     "end" : 3392.45,
-    "text" : "Nó cũng dễ sử dụng thôi.",
+    "text" : "Tất nhiên anh em có thể search thêm một vài lệnh nữa của localStorage này để phục vụ cho một app nào đấy của anh em nha, nó cũng dễ sử dụng thôi.",
     "words" : null
   }, {
-    "id" : "S0754",
+    "id" : "S0699",
     "start" : 3392.45,
     "end" : 3396.28,
     "text" : "OK, thời lượng của video bài giảng ngày hôm nay cũng đã tương đối là dài rồi.",
     "words" : null
   }, {
-    "id" : "S0755",
+    "id" : "S0700",
     "start" : 3396.28,
     "end" : 3400.55,
     "text" : "Tuy nhiên thì hàm lượng kiến thức nó mới chỉ dừng lại ở mức độ hết sức là cơ bản thôi.",
     "words" : null
   }, {
-    "id" : "S0756",
+    "id" : "S0701",
     "start" : 3400.55,
     "end" : 3412.11,
-    "text" : "Tuy nhiên mình vẫn hy vọng là bài giảng sẽ giúp cho các anh em có một cái đà ban đầu, có một cái bệ phóng về kiến thức để giúp các anh em có thể tự tin hơn khi tiếp cận ngôn ngữ này, cũng như là truyền được cái cảm hứng cho anh em.",
+    "text" : "Tuy nhiên mình vẫn hy vọng là bài giảng sẽ giúp cho các anh em có một cái đà ban đầu, có một cái bệ phóng về kiến thức để giúp các anh em có thể tự tin hơn khi mà tiếp cận ngôn ngữ này, cũng như là truyền được cái cảm hứng cho anh em.",
     "words" : null
   }, {
-    "id" : "S0757",
+    "id" : "S0702",
     "start" : 3412.11,
     "end" : 3413.99,
     "text" : "Chúc các anh em tự tin và học tốt nhé!",
     "words" : null
   }, {
-    "id" : "S0758",
+    "id" : "S0703",
     "start" : 3413.99,
     "end" : 3422.98,
     "text" : "Còn các anh em nào vẫn mong muốn đi theo một khóa học mà nó chi tiết hơn, nó đi từng bước về JavaScript thì cũng có thể tham khảo khóa học của mình ở trên website www.vungecoder.com.",
     "words" : null
   }, {
-    "id" : "S0759",
+    "id" : "S0704",
     "start" : 3422.98,
     "end" : 3427.03,
     "text" : "Còn bây giờ thì xin chào và hẹn gặp lại các anh em trong những bài giảng kế tiếp.",
     "words" : null
   }, {
-    "id" : "S0760",
+    "id" : "S0705",
     "start" : 3427.03,
     "end" : 3427.48,
     "text" : "Xin chào!",
