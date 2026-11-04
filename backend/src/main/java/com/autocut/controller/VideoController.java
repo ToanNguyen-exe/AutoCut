@@ -199,13 +199,68 @@ public class VideoController {
             videoEntity.setStatus("UPLOADED");
             videoRepository.save(videoEntity);
 
+            // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
+            String transcriptFile = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
+            TranscriptDTO transcriptDTO = null;
+            SegmentsDTO segmentsDTO = null;
+
+            Path transPath = projectRoot.resolve(transcriptFile);
+            if (Files.exists(transPath)) {
+                try {
+                    transcriptDTO = objectMapper.readValue(transPath.toFile(), TranscriptDTO.class);
+                } catch (Exception ex) {
+                    log.warn("Không thể đọc transcript vừa tạo {}: {}", transPath, ex.getMessage());
+                }
+            }
+
+            if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
+                List<Sentence> sents = transcriptDTO.sentences();
+                double totalDur = transcriptDTO.duration() > 0 ? transcriptDTO.duration() : 180.0;
+                int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
+                List<Segment> segList = new ArrayList<>();
+
+                for (int i = 0; i < segCount; i++) {
+                    int sIdx = i * chunkSize;
+                    if (sIdx >= sents.size()) break;
+                    int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
+                    Sentence fSent = sents.get(sIdx);
+                    Sentence lSent = sents.get(eIdx);
+                    double sStart = (i == 0) ? 0.0 : fSent.start();
+                    double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
+                    String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
+                    String topName = "Đoạn " + (i + 1);
+                    segList.add(new Segment(
+                            "seg_ai_" + (i + 1),
+                            i + 1,
+                            secFolder,
+                            i + 1,
+                            topName,
+                            "doan-" + (i + 1),
+                            fSent.id(),
+                            lSent.id(),
+                            Math.round(sStart * 10.0) / 10.0,
+                            Math.round(sEnd * 10.0) / 10.0,
+                            List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                    ));
+                }
+                segmentsDTO = new SegmentsDTO(originalFilename, originalFilename, "analyzed", false, segList);
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", "SUCCESS");
             response.put("file_name", originalFilename);
             response.put("file_size", file.getSize());
             response.put("sha256", hash);
             response.put("cloud_url", publicUrl);
-            response.put("message", "Tải video lên thành công! Video đã sẵn sàng phát trực tiếp.");
+            response.put("transcript_file", transcriptFile);
+            if (transcriptDTO != null) {
+                response.put("transcript", transcriptDTO);
+            }
+            if (segmentsDTO != null) {
+                response.put("segmentsData", segmentsDTO);
+            }
+            response.put("message", "Tải video lên và phân tích AI thành công!");
 
             return ResponseEntity.ok(response);
 
