@@ -7,7 +7,6 @@ import {
   fetchConfig,
   submitRenderSegments,
   saveProject,
-  checkCache,
   fetchBackendVideos,
   analyzeVideoBackend,
   API_BASE,
@@ -546,17 +545,17 @@ export default function Home() {
       return;
     }
 
-    // Khi chỉ thêm video mới: KHÔNG tự động chia nhiều đoạn giả lập.
-    // Giữ đúng 1 PHÂN ĐOẠN DUY NHẤT bao quát toàn bộ video từ 0 đến hết thời lượng!
+    // Video mới tải lên ở trạng thái Video Gốc (RAW):
+    // Giữ đúng 1 PHÂN ĐOẠN DUY NHẤT bao quát toàn bộ video từ 0 đến hết thời lượng để xem trước
     const singleSegment: Segment = {
       id: `seg_${Date.now()}_raw`,
       section_no: 1,
       section: "01_VideoGoc",
       topic_no: 1,
-      topic: lessonTitle,
+      topic: "Toàn bộ video gốc (Chưa phân tích)",
       slug: slugify(lessonTitle),
-      start_id: "s001",
-      end_id: "s001",
+      start_id: "S0001",
+      end_id: "S0001",
       start: 0,
       end: totalSecs,
       parts: [
@@ -569,34 +568,19 @@ export default function Home() {
       ],
     };
 
-    // Đặt mode = "raw" (Chưa phân tích)
-    setData({
+    const nextData: SegmentsData = {
       video: newVideo.name,
       lesson: lessonTitle,
       mode: "raw",
       reviewed: false,
       segments: [singleSegment],
-    });
+    };
 
-    // Nạp transcript nếu AI đã bóc băng khi upload hoặc nhận diện video âm nhạc/download
-    if (newVideo.transcript) {
-      setTranscript(newVideo.transcript);
-    } else {
-      const isMusicOrDownload = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-        `${newVideo.name} ${lessonTitle}`
-      );
-      if (isMusicOrDownload) {
-        setTranscript({
-          video: newVideo.name,
-          duration: totalSecs > 0 ? totalSecs : 356.3,
-          sentences: REAL_DOWNLOAD_LYRICS,
-        });
-      } else {
-        setTranscript(undefined);
-      }
-    }
+    // Đặt mode = "raw" (Chưa phân tích) và xóa transcript cũ
+    setData(nextData);
+    setTranscript(undefined);
 
-    // Lưu video mới vào thư viện video
+    // Lưu video mới vào thư viện video ở trạng thái Chưa phân tích
     const libItem: VideoLibraryItem = {
       id: `vid_${Date.now()}`,
       name: newVideo.name,
@@ -604,14 +588,14 @@ export default function Home() {
       title: lessonTitle,
       url: newVideo.url,
       duration: totalSecs,
-      status: newVideo.transcript ? "edited" : "added",
-      statusLabel: newVideo.transcript ? "Đã có transcript" : "Chưa phân tích",
-      category: "Video mới thêm",
+      status: "added",
+      statusLabel: "Chưa phân tích",
+      category: "Video mới tải lên",
       segmentsCount: 1,
       updatedAt: new Date().toLocaleTimeString("vi-VN"),
       segments: [singleSegment],
-      transcript: newVideo.transcript,
     };
+
     const updatedLib = saveVideoToLibrary(libItem);
     setVideoLibrary(updatedLib);
     setUndoStack([]);
@@ -621,29 +605,12 @@ export default function Home() {
     setCurrentTime(0);
     setIsPlaying(false);
 
-    if (newVideo.transcript) {
-      showToast(
-        "success",
-        `✓ Đã thêm video: "${lessonTitle}" & AI đã hoàn tất bóc băng transcript (lưu tại ${newVideo.transcriptFile || "transcripts/"})!`
-      );
-      return;
-    }
+    persistActiveProject(nextData, undefined, newVideo.url, singleSegment.id);
 
-    // Kiểm tra cache nếu video đã từng được phân tích trên backend (GET /api/video/cache/{hash})
-    if (newVideo.sha256) {
-      try {
-        const cacheRes = await checkCache(newVideo.sha256);
-        if (cacheRes.source === "api" && cacheRes.data?.cached && cacheRes.data?.transcript) {
-          setTranscript(cacheRes.data.transcript);
-          showToast("success", `Đã thêm video: "${lessonTitle}" (Đã nạp bản ghi từ Cache HIT!)`);
-          return;
-        }
-      } catch (cacheErr) {
-        console.warn("Không thể kiểm tra cache:", cacheErr);
-      }
-    }
-
-    showToast("success", `Đã thêm video: "${lessonTitle}" (1 đoạn duy nhất). Hãy bấm "Phân Tích AI" để trích xuất nội dung!`);
+    showToast(
+      "success",
+      `✓ Đã thêm video: "${lessonTitle}". Video đã sẵn sàng phát! Hãy bấm nút "Phân Tích AI" khi bạn muốn bóc tách phân đoạn.`
+    );
   };
 
   const handleAnalyzeAI = useCallback(async () => {
@@ -1137,11 +1104,15 @@ export default function Home() {
         }}
       />
 
-      {/* Add External Video Modal (URL or File Upload) */}
+      {/* Add External Video Modal (Kho Clip, Upload File or URL) */}
       <AddVideoModal
         isOpen={isAddVideoOpen}
         onClose={() => setIsAddVideoOpen(false)}
         onAddVideo={handleAddVideo}
+        onSelectExistingVideo={handleSelectLibraryVideo}
+        existingVideos={videoLibrary}
+        currentVideoUrl={externalVideoUrl}
+        currentVideoName={data.video}
       />
 
       {/* Video Library Drawer (Kho Video Đã sửa, Chưa sửa, Mới thêm) */}

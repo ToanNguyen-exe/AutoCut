@@ -17,6 +17,7 @@ import {
   Volume2,
   VolumeX,
   Sparkles,
+  Link as LinkIcon,
 } from "lucide-react";
 
 interface VideoCanvasViewportProps {
@@ -276,16 +277,27 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     <div className="flex-1 flex flex-col bg-[#0b0c10] overflow-hidden select-none min-h-0 min-w-0">
       {/* Top Header Bar of Viewport */}
       <div className="h-10 border-b border-slate-800/80 px-4 flex items-center justify-between shrink-0 bg-[#121318]/90 z-20">
-        {/* Left: Video Status Indicator */}
+        {/* Left: Video Status Indicator & URL Bar */}
         <div className="flex items-center gap-2 overflow-hidden">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               videoSrc ? "bg-emerald-400 animate-pulse" : "bg-purple-500"
             }`}
           />
-          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[280px]">
+          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[220px]">
             {videoFileName || videoTitle || "Bai05_VongLap.mp4"}
           </span>
+
+          {/* Ô hiển thị URL phía trên video */}
+          {videoSrc && (
+            <div
+              className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-mono text-purple-300 max-w-[280px] truncate"
+              title={videoSrc}
+            >
+              <LinkIcon className="w-3 h-3 text-purple-400 shrink-0" />
+              <span className="truncate">{videoSrc}</span>
+            </div>
+          )}
           {isDemo ? (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               Dữ liệu mẫu (Demo)

@@ -168,127 +168,44 @@ public class VideoController {
 
 
 
-            // Lưu một bản sao tại uploads/ để module Python AI đọc trực tiếp
-
+            // Lưu một bản sao tại uploads/ để phục vụ phát trực tiếp hoặc phân tích sau này
             Path projectRoot = resolveProjectRoot();
-
             Path uploadDir = projectRoot.resolve("uploads");
-
             if (!Files.exists(uploadDir)) {
-
                 Files.createDirectories(uploadDir);
-
             }
-
             Path localFile = uploadDir.resolve(hash + "_" + originalFilename);
-
             Files.copy(tempFile, localFile, StandardCopyOption.REPLACE_EXISTING);
 
-
-
-            // Chạy Whisper + Gemini ngay khi upload để xuất file vào thư mục riêng transcripts/
-
-            String relativeTranscriptPath = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
-
-
-
-            // Nạp đối tượng TranscriptDTO đã tạo để trả về ngay cho Frontend
-
-            TranscriptDTO transcriptDTO = null;
-
-            String videoStem = stripExtension(originalFilename);
-
-            Path transcriptFile = projectRoot.resolve("transcripts").resolve(videoStem + "_transcript.json");
-
-            if (Files.exists(transcriptFile)) {
-
-                try {
-
-                    transcriptDTO = objectMapper.readValue(transcriptFile.toFile(), TranscriptDTO.class);
-
-                } catch (Exception ex) {
-
-                    log.warn("Không thể parse file transcript {}: {}", transcriptFile, ex.getMessage());
-
-                }
-
-            }
-
-            if (transcriptDTO == null && !hash.isBlank()) {
-
-                transcriptDTO = cacheService.getCachedTranscript(hash).orElse(null);
-
-            }
-
-
-
             String publicUrl;
-
             String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + originalFilename;
 
-
-
             // Thử upload lên Cloudflare R2 trước, nếu chưa cấu hình thì dùng link stream cục bộ
-
             try {
-
                 publicUrl = r2Service.uploadFile(tempFile, r2Key);
-
                 log.info("Đã upload video lên Cloudflare R2 thành công: {}", publicUrl);
-
             } catch (Exception ex) {
-
                 log.warn("Cloudflare R2 chưa kích hoạt ({}), sử dụng luồng phát cục bộ tại uploads/", ex.getMessage());
-
                 publicUrl = "http://localhost:8080/api/video/stream/" + hash;
-
             }
-
-
 
             // Lưu thông tin video vào Database
-
             VideoEntity videoEntity = videoRepository.findBySha256Hash(hash).orElse(new VideoEntity());
-
             videoEntity.setFileName(originalFilename);
-
             videoEntity.setSha256Hash(hash);
-
             videoEntity.setFileSize(file.getSize());
-
             videoEntity.setR2Key(r2Key);
-
             videoEntity.setCloudUrl(publicUrl);
-
             videoEntity.setStatus("UPLOADED");
-
             videoRepository.save(videoEntity);
 
-
-
             Map<String, Object> response = new HashMap<>();
-
             response.put("status", "SUCCESS");
-
             response.put("file_name", originalFilename);
-
             response.put("file_size", file.getSize());
-
             response.put("sha256", hash);
-
             response.put("cloud_url", publicUrl);
-
-            response.put("transcript_file", relativeTranscriptPath);
-
-            if (transcriptDTO != null) {
-
-                response.put("transcript", transcriptDTO);
-
-            }
-
-            response.put("message", "Video đã được tải lên và AI đã xuất file transcript tại: " + relativeTranscriptPath);
-
-
+            response.put("message", "Tải video lên thành công! Video đã sẵn sàng phát trực tiếp.");
 
             return ResponseEntity.ok(response);
 
