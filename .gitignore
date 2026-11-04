@@ -102,6 +102,33 @@ Thumbs.db
 *.swp
 *~
 
+<<<<<<< HEAD
 # 8. AI Agents & Local DB Cache
 .agents/
 .neon
+=======
+# Media & Cache Files
+cache/
+output/
+*.mp4
+*.mkv
+*.avi
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+>>>>>>> origin/feature/sv2-whisper-stt

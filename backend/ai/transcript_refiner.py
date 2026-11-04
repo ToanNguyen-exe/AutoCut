@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """Module hiệu đính, tách câu đơn & phân đoạn ngữ nghĩa bài giảng bằng Google Gemini LLM.
 
 Nhiệm vụ trong Pipeline:
@@ -5,15 +6,31 @@ Nhiệm vụ trong Pipeline:
 2. Dùng Gemini để đọc hiểu văn bản, sửa lỗi chính tả tiếng Việt, chuẩn hóa thuật ngữ chuyên ngành và tách các đoạn dài thành từng câu đơn.
 3. Nội suy mốc thời gian [start, end] tương ứng cho từng câu đơn và đánh lại mã định danh tuần tự S0001, S0002...
 4. Phân tích ngữ nghĩa toàn bộ các câu S0001..Sxxxx để chia bài giảng thành các chương/chủ đề (SegmentsDTO) phục vụ Backend Spring Boot & Frontend Studio.
+=======
+"""Module hiệu đính và tách câu văn bản bóc băng bằng Google Gemini LLM.
+
+Nhiệm vụ trong Pipeline:
+1. Tiếp nhận kết quả bóc băng từ Faster-Whisper (có mốc thời gian start, end).
+2. Dùng Gemini để đọc hiểu ngữ cảnh, sửa lỗi chính tả tiếng Việt và chuẩn hóa thuật ngữ chuyên ngành (JavaScript, C++, for, while, Object, Primitive, DOM, Asynchronous...).
+3. Tự động TÁCH các đoạn văn bản dài/nhiều ý của Whisper thành từng câu đơn độc lập, rõ ràng.
+4. Tự động chuyển đổi dự phòng (fallback) giữa các model Gemini nếu gặp giới hạn 429/503 Free Tier.
+5. Hiển thị thanh tiến độ, thời gian đã chạy (Elapsed) và thời gian dự kiến còn lại (ETA) theo thời gian thực.
+>>>>>>> origin/feature/sv2-whisper-stt
 """
 
 import json
 import logging
+<<<<<<< HEAD
 import re
 import sys
 import time
 import unicodedata
 from typing import Optional, List, Dict, Any
+=======
+import sys
+import time
+from typing import Optional, List, Dict, Callable
+>>>>>>> origin/feature/sv2-whisper-stt
 
 from google import genai
 from google.genai import types
@@ -21,15 +38,24 @@ from google.genai import types
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import extract_terms_from_outline
 from .config_loader import default_ai_config
+<<<<<<< HEAD
 from .post_processor import (
     ensure_sentence_casing_and_punctuation,
     split_segment_into_timed_sentences,
 )
 from .whisper_service import format_duration, build_progress_bar
+=======
+from .whisper_service import format_duration, build_progress_bar
+from .post_processor import (
+    split_segment_into_timed_sentences,
+    ensure_sentence_casing_and_punctuation,
+)
+>>>>>>> origin/feature/sv2-whisper-stt
 
 logger = logging.getLogger("AutoCut.AI.Refiner")
 
 FALLBACK_MODELS = [
+<<<<<<< HEAD
     "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
     "gemini-2.5-flash",
@@ -50,6 +76,17 @@ def slugify_vi(text: str) -> str:
 
 class TranscriptRefiner:
     """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề bằng Gemini LLM."""
+=======
+    "gemini-3.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-3.5-flash-lite",
+]
+
+
+class TranscriptRefiner:
+    """Bộ hiệu đính chính tả, chuẩn hóa thuật ngữ và tách câu đơn bằng Gemini LLM."""
+>>>>>>> origin/feature/sv2-whisper-stt
 
     def __init__(
         self,
@@ -59,6 +96,7 @@ class TranscriptRefiner:
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
+<<<<<<< HEAD
         primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
@@ -98,13 +136,39 @@ class TranscriptRefiner:
     @staticmethod
     def _build_char_batches(sentences: List[Sentence], max_chars: int = 6000, max_items: int = 25) -> List[List[Sentence]]:
         """Gom các câu thành từng lô dựa theo tổng số ký tự để tối ưu số lượt gọi API Gemini."""
+=======
+        self.model_name = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
+        self.client = genai.Client(
+            api_key=self.api_key,
+            http_options={"timeout": 180000.0}  # 180s timeout cho mỗi lượt gọi
+        )
+
+    def _get_candidate_models(self) -> List[str]:
+        models = [self.model_name]
+        for m in FALLBACK_MODELS:
+            if m not in models:
+                models.append(m)
+        return models
+
+    def _build_batches(
+        self,
+        sentences: List[Sentence],
+        max_items: int = 25,
+        max_chars: int = 6000
+    ) -> List[List[Sentence]]:
+        """Chia danh sách câu thành các batch hợp lý dựa theo số câu và tổng số ký tự."""
+>>>>>>> origin/feature/sv2-whisper-stt
         batches: List[List[Sentence]] = []
         current_batch: List[Sentence] = []
         current_chars = 0
 
         for s in sentences:
             s_len = len(s.text)
+<<<<<<< HEAD
             if current_batch and (current_chars + s_len > max_chars or len(current_batch) >= max_items):
+=======
+            if current_batch and (len(current_batch) >= max_items or current_chars + s_len > max_chars):
+>>>>>>> origin/feature/sv2-whisper-stt
                 batches.append(current_batch)
                 current_batch = [s]
                 current_chars = s_len
@@ -114,6 +178,7 @@ class TranscriptRefiner:
 
         if current_batch:
             batches.append(current_batch)
+<<<<<<< HEAD
         return batches
 
     @staticmethod
@@ -157,19 +222,34 @@ class TranscriptRefiner:
 
         return timed_items
 
+=======
+
+        return batches
+
+>>>>>>> origin/feature/sv2-whisper-stt
     def refine_transcript(
         self,
         transcript: TranscriptOutput,
         outline_text: Optional[str] = None,
+<<<<<<< HEAD
         start_from_id: Optional[str] = None
     ) -> TranscriptOutput:
         """Hiệu đính chính tả và tách từng câu đơn trên toàn bộ transcript, sau đó đánh lại mã S0001, S0002..."""
+=======
+        max_batch_items: int = 25,
+        max_batch_chars: int = 6000,
+        start_from_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[dict], None]] = None
+    ) -> TranscriptOutput:
+        """Hiệu đính chính tả và tách các đoạn văn dài thành các câu đơn được đánh mã số S0001, S0002..."""
+>>>>>>> origin/feature/sv2-whisper-stt
         if not transcript.sentences:
             return transcript
 
         terms = extract_terms_from_outline(outline_text) if outline_text else []
         terms_hint = f"Thuật ngữ bài giảng cần đối chiếu: {', '.join(terms)}" if terms else ""
 
+<<<<<<< HEAD
         prefix_items: List[dict] = []
         target_sentences: List[Sentence] = []
         resuming = bool(start_from_id)
@@ -184,10 +264,34 @@ class TranscriptRefiner:
         batches = self._build_char_batches(target_sentences, max_chars=6000, max_items=25)
         total_batches = len(batches)
         refined_items: List[dict] = list(prefix_items)
+=======
+        sentences_to_refine: List[Sentence] = []
+        for s in transcript.sentences:
+            if start_from_id and s.id < start_from_id:
+                continue
+            sentences_to_refine.append(s)
+
+        batches = self._build_batches(
+            sentences_to_refine,
+            max_items=max_batch_items,
+            max_chars=max_batch_chars
+        )
+        total_batches = len(batches)
+
+        logger.info(
+            f"[REFINER] Bắt đầu dùng Gemini hiệu đính & tách câu cho "
+            f"{len(sentences_to_refine)} phân đoạn ({total_batches} batches)..."
+        )
+
+        refined_sentences_map: Dict[str, List[str]] = {}
+        candidate_models = self._get_candidate_models()
+        active_model_idx = 0
+>>>>>>> origin/feature/sv2-whisper-stt
         refine_start_wall = time.perf_counter()
 
         for b_idx, batch in enumerate(batches, start=1):
             batch_data = [{"id": s.id, "text": s.text} for s in batch]
+<<<<<<< HEAD
 
             elapsed_ref = time.perf_counter() - refine_start_wall
             completed_batches = b_idx - 1
@@ -225,20 +329,90 @@ DANH SÁCH ĐẦU VÀO:
 {json.dumps(batch_data, ensure_ascii=False, indent=2)}
 
 ĐỊNH DẠNG JSON ĐẦU RA BẮT BUỘC:
+=======
+            elapsed_before = time.perf_counter() - refine_start_wall
+            done_batches = b_idx - 1
+            pct_before = (done_batches / total_batches) * 100.0 if total_batches else 0.0
+            eta_before = (elapsed_before / done_batches) * (total_batches - done_batches) if done_batches > 0 else 0.0
+            bar_before = build_progress_bar(pct_before)
+
+            eta_label = f"~{format_duration(eta_before)}" if done_batches > 0 else "Đang ước tính..."
+            print(
+                f"[Gemini Refiner] [{bar_before}] {pct_before:5.1f}% "
+                f"(Batch {b_idx}/{total_batches}: {batch[0].id} -> {batch[-1].id}) | "
+                f"Đã chạy: {format_duration(elapsed_before)} | Còn lại (ETA): {eta_label}"
+            )
+            sys.stdout.flush()
+
+            prompt = f"""Bạn là chuyên gia biên tập ngữ liệu bài giảng lập trình tiếng Việt.
+Dưới đây là các phân đoạn văn bản được bóc băng từ giọng nói (Speech-to-Text). Do giảng viên phát âm thuật ngữ tiếng Anh xen lẫn tiếng Việt và nói liền mạch, văn bản thô bị sai chính tả, sai tên thuật ngữ và nhiều câu bị dính liền thành một đoạn dài không có dấu chấm câu.
+
+NHIỆM VỤ CỦA BẠN:
+1. Sửa toàn bộ lỗi chính tả tiếng Việt và chuẩn hóa các thuật ngữ lập trình / CNTT về đúng dạng chuẩn (ví dụ: JavaScript, Object, Primitive, Non-primitive, function, parameter, argument, return, undefined, Arrow Function, Array, index, length, a.push, a.pop, CRUD, Create, Read, Update, Delete, String, Type Coercion, DOM, Document Object Model, HTML, element, event, event handler, attribute, onclick, document.write, document.getElementById, innerHTML, window.prompt, parseInt, console.log, Asynchronous, Multi-thread, C++, setTimeout, V8 Engine, Callback, Promise, Async/Await, Data Storage, Cookie, Web Storage, IndexedDB, HTML5, NoSQL Database, localStorage, Live Server, port 5500, 127.0.0.1:5500, Ctrl + S, Eimi Fukada, Yua Mikami, www.vungecoder.com...).
+2. {terms_hint}
+3. TÁCH CÂU RÕ RÀNG:
+   - Nếu một mục ('id') chứa nhiều câu hoặc nhiều ý nối tiếp nhau, hãy TÁCH nó thành danh sách các câu đơn độc lập trong mảng "sentences".
+   - Mỗi phần tử trong "sentences" chỉ là 1 câu hoàn chỉnh (viết hoa chữ cái đầu, kết thúc bằng dấu chấm '.', dấu hỏi '?' hoặc dấu cảm thán '!').
+   - Không gộp các từ cảm thán ngắn (như 'OK!', 'Đó,', 'Rồi,') thành một câu riêng lẻ chỉ có 1-3 chữ mà hãy ghép tự nhiên vào đầu câu liền sau.
+   - Giữ nguyên đầy đủ 100% ý nghĩa lời giảng của giảng viên, KHÔNG tóm tắt, KHÔNG lược bỏ ý.
+
+DANH SÁCH PHÂN ĐOẠN ĐẦU VÀO:
+{json.dumps(batch_data, ensure_ascii=False, indent=2)}
+
+ĐỊNH DẠNG JSON ĐẦU RA BẮT BUỘC (chỉ trả về JSON thuần túy):
+>>>>>>> origin/feature/sv2-whisper-stt
 {{
   "items": [
     {{
       "id": "S0001",
       "sentences": [
+<<<<<<< HEAD
         "Câu đơn thứ nhất đã sửa chính tả.",
         "Câu đơn thứ hai được tách ra từ đoạn gốc."
+=======
+        "Câu đơn hoàn chỉnh thứ nhất đã sửa chính tả và thuật ngữ.",
+        "Câu đơn hoàn chỉnh thứ hai được tách ra từ đoạn gốc."
+>>>>>>> origin/feature/sv2-whisper-stt
       ]
     }}
   ]
 }}
 """
+<<<<<<< HEAD
             try:
                 response = self._generate_with_fallback(prompt)
+=======
+
+            try:
+                response = None
+                last_err = None
+                for m_offset in range(len(candidate_models)):
+                    m_idx = (active_model_idx + m_offset) % len(candidate_models)
+                    chosen_model = candidate_models[m_idx]
+                    try:
+                        response = self.client.models.generate_content(
+                            model=chosen_model,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                temperature=0.1
+                            )
+                        )
+                        active_model_idx = m_idx
+                        break
+                    except Exception as gen_err:
+                        last_err = gen_err
+                        err_str = str(gen_err)
+                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "503" in err_str or "UNAVAILABLE" in err_str or "404" in err_str:
+                            logger.warning(f"[REFINER] Model {chosen_model} bận hoặc hết hạn mức ({err_str[:80]}...), chuyển sang model dự phòng...")
+                            time.sleep(1.5)
+                            continue
+                        raise gen_err
+
+                if response is None and last_err is not None:
+                    raise last_err
+
+>>>>>>> origin/feature/sv2-whisper-stt
                 raw_text = response.text.strip()
                 if raw_text.startswith("```json"):
                     raw_text = raw_text[7:]
@@ -249,6 +423,7 @@ DANH SÁCH ĐẦU VÀO:
                 raw_text = raw_text.strip()
 
                 parsed = json.loads(raw_text)
+<<<<<<< HEAD
                 items_list = parsed.get("items", [])
                 by_id: Dict[str, List[str]] = {}
                 for it in items_list:
@@ -291,10 +466,69 @@ DANH SÁCH ĐẦU VÀO:
         new_sentences: List[Sentence] = []
         for idx, item in enumerate(refined_items, start=1):
             new_sentences.append(
+=======
+                items = parsed.get("items") or parsed.get("corrections") or []
+
+                for item in items:
+                    c_id = item.get("id")
+                    c_sents = item.get("sentences")
+                    if isinstance(c_sents, list) and c_sents:
+                        cleaned_list = [str(x).strip() for x in c_sents if str(x).strip()]
+                        if c_id and cleaned_list:
+                            refined_sentences_map[c_id] = cleaned_list
+                    else:
+                        c_text = str(item.get("text", "")).strip()
+                        if c_id and c_text:
+                            refined_sentences_map[c_id] = [c_text]
+
+            except Exception as e:
+                logger.warning(
+                    f"[REFINER] Lỗi khi xử lý batch {b_idx} ({batch[0].id} -> {batch[-1].id}): {e}. "
+                    f"Sử dụng bộ tách câu cục bộ cho nhóm này."
+                )
+
+            if progress_callback:
+                elapsed_after = time.perf_counter() - refine_start_wall
+                pct_after = (b_idx / total_batches) * 100.0 if total_batches else 100.0
+                eta_after = (elapsed_after / b_idx) * (total_batches - b_idx)
+                progress_callback({
+                    "stage": "gemini_refiner",
+                    "percent": round(pct_after, 1),
+                    "elapsed_sec": round(elapsed_after, 2),
+                    "eta_sec": round(eta_after, 2)
+                })
+
+        total_refine_elapsed = time.perf_counter() - refine_start_wall
+        if total_batches > 0:
+            bar_done = build_progress_bar(100.0)
+            print(
+                f"[Gemini Refiner] [{bar_done}] 100.0% "
+                f"(Hoàn tất {total_batches}/{total_batches} batches) | "
+                f"Tổng thời gian: {format_duration(total_refine_elapsed)} ({total_refine_elapsed:.2f}s)"
+            )
+
+        # Bước cuối: Tách từng phân đoạn thành các câu độc lập kèm nội suy thời gian [start, end]
+        # và đánh lại mã định danh câu S0001, S0002... trên toàn bộ transcript.
+        expanded_timed_items: List[dict] = []
+        for s in transcript.sentences:
+            source_text_or_list = refined_sentences_map.get(s.id, s.text)
+            timed_chunks = split_segment_into_timed_sentences(
+                start=s.start,
+                end=s.end,
+                text_or_sentences=source_text_or_list
+            )
+            expanded_timed_items.extend(timed_chunks)
+
+        digit_count = 5 if len(expanded_timed_items) > 9999 else 4
+        final_sentences: List[Sentence] = []
+        for idx, item in enumerate(expanded_timed_items, start=1):
+            final_sentences.append(
+>>>>>>> origin/feature/sv2-whisper-stt
                 Sentence(
                     id=f"S{idx:0{digit_count}d}",
                     start=item["start"],
                     end=item["end"],
+<<<<<<< HEAD
                     text=item["text"]
                 )
             )
@@ -598,3 +832,16 @@ DANH SÁCH CÂU TRANSCRIPT:
             start_idx = end_idx + 1
 
         return topics
+=======
+                    text=ensure_sentence_casing_and_punctuation(item["text"])
+                )
+            )
+
+        logger.info(
+            f"[REFINER HOÀN TẤT] Đã chuẩn hóa và tách từ {len(transcript.sentences)} phân đoạn "
+            f"thành {len(final_sentences)} câu đơn hoàn chỉnh (S0001 -> S{len(final_sentences):0{digit_count}d}) "
+            f"trong {format_duration(total_refine_elapsed)} ({total_refine_elapsed:.2f}s)."
+        )
+        transcript.sentences = final_sentences
+        return transcript
+>>>>>>> origin/feature/sv2-whisper-stt

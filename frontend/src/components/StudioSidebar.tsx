@@ -29,7 +29,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   onOpenVideoLibrary,
 }) => {
   return (
-    <aside className="w-14 bg-[#121318] border-r border-slate-800 flex flex-col items-center justify-between py-4 select-none shrink-0 z-30">
+    <aside className="w-14 bg-white border-r border-slate-200 flex flex-col items-center justify-between py-4 select-none shrink-0 z-30">
       {/* Top icon group */}
       <div className="flex flex-col items-center gap-4 w-full">
         {/* Studio View */}
@@ -38,8 +38,8 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           title="Studio Dựng Video (Giao diện chính)"
           className={`p-2.5 rounded-xl transition ${
             activeTab === "studio"
-              ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
+              ? "bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-2xs"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
           }`}
         >
           <Home className="w-5 h-5" />
@@ -51,19 +51,19 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           title="Bảng Duyệt Phân Đoạn (B9)"
           className={`p-2.5 rounded-xl transition ${
             activeTab === "table"
-              ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
+              ? "bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-2xs"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
           }`}
         >
           <TableProperties className="w-5 h-5" />
         </button>
 
-        <div className="w-6 h-[1px] bg-slate-800 my-1" />
+        <div className="w-6 h-[1px] bg-slate-200 my-1" />
 
         {/* AI Magic Segment */}
         <button
           title="Tự động phân đoạn AI (B4 LLM)"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
         >
           <Wand2 className="w-5 h-5 text-indigo-400" />
         </button>
@@ -72,7 +72,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         <button
           onClick={onOpenTranscriptDrawer}
           title="Tra cứu Transcript Whisper (B2)"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition relative"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition relative"
         >
           <FileText className="w-5 h-5" />
           <span className="w-2 h-2 rounded-full bg-purple-500 absolute top-1.5 right-1.5" />
@@ -81,7 +81,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {/* Audio Waveform */}
         <button
           title="Khoảng lặng âm thanh & Điểm cắt (B3)"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
         >
           <AudioWaveform className="w-5 h-5" />
         </button>
@@ -89,7 +89,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {/* Bot AI */}
         <button
           title="Trợ lý LLM Phân đoạn"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
         >
           <Bot className="w-5 h-5" />
         </button>
@@ -98,7 +98,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         <button
           onClick={onOpenVideoLibrary}
           title="Kho Video Dự Án (Đã sửa, Chưa sửa, Mới thêm)"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition relative group"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition relative group"
         >
           <Film className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition" />
           <span className="w-2 h-2 rounded-full bg-emerald-400 absolute top-1.5 right-1.5 ring-2 ring-[#121318]" />
@@ -107,7 +107,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {/* Subtitles */}
         <button
           title="Phụ đề & Chapters"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
         >
           <Subtitles className="w-5 h-5" />
         </button>
@@ -117,7 +117,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       <div className="flex flex-col items-center gap-4 w-full">
         <button
           title="Cấu hình hệ thống"
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
         >
           <Settings className="w-5 h-5" />
         </button>

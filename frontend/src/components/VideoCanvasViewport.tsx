@@ -254,23 +254,23 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               videoSrc ? "bg-emerald-400 animate-pulse" : "bg-purple-500"
             }`}
           />
-          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[280px]">
+          <span className="text-xs font-bold text-slate-900 tracking-wide truncate max-w-[280px]">
             {videoFileName || videoTitle || "Bai05_VongLap.mp4"}
           </span>
           {isDemo ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
               Dữ liệu mẫu (Demo)
             </span>
           ) : isAnalyzing ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 animate-pulse">
               ⚡ Đang phân tích AI...
             </span>
           ) : mode === "raw" ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
               Chưa phân tích (1 đoạn)
             </span>
           ) : videoSrc ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
               ✓ Đã phân tích bởi AI
             </span>
           ) : null}
@@ -619,9 +619,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                         fileInputRef.current?.click();
                       }
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 text-xs font-semibold transition hover:scale-105 active:scale-95 shadow-lg shadow-purple-600/20"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition hover:scale-102 active:scale-98 shadow-md shadow-indigo-600/20"
                   >
-                    <Upload className="w-4 h-4 text-purple-400" />
+                    <Upload className="w-4 h-4 text-white" />
                     <span>Thêm video bài giảng từ link URL hoặc tải từ máy</span>
                   </button>
                 </div>

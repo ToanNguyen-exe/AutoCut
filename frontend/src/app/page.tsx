@@ -800,7 +800,7 @@ export default function Home() {
   const isDemo = data.mode === "demo" || data.lesson === "Bai05_VongLap" || data.video === "Bai05_VongLap.mp4";
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#0d0e12] text-slate-100 font-sans select-none selection:bg-purple-600 selection:text-white">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f8fafc] text-slate-800 font-sans select-none selection:bg-indigo-600 selection:text-white">
       {/* Top Header matching reference image */}
       <StudioHeader
         user={currentUser}
@@ -877,15 +877,15 @@ export default function Home() {
           </div>
         ) : (
           /* Table View: Standard B9 Review Table for grading & detailed metrics */
-          <div className="flex-1 overflow-y-auto p-6 bg-[#0d0e12]">
+          <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900">
                   Bảng Duyệt Chi Tiết Phân Đoạn (B9 Specification)
                 </h2>
                 <button
                   onClick={() => setActiveTab("studio")}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium transition"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition"
                 >
                   &larr; Trở về Studio Editor
                 </button>
@@ -913,18 +913,17 @@ export default function Home() {
         {/* Floating Notification Toast */}
         {notification && (
           <div
-            className={`absolute top-4 right-4 z-50 p-3 rounded-xl border flex items-center gap-2.5 text-xs shadow-2xl backdrop-blur-md animate-in fade-in duration-200 ${
-              notification.type === "success"
-                ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-300"
+            className={`absolute top-4 right-4 z-50 p-3 rounded-xl border flex items-center gap-2.5 text-xs shadow-2xl backdrop-blur-md animate-in fade-in duration-200 ${notification.type === "success"
+                ? "bg-white border-emerald-300 text-emerald-800"
                 : notification.type === "error"
-                ? "bg-rose-950/80 border-rose-500/50 text-rose-300"
-                : "bg-slate-900/90 border-purple-500/50 text-purple-300"
-            }`}
+                  ? "bg-white border-rose-300 text-rose-800"
+                  : "bg-white border-indigo-300 text-indigo-900"
+              }`}
           >
             {notification.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-purple-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-indigo-600 shrink-0" />
             )}
             <span className="font-medium">{notification.message}</span>
             <button
