@@ -1,4 +1,4 @@
-import { SegmentsData, TranscriptData, Segment } from "@/types";
+import { SegmentsData, TranscriptData } from "@/types";
 
 const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
 export const API_BASE = rawBase.endsWith("/api/video")
@@ -253,80 +253,6 @@ export async function submitRenderSegments(
     return {
       success: false,
       message: err instanceof Error ? err.message : "Lỗi khi gửi yêu cầu render",
-    };
-  }
-}
-
-export interface SaveProjectPayload {
-  user: string;
-  userId?: string;
-  lesson: string;
-  video: string;
-  segments: Segment[];
-  transcript?: TranscriptData;
-  duration?: number;
-  cloudUrl?: string | null;
-}
-
-export interface SaveProjectResponse {
-  success: boolean;
-  status?: string;
-  user?: string;
-  lesson?: string;
-  directory?: string;
-  r2Url?: string;
-  message: string;
-}
-
-/**
- * Lưu trạng thái dự án phân đoạn của người dùng vào thư mục riêng và đồng bộ R2 (POST /api/video/save)
- */
-export async function saveProject(
-  payload: SaveProjectPayload
-): Promise<SaveProjectResponse> {
-  try {
-    const res = await fetch(`${API_BASE}/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
-      try {
-        const errJson = (await res.json()) as { error?: string };
-        if (errJson && typeof errJson.error === "string") {
-          errorMsg = errJson.error;
-        }
-      } catch {
-        const errText = await res.text().catch(() => "");
-        if (errText) errorMsg = errText;
-      }
-      throw new Error(errorMsg);
-    }
-
-    const json = (await res.json()) as {
-      status?: string;
-      user?: string;
-      lesson?: string;
-      directory?: string;
-      r2Url?: string;
-      message?: string;
-    };
-
-    return {
-      success: true,
-      status: json.status,
-      user: json.user,
-      lesson: json.lesson,
-      directory: json.directory,
-      r2Url: json.r2Url,
-      message: json.message || "Đã lưu dự án thành công!",
-    };
-  } catch (err) {
-    return {
-      success: false,
-      message: err instanceof Error ? err.message : "Lỗi khi lưu dự án",
     };
   }
 }

@@ -22,7 +22,6 @@ import {
 
 interface VideoCanvasViewportProps {
   currentSegment?: Segment;
-  segments?: Segment[];
   currentTime: number;
   totalDuration: number;
   videoTitle: string;
@@ -46,7 +45,6 @@ interface VideoCanvasViewportProps {
 
 export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   currentSegment,
-  segments,
   currentTime,
   totalDuration,
   videoTitle,
@@ -200,37 +198,10 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     }
   };
 
-  // Cập nhật currentTime khi video tự chạy, tự động NHẢY CÓC (skip) qua các đoạn bị xóa / khoảng trống
+  // Cập nhật currentTime khi video tự chạy
   const handleTimeUpdate = () => {
-    if (!videoRef.current) return;
-    const now = Number(videoRef.current.currentTime.toFixed(1));
-
-    if (segments && segments.length > 0 && isPlaying) {
-      const sorted = [...segments].sort((a, b) => a.start - b.start);
-      const inSeg = sorted.find((s) => now >= s.start - 0.1 && now < s.end);
-
-      if (!inSeg) {
-        // Vị trí nằm ngoài các phân đoạn (đoạn đã bị xóa hoặc khoảng trống)
-        const nextSeg = sorted.find((s) => s.start >= now);
-        if (nextSeg) {
-          videoRef.current.currentTime = nextSeg.start;
-          if (onSeek) onSeek(nextSeg.start);
-          if (onSelectSegment) onSelectSegment(nextSeg.id);
-          return;
-        } else {
-          videoRef.current.pause();
-          if (onTogglePlay) onTogglePlay();
-          return;
-        }
-      } else {
-        if (onSelectSegment && currentSegment?.id !== inSeg.id) {
-          onSelectSegment(inSeg.id);
-        }
-      }
-    }
-
-    if (onSeek && isPlaying) {
-      onSeek(now);
+    if (videoRef.current && onSeek && isPlaying) {
+      onSeek(Number(videoRef.current.currentTime.toFixed(1)));
     }
   };
 
@@ -277,41 +248,39 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     <div className="flex-1 flex flex-col bg-[#0b0c10] overflow-hidden select-none min-h-0 min-w-0">
       {/* Top Header Bar of Viewport */}
       <div className="h-10 border-b border-slate-800/80 px-4 flex items-center justify-between shrink-0 bg-[#121318]/90 z-20">
-        {/* Left: Video Status Indicator & URL Bar */}
+        {/* Left: Video Status Indicator */}
         <div className="flex items-center gap-2 overflow-hidden">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               videoSrc ? "bg-emerald-400 animate-pulse" : "bg-purple-500"
             }`}
           />
-          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[220px]">
+          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[280px]">
             {videoFileName || videoTitle || "Bai05_VongLap.mp4"}
           </span>
-
-          {/* Ô hiển thị URL phía trên video */}
           {videoSrc && (
-            <div
-              className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-mono text-purple-300 max-w-[280px] truncate"
+            <span
+              className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/90 text-indigo-300 border border-slate-700 max-w-[280px] truncate"
               title={videoSrc}
             >
-              <LinkIcon className="w-3 h-3 text-purple-400 shrink-0" />
+              <LinkIcon className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
               <span className="truncate">{videoSrc}</span>
-            </div>
+            </span>
           )}
           {isDemo ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
               Dữ liệu mẫu (Demo)
             </span>
           ) : isAnalyzing ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 animate-pulse">
               ⚡ Đang phân tích AI...
             </span>
           ) : mode === "raw" ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
               Chưa phân tích (1 đoạn)
             </span>
           ) : videoSrc ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
               ✓ Đã phân tích bởi AI
             </span>
           ) : null}
@@ -660,9 +629,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                         fileInputRef.current?.click();
                       }
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 text-xs font-semibold transition hover:scale-105 active:scale-95 shadow-lg shadow-purple-600/20"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition hover:scale-102 active:scale-98 shadow-md shadow-indigo-600/20"
                   >
-                    <Upload className="w-4 h-4 text-purple-400" />
+                    <Upload className="w-4 h-4 text-white" />
                     <span>Thêm video bài giảng từ link URL hoặc tải từ máy</span>
                   </button>
                 </div>

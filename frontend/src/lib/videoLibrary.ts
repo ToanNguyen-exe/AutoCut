@@ -4,20 +4,20 @@ import defaultVideos from "@/mock-data/videos_library.json";
 const STORAGE_KEY = "autocut_video_library";
 
 export function getLibraryVideos(): VideoLibraryItem[] {
-  if (typeof window !== "undefined") {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed as VideoLibraryItem[];
-        }
-      }
-    } catch {
-      // ignore
-    }
+  if (typeof window === "undefined") {
+    return defaultVideos as VideoLibraryItem[];
   }
-  return defaultVideos as VideoLibraryItem[];
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultVideos));
+      return defaultVideos as VideoLibraryItem[];
+    }
+    return JSON.parse(raw) as VideoLibraryItem[];
+  } catch {
+    return defaultVideos as VideoLibraryItem[];
+  }
 }
 
 export function saveVideoToLibrary(video: VideoLibraryItem): VideoLibraryItem[] {

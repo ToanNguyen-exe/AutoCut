@@ -11,10 +11,16 @@ export function getCurrentUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as User;
-  } catch {
+    if (raw) return JSON.parse(raw) as User;
+    // Tự động gán tài khoản mặc định Toàn Nguyễn (Admin)
+    const defaultUser = (mockUsers as User[])[0];
+    if (defaultUser) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultUser));
+      return defaultUser;
+    }
     return null;
+  } catch {
+    return (mockUsers as User[])[0] || null;
   }
 }
 
