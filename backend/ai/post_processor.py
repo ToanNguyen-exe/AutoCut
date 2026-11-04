@@ -83,7 +83,7 @@ DOMAIN_TERM_MAPPINGS = [
 ]
 
 # Các ký tự kết thúc câu hoặc mệnh đề hoàn chỉnh
-PUNCTUATION_ENDINGS = ('.', '?', '!', ';', ':', '…', '...')
+PUNCTUATION_ENDINGS = ('.', ',', '?', '!', ';', ':', '…', '...')
 
 # Biểu thức chính quy nhận diện ranh giới giữa các câu (dấu chấm, hỏi, chấm than, chấm phẩy)
 # theo sau bởi khoảng trắng và chữ cái viết hoa (hoặc dấu mở ngoặc/nháy + chữ hoa).
