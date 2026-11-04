@@ -58,6 +58,17 @@ class AIConfig:
             or 500
         )
 
+        self.whisper_api_key: str = (
+            os.getenv("WHISPER_API_KEY")
+            or transcript_cfg.get("api_key")
+            or ""
+        )
+        self.whisper_api_url: str = (
+            os.getenv("WHISPER_API_URL")
+            or transcript_cfg.get("api_url")
+            or "https://api.groq.com/openai/v1/audio/transcriptions"
+        )
+
         # Gemini API Key & Model
         self.gemini_api_key: str = (
             os.getenv("GEMINI_API_KEY")
