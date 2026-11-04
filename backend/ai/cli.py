@@ -330,7 +330,7 @@ def main():
         )
         return
 
-    use_gemini_refine = args.refine and not args.no_refine
+    use_gemini_refine = bool(getattr(args, "refine", True))
 
     # Chế độ xóa cache
     if args.clear_cache:
