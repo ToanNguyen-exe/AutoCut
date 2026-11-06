@@ -278,9 +278,9 @@ def _find_matching_transcript_or_video(
             q_lesson = strip_accents(norm_lesson).replace(" ", "_")
 
             matched = (
-                (q_vid and (k_vid == q_vid or q_vid in k_vid or k_vid in q_vid))
-                or (q_stem and (k_stem == q_stem or q_stem in k_stem or k_stem in q_stem))
-                or (q_lesson and (k_stem == q_lesson or q_lesson in k_stem or k_stem in q_lesson))
+                (q_vid and k_vid == q_vid)
+                or (q_stem and k_stem == q_stem)
+                or (q_lesson and k_stem == q_lesson)
             )
 
             if matched:
@@ -294,13 +294,7 @@ def _find_matching_transcript_or_video(
         except Exception:
             continue
 
-    # 5. Nếu có transcript.json gốc
-    if fallback_root_transcript is not None and fallback_root_transcript.sentences:
-        processed = post_process_transcript(fallback_root_transcript)
-        save_to_dedicated_transcripts_folder(processed, clean_vname)
-        return processed
-
-    # 6. Trường hợp dự phòng cuối cùng (ví dụ khi chạy Unit Test với tên video giả định không có file âm thanh thật)
+    # 5. Trường hợp dự phòng cuối cùng (ví dụ khi chạy Unit Test với tên video giả định không có file âm thanh thật)
     eff_dur = round(float(duration if duration and duration > 0 else 180.0), 2)
     step = round(eff_dur / 8.0, 2)
     sample_texts = [

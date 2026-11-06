@@ -893,13 +893,7 @@ public class VideoController {
                 for (Path p : files) {
                     String base = p.getFileName().toString().replace("_transcript.json", "");
                     String fileNorm = normalizeSearchKey(base);
-                    if (!fileNorm.isBlank() && (
-                            fileNorm.equals(normKey) ||
-                            fileNorm.equals(innerNorm) ||
-                            normKey.contains(fileNorm) ||
-                            fileNorm.contains(normKey) ||
-                            (!innerNorm.isBlank() && (innerNorm.contains(fileNorm) || fileNorm.contains(innerNorm)))
-                    )) {
+                    if (!fileNorm.isBlank() && (fileNorm.equals(normKey) || (!innerNorm.isBlank() && fileNorm.equals(innerNorm)))) {
                         candidateTranscript = p;
                         break;
                     }
@@ -907,25 +901,17 @@ public class VideoController {
             } catch (Exception ignored) {}
         }
 
-        if (!Files.exists(candidateTranscript) && Files.exists(resolveProjectRoot().resolve("transcript.json"))) {
-
-            candidateTranscript = resolveProjectRoot().resolve("transcript.json");
-
-        }
-
-
-
         if (Files.exists(candidateTranscript)) {
             try {
                 TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
                 if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
                     double transDur = existingDto.duration();
-                    // Chỉ sử dụng transcript nếu khớp tên video hoặc thời lượng tương đương
-                    // Tránh gán nhầm transcript 2 tiếng của video dài cho video ngắn 2 phút
-                    boolean matchesVideo = (duration > 0 && transDur > 0 && Math.abs(transDur - duration) / Math.max(transDur, duration) < 0.3)
-                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())))
-                            || candidateTranscript.getFileName().toString().toLowerCase().contains(safeStem)
-                            || safeStem.contains(candidateTranscript.getFileName().toString().replace("_transcript.json", "").toLowerCase());
+                    // Chỉ sử dụng transcript nếu khớp chính xác tên video hoặc slug
+                    boolean matchesVideo = (existingDto.video() != null && (
+                            sanitizeToSafeSlug(existingDto.video()).equals(safeStem) ||
+                            existingDto.video().equalsIgnoreCase(videoName) ||
+                            existingDto.video().equalsIgnoreCase(videoStem)
+                    )) || candidateTranscript.getFileName().toString().replace("_transcript.json", "").equalsIgnoreCase(safeStem);
 
                     if (matchesVideo) {
                         List<Sentence> sents = existingDto.sentences();
