@@ -257,7 +257,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-slate-200/60 overflow-hidden select-none min-h-0 min-w-0 text-slate-800">
       {/* Top Header Bar of Viewport */}
-      <div className="h-10 border-b border-slate-300 px-4 flex items-center justify-between shrink-0 bg-slate-100 z-20">
+      <div className="h-10 border-b border-slate-200/90 px-4 flex items-center justify-between shrink-0 bg-white/90 backdrop-blur-md z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
         {/* Left: Video Status Indicator */}
         <div className="flex items-center gap-2 overflow-hidden">
           <span
@@ -265,23 +265,23 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               videoSrc ? "bg-emerald-500 animate-pulse" : "bg-indigo-600"
             }`}
           />
-          <span className="text-xs font-bold text-slate-900 tracking-wide truncate max-w-[280px]">
+          <span className="text-xs font-semibold text-slate-800 tracking-wide truncate max-w-[280px]">
             {videoFileName || videoTitle || "Bai05_VongLap.mp4"}
           </span>
           {isDemo ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 font-bold">
               Demo Mẫu
             </span>
           ) : isAnalyzing ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold animate-pulse">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-bold animate-pulse">
               ⚡ Đang phân tích AI...
             </span>
           ) : mode === "raw" ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 font-bold">
               Chưa phân tích (1 đoạn)
             </span>
           ) : videoSrc ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-bold">
               ✓ Đã phân tích bởi AI
             </span>
           ) : null}
@@ -294,10 +294,10 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
             <button
               onClick={onAnalyzeAI}
               disabled={isAnalyzing}
-              className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
+              className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs transition hover:scale-102 active:scale-98"
               title="Phân tích nội dung và chia đoạn bằng AI"
             >
-              <Sparkles className="w-3 h-3 text-amber-300" />
+              <Sparkles className="w-3 h-3 text-amber-500" />
               <span>Phân Tích AI</span>
             </button>
           )}
@@ -319,7 +319,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               }
             }}
             title="Thêm video từ link URL hoặc tải tệp từ máy tính"
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>{videoSrc ? "Đổi video" : "+ Thêm video"}</span>
@@ -333,7 +333,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                 setVideoFileName(null);
               }}
               title="Đóng video và về màn hình giả lập"
-              className="p-1.5 rounded-lg bg-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-300 transition"
+              className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition border border-slate-200"
             >
               <X className="w-4 h-4" />
             </button>
@@ -342,7 +342,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
           {/* Landscape / Portrait switcher */}
           <button
             onClick={() => setAspect(aspect === "landscape" ? "portrait" : "landscape")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs transition"
+            className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition"
             title="Đổi tỉ lệ khung hình (16:9 / 9:16)"
           >
             {aspect === "landscape" ? (
@@ -361,7 +361,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
           {/* Fullscreen Button */}
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 shadow-2xs transition"
+            className="p-1.5 rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 shadow-2xs transition"
             title="Phóng to toàn màn hình"
           >
             <Maximize2 className="w-4 h-4" />
@@ -374,12 +374,12 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="flex-1 min-h-0 min-w-0 w-full h-full flex items-center justify-center p-2 sm:p-3 relative overflow-hidden bg-slate-200/60"
+        className="flex-1 min-h-0 min-w-0 w-full h-full flex items-center justify-center p-3 sm:p-4 relative overflow-hidden bg-slate-200/50"
       >
         {/* Video Monitor Container */}
         <div
           ref={containerRef}
-          className={`relative bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-300 flex items-center justify-center transition-all duration-200 group ${
+          className={`relative bg-slate-950 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-slate-800/20 flex items-center justify-center transition-all duration-200 group ${
             aspect === "landscape" ? "aspect-video" : "aspect-[9/16]"
           }`}
           style={{

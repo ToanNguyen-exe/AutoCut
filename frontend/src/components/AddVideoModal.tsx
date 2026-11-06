@@ -246,17 +246,17 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-slate-100 border border-slate-300 rounded-2xl shadow-xl overflow-hidden flex flex-col text-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-800">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-300 flex items-center justify-between bg-slate-200/70">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 border border-indigo-300 flex items-center justify-center text-indigo-700 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-600 shadow-2xs">
               <Film className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">Thêm Video & Khởi tạo Dự Án</h3>
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-slate-500">
                 Thêm bằng link URL hoặc chọn file từ máy tính
               </p>
             </div>
@@ -264,21 +264,21 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-300/60 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switch */}
-        <div className="flex border-b border-slate-300 bg-slate-200/80 p-1">
+        <div className="flex border-b border-slate-200 bg-slate-100 p-1">
           <button
             type="button"
             onClick={() => setTab("url")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
               tab === "url"
-                ? "bg-slate-100 text-indigo-800 shadow-xs border border-slate-300 font-bold"
-                : "text-slate-700 hover:text-slate-900 hover:bg-slate-300/50"
+                ? "bg-white text-indigo-700 shadow-xs border border-slate-200/60 font-semibold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
             }`}
           >
             <LinkIcon className="w-4 h-4" />
@@ -287,10 +287,10 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           <button
             type="button"
             onClick={() => setTab("file")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
               tab === "file"
-                ? "bg-slate-100 text-indigo-800 shadow-xs border border-slate-300 font-bold"
-                : "text-slate-700 hover:text-slate-900 hover:bg-slate-300/50"
+                ? "bg-white text-indigo-700 shadow-xs border border-slate-200/60 font-semibold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
             }`}
           >
             <Upload className="w-4 h-4" />

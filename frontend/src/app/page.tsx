@@ -1029,7 +1029,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f8fafc] text-slate-800 font-sans select-none selection:bg-indigo-600 selection:text-white">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f4f6f8] text-slate-800 font-sans select-none selection:bg-indigo-600 selection:text-white">
       {/* Top Header matching reference image */}
       <StudioHeader
         user={currentUser}

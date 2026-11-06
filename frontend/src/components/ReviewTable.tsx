@@ -161,24 +161,24 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
   }
 
   return (
-    <div className="bg-slate-100 border border-slate-300 rounded-2xl shadow-xs overflow-hidden mb-8 text-slate-800">
+    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden mb-8 text-slate-800">
       {/* Table Header Controls */}
-      <div className="p-4 bg-slate-200/70 border-b border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <span>Bảng Duyệt &amp; Hiệu Chỉnh Phân Đoạn</span>
-            <span className="text-xs font-bold text-slate-600">
+            <span className="text-xs font-semibold text-slate-500">
               ({segments.length} chủ đề)
             </span>
           </h2>
-          <p className="text-xs text-slate-600 mt-0.5 font-medium">
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">
             Cho phép sửa tên phần, tên chủ đề, mốc thời gian, gộp đoạn liền kề và tự động tính số phần con cần tách.
           </p>
         </div>
 
         <button
           onClick={handleAddNewSegment}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Thêm phân đoạn</span>
@@ -188,7 +188,7 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
       {/* Main Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-slate-800">
-          <thead className="bg-slate-200/50 text-xs text-slate-700 uppercase tracking-wider border-b border-slate-300 font-bold">
+          <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider border-b border-slate-200 font-semibold">
             <tr>
               <th className="py-3 px-3 w-10 text-center">#</th>
               <th className="py-3 px-3 min-w-[150px]">Phần (Section)</th>
