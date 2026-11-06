@@ -986,17 +986,20 @@ public class VideoController {
 
 
     /**
-     * Lưu trạng thái chỉnh sửa video/dự án của người dùng vào thư mục riêng biệt liên kết với User.
+     * API Lưu dự án phân lập theo người dùng và đồng bộ Cloudflare R2 (Thẻ 3.1).
+     * Tạo thư mục: output/users/{user}/{lesson}/
+     * Ghi 2 file: project.json và segments.json
+     * Đồng bộ metadata project.json lên Cloudflare R2: autocut/users/{user}/{lesson}/project.json
      */
     @PostMapping("/save")
     public ResponseEntity<?> saveProject(@RequestBody Map<String, Object> payload) {
-        String user = (String) payload.getOrDefault("user", "admin");
-        if (user == null || user.isBlank()) {
-            user = "admin";
-        }
-        String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
-        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
-        String safeLesson = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_");
+        String rawUser = String.valueOf(payload.getOrDefault("user", "admin"));
+        String rawLesson = String.valueOf(payload.getOrDefault("lesson", "BaiGiang"));
+
+        String safeUser = rawUser.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeLesson = rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (safeUser.isBlank()) safeUser = "admin";
+        if (safeLesson.isBlank()) safeLesson = "BaiGiang";
 
         try {
             Path userDir = Paths.get("output", "users", safeUser, safeLesson);
@@ -1004,20 +1007,29 @@ public class VideoController {
                 Files.createDirectories(userDir);
             }
 
-            Path projectFile = userDir.resolve("project.json");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), payload);
-
+            // 1. Ghi file segments.json
             Path segmentsFile = userDir.resolve("segments.json");
-            Object segmentsObj = payload.get("segments");
-            if (segmentsObj != null) {
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsObj);
+            Object segmentsData = payload.get("segments");
+            if (segmentsData != null) {
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsData);
             }
 
+            // 2. Ghi file project.json
+            Path projectFile = userDir.resolve("project.json");
+            Map<String, Object> projectMeta = new HashMap<>(payload);
+            long nowMs = System.currentTimeMillis();
+            projectMeta.put("savedAt", nowMs);
+            projectMeta.put("savedDate", java.time.Instant.now().toString());
+            projectMeta.put("schemaVersion", "2.0");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), projectMeta);
+
+            // 3. Đồng bộ project.json lên Cloudflare R2
             String r2Url = null;
             try {
                 if (r2Service != null) {
                     String relativeKey = "users/" + safeUser + "/" + safeLesson + "/project.json";
                     r2Url = r2Service.uploadFile(projectFile, relativeKey);
+                    log.info("Đã đồng bộ project.json lên Cloudflare R2: {}", r2Url);
                 }
             } catch (Exception r2Ex) {
                 log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
@@ -1030,7 +1042,14 @@ public class VideoController {
                 "user", safeUser,
                 "lesson", safeLesson,
                 "directory", userDir.toAbsolutePath().toString(),
+                "localDirectory", userDir.toAbsolutePath().toString(),
                 "r2Url", r2Url != null ? r2Url : "",
+                "cloudUrl", r2Url != null ? r2Url : "",
+                "files", List.of(
+                    "output/users/" + safeUser + "/" + safeLesson + "/project.json",
+                    "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
+                ),
+                "savedAt", nowMs,
                 "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
             ));
         } catch (Exception e) {

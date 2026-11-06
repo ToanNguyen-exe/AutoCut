@@ -393,3 +393,49 @@ export async function analyzeVideoBackend(payload: {
     };
   }
 }
+
+export interface SaveProjectPayload {
+  user?: string;
+  lesson: string;
+  video: string;
+  videoUrl?: string;
+  duration?: number;
+  segments: unknown[];
+  [key: string]: unknown;
+}
+
+export interface SaveProjectResponse {
+  status: string;
+  message: string;
+  user?: string;
+  lesson?: string;
+  localDirectory?: string;
+  cloudUrl?: string;
+  r2Url?: string;
+  files?: string[];
+  savedAt?: number;
+}
+
+export async function saveProjectToBackend(
+  payload: SaveProjectPayload
+): Promise<ApiResponse<SaveProjectResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SaveProjectResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể kết nối API lưu dự án",
+      source: "fallback",
+    };
+  }
+}

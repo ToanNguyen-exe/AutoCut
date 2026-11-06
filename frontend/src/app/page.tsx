@@ -12,6 +12,7 @@ import {
   checkCache,
   fetchBackendVideos,
   analyzeVideoBackend,
+  saveProjectToBackend,
   API_BASE,
   FALLBACK_SEGMENTS,
 } from "@/lib/api";
@@ -176,6 +177,7 @@ export default function Home() {
   // AI Analysis States
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisStep, setAnalysisStep] = useState<string>("");
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -512,6 +514,51 @@ export default function Home() {
     downloadAnchor.remove();
     showToast("success", "Đã xuất file segments.json thành công!");
   };
+
+  const handleSaveProject = useCallback(async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    showToast("info", "Đang lưu dự án và đồng bộ Cloudflare R2...");
+
+    try {
+      const totalDur = data.segments.reduce((max, s) => Math.max(max, s.end), 0) || 120;
+      const payload = {
+        user: currentUser?.id || currentUser?.username || "admin",
+        lesson: data.lesson || data.video.replace(/\.[^/.]+$/, ""),
+        video: data.video,
+        videoUrl: String(externalVideoUrl || (data as unknown as Record<string, unknown>).videoUrl || ""),
+        duration: totalDur,
+        segments: data.segments,
+        mode: data.mode,
+        reviewed: data.reviewed,
+      };
+
+      const res = await saveProjectToBackend(payload);
+      if (res.source === "api" && res.data) {
+        showToast(
+          "success",
+          `Đã lưu dự án thành công cho user: ${payload.user}!${res.data.cloudUrl ? " Đã đồng bộ Cloudflare R2." : ""}`
+        );
+      } else {
+        showToast("info", "Đã lưu dự án vào bộ nhớ cục bộ.");
+      }
+    } catch (err) {
+      showToast("error", "Lỗi khi lưu dự án: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentUser, data, externalVideoUrl, isSaving, showToast]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveProject();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSaveProject]);
 
   const handleRender = async () => {
     setIsRendering(true);
@@ -1037,9 +1084,11 @@ export default function Home() {
         backendOnline={backendOnline}
         isRendering={isRendering}
         isAnalyzing={isAnalyzing}
+        isSaving={isSaving}
         isDemo={isDemo}
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
+        onSave={handleSaveProject}
         onRender={handleRender}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
         onAnalyzeAI={handleAnalyzeAI}
