@@ -316,6 +316,7 @@ export interface BackendVideoItem {
   sha256Hash: string;
   status?: string;
   fileSize?: number;
+  duration?: number;
   r2Key?: string;
   cloudUrl?: string;
   createdAt?: string;
