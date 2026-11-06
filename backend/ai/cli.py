@@ -167,32 +167,67 @@ def _find_matching_transcript_or_video(
                 except Exception:
                     continue
 
-    # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
+    # 3. Ưu tiên kiểm tra file video vật lý để chạy Groq Whisper / Whisper thật
     video_candidates = []
     norm_video = clean_vname.strip().lower()
     norm_lesson = (lesson or "").strip().lower()
     norm_stem = Path(norm_video).stem.lower() if norm_video else ""
 
-    for u_dir in [uploads_dir, backend_uploads_dir]:
-        if u_dir.exists():
+    # Trích xuất tên tệp thực tế nếu có dạng "Tiêu đề (video.mp4)"
+    actual_filenames = [clean_vname]
+    m_inner = re.search(r"\(([^)]+)\)", clean_vname)
+    if m_inner and "." in m_inner.group(1):
+        actual_filenames.append(m_inner.group(1).strip())
+
+    search_dirs = [
+        uploads_dir,
+        backend_uploads_dir,
+        PROJECT_ROOT / "input",
+        PROJECT_ROOT / "backend" / "input",
+        cache_dir,
+        PROJECT_ROOT / "backend" / "cache"
+    ]
+
+    for s_dir in search_dirs:
+        if s_dir.exists():
             if file_hash:
-                video_candidates.extend(sorted(u_dir.glob(f"{file_hash}*")))
-            if clean_vname:
-                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}")))
-                stem_candidate = Path(clean_vname).stem
-                video_candidates.extend(sorted(u_dir.glob(f"*{stem_candidate}*")))
+                video_candidates.extend(sorted(s_dir.glob(f"{file_hash}*")))
+            for fname in actual_filenames:
+                if fname:
+                    video_candidates.extend(sorted(s_dir.glob(f"*{fname}*")))
+                    f_stem = Path(fname).stem
+                    if f_stem:
+                        video_candidates.extend(sorted(s_dir.glob(f"*{f_stem}*")))
     if clean_vname:
         root_vid = PROJECT_ROOT / clean_vname
         if root_vid.exists() and root_vid.is_file():
             video_candidates.append(root_vid)
 
-    # Lọc các file video trùng lặp
+    # Lọc các file video trùng lặp và chỉ lấy file media hợp lệ
+    media_exts = {".mp4", ".mkv", ".wav", ".webm", ".m4a", ".mp3"}
     seen_vids = set()
     unique_vids = []
     for vp in video_candidates:
-        if vp.exists() and vp.is_file() and vp.stat().st_size > 0 and str(vp) not in seen_vids:
+        if vp.exists() and vp.is_file() and vp.suffix.lower() in media_exts and vp.stat().st_size > 0 and str(vp) not in seen_vids:
             seen_vids.add(str(vp))
             unique_vids.append(vp)
+
+    # Nếu chưa có file cục bộ, kiểm tra tự động tải từ Cloudflare R2
+    if not unique_vids:
+        for fname in actual_filenames:
+            if fname and fname.endswith(".mp4"):
+                clean_target = Path(fname).name
+                r2_url = f"https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/{clean_target}"
+                cached_target = cache_dir / clean_target
+                if not cached_target.exists() or cached_target.stat().st_size == 0:
+                    try:
+                        import urllib.request
+                        urllib.request.urlretrieve(r2_url, str(cached_target))
+                    except Exception:
+                        pass
+                if cached_target.exists() and cached_target.stat().st_size > 0:
+                    unique_vids.append(cached_target)
+                    break
 
     for vid_path in unique_vids:
         from .whisper_service import WhisperTranscriber, compute_file_sha256
