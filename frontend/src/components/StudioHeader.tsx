@@ -77,39 +77,39 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
   return (
     <>
-      <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40">
+      <header className="h-14 bg-slate-100 border-b border-slate-300 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40 text-slate-800">
         {/* Left: LOGO & Project Name */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-600/20">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Scissors className="w-4 h-4" />
             </div>
             <span className="font-extrabold tracking-widest text-sm text-slate-900 uppercase font-sans">
               YOUR LOGO
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80 ml-2 hidden sm:inline-block">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200 text-indigo-700 border border-slate-300 ml-2 hidden sm:inline-block font-semibold">
               AutoCut AI
             </span>
 
             {/* Trạng thái dữ liệu: Demo vs Đang phân tích vs Chưa phân tích vs Đã phân tích */}
             {isDemo ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                 Demo Mẫu
               </span>
             ) : isAnalyzing ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 animate-pulse flex items-center gap-1 shadow-2xs">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 animate-pulse flex items-center gap-1 shadow-2xs">
                 <RefreshCw className="w-2.5 h-2.5 animate-spin text-indigo-600" />
                 Đang phân tích AI...
               </span>
             ) : data.mode === "raw" ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                 Chưa phân tích (1 đoạn)
               </span>
             ) : (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 ✓ AI Đã phân tích
               </span>
             )}
@@ -124,9 +124,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               onClick={onAnalyzeAI}
               disabled={isAnalyzing}
               title="Khởi chạy Whisper & AI để phân tích video và phân đoạn thông minh"
-              className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs transition hover:scale-102 active:scale-98"
+              className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 shadow-2xs transition hover:scale-102 active:scale-98"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Phân Tích AI</span>
             </button>
           )}
@@ -135,7 +135,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button
             onClick={onOpenAddVideo}
             title="Thêm video từ liên kết URL hoặc tệp máy tính"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
+            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Thêm Video</span>
@@ -146,9 +146,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             <button
               onClick={onExport}
               title="Tải tệp segments.json về máy tính"
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs transition"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-slate-800 border border-slate-300 shadow-2xs transition"
             >
-              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <Download className="w-3.5 h-3.5 text-indigo-600" />
               <span className="hidden sm:inline">Xuất JSON</span>
             </button>
           )}
@@ -157,7 +157,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button
             onClick={onRender}
             disabled={isRendering}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-1.5 rounded-lg shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+            className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-1.5 rounded-lg shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
           >
             {isRendering ? (
               <>
@@ -171,89 +171,75 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
           {/* User Account Dropdown with Avatar */}
           {user && (
-            <div className="relative pl-2 border-l border-slate-200" ref={dropdownRef}>
+            <div className="relative pl-2 border-l border-slate-300" ref={dropdownRef}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100 transition border border-transparent hover:border-slate-200"
+                className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-200 transition border border-transparent hover:border-slate-300"
               >
                 {/* Avatar Circle */}
                 <div
                   className={`w-7 h-7 rounded-full bg-gradient-to-tr ${
-                    user.avatarColor || "from-purple-600 to-indigo-600"
-                  } flex items-center justify-center text-white text-xs font-bold shadow-md ring-1 ring-white/10`}
+                    user.avatarColor || "from-indigo-600 to-blue-600"
+                  } flex items-center justify-center text-white text-xs font-bold shadow-xs ring-1 ring-white/40`}
                 >
                   {initial}
                 </div>
 
                 {/* Account Name */}
-                <span className="text-xs font-semibold text-slate-800 hidden sm:inline max-w-[120px] truncate">
+                <span className="text-xs font-bold text-slate-800 hidden sm:inline max-w-[120px] truncate">
                   {user.name}
                 </span>
 
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
               {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in duration-150 backdrop-blur-xl">
+                <div className="absolute right-0 mt-2 w-64 bg-slate-50 border border-slate-300 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in duration-150 backdrop-blur-xl">
                   {/* User Profile Header in dropdown */}
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 mb-1.5 flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 mb-1.5 flex items-center gap-2.5">
                     <div
                       className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${
-                        user.avatarColor || "from-purple-600 to-indigo-600"
-                      } flex items-center justify-center text-white text-sm font-bold shadow-md shrink-0`}
+                        user.avatarColor || "from-indigo-600 to-blue-600"
+                      } flex items-center justify-center text-white text-sm font-bold shadow-xs shrink-0`}
                     >
                       {initial}
                     </div>
                     <div className="overflow-hidden">
                       <div className="font-bold text-slate-900 truncate text-xs">{user.name}</div>
-                      <div className="text-[10px] text-indigo-600 truncate">{user.role}</div>
-                      <div className="text-[10px] text-slate-500 font-mono truncate">{user.email}</div>
+                      <div className="text-[10px] text-indigo-700 font-semibold truncate">{user.role}</div>
+                      <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
                     </div>
                   </div>
 
-                  {/* Action Items */}
+                  {/* Menu Options */}
                   <div className="space-y-0.5">
                     <button
                       onClick={() => openAccountModal("profile")}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition text-left"
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-200/70 transition font-medium"
                     >
-                      <UserIcon className="w-4 h-4 text-indigo-600" />
+                      <UserIcon className="w-3.5 h-3.5 text-slate-500" />
                       <span>Thông tin tài khoản</span>
                     </button>
 
                     <button
                       onClick={() => openAccountModal("password")}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition text-left"
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-200/70 transition font-medium"
                     >
-                      <KeyRound className="w-4 h-4 text-amber-400" />
+                      <KeyRound className="w-3.5 h-3.5 text-slate-500" />
                       <span>Đổi mật khẩu</span>
                     </button>
 
-                    {onExport && (
-                      <button
-                        onClick={() => {
-                          onExport();
-                          setShowDropdown(false);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition text-left"
-                      >
-                        <Download className="w-4 h-4 text-indigo-400" />
-                        <span>Xuất segments.json</span>
-                      </button>
-                    )}
+                    <div className="my-1 border-t border-slate-200" />
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition font-medium"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Đăng xuất</span>
+                    </button>
                   </div>
-
-                  <div className="h-[1px] bg-slate-800/80 my-1" />
-
-                  {/* Logout Button */}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition text-left font-medium"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Đăng xuất tài khoản</span>
-                  </button>
                 </div>
               )}
             </div>
@@ -261,16 +247,18 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
       </header>
 
-      {/* Account Settings / Change Password Modal */}
-      <AccountModal
-        isOpen={accountModalOpen}
-        initialTab={accountModalTab}
-        user={user}
-        onClose={() => setAccountModalOpen(false)}
-        onUserUpdate={(updatedUser) => {
-          if (onUserUpdate) onUserUpdate(updatedUser);
-        }}
-      />
+      {/* Account Management Modal */}
+      {user && (
+        <AccountModal
+          isOpen={accountModalOpen}
+          initialTab={accountModalTab}
+          user={user}
+          onClose={() => setAccountModalOpen(false)}
+          onUserUpdate={(updatedUser) => {
+            if (onUserUpdate) onUserUpdate(updatedUser);
+          }}
+        />
+      )}
     </>
   );
 };

@@ -888,87 +888,119 @@ public class VideoController {
 
                 if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
 
-                    List<Sentence> sents = existingDto.sentences();
-
+                    List<Sentence> rawSents = existingDto.sentences();
                     double totalDur = existingDto.duration() > 0 ? existingDto.duration() : duration;
+                    if (totalDur <= 0) totalDur = 180.0;
 
-                    int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
-
-                    int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-
-                    List<Segment> segList = new ArrayList<>();
-
-
-
-                    for (int i = 0; i < segCount; i++) {
-
-                        int sIdx = i * chunkSize;
-
-                        if (sIdx >= sents.size()) break;
-
-                        int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-
-                        Sentence fSent = sents.get(sIdx);
-
-                        Sentence lSent = sents.get(eIdx);
-
-                        double sStart = (i == 0) ? 0.0 : fSent.start();
-
-                        double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
-
-                        String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-
-                        String topName = "Đoạn " + (i + 1);
-
-                        segList.add(new Segment(
-
-                                "seg_ai_" + (i + 1),
-
-                                i + 1,
-
-                                secFolder,
-
-                                i + 1,
-
-                                topName,
-
-                                "doan-" + (i + 1),
-
-                                fSent.id(),
-
-                                lSent.id(),
-
-                                Math.round(sStart * 10.0) / 10.0,
-
-                                Math.round(sEnd * 10.0) / 10.0,
-
-                                List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
-
+                    // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
+                    List<Sentence> filledSents = new ArrayList<>();
+                    if (rawSents.get(0).start() > 1.5) {
+                        filledSents.add(new Sentence(
+                                "S0000",
+                                0.0,
+                                Math.round(rawSents.get(0).start() * 10.0) / 10.0,
+                                "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
+                                null
                         ));
-
+                    }
+                    for (int s = 0; s < rawSents.size(); s++) {
+                        Sentence curr = rawSents.get(s);
+                        filledSents.add(curr);
+                        if (s < rawSents.size() - 1) {
+                            Sentence next = rawSents.get(s + 1);
+                            double gap = next.start() - curr.end();
+                            if (gap >= 8.0) {
+                                filledSents.add(new Sentence(
+                                        "S_gap_" + s,
+                                        Math.round(curr.end() * 10.0) / 10.0,
+                                        Math.round(next.start() * 10.0) / 10.0,
+                                        "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
+                                        null
+                                ));
+                            }
+                        }
+                    }
+                    if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
+                        filledSents.add(new Sentence(
+                                "S_outro",
+                                Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
+                                Math.round(totalDur * 10.0) / 10.0,
+                                "Giai điệu kết thúc (Outro Fade)",
+                                null
+                        ));
                     }
 
+                    // Đánh số lại thứ tự câu S0001, S0002...
+                    List<Sentence> sents = new ArrayList<>();
+                    for (int s = 0; s < filledSents.size(); s++) {
+                        Sentence item = filledSents.get(s);
+                        sents.add(new Sentence(
+                                String.format("S%04d", s + 1),
+                                item.start(),
+                                item.end(),
+                                item.text(),
+                                item.words()
+                        ));
+                    }
 
+                    // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
+                    int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                    int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
+                    List<Segment> segList = new ArrayList<>();
+                    double currentStart = 0.0;
 
+                    for (int i = 0; i < segCount; i++) {
+                        int sIdx = i * chunkSize;
+                        if (sIdx >= sents.size()) break;
+                        int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
+                        Sentence fSent = sents.get(sIdx);
+                        Sentence lSent = sents.get(eIdx);
+
+                        double sStart = currentStart;
+                        double sEnd;
+                        if (i == segCount - 1 || eIdx == sents.size() - 1) {
+                            sEnd = totalDur;
+                        } else {
+                            int nextSIdx = (i + 1) * chunkSize;
+                            Sentence nextSent = sents.get(Math.min(nextSIdx, sents.size() - 1));
+                            sEnd = Math.round(((lSent.end() + nextSent.start()) / 2.0) * 10.0) / 10.0;
+                            if (sEnd <= sStart) {
+                                sEnd = Math.round(lSent.end() * 10.0) / 10.0;
+                            }
+                        }
+                        currentStart = sEnd;
+
+                        String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
+                        String topName = fSent.text().length() > 35 ? fSent.text().substring(0, 35) + "..." : fSent.text();
+
+                        segList.add(new Segment(
+                                "seg_ai_" + (i + 1),
+                                i + 1,
+                                secFolder,
+                                i + 1,
+                                topName,
+                                "doan-" + (i + 1),
+                                fSent.id(),
+                                lSent.id(),
+                                Math.round(sStart * 10.0) / 10.0,
+                                Math.round(sEnd * 10.0) / 10.0,
+                                List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                        ));
+                    }
+
+                    TranscriptDTO normalizedDto = new TranscriptDTO(existingDto.video(), totalDur, sents);
                     SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
 
                     if (!hash.isBlank()) {
-
-                        cacheService.saveTranscriptCache(hash, existingDto);
-                    try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), existingDto); } catch (Exception ignored) {}
-
+                        cacheService.saveTranscriptCache(hash, normalizedDto);
+                        try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), normalizedDto); } catch (Exception ignored) {}
                     }
 
                     return ResponseEntity.ok(Map.of(
-
                             "status", "SUCCESS",
-
                             "mode", "analyzed",
-
                             "segmentsData", segsDto,
-
-                            "transcript", existingDto
-
+                            "transcript", normalizedDto
                     ));
 
                 }

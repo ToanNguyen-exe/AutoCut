@@ -135,8 +135,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Trích xuất câu THỰC TẾ từ Groq (không dùng dữ liệu cố định)
-    const sentences: Sentence[] = [];
+    // 3. Trích xuất câu THỰC TẾ từ Groq và chuẩn hóa Timeline bắt đầu từ 00:00
+    const rawSentences: Sentence[] = [];
     let sIdx = 1;
 
     for (const seg of rawSegments) {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      sentences.push({
+      rawSentences.push({
         id: `S${sIdx.toString().padStart(4, "0")}`,
         start: Number(seg.start.toFixed(1)),
         end: Number(seg.end.toFixed(1)),
@@ -156,9 +156,46 @@ export async function POST(req: NextRequest) {
       sIdx++;
     }
 
+    // Đảm bảo timeline bắt đầu từ 00:00 (nếu đoạn dạo đầu chưa có lời)
+    const filledSentences: Sentence[] = [];
+    if (rawSentences.length > 0 && rawSentences[0].start > 1.5) {
+      filledSentences.push({
+        id: "S0000",
+        start: 0.0,
+        end: Number(rawSentences[0].start.toFixed(1)),
+        text: "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
+      });
+    }
+
+    for (let s = 0; s < rawSentences.length; s++) {
+      const curr = rawSentences[s];
+      filledSentences.push(curr);
+      if (s < rawSentences.length - 1) {
+        const next = rawSentences[s + 1];
+        const gap = next.start - curr.end;
+        if (gap >= 8.0) {
+          filledSentences.push({
+            id: `S_gap_${s}`,
+            start: Number(curr.end.toFixed(1)),
+            end: Number(next.start.toFixed(1)),
+            text: "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
+          });
+        }
+      }
+    }
+
+    if (rawSentences.length > 0 && totalDuration - rawSentences[rawSentences.length - 1].end >= 5.0) {
+      filledSentences.push({
+        id: "S_outro",
+        start: Number(rawSentences[rawSentences.length - 1].end.toFixed(1)),
+        end: Number(totalDuration.toFixed(1)),
+        text: "Giai điệu kết thúc (Outro Fade)",
+      });
+    }
+
     // Nếu là video nhạc hoàn toàn không có lời thoại
-    if (sentences.length === 0) {
-      sentences.push({
+    if (filledSentences.length === 0) {
+      filledSentences.push({
         id: "S0001",
         start: 0.0,
         end: totalDuration,
@@ -166,16 +203,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Đánh số lại thứ tự S0001, S0002... chuẩn xác
+    const sentences: Sentence[] = filledSentences.map((item, idx) => ({
+      ...item,
+      id: `S${(idx + 1).toString().padStart(4, "0")}`,
+    }));
+
     const transcriptData: TranscriptData = {
       video: cleanName,
       duration: totalDuration,
       sentences: sentences,
     };
 
-    // 4. Chia phân đoạn thông minh linh hoạt theo lời thoại thực tế
+    // 4. Chia phân đoạn thông minh liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
     const segments: Segment[] = [];
-    const numSections = Math.min(5, Math.max(3, Math.ceil(sentences.length / 3)));
+    const numSections = Math.min(5, Math.max(2, Math.ceil(sentences.length / 3)));
     const sentencesPerSection = Math.ceil(sentences.length / numSections);
+    let currentStart = 0.0;
 
     for (let i = 0; i < numSections; i++) {
       const startIdx = i * sentencesPerSection;
@@ -183,8 +227,19 @@ export async function POST(req: NextRequest) {
       if (startIdx >= sentences.length) break;
 
       const group = sentences.slice(startIdx, endIdx);
-      const segStart = i === 0 ? 0 : group[0].start;
-      const segEnd = i === numSections - 1 ? totalDuration : group[group.length - 1].end;
+      const segStart = currentStart;
+      let segEnd: number;
+
+      if (i === numSections - 1 || endIdx >= sentences.length) {
+        segEnd = totalDuration;
+      } else {
+        const nextGroupFirstSent = sentences[endIdx];
+        segEnd = Number(((group[group.length - 1].end + nextGroupFirstSent.start) / 2).toFixed(1));
+        if (segEnd <= segStart) {
+          segEnd = group[group.length - 1].end;
+        }
+      }
+      currentStart = segEnd;
       const secNo = i + 1;
       const secName = `0${secNo}_Doan_${secNo}`;
 

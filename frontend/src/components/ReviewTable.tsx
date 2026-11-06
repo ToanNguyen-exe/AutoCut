@@ -65,7 +65,6 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
       if (field === "end") item.end = numVal;
     }
 
-    // Tự động tính lại B8: số phần và mảng parts
     const sectionSlug = slugify(item.section).replace(/-/g, "");
     const sectionPrefix = item.section_no.toString().padStart(2, "0");
     const sectionFolder = `${sectionPrefix}_${capitalizeFirstLetter(sectionSlug)}`;
@@ -82,7 +81,6 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
     onUpdateSegments(updated);
   };
 
-  // Xóa đoạn
   const handleDelete = (index: number) => {
     if (confirm(`Bạn có chắc muốn xóa phân đoạn "${segments[index].topic}"?`)) {
       const updated = segments.filter((_, i) => i !== index);
@@ -90,7 +88,6 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
     }
   };
 
-  // Gộp đoạn hiện tại với đoạn liền kề sau (B7 & B9)
   const handleMergeNext = (index: number) => {
     if (index >= segments.length - 1) return;
 
@@ -122,7 +119,6 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
     const updated = [...segments];
     updated.splice(index, 2, mergedSegment);
 
-    // Đánh lại số thứ tự topic_no
     const reindexed = updated.map((s, idx) => ({
       ...s,
       topic_no: idx + 1,
@@ -131,11 +127,10 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
     onUpdateSegments(reindexed);
   };
 
-  // Thêm một phân đoạn rỗng mới ở cuối
   const handleAddNewSegment = () => {
     const lastSeg = segments[segments.length - 1];
     const newStart = lastSeg ? lastSeg.end : 0;
-    const newEnd = newStart + 300; // 5 phút mặc định
+    const newEnd = newStart + 300;
 
     const newSegment: Segment = {
       id: `seg${(segments.length + 1).toString().padStart(2, "0")}`,
@@ -166,24 +161,24 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden mb-8 text-slate-800">
+    <div className="bg-slate-100 border border-slate-300 rounded-2xl shadow-xs overflow-hidden mb-8 text-slate-800">
       {/* Table Header Controls */}
-      <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-4 bg-slate-200/70 border-b border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <span>Bảng Duyệt &amp; Hiệu Chỉnh Phân Đoạn</span>
-            <span className="text-xs font-normal text-slate-500">
+            <span className="text-xs font-bold text-slate-600">
               ({segments.length} chủ đề)
             </span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5 font-medium">
             Cho phép sửa tên phần, tên chủ đề, mốc thời gian, gộp đoạn liền kề và tự động tính số phần con cần tách.
           </p>
         </div>
 
         <button
           onClick={handleAddNewSegment}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Thêm phân đoạn</span>
@@ -192,8 +187,8 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
 
       {/* Main Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-700">
-          <thead className="bg-slate-100/70 text-xs text-slate-600 uppercase tracking-wider border-b border-slate-200 font-semibold">
+        <table className="w-full text-left text-sm text-slate-800">
+          <thead className="bg-slate-200/50 text-xs text-slate-700 uppercase tracking-wider border-b border-slate-300 font-bold">
             <tr>
               <th className="py-3 px-3 w-10 text-center">#</th>
               <th className="py-3 px-3 min-w-[150px]">Phần (Section)</th>
@@ -205,31 +200,31 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
               <th className="py-3 px-3 w-36 text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200">
             {segments.map((seg, idx) => {
               const duration = Math.max(0, seg.end - seg.start);
-              const isOverLimit = duration > 420 * 1.1; // 462s
-              const isUnderLimit = duration < 30; // 30s
+              const isOverLimit = duration > 420 * 1.1;
+              const isUnderLimit = duration < 30;
               const isExpanded = expandedRows[seg.id];
               const isActive = activeSegmentId === seg.id;
 
               return (
                 <React.Fragment key={seg.id || idx}>
                   <tr
-                    className={`hover:bg-slate-50 transition-colors ${
-                      isActive ? "bg-indigo-50/60" : ""
+                    className={`hover:bg-slate-200/40 transition-colors ${
+                      isActive ? "bg-indigo-100/70" : ""
                     }`}
                   >
                     {/* Expand/Index */}
-                    <td className="py-3 px-3 text-center font-mono text-xs text-slate-500">
+                    <td className="py-3 px-3 text-center font-mono text-xs text-slate-600 font-bold">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => toggleExpand(seg.id)}
-                          className="p-1 hover:text-slate-900 text-slate-400 transition"
+                          className="p-1 hover:text-slate-950 text-slate-500 transition"
                           title="Xem chi tiết các video con (parts)"
                         >
                           {isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 text-indigo-600" />
+                            <ChevronDown className="w-3.5 h-3.5 text-indigo-700" />
                           ) : (
                             <ChevronRight className="w-3.5 h-3.5" />
                           )}
@@ -245,7 +240,7 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                         onChange={(e) =>
                           handleFieldChange(idx, "section", e.target.value)
                         }
-                        className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition shadow-2xs font-medium"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition shadow-2xs font-bold"
                       >
                         {SECTION_OPTIONS.map((opt) => (
                           <option key={opt} value={opt}>
@@ -263,7 +258,7 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                         onChange={(e) =>
                           handleFieldChange(idx, "topic", e.target.value)
                         }
-                        className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition font-medium shadow-2xs"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition font-bold shadow-2xs"
                       />
                       <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
                         slug: {seg.slug}
@@ -280,9 +275,9 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                           handleFieldChange(idx, "start", e.target.value)
                         }
                         placeholder="mm:ss"
-                        className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500 transition text-center shadow-2xs"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-indigo-500 transition text-center shadow-2xs font-bold"
                       />
-                      <div className="text-[10px] text-slate-400 text-center font-mono">
+                      <div className="text-[10px] text-slate-500 text-center font-mono font-medium">
                         {seg.start_id}
                       </div>
                     </td>
@@ -297,9 +292,9 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                           handleFieldChange(idx, "end", e.target.value)
                         }
                         placeholder="mm:ss"
-                        className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500 transition text-center shadow-2xs"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-indigo-500 transition text-center shadow-2xs font-bold"
                       />
-                      <div className="text-[10px] text-slate-400 text-center font-mono">
+                      <div className="text-[10px] text-slate-500 text-center font-mono font-medium">
                         {seg.end_id}
                       </div>
                     </td>
@@ -307,12 +302,12 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                     {/* Duration Badge */}
                     <td className="py-3 px-3 text-center">
                       <div
-                        className={`inline-flex items-center gap-1 font-mono text-xs px-2 py-1 rounded-md font-semibold ${
+                        className={`inline-flex items-center gap-1 font-mono text-xs px-2 py-1 rounded-md font-bold ${
                           isOverLimit
-                            ? "bg-amber-50 text-amber-800 border border-amber-200"
+                            ? "bg-amber-100 text-amber-900 border border-amber-300"
                             : isUnderLimit
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            ? "bg-rose-100 text-rose-800 border border-rose-300"
+                            : "bg-emerald-100 text-emerald-900 border border-emerald-300"
                         }`}
                         title={
                           isOverLimit
@@ -329,10 +324,10 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                     {/* Parts Count Badge */}
                     <td className="py-3 px-3 text-center">
                       <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
                           seg.parts.length > 1
-                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                            : "bg-slate-100 text-slate-600 border border-slate-200"
+                            ? "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                            : "bg-slate-200 text-slate-700 border border-slate-300"
                         }`}
                       >
                         {seg.parts.length > 1
@@ -344,31 +339,28 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                     {/* Action Buttons */}
                     <td className="py-3 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {/* Xem thử */}
                         <button
                           onClick={() => onPreviewSegment(seg.start, seg.id)}
                           title="Xem trước đoạn này trên video player"
-                          className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition"
+                          className="p-1.5 rounded-lg bg-indigo-100 text-indigo-800 hover:bg-indigo-600 hover:text-white transition"
                         >
                           <Play className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* Gộp đoạn liền kề sau */}
                         {idx < segments.length - 1 && (
                           <button
                             onClick={() => handleMergeNext(idx)}
                             title="Gộp với đoạn kế tiếp"
-                            className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
+                            className="p-1.5 rounded-lg bg-slate-200 text-slate-800 hover:bg-slate-300 transition"
                           >
                             <Combine className="w-3.5 h-3.5" />
                           </button>
                         )}
 
-                        {/* Xóa */}
                         <button
                           onClick={() => handleDelete(idx)}
                           title="Xóa phân đoạn này"
-                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition"
+                          className="p-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-600 hover:text-white transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -378,29 +370,29 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
 
                   {/* Expanded Sub-parts Breakdown */}
                   {isExpanded && (
-                    <tr className="bg-slate-50/60">
+                    <tr className="bg-slate-200/40">
                       <td colSpan={8} className="py-3 px-6">
-                        <div className="bg-white border border-slate-200 rounded-xl p-3 text-xs space-y-2 shadow-2xs">
-                          <div className="font-semibold text-slate-700 flex items-center gap-2">
-                            <Folder className="w-3.5 h-3.5 text-indigo-600" />
+                        <div className="bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs space-y-2 shadow-2xs">
+                          <div className="font-bold text-slate-800 flex items-center gap-2">
+                            <Folder className="w-3.5 h-3.5 text-indigo-700" />
                             <span>Kế hoạch xuất file video con:</span>
                           </div>
                           <div className="space-y-1.5">
                             {seg.parts.map((p) => (
                               <div
                                 key={p.part}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 gap-2"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-100 px-3 py-2 rounded-lg border border-slate-300 gap-2"
                               >
-                                <div className="flex items-center gap-2 font-mono text-indigo-700 font-semibold">
-                                  <FileVideo className="w-3.5 h-3.5 text-indigo-600" />
+                                <div className="flex items-center gap-2 font-mono text-indigo-800 font-bold">
+                                  <FileVideo className="w-3.5 h-3.5 text-indigo-700" />
                                   <span>{p.file}</span>
                                 </div>
-                                <div className="flex items-center gap-4 text-slate-600 font-mono">
+                                <div className="flex items-center gap-4 text-slate-700 font-mono font-semibold">
                                   <span>Phần {p.part}</span>
                                   <span>
                                     {formatTime(p.start)} → {formatTime(p.end)}
                                   </span>
-                                  <span className="text-emerald-700 font-semibold">
+                                  <span className="text-emerald-800 font-bold">
                                     ({(p.end - p.start).toFixed(1)}s)
                                   </span>
                                 </div>
