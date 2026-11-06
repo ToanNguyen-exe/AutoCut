@@ -1,6 +1,7 @@
 package com.autocut.video;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,6 +11,7 @@ import java.nio.file.Paths;
  * Cấu hình tham số cho phân hệ Video của SV1.
  * Tự động ánh xạ từ prefix "autocut.video" trong application.properties.
  */
+@Component
 @ConfigurationProperties(prefix = "autocut.video")
 public class VideoProps {
 
