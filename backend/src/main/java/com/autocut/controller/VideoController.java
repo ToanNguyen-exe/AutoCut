@@ -21,6 +21,11 @@ import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
+import java.io.File;
+import com.autocut.video.VideoCutter;
+import com.autocut.video.VideoProps;
+import com.autocut.video.CutResult;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -79,21 +84,20 @@ public class VideoController {
     private final CloudflareR2Service r2Service;
 
     private final VideoRepository videoRepository;
-
+    private final VideoCutter videoCutter;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()));
+    }
 
+    @Autowired
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
         this.cacheService = cacheService;
-
         this.configService = configService;
-
         this.r2Service = r2Service;
-
         this.videoRepository = videoRepository;
-
+        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
     }
 
 
@@ -160,127 +164,99 @@ public class VideoController {
 
 
 
-            // Lưu một bản sao tại uploads/ để module Python AI đọc trực tiếp
-
+            // Lưu một bản sao tại uploads/ để phục vụ phát trực tiếp hoặc phân tích sau này
             Path projectRoot = resolveProjectRoot();
-
             Path uploadDir = projectRoot.resolve("uploads");
-
             if (!Files.exists(uploadDir)) {
-
                 Files.createDirectories(uploadDir);
-
             }
-
             Path localFile = uploadDir.resolve(hash + "_" + originalFilename);
-
             Files.copy(tempFile, localFile, StandardCopyOption.REPLACE_EXISTING);
 
-
-
-            // Chạy Whisper + Gemini ngay khi upload để xuất file vào thư mục riêng transcripts/
-
-            String relativeTranscriptPath = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
-
-
-
-            // Nạp đối tượng TranscriptDTO đã tạo để trả về ngay cho Frontend
-
-            TranscriptDTO transcriptDTO = null;
-
-            String videoStem = stripExtension(originalFilename);
-
-            Path transcriptFile = projectRoot.resolve("transcripts").resolve(videoStem + "_transcript.json");
-
-            if (Files.exists(transcriptFile)) {
-
-                try {
-
-                    transcriptDTO = objectMapper.readValue(transcriptFile.toFile(), TranscriptDTO.class);
-
-                } catch (Exception ex) {
-
-                    log.warn("Không thể parse file transcript {}: {}", transcriptFile, ex.getMessage());
-
-                }
-
-            }
-
-            if (transcriptDTO == null && !hash.isBlank()) {
-
-                transcriptDTO = cacheService.getCachedTranscript(hash).orElse(null);
-
-            }
-
-
-
             String publicUrl;
-
             String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + originalFilename;
 
-
-
             // Thử upload lên Cloudflare R2 trước, nếu chưa cấu hình thì dùng link stream cục bộ
-
             try {
-
                 publicUrl = r2Service.uploadFile(tempFile, r2Key);
-
                 log.info("Đã upload video lên Cloudflare R2 thành công: {}", publicUrl);
-
             } catch (Exception ex) {
-
                 log.warn("Cloudflare R2 chưa kích hoạt ({}), sử dụng luồng phát cục bộ tại uploads/", ex.getMessage());
-
                 publicUrl = "http://localhost:8080/api/video/stream/" + hash;
-
             }
-
-
 
             // Lưu thông tin video vào Database
-
             VideoEntity videoEntity = videoRepository.findBySha256Hash(hash).orElse(new VideoEntity());
-
             videoEntity.setFileName(originalFilename);
-
             videoEntity.setSha256Hash(hash);
-
             videoEntity.setFileSize(file.getSize());
-
             videoEntity.setR2Key(r2Key);
-
             videoEntity.setCloudUrl(publicUrl);
-
             videoEntity.setStatus("UPLOADED");
-
             videoRepository.save(videoEntity);
 
+            // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
+            String transcriptFile = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
+            TranscriptDTO transcriptDTO = null;
+            SegmentsDTO segmentsDTO = null;
 
-
-            Map<String, Object> response = new HashMap<>();
-
-            response.put("status", "SUCCESS");
-
-            response.put("file_name", originalFilename);
-
-            response.put("file_size", file.getSize());
-
-            response.put("sha256", hash);
-
-            response.put("cloud_url", publicUrl);
-
-            response.put("transcript_file", relativeTranscriptPath);
-
-            if (transcriptDTO != null) {
-
-                response.put("transcript", transcriptDTO);
-
+            Path transPath = projectRoot.resolve(transcriptFile);
+            if (Files.exists(transPath)) {
+                try {
+                    transcriptDTO = objectMapper.readValue(transPath.toFile(), TranscriptDTO.class);
+                } catch (Exception ex) {
+                    log.warn("Không thể đọc transcript vừa tạo {}: {}", transPath, ex.getMessage());
+                }
             }
 
-            response.put("message", "Video đã được tải lên và AI đã xuất file transcript tại: " + relativeTranscriptPath);
+            if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
+                List<Sentence> sents = transcriptDTO.sentences();
+                double totalDur = transcriptDTO.duration() > 0 ? transcriptDTO.duration() : 180.0;
+                int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
+                List<Segment> segList = new ArrayList<>();
 
+                for (int i = 0; i < segCount; i++) {
+                    int sIdx = i * chunkSize;
+                    if (sIdx >= sents.size()) break;
+                    int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
+                    Sentence fSent = sents.get(sIdx);
+                    Sentence lSent = sents.get(eIdx);
+                    double sStart = (i == 0) ? 0.0 : fSent.start();
+                    double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
+                    String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
+                    String topName = "Đoạn " + (i + 1);
+                    segList.add(new Segment(
+                            "seg_ai_" + (i + 1),
+                            i + 1,
+                            secFolder,
+                            i + 1,
+                            topName,
+                            "doan-" + (i + 1),
+                            fSent.id(),
+                            lSent.id(),
+                            Math.round(sStart * 10.0) / 10.0,
+                            Math.round(sEnd * 10.0) / 10.0,
+                            List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                    ));
+                }
+                segmentsDTO = new SegmentsDTO(originalFilename, originalFilename, "analyzed", false, segList);
+            }
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
+            response.put("file_name", originalFilename);
+            response.put("file_size", file.getSize());
+            response.put("sha256", hash);
+            response.put("cloud_url", publicUrl);
+            response.put("transcript_file", transcriptFile);
+            if (transcriptDTO != null) {
+                response.put("transcript", transcriptDTO);
+            }
+            if (segmentsDTO != null) {
+                response.put("segmentsData", segmentsDTO);
+            }
+            response.put("message", "Tải video lên và phân tích AI thành công!");
 
             return ResponseEntity.ok(response);
 
@@ -324,7 +300,10 @@ public class VideoController {
      */
     @GetMapping("/list")
     public ResponseEntity<List<VideoEntity>> listVideos() {
-        return ResponseEntity.ok(videoRepository.findAll());
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
+        return ResponseEntity.ok(list);
     }
 
     /**
@@ -342,11 +321,13 @@ public class VideoController {
      */
     @GetMapping("/latest")
     public ResponseEntity<?> getLatestVideo() {
-        List<VideoEntity> all = videoRepository.findAll();
-        if (all.isEmpty()) {
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
+        if (list.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(all.get(all.size() - 1));
+        return ResponseEntity.ok(list.get(list.size() - 1));
     }
 
     /**
@@ -885,136 +866,135 @@ public class VideoController {
 
 
         if (Files.exists(candidateTranscript)) {
-
             try {
-
                 TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
-
                 if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
+                    double transDur = existingDto.duration();
+                    // Chỉ sử dụng transcript nếu khớp tên video hoặc thời lượng tương đương
+                    // Tránh gán nhầm transcript 2 tiếng của video dài cho video ngắn 2 phút
+                    boolean matchesVideo = (duration > 0 && transDur > 0 && Math.abs(transDur - duration) / Math.max(transDur, duration) < 0.3)
+                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())));
 
-                    List<Sentence> rawSents = existingDto.sentences();
-                    double totalDur = existingDto.duration() > 0 ? existingDto.duration() : duration;
-                    if (totalDur <= 0) totalDur = 180.0;
+                    if (matchesVideo) {
+                        List<Sentence> rawSents = existingDto.sentences();
+                        double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
 
-                    // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
-                    List<Sentence> filledSents = new ArrayList<>();
-                    if (rawSents.get(0).start() > 1.5) {
-                        filledSents.add(new Sentence(
-                                "S0000",
-                                0.0,
-                                Math.round(rawSents.get(0).start() * 10.0) / 10.0,
-                                "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
-                                null
-                        ));
-                    }
-                    for (int s = 0; s < rawSents.size(); s++) {
-                        Sentence curr = rawSents.get(s);
-                        filledSents.add(curr);
-                        if (s < rawSents.size() - 1) {
-                            Sentence next = rawSents.get(s + 1);
-                            double gap = next.start() - curr.end();
-                            if (gap >= 8.0) {
-                                filledSents.add(new Sentence(
-                                        "S_gap_" + s,
-                                        Math.round(curr.end() * 10.0) / 10.0,
-                                        Math.round(next.start() * 10.0) / 10.0,
-                                        "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
-                                        null
-                                ));
+                        // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
+                        List<Sentence> filledSents = new ArrayList<>();
+                        if (rawSents.get(0).start() > 1.5) {
+                            filledSents.add(new Sentence(
+                                    "S0000",
+                                    0.0,
+                                    Math.round(rawSents.get(0).start() * 10.0) / 10.0,
+                                    "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
+                                    null
+                            ));
+                        }
+                        for (int s = 0; s < rawSents.size(); s++) {
+                            Sentence curr = rawSents.get(s);
+                            filledSents.add(curr);
+                            if (s < rawSents.size() - 1) {
+                                Sentence next = rawSents.get(s + 1);
+                                double gap = next.start() - curr.end();
+                                if (gap >= 8.0) {
+                                    filledSents.add(new Sentence(
+                                            "S_gap_" + s,
+                                            Math.round(curr.end() * 10.0) / 10.0,
+                                            Math.round(next.start() * 10.0) / 10.0,
+                                            "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
+                                            null
+                                    ));
+                                }
                             }
                         }
-                    }
-                    if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
-                        filledSents.add(new Sentence(
-                                "S_outro",
-                                Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
-                                Math.round(totalDur * 10.0) / 10.0,
-                                "Giai điệu kết thúc (Outro Fade)",
-                                null
-                        ));
-                    }
-
-                    // Đánh số lại thứ tự câu S0001, S0002...
-                    List<Sentence> sents = new ArrayList<>();
-                    for (int s = 0; s < filledSents.size(); s++) {
-                        Sentence item = filledSents.get(s);
-                        sents.add(new Sentence(
-                                String.format("S%04d", s + 1),
-                                item.start(),
-                                item.end(),
-                                item.text(),
-                                item.words()
-                        ));
-                    }
-
-                    // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
-                    int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
-                    int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-                    List<Segment> segList = new ArrayList<>();
-                    double currentStart = 0.0;
-
-                    for (int i = 0; i < segCount; i++) {
-                        int sIdx = i * chunkSize;
-                        if (sIdx >= sents.size()) break;
-                        int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-                        Sentence fSent = sents.get(sIdx);
-                        Sentence lSent = sents.get(eIdx);
-
-                        double sStart = currentStart;
-                        double sEnd;
-                        if (i == segCount - 1 || eIdx == sents.size() - 1) {
-                            sEnd = totalDur;
-                        } else {
-                            int nextSIdx = (i + 1) * chunkSize;
-                            Sentence nextSent = sents.get(Math.min(nextSIdx, sents.size() - 1));
-                            sEnd = Math.round(((lSent.end() + nextSent.start()) / 2.0) * 10.0) / 10.0;
-                            if (sEnd <= sStart) {
-                                sEnd = Math.round(lSent.end() * 10.0) / 10.0;
-                            }
+                        if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
+                            filledSents.add(new Sentence(
+                                    "S_outro",
+                                    Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
+                                    Math.round(totalDur * 10.0) / 10.0,
+                                    "Giai điệu kết thúc (Outro Fade)",
+                                    null
+                            ));
                         }
-                        currentStart = sEnd;
 
-                        String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-                        String topName = fSent.text().length() > 35 ? fSent.text().substring(0, 35) + "..." : fSent.text();
+                        // Đánh số lại thứ tự câu S0001, S0002...
+                        List<Sentence> sents = new ArrayList<>();
+                        for (int s = 0; s < filledSents.size(); s++) {
+                            Sentence item = filledSents.get(s);
+                            sents.add(new Sentence(
+                                    String.format("S%04d", s + 1),
+                                    item.start(),
+                                    item.end(),
+                                    item.text(),
+                                    item.words()
+                            ));
+                        }
 
-                        segList.add(new Segment(
-                                "seg_ai_" + (i + 1),
-                                i + 1,
-                                secFolder,
-                                i + 1,
-                                topName,
-                                "doan-" + (i + 1),
-                                fSent.id(),
-                                lSent.id(),
-                                Math.round(sStart * 10.0) / 10.0,
-                                Math.round(sEnd * 10.0) / 10.0,
-                                List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                        // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
+                        int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                        int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
+                        List<Segment> segList = new ArrayList<>();
+                        double currentStart = 0.0;
+
+                        for (int i = 0; i < segCount; i++) {
+                            int sIdx = i * chunkSize;
+                            if (sIdx >= sents.size()) break;
+                            int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
+                            Sentence fSent = sents.get(sIdx);
+                            Sentence lSent = sents.get(eIdx);
+
+                            double sStart = currentStart;
+                            double sEnd;
+                            if (i == segCount - 1 || eIdx == sents.size() - 1) {
+                                sEnd = totalDur;
+                            } else {
+                                int nextSIdx = (i + 1) * chunkSize;
+                                Sentence nextSent = sents.get(Math.min(nextSIdx, sents.size() - 1));
+                                sEnd = Math.round(((lSent.end() + nextSent.start()) / 2.0) * 10.0) / 10.0;
+                                if (sEnd <= sStart) {
+                                    sEnd = Math.round(lSent.end() * 10.0) / 10.0;
+                                }
+                            }
+                            currentStart = sEnd;
+
+                            String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
+                            String topName = fSent.text().length() > 35 ? fSent.text().substring(0, 35) + "..." : fSent.text();
+
+                            segList.add(new Segment(
+                                    "seg_ai_" + (i + 1),
+                                    i + 1,
+                                    secFolder,
+                                    i + 1,
+                                    topName,
+                                    "doan-" + (i + 1),
+                                    fSent.id(),
+                                    lSent.id(),
+                                    Math.round(sStart * 10.0) / 10.0,
+                                    Math.round(sEnd * 10.0) / 10.0,
+                                    List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                            ));
+                        }
+
+                        TranscriptDTO normalizedDto = new TranscriptDTO(existingDto.video(), totalDur, sents);
+                        SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
+                        if (!hash.isBlank()) {
+                            cacheService.saveTranscriptCache(hash, normalizedDto);
+                        }
+
+                        return ResponseEntity.ok(Map.of(
+                                "status", "SUCCESS",
+                                "mode", "analyzed",
+                                "segmentsData", segsDto,
+                                "transcript", normalizedDto
                         ));
+                    } else {
+                        log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",
+                                candidateTranscript.getFileName(), transDur, videoName, duration);
                     }
-
-                    TranscriptDTO normalizedDto = new TranscriptDTO(existingDto.video(), totalDur, sents);
-                    SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
-
-                    if (!hash.isBlank()) {
-                        cacheService.saveTranscriptCache(hash, normalizedDto);
-                        try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), normalizedDto); } catch (Exception ignored) {}
-                    }
-
-                    return ResponseEntity.ok(Map.of(
-                            "status", "SUCCESS",
-                            "mode", "analyzed",
-                            "segmentsData", segsDto,
-                            "transcript", normalizedDto
-                    ));
-
                 }
-
             } catch (Exception ex) {
-
                 log.warn("Không thể parse transcript {}: {}", candidateTranscript, ex.getMessage());
-
             }
-
         }
 
 
@@ -1075,57 +1055,198 @@ public class VideoController {
 
 
     /**
-
-     * Tiếp nhận segments đã duyệt từ Frontend gửi sang để thực hiện cắt video (B10).
-
+     * Lưu trạng thái chỉnh sửa video/dự án của người dùng vào thư mục riêng biệt liên kết với User.
      */
-
-    @PostMapping("/render")
-
-    public ResponseEntity<?> renderSegments(@RequestBody SegmentsDTO segments) {
-
-        log.info("Tiếp nhận yêu cầu cắt video bài giảng: {}, số phân đoạn: {}",
-
-                segments.lesson(), segments.segments().size());
-
-
+    @PostMapping("/save")
+    public ResponseEntity<?> saveProject(@RequestBody Map<String, Object> payload) {
+        String user = (String) payload.getOrDefault("user", "admin");
+        if (user == null || user.isBlank()) {
+            user = "admin";
+        }
+        String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
+        String safeLesson = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_");
 
         try {
-
-            Path outputDir = Paths.get("output");
-
-            if (!Files.exists(outputDir)) {
-
-                Files.createDirectories(outputDir);
-
+            Path userDir = Paths.get("output", "users", safeUser, safeLesson);
+            if (!Files.exists(userDir)) {
+                Files.createDirectories(userDir);
             }
 
-            Path outputFile = outputDir.resolve("segments_" + segments.lesson() + ".json");
+            Path projectFile = userDir.resolve("project.json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), payload);
 
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile.toFile(), segments);
+            Path segmentsFile = userDir.resolve("segments.json");
+            Object segmentsObj = payload.get("segments");
+            if (segmentsObj != null) {
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsObj);
+            }
 
-            log.info("Đã lưu kế hoạch cắt đã duyệt tại: {}", outputFile.toAbsolutePath());
+            String r2Url = null;
+            try {
+                if (r2Service != null) {
+                    String relativeKey = "users/" + safeUser + "/" + safeLesson + "/project.json";
+                    r2Url = r2Service.uploadFile(projectFile, relativeKey);
+                }
+            } catch (Exception r2Ex) {
+                log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
+            }
 
-
+            log.info("Đã lưu dự án của user '{}' tại: {}", safeUser, userDir.toAbsolutePath());
 
             return ResponseEntity.ok(Map.of(
-
-                    "status", "QUEUED",
-
-                    "message", "Đã tiếp nhận và chuẩn bị cắt " + segments.segments().size() + " phân đoạn.",
-
-                    "savedPlan", outputFile.toString()
-
+                "status", "SAVED",
+                "user", safeUser,
+                "lesson", safeLesson,
+                "directory", userDir.toAbsolutePath().toString(),
+                "r2Url", r2Url != null ? r2Url : "",
+                "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
             ));
+        } catch (Exception e) {
+            log.error("Lỗi khi lưu dự án cho user '{}': {}", safeUser, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Không thể lưu dự án: " + e.getMessage()));
+        }
+    }
 
-        } catch (IOException e) {
+    public ResponseEntity<?> renderSegments(SegmentsDTO segments) {
+        if (segments == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Payload segments null"));
+        }
+        Map<String, Object> map = objectMapper.convertValue(segments, Map.class);
+        return renderSegments(map);
+    }
 
-            log.error("Không thể ghi nhận kế hoạch cắt: {}", e.getMessage(), e);
+    /**
+     * Tiếp nhận segments đã duyệt từ Frontend gửi sang để thực hiện cắt video vật lý bằng FFmpeg (B10).
+     */
+    @PostMapping("/render")
+    public ResponseEntity<?> renderSegments(@RequestBody Map<String, Object> payload) {
+        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
+        String videoName = (String) payload.getOrDefault("video", "vibe_short.mp4");
+        List<?> rawSegments = (List<?>) payload.getOrDefault("segments", List.of());
+        String user = (String) payload.get("user");
+        log.info("Tiếp nhận yêu cầu cắt video: user={}, lesson={}, video={}, số phân đoạn={}", user, lesson, videoName, rawSegments.size());
 
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        try {
+            Path outputDir;
+            if (user != null && !user.isBlank()) {
+                String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+                outputDir = Paths.get("output", "users", safeUser, lesson);
+            } else {
+                outputDir = Paths.get("output", lesson);
+            }
 
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+            Path planFile = outputDir.resolve("segments_" + lesson + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(planFile.toFile(), payload);
+            log.info("Đã lưu kế hoạch cắt tại: {}", planFile.toAbsolutePath());
+
+            String sourcePath = resolveVideoSource(videoName);
+            log.info("Nguồn video để cắt: {}", sourcePath);
+
+            List<Map<String, Object>> renderedFiles = new ArrayList<>();
+            int successCount = 0;
+
+            for (Object segObj : rawSegments) {
+                if (!(segObj instanceof Map<?, ?> rawMap)) continue;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> segMap = (Map<String, Object>) rawMap;
+                Object partsObj = segMap.get("parts");
+                if (partsObj instanceof List<?> partsList && !partsList.isEmpty()) {
+                    for (Object pObj : partsList) {
+                        if (!(pObj instanceof Map<?, ?> rawPMap)) continue;
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> pMap = (Map<String, Object>) rawPMap;
+                        String relFile = String.valueOf(pMap.get("file"));
+                        double start = pMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
+                        double end = pMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
+
+                        File outFile = outputDir.resolve(relFile).toFile();
+                        log.info("Đang thực hiện cắt clip: {} [{} -> {}]", relFile, start, end);
+                        CutResult cutResult = videoCutter.cut(sourcePath, outFile.getAbsolutePath(), start, end);
+
+                        if (cutResult.success()) {
+                            successCount++;
+                            renderedFiles.add(Map.of(
+                                "file", relFile,
+                                "sizeBytes", cutResult.outputSizeBytes(),
+                                "executionMs", cutResult.executionTimeMs(),
+                                "path", outFile.getAbsolutePath()
+                            ));
+                        }
+                    }
+                } else {
+                    String slug = segMap.get("slug") != null ? String.valueOf(segMap.get("slug")) : "clip";
+                    String section = segMap.get("section") != null ? String.valueOf(segMap.get("section")) : "01_Phan";
+                    double start = segMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
+                    double end = segMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
+                    String relFile = section + "/" + slug + ".mp4";
+
+                    File outFile = outputDir.resolve(relFile).toFile();
+                    CutResult cutResult = videoCutter.cut(sourcePath, outFile.getAbsolutePath(), start, end);
+                    if (cutResult.success()) {
+                        successCount++;
+                        renderedFiles.add(Map.of(
+                            "file", relFile,
+                            "sizeBytes", cutResult.outputSizeBytes(),
+                            "executionMs", cutResult.executionTimeMs(),
+                            "path", outFile.getAbsolutePath()
+                        ));
+                    }
+                }
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "status", "COMPLETED",
+                "engine", "FFmpeg libx264 (SV1)",
+                "lesson", lesson,
+                "totalRendered", successCount,
+                "renderedFiles", renderedFiles,
+                "outputDirectory", outputDir.toAbsolutePath().toString(),
+                "message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson
+            ));
+        } catch (Exception e) {
+            log.error("Không thể hoàn tất cắt video: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "status", "ERROR",
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    private String resolveVideoSource(String videoName) {
+        if (videoName != null && (videoName.startsWith("http://") || videoName.startsWith("https://"))) {
+            return videoName;
         }
 
+        if (videoName != null && !videoName.isBlank()) {
+            List<VideoEntity> all = videoRepository.findAll();
+            for (VideoEntity v : all) {
+                if (videoName.equalsIgnoreCase(v.getFileName()) && v.getCloudUrl() != null && !v.getCloudUrl().isBlank()) {
+                    return v.getCloudUrl();
+                }
+            }
+        }
+
+        if (videoName != null && !videoName.isBlank()) {
+            List<Path> candidates = List.of(
+                Paths.get("input", videoName),
+                Paths.get("uploads", videoName),
+                Paths.get("..", "input", videoName),
+                Paths.get("..", "uploads", videoName),
+                Paths.get(videoName)
+            );
+            for (Path p : candidates) {
+                if (Files.exists(p) && Files.isRegularFile(p)) {
+                    return p.toAbsolutePath().toString();
+                }
+            }
+        }
+
+        return "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4";
     }
 
 
