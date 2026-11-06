@@ -421,6 +421,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                   {localVideos
                     .filter(
                       (lv) =>
+                        lv.url &&
+                        (lv.url.includes("r2.dev") || lv.url.includes("/stream/")) &&
                         !SAMPLE_VIDEOS.some((sv) => sv.url === lv.url) &&
                         !cloudVideos.some((cv) => cv.cloudUrl === lv.url)
                     )
