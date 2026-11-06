@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { uploadVideoFile, fetchBackendVideos, BackendVideoItem, API_BASE } from "@/lib/api";
-import { TranscriptData, SegmentsData } from "@/types";
+import { getLibraryVideos } from "@/lib/videoLibrary";
+import { TranscriptData, SegmentsData, VideoLibraryItem } from "@/types";
 
 export interface NewVideoData {
   url: string;
@@ -82,9 +83,11 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
   const [cloudVideos, setCloudVideos] = useState<BackendVideoItem[]>([]);
+  const [localVideos, setLocalVideos] = useState<VideoLibraryItem[]>([]);
 
   React.useEffect(() => {
     if (isOpen) {
+      setLocalVideos(getLibraryVideos());
       fetchBackendVideos()
         .then((res) => {
           if (res.source === "api" && res.data) {
@@ -410,6 +413,45 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                           </div>
                           <span className="text-[10px] font-mono text-slate-500 shrink-0">
                             {sizeMb} MB
+                          </span>
+                        </button>
+                      );
+                    })}
+                  {/* Danh sách clip bạn đã thêm hoặc tải lên lưu trong thư viện */}
+                  {localVideos
+                    .filter(
+                      (lv) =>
+                        !SAMPLE_VIDEOS.some((sv) => sv.url === lv.url) &&
+                        !cloudVideos.some((cv) => cv.cloudUrl === lv.url)
+                    )
+                    .map((lv, idx) => {
+                      const isSelected = urlInput === lv.url;
+                      return (
+                        <button
+                          key={`local_${idx}`}
+                          type="button"
+                          onClick={() => {
+                            handleSelectSample({
+                              name: lv.title || lv.name,
+                              url: lv.url,
+                              durationSeconds: lv.duration || 120,
+                              durationText: formatTime(lv.duration || 120),
+                            });
+                          }}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left transition group shadow-2xs ${
+                            isSelected
+                              ? "bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500"
+                              : "bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <Play className="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition shrink-0" />
+                            <span className="font-medium text-slate-800 group-hover:text-indigo-700 truncate">
+                              {lv.title || lv.name}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-500 shrink-0 font-medium">
+                            {formatTime(lv.duration || 120)}
                           </span>
                         </button>
                       );
