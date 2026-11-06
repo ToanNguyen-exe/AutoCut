@@ -1236,25 +1236,22 @@ public class VideoController {
 
 
     private String resolvePythonExecutable() {
-
         String envPython = System.getenv("PYTHON_EXE");
-
         if (envPython != null && Files.exists(Paths.get(envPython))) {
-
             return envPython;
+        }
 
+        Path venvPython = Paths.get(System.getProperty("user.home"), "AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe");
+        if (Files.exists(venvPython)) {
+            return venvPython.toAbsolutePath().toString();
         }
 
         Path userPython = Paths.get(System.getProperty("user.home"), "AppData/Local/Programs/Python/Python312/python.exe");
-
         if (Files.exists(userPython)) {
-
             return userPython.toAbsolutePath().toString();
-
         }
 
         return "python";
-
     }
 
 
