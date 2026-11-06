@@ -737,7 +737,9 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                   const isCurrentPlaying = currentTime >= seg.start && currentTime <= seg.end;
 
                   const segSentences =
-                    transcript?.sentences.filter((s) => s.start >= seg.start && s.start <= seg.end) || [];
+                    transcript?.sentences.filter(
+                      (s) => s.start >= seg.start && (idx === segments.length - 1 ? s.start <= seg.end : s.start < seg.end)
+                    ) || [];
 
                   return (
                     <div

@@ -350,6 +350,10 @@ public class VideoController {
 
             pb.directory(projectRoot.toFile());
 
+            pb.environment().put("PYTHONPATH", ".");
+
+            pb.environment().put("PYTHONIOENCODING", "utf-8");
+
             pb.redirectErrorStream(true);
 
 
@@ -762,6 +766,10 @@ public class VideoController {
 
             pb.directory(projectRoot.toFile());
 
+            pb.environment().put("PYTHONPATH", ".");
+
+            pb.environment().put("PYTHONIOENCODING", "utf-8");
+
             pb.redirectErrorStream(true);
 
 
@@ -855,6 +863,17 @@ public class VideoController {
 
             candidateTranscript = transcriptsDir.resolve(videoStem + " (1)_transcript.json");
 
+        }
+
+        if (!Files.exists(candidateTranscript)) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
+            if (m.find()) {
+                String innerStem = stripExtension(m.group(1).trim());
+                Path innerP = transcriptsDir.resolve(innerStem + "_transcript.json");
+                if (Files.exists(innerP)) {
+                    candidateTranscript = innerP;
+                }
+            }
         }
 
         if (!Files.exists(candidateTranscript) && Files.exists(resolveProjectRoot().resolve("transcript.json"))) {
