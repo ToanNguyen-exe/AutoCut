@@ -64,6 +64,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [durationUnit, setDurationUnit] = useState<"seconds" | "minutes">("seconds");
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
   const [showManualDuration, setShowManualDuration] = useState<boolean>(false);
+  const [isProbing, setIsProbing] = useState<boolean>(false);
 
   const parseDuration = (val: string, unit: "seconds" | "minutes"): number => {
     const trimmed = val.trim();
@@ -102,27 +103,44 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Tự động nhận diện độ dài thật của video khi chọn link hoặc file
+  const formatExactDuration = (secs: number | null): string => {
+    if (secs === null || isNaN(secs) || secs <= 0) return "--:--";
+    if (secs < 60) {
+      const intPart = Math.floor(secs);
+      const dec = Math.round((secs - intPart) * 10);
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      if (dec > 0) {
+        return `00:${pad(intPart)}.${dec} (${secs.toFixed(1)}s)`;
+      }
+      return `00:${pad(intPart)} (${intPart}s)`;
+    }
+    return formatTime(secs);
+  };
+
+  // Tự động nhận diện độ dài thật của video khi chọn link hoặc file (kể cả clip ngắn vài giây)
   const probeDuration = (src: string) => {
+    setIsProbing(true);
     try {
       const v = document.createElement("video");
       v.preload = "metadata";
       v.onloadedmetadata = () => {
+        setIsProbing(false);
         if (v.duration && isFinite(v.duration) && v.duration > 0) {
-          const secs = Math.round(v.duration);
-          setDetectedDuration(secs);
-          if (secs < 60) {
+          const exactSecs = Number(v.duration.toFixed(1));
+          setDetectedDuration(exactSecs);
+          if (exactSecs < 60) {
             setDurationUnit("seconds");
-            setDurationValue(String(secs));
+            setDurationValue(String(exactSecs));
           } else {
             setDurationUnit("minutes");
-            setDurationValue(String(Number((secs / 60).toFixed(1))));
+            setDurationValue(String(Number((exactSecs / 60).toFixed(1))));
           }
         }
       };
+      v.onerror = () => setIsProbing(false);
       v.src = src;
     } catch {
-      // Bỏ qua lỗi CORS metadata
+      setIsProbing(false);
     }
   };
 
@@ -171,6 +189,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       setSelectedFile(file);
       setTitleInput(file.name.replace(/\.[^/.]+$/, ""));
       setError(null);
+      setDetectedDuration(null);
 
       const objectUrl = URL.createObjectURL(file);
       probeDuration(objectUrl);
@@ -181,13 +200,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video)
-    let finalDurationSeconds = 60; // Mặc định 1 phút nếu video ngắn không rõ thời lượng
-    const parsed = parseDuration(durationValue, durationUnit);
-    if (parsed > 0) {
-      finalDurationSeconds = parsed;
-    } else if (detectedDuration && detectedDuration > 0) {
-      finalDurationSeconds = detectedDuration;
+    // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)
+    let finalDurationSeconds = 60;
+    if (detectedDuration && detectedDuration > 0) {
+      finalDurationSeconds = Number(detectedDuration.toFixed(1));
+    } else {
+      const parsed = parseDuration(durationValue, durationUnit);
+      if (parsed > 0) finalDurationSeconds = parsed;
     }
 
     if (tab === "url") {
@@ -223,10 +242,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
         if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
+          const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
+            ? uploadRes.data.transcript.duration
+            : finalDurationSeconds;
           onAddVideo({
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: finalDurationSeconds,
+            duration: Number(cloudDur.toFixed(1)),
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
@@ -532,13 +554,19 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between shadow-2xs">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0 shadow-2xs">
-                <Clock className="w-4 h-4" />
+                {isProbing ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                ) : (
+                  <Clock className="w-4 h-4" />
+                )}
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-800">Thời lượng video</p>
                 <p className="text-[11px] text-slate-500 truncate">
-                  {detectedDuration
-                    ? "✓ Tự động nhận diện từ siêu dữ liệu video"
+                  {isProbing
+                    ? "Đang nhận diện thời lượng từ video..."
+                    : detectedDuration
+                    ? "✓ Tự động nhận diện chính xác từ video"
                     : "Chọn video để tự động nhận diện thời lượng"}
                 </p>
               </div>
@@ -546,7 +574,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-mono font-bold text-indigo-800 bg-white border border-indigo-300 px-3 py-1.5 rounded-xl shadow-2xs">
-                {formatTime(detectedDuration || 60)}
+                {formatExactDuration(detectedDuration)}
               </span>
               <button
                 type="button"

@@ -583,11 +583,27 @@ export default function Home() {
 
     setData((prev) => {
       const currentEnd = prev.segments.reduce((max, s) => Math.max(max, s.end), 0);
-      // Nếu đã khớp chính xác với thời lượng thật (sai số < 0.5s), không cần chỉnh
-      if (Math.abs(currentEnd - realSecs) < 0.5) return prev;
+      // Nếu đã khớp chính xác với thời lượng thật (sai số < 0.1s), không cần chỉnh
+      if (Math.abs(currentEnd - realSecs) < 0.1) return prev;
+
+      if (prev.segments.length === 1) {
+        const seg = prev.segments[0];
+        const sectionFolder = `${seg.section_no.toString().padStart(2, "0")}_${seg.section.replace(/\s+/g, "")}`;
+        return {
+          ...prev,
+          segments: [
+            {
+              ...seg,
+              start: 0,
+              end: realSecs,
+              parts: recalculateParts(0, realSecs, sectionFolder, seg.topic_no, seg.slug),
+            },
+          ],
+        };
+      }
 
       // Rescale toàn bộ các phân đoạn theo tỷ lệ phần trăm để ôm khít 100% thời lượng video thật [0, realSecs]
-      const scale = realSecs / Math.max(1, currentEnd);
+      const scale = realSecs / Math.max(0.1, currentEnd);
       let runningStart = 0;
 
       const updatedSegments: Segment[] = prev.segments.map((seg, idx) => {
@@ -633,7 +649,7 @@ export default function Home() {
 
     const cleanName = newVideo.name.replace(/\.[^/.]+$/, "");
     const lessonTitle = newVideo.topicTitle || (cleanName.length > 40 ? cleanName.slice(0, 40) : cleanName);
-    const totalSecs = Math.max(5, newVideo.duration || 60);
+    const totalSecs = Math.max(1, Number((newVideo.duration || 60).toFixed(1)));
 
     // Nếu AI đã phân tích khi upload: nạp ngay transcript và segments
     if (newVideo.segmentsData && newVideo.segmentsData.segments.length > 0) {
