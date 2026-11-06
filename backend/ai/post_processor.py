@@ -9,6 +9,8 @@ Giải quyết triệt để các lỗi thường gặp của Whisper:
 """
 
 import re
+import unicodedata
+from pathlib import Path
 from typing import List
 from .models import Sentence, TranscriptOutput
 
@@ -55,8 +57,8 @@ DOMAIN_TERM_MAPPINGS = [
     (r"\b(?:thể\s+ấn\s+trên\s+hộ)\b", "thể lên trên fanpage"),
 ]
 
-# Chỉ coi dấu kết thúc câu thực sự (., ?, !, …) là ranh giới đóng câu
-SENTENCE_END_PUNCTUATION = ('.', '?', '!', '…', '...')
+# Chỉ coi dấu kết thúc câu hoặc mệnh đề hoàn chỉnh (., ?, !, …, ,, ;, :) là ranh giới đóng segment
+SENTENCE_END_PUNCTUATION = ('.', '?', '!', '…', '...', ',', ';', ':')
 
 # Biểu thức chính quy tách câu tại dấu ., ?, !, … nhưng KHÔNG tách bên trong tên kỹ thuật như Node.js, document.write, console.log, v.v.
 SENTENCE_BOUNDARY_RE = re.compile(r'(?<=[.?!…])\s+(?=[A-ZÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ"\'“‘(\[])')
@@ -279,3 +281,22 @@ def post_process_transcript(transcript: TranscriptOutput) -> TranscriptOutput:
 
     transcript.sentences = new_sentences
     return transcript
+
+
+def sanitize_transcript_stem(name: str) -> str:
+    """Chuẩn hóa stem tên file transcript: không dấu tiếng Việt, không khoảng trắng, chỉ gồm ký tự ASCII an toàn."""
+    if not name:
+        return "video"
+    raw_stem = Path(name).stem if "." in name else name
+    # 1. Bỏ dấu tiếng Việt (đ/Đ và các dấu thanh Unicode)
+    s = raw_stem.replace("đ", "d").replace("Đ", "D")
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
+    # 2. Thay thế khoảng trắng và ký tự đặc biệt bằng gạch nối '-', giữ gạch dưới hợp lệ
+    s = re.sub(r"[\s\(\)\[\]\{\}]+", "-", s)
+    s = re.sub(r"[^a-zA-Z0-9_-]+", "", s)
+    s = re.sub(r"-+", "-", s)
+    s = re.sub(r"_+", "_", s)
+    s = s.strip("-_").lower()
+    return s or "video"
+

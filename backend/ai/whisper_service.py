@@ -34,7 +34,7 @@ except Exception:
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import build_initial_prompt
 from .config_loader import default_ai_config
-from .post_processor import post_process_transcript, merge_fragmented_segments
+from .post_processor import post_process_transcript, merge_fragmented_segments, sanitize_transcript_stem
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("AutoCut.AI.Whisper")
@@ -213,7 +213,12 @@ class WhisperTranscriber:
             transcript_obj = post_process_transcript(transcript_obj)
 
             if output_file:
-                with open(output_file, "w", encoding="utf-8") as f:
+                out_p = Path(output_file)
+                if out_p.parent.name == "transcripts":
+                    clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+                    out_p = out_p.parent / f"{clean_stem}_transcript.json"
+                out_p.parent.mkdir(parents=True, exist_ok=True)
+                with open(out_p, "w", encoding="utf-8") as f:
                     f.write(transcript_obj.model_dump_json(indent=2, exclude_none=True))
             return transcript_obj
 
@@ -302,9 +307,12 @@ class WhisperTranscriber:
 
         if output_file:
             out_p = Path(output_file)
+            if out_p.parent.name == "transcripts":
+                clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+                out_p = out_p.parent / f"{clean_stem}_transcript.json"
             out_p.parent.mkdir(parents=True, exist_ok=True)
             with open(out_p, "w", encoding="utf-8") as f:
                 f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
-            logger.info(f"Đã xuất tệp transcript: {output_file}")
+            logger.info(f"Đã xuất tệp transcript: {out_p}")
 
         return transcript_output

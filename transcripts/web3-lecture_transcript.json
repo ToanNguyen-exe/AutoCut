@@ -1,0 +1,5568 @@
+{
+  "video": "web3-lecture.mp4",
+  "duration": 1479.46,
+  "sentences": [
+    {
+      "id": "S0001",
+      "start": 0.0,
+      "end": 3.15,
+      "text": "Em qua thử quay được không?"
+    },
+    {
+      "id": "S0002",
+      "start": 3.15,
+      "end": 5.71,
+      "text": "Mic ai vừa dùng không?"
+    },
+    {
+      "id": "S0003",
+      "start": 5.71,
+      "end": 8.16,
+      "text": "Video rồi đúng không?"
+    },
+    {
+      "id": "S0004",
+      "start": 8.16,
+      "end": 10.37,
+      "text": "Xin chào mọi người!"
+    },
+    {
+      "id": "S0005",
+      "start": 10.37,
+      "end": 12.12,
+      "text": "Chào mọi người!"
+    },
+    {
+      "id": "S0006",
+      "start": 12.12,
+      "end": 14.62,
+      "text": "Chào mọi người đã quay trở lại với kênh của mình!"
+    },
+    {
+      "id": "S0007",
+      "start": 14.62,
+      "end": 17.88,
+      "text": "Hôm nay chúng ta sẽ nói về một chủ đề mà mọi người rất quan tâm."
+    },
+    {
+      "id": "S0008",
+      "start": 17.88,
+      "end": 20.08,
+      "text": "Mọi người yêu cầu mình rất là nhiều."
+    },
+    {
+      "id": "S0009",
+      "start": 20.08,
+      "end": 22.89,
+      "text": "Hôm nay chúng ta sẽ nói về chủ đề như thế này."
+    },
+    {
+      "id": "S0010",
+      "start": 22.89,
+      "end": 24.72,
+      "text": "Nó sẽ là về Roadmap, nhưng mà."
+    },
+    {
+      "id": "S0011",
+      "start": 24.72,
+      "end": 26.56,
+      "text": "Chúng ta sẽ không đi sâu quá nhiều về tất cả."
+    },
+    {
+      "id": "S0012",
+      "start": 26.56,
+      "end": 28.32,
+      "text": "Không phải là ngay lập tức chúng ta đi vào."
+    },
+    {
+      "id": "S0013",
+      "start": 28.32,
+      "end": 30.32,
+      "text": "Và chúng ta sẽ nói về Blockchain."
+    },
+    {
+      "id": "S0014",
+      "start": 30.32,
+      "end": 31.32,
+      "text": "Tại sao nói về Blockchain?"
+    },
+    {
+      "id": "S0015",
+      "start": 31.32,
+      "end": 35.32,
+      "text": "Tại sao thì câu hỏi này mình sẽ hỏi một bạn team member trong Blockchain team của mình."
+    },
+    {
+      "id": "S0016",
+      "start": 35.32,
+      "end": 41.32,
+      "text": "Thế nên là video này sẽ được kết hợp với một bạn team member cũng là của Builder mà còn rất là trẻ, bạn ấy sinh năm 2003 thôi."
+    },
+    {
+      "id": "S0017",
+      "start": 41.32,
+      "end": 44.32,
+      "text": "Hôm nay chúng ta sẽ được gặp thêm một nhân vật mới trong team của mình."
+    },
+    {
+      "id": "S0018",
+      "start": 44.32,
+      "end": 45.35,
+      "text": "Hello quý vị!"
+    },
+    {
+      "id": "S0019",
+      "start": 45.35,
+      "end": 47.32,
+      "text": "Bạn này tên là Bích Trần."
+    },
+    {
+      "id": "S0020",
+      "start": 47.32,
+      "end": 52.32,
+      "text": "Cũng đang muốn trở thành một YouTuber về Education, về Blockchain Dev giống như mình thôi."
+    },
+    {
+      "id": "S0021",
+      "start": 52.32,
+      "end": 54.95,
+      "text": "Mọi người có thể coi kênh của Bích ở dưới."
+    },
+    {
+      "id": "S0022",
+      "start": 54.95,
+      "end": 59.02,
+      "text": "Bích sẽ làm những nội dung về Solana Blockchain và ngôn ngữ Rust."
+    },
+    {
+      "id": "S0023",
+      "start": 59.16,
+      "end": 61.74,
+      "text": "Bích là một developer trong mảng Blockchain khá là thành công."
+    },
+    {
+      "id": "S0024",
+      "start": 62.7,
+      "end": 67.94,
+      "text": "Và trong team member của mình, Bích cũng là một người rất giỏi và có thể làm việc trên nhiều Blockchain khác nhau."
+    },
+    {
+      "id": "S0025",
+      "start": 68.54,
+      "end": 75.28,
+      "text": "Vậy thì khi mà chúng ta làm việc với một cái Roadmap hay là chúng ta muốn tìm kiếm một công việc ở trong thị trường Blockchain."
+    },
+    {
+      "id": "S0026",
+      "start": 75.54,
+      "end": 77.66,
+      "text": "Thì câu quan trọng nhất em nghĩ là cái gì?"
+    },
+    {
+      "id": "S0027",
+      "start": 78.18,
+      "end": 80.22,
+      "text": "Câu quan trọng nhất em nghĩ là cơ hội."
+    },
+    {
+      "id": "S0028",
+      "start": 80.86,
+      "end": 81.8,
+      "text": "Xem cơ hội ấy."
+    },
+    {
+      "id": "S0029",
+      "start": 81.8,
+      "end": 84.44,
+      "text": "Cơ hội là về tiền đó."
+    },
+    {
+      "id": "S0030",
+      "start": 84.44,
+      "end": 85.34,
+      "text": "Quan trọng là tiền."
+    },
+    {
+      "id": "S0031",
+      "start": 85.34,
+      "end": 86.58,
+      "text": "Quan trọng là mình phải có tiền."
+    },
+    {
+      "id": "S0032",
+      "start": 86.58,
+      "end": 88.52,
+      "text": "Khi mà mình làm thì nó phải có tiền."
+    },
+    {
+      "id": "S0033",
+      "start": 88.52,
+      "end": 90.68,
+      "text": "Thì chúng ta mới có động lực để chúng ta làm."
+    },
+    {
+      "id": "S0034",
+      "start": 90.68,
+      "end": 92.56,
+      "text": "Vậy thì Blockchain nào?"
+    },
+    {
+      "id": "S0035",
+      "start": 92.56,
+      "end": 94.28,
+      "text": "Chúng ta có thể dễ dàng tiếp cận."
+    },
+    {
+      "id": "S0036",
+      "start": 94.28,
+      "end": 96.7,
+      "text": "Người ta gọi là tham gia Hackathon."
+    },
+    {
+      "id": "S0037",
+      "start": 96.7,
+      "end": 97.4,
+      "text": "Tham gia thi."
+    },
+    {
+      "id": "S0038",
+      "start": 97.4,
+      "end": 99.38,
+      "text": "Và Blockchain nó sẽ airdrop cho chúng ta tiền."
+    },
+    {
+      "id": "S0039",
+      "start": 99.38,
+      "end": 101.02,
+      "text": "Thì Blockchain nào là xứng đáng nhất?"
+    },
+    {
+      "id": "S0040",
+      "start": 101.02,
+      "end": 102.64,
+      "text": "Để chúng ta có thể học, làm việc."
+    },
+    {
+      "id": "S0041",
+      "start": 102.64,
+      "end": 104.38,
+      "text": "Thì cái phần đầu tiên của video này."
+    },
+    {
+      "id": "S0042",
+      "start": 104.38,
+      "end": 105.36,
+      "text": "Chúng ta sẽ nói về."
+    },
+    {
+      "id": "S0043",
+      "start": 105.36,
+      "end": 106.78,
+      "text": "Cái hệ sinh thái Blockchain hiện tại."
+    },
+    {
+      "id": "S0044",
+      "start": 106.78,
+      "end": 108.6,
+      "text": "Có những Blockchain nào nó hội tụ tốt."
+    },
+    {
+      "id": "S0045",
+      "start": 108.6,
+      "end": 109.96,
+      "text": "Cho Blockchain tại Việt Nam."
+    },
+    {
+      "id": "S0046",
+      "start": 109.96,
+      "end": 114.76,
+      "text": "Chúng ta có thể focus vào nó, học cái ngôn ngữ nào hay là những cái tech stack nào nó phù hợp với Blockchain đó."
+    },
+    {
+      "id": "S0047",
+      "start": 114.92,
+      "end": 116.96,
+      "text": "Chúng ta bắt đầu trở thành một builder trong nền Web3."
+    },
+    {
+      "id": "S0048",
+      "start": 117.14,
+      "end": 118.46,
+      "text": "Video này sẽ chia thành 3 phần."
+    },
+    {
+      "id": "S0049",
+      "start": 118.78,
+      "end": 122.84,
+      "text": "Blockchain nào, ngôn ngữ gì và tech stack của Blockchain đó là gì."
+    },
+    {
+      "id": "S0050",
+      "start": 123.0,
+      "end": 125.06,
+      "text": "Bây giờ chúng ta sẽ bắt đầu review vào video này thôi."
+    },
+    {
+      "id": "S0051",
+      "start": 125.32,
+      "end": 126.6,
+      "text": "Đầu tiên là nói về Blockchain."
+    },
+    {
+      "id": "S0052",
+      "start": 126.8,
+      "end": 131.94,
+      "text": "Bây giờ chúng ta sẽ nói về là cái Blockchain đó nó có thực sự phù hợp với chúng ta có thể tập trung vào build hay không."
+    },
+    {
+      "id": "S0053",
+      "start": 132.18,
+      "end": 134.38,
+      "text": "Đầu tiên là cái độ phổ biến của Blockchain đó."
+    },
+    {
+      "id": "S0054",
+      "start": 134.96,
+      "end": 137.64,
+      "text": "Blockchain nó có thực sự ủng hộ những developer tại Việt Nam hay không?"
+    },
+    {
+      "id": "S0055",
+      "start": 137.64,
+      "end": 139.96,
+      "text": "Bằng cách là chúng ta nhìn vào cộng đồng của Blockchain đó."
+    },
+    {
+      "id": "S0056",
+      "start": 139.96,
+      "end": 142.26,
+      "text": "Ví dụ như Ethereum là cộng đồng rất là lớn rồi."
+    },
+    {
+      "id": "S0057",
+      "start": 142.26,
+      "end": 144.78,
+      "text": "Chúng ta không cần phải suy nghĩ về cộng đồng Blockchain Ethereum nữa."
+    },
+    {
+      "id": "S0058",
+      "start": 144.78,
+      "end": 146.34,
+      "text": "Nhưng có những Blockchain khác."
+    },
+    {
+      "id": "S0059",
+      "start": 146.34,
+      "end": 147.96,
+      "text": "Ngoài Ethereum ra, ví dụ như Solana."
+    },
+    {
+      "id": "S0060",
+      "start": 147.96,
+      "end": 150.64,
+      "text": "Thì tại Việt Nam nó có Solana, Superteam."
+    },
+    {
+      "id": "S0061",
+      "start": 150.64,
+      "end": 152.98,
+      "text": "Bên Polkadot thì nó có OpenGuide."
+    },
+    {
+      "id": "S0062",
+      "start": 152.98,
+      "end": 154.56,
+      "text": "Còn TON."
+    },
+    {
+      "id": "S0063",
+      "start": 154.56,
+      "end": 156.68,
+      "text": "TON hình như cũng hướng về Việt Nam, đúng không?"
+    },
+    {
+      "id": "S0064",
+      "start": 156.96,
+      "end": 157.48,
+      "text": "Có TON không?"
+    },
+    {
+      "id": "S0065",
+      "start": 158.52,
+      "end": 159.62,
+      "text": "TON Society."
+    },
+    {
+      "id": "S0066",
+      "start": 159.62,
+      "end": 162.9,
+      "text": "TON Society đó cũng có hỗ trợ tại Việt Nam."
+    },
+    {
+      "id": "S0067",
+      "start": 162.9,
+      "end": 163.58,
+      "text": "Và Sui nữa."
+    },
+    {
+      "id": "S0068",
+      "start": 163.58,
+      "end": 166.28,
+      "text": "Sui Hub."
+    },
+    {
+      "id": "S0069",
+      "start": 166.28,
+      "end": 166.66,
+      "text": "Đúng rồi."
+    },
+    {
+      "id": "S0070",
+      "start": 166.66,
+      "end": 169.32,
+      "text": "VBI Academy."
+    },
+    {
+      "id": "S0071",
+      "start": 169.32,
+      "end": 170.14,
+      "text": "Tụi mình."
+    },
+    {
+      "id": "S0072",
+      "start": 170.14,
+      "end": 170.72,
+      "text": "Tức là."
+    },
+    {
+      "id": "S0073",
+      "start": 170.72,
+      "end": 171.42,
+      "text": "Cả hai tụi mình."
+    },
+    {
+      "id": "S0074",
+      "start": 171.42,
+      "end": 172.56,
+      "text": "Đều làm tại VBI hết."
+    },
+    {
+      "id": "S0075",
+      "start": 172.56,
+      "end": 173.26,
+      "text": "Mọi người có thể."
+    },
+    {
+      "id": "S0076",
+      "start": 173.26,
+      "end": 173.92,
+      "text": "Ấn ủng hộ VBI."
+    },
+    {
+      "id": "S0077",
+      "start": 173.92,
+      "end": 174.34,
+      "text": "Để xem."
+    },
+    {
+      "id": "S0078",
+      "start": 174.34,
+      "end": 175.02,
+      "text": "Thì VBI."
+    },
+    {
+      "id": "S0079",
+      "start": 175.02,
+      "end": 176.38,
+      "text": "Luôn có thể."
+    },
+    {
+      "id": "S0080",
+      "start": 176.38,
+      "end": 177.12,
+      "text": "Hợp tác với những."
+    },
+    {
+      "id": "S0081",
+      "start": 177.12,
+      "end": 178.34,
+      "text": "Bên blockchain."
+    },
+    {
+      "id": "S0082",
+      "start": 178.34,
+      "end": 180.02,
+      "text": "Người ta rất là hỗ trợ."
+    },
+    {
+      "id": "S0083",
+      "start": 180.02,
+      "end": 180.84,
+      "text": "Bên phía của."
+    },
+    {
+      "id": "S0084",
+      "start": 180.84,
+      "end": 181.5,
+      "text": "Việt Nam mình."
+    },
+    {
+      "id": "S0085",
+      "start": 181.5,
+      "end": 182.5,
+      "text": "Khiến người ta muốn hỗ trợ."
+    },
+    {
+      "id": "S0086",
+      "start": 182.5,
+      "end": 183.14,
+      "text": "Thì người ta mới hợp tác."
+    },
+    {
+      "id": "S0087",
+      "start": 183.14,
+      "end": 184.14,
+      "text": "Với bên VBI của tụi mình."
+    },
+    {
+      "id": "S0088",
+      "start": 184.14,
+      "end": 185.08,
+      "text": "Để mở ra những cái."
+    },
+    {
+      "id": "S0089",
+      "start": 185.08,
+      "end": 185.98,
+      "text": "Hackcamp này."
+    },
+    {
+      "id": "S0090",
+      "start": 185.98,
+      "end": 186.6,
+      "text": "Giống như Sui."
+    },
+    {
+      "id": "S0091",
+      "start": 186.6,
+      "end": 187.96,
+      "text": "Hay là những cái Hackathon."
+    },
+    {
+      "id": "S0092",
+      "start": 187.96,
+      "end": 188.42,
+      "text": "Tại Việt Nam."
+    },
+    {
+      "id": "S0093",
+      "start": 188.42,
+      "end": 189.88,
+      "text": "Thì mọi người hãy follow VBI."
+    },
+    {
+      "id": "S0094",
+      "start": 189.88,
+      "end": 190.78,
+      "text": "Thì để chúng ta."
+    },
+    {
+      "id": "S0095",
+      "start": 190.78,
+      "end": 191.7,
+      "text": "Có thể biết được là."
+    },
+    {
+      "id": "S0096",
+      "start": 191.7,
+      "end": 192.42,
+      "text": "Cái blockchain nó."
+    },
+    {
+      "id": "S0097",
+      "start": 192.42,
+      "end": 193.04,
+      "text": "Nó có phù hợp với."
+    },
+    {
+      "id": "S0098",
+      "start": 193.04,
+      "end": 193.56,
+      "text": "Cái việc mà."
+    },
+    {
+      "id": "S0099",
+      "start": 193.56,
+      "end": 194.26,
+      "text": "Người ta chu cấp."
+    },
+    {
+      "id": "S0100",
+      "start": 194.26,
+      "end": 195.12,
+      "text": "Phần chúng ta đi build hay không."
+    },
+    {
+      "id": "S0101",
+      "start": 195.12,
+      "end": 198.28,
+      "text": "Rồi cái thứ hai là chúng ta cũng phải."
+    },
+    {
+      "id": "S0102",
+      "start": 198.28,
+      "end": 200.22,
+      "text": "Xét theo cái độ nổi tiếng của blockchain."
+    },
+    {
+      "id": "S0103",
+      "start": 200.22,
+      "end": 201.74,
+      "text": "Đó trong cộng đồng nước ngoài nữa."
+    },
+    {
+      "id": "S0104",
+      "start": 201.74,
+      "end": 204.26,
+      "text": "Thì để xét theo cái độ nổi tiếng."
+    },
+    {
+      "id": "S0105",
+      "start": 204.26,
+      "end": 206.12,
+      "text": "Chúng ta có thể truy cập vào một cái website."
+    },
+    {
+      "id": "S0106",
+      "start": 206.12,
+      "end": 207.18,
+      "text": "Là DefiLlama."
+    },
+    {
+      "id": "S0107",
+      "start": 207.18,
+      "end": 209.84,
+      "text": "Khi mà chúng ta vào DefiLlama, chúng ta có thể coi."
+    },
+    {
+      "id": "S0108",
+      "start": 209.84,
+      "end": 212.32,
+      "text": "Cái phần là chain đó, tức là bấm vào phần chain này."
+    },
+    {
+      "id": "S0109",
+      "start": 212.32,
+      "end": 214.34,
+      "text": "Thì chúng ta hãy coi cái phần là."
+    },
+    {
+      "id": "S0110",
+      "start": 214.34,
+      "end": 215.98,
+      "text": "Total Value Locked All Chains."
+    },
+    {
+      "id": "S0111",
+      "start": 215.98,
+      "end": 218.08,
+      "text": "Tại vì khi mà chúng ta xem cái."
+    },
+    {
+      "id": "S0112",
+      "start": 218.08,
+      "end": 220.18,
+      "text": "Total Value Locked này thì chúng ta sẽ biết được."
+    },
+    {
+      "id": "S0113",
+      "start": 220.18,
+      "end": 221.12,
+      "text": "Là cái."
+    },
+    {
+      "id": "S0114",
+      "start": 221.12,
+      "end": 223.94,
+      "text": "Hệ sinh thái đó đang được những."
+    },
+    {
+      "id": "S0115",
+      "start": 223.94,
+      "end": 224.62,
+      "text": "Những nhà đầu tư."
+    },
+    {
+      "id": "S0116",
+      "start": 224.62,
+      "end": 225.46,
+      "text": "Người ta nhắm tới."
+    },
+    {
+      "id": "S0117",
+      "start": 225.46,
+      "end": 226.08,
+      "text": "Để người ta sử dụng."
+    },
+    {
+      "id": "S0118",
+      "start": 226.08,
+      "end": 226.84,
+      "text": "Những cái dApp đấy không?"
+    },
+    {
+      "id": "S0119",
+      "start": 226.84,
+      "end": 227.38,
+      "text": "Đúng không?"
+    },
+    {
+      "id": "S0120",
+      "start": 227.38,
+      "end": 229.0,
+      "text": "Thì hiện tại."
+    },
+    {
+      "id": "S0121",
+      "start": 229.0,
+      "end": 229.58,
+      "text": "Nếu mà các bạn nhìn."
+    },
+    {
+      "id": "S0122",
+      "start": 229.58,
+      "end": 230.82,
+      "text": "Ethereum và Solana."
+    },
+    {
+      "id": "S0123",
+      "start": 230.82,
+      "end": 232.28,
+      "text": "Nó vẫn nằm ở top đầu luôn."
+    },
+    {
+      "id": "S0124",
+      "start": 232.28,
+      "end": 234.28,
+      "text": "Nhưng có một cái."
+    },
+    {
+      "id": "S0125",
+      "start": 234.28,
+      "end": 234.68,
+      "text": "Là mình."
+    },
+    {
+      "id": "S0126",
+      "start": 234.68,
+      "end": 236.1,
+      "text": "Khi mà mình nói tới ngôn ngữ."
+    },
+    {
+      "id": "S0127",
+      "start": 236.1,
+      "end": 237.28,
+      "text": "Là Ethereum."
+    },
+    {
+      "id": "S0128",
+      "start": 237.28,
+      "end": 238.18,
+      "text": "Là."
+    },
+    {
+      "id": "S0129",
+      "start": 238.18,
+      "end": 239.6,
+      "text": "Nó sử dụng."
+    },
+    {
+      "id": "S0130",
+      "start": 239.6,
+      "end": 240.34,
+      "text": "Ngôn ngữ Solidity."
+    },
+    {
+      "id": "S0131",
+      "start": 240.34,
+      "end": 241.76,
+      "text": "Mình có một khóa Solidity rồi."
+    },
+    {
+      "id": "S0132",
+      "start": 241.76,
+      "end": 242.7,
+      "text": "Thì ngay lập tức."
+    },
+    {
+      "id": "S0133",
+      "start": 242.7,
+      "end": 243.1,
+      "text": "Chúng ta biết."
+    },
+    {
+      "id": "S0134",
+      "start": 243.1,
+      "end": 244.1,
+      "text": "Khi mà chúng ta vào học."
+    },
+    {
+      "id": "S0135",
+      "start": 244.1,
+      "end": 244.66,
+      "text": "Với bài chúng ta biết."
+    },
+    {
+      "id": "S0136",
+      "start": 244.66,
+      "end": 245.64,
+      "text": "Chúng ta nên học cái gì rồi?"
+    },
+    {
+      "id": "S0137",
+      "start": 245.64,
+      "end": 246.28,
+      "text": "Tại vì sao?"
+    },
+    {
+      "id": "S0138",
+      "start": 246.28,
+      "end": 247.0,
+      "text": "Mình hướng dẫn các bạn."
+    },
+    {
+      "id": "S0139",
+      "start": 247.0,
+      "end": 248.36,
+      "text": "Solidity từ blockchain cơ bản."
+    },
+    {
+      "id": "S0140",
+      "start": 248.36,
+      "end": 249.46,
+      "text": "Xong rồi tới Ethereum."
+    },
+    {
+      "id": "S0141",
+      "start": 249.46,
+      "end": 250.1,
+      "text": "Và Solidity."
+    },
+    {
+      "id": "S0142",
+      "start": 250.1,
+      "end": 251.14,
+      "text": "Thì tại vì."
+    },
+    {
+      "id": "S0143",
+      "start": 251.14,
+      "end": 251.92,
+      "text": "Nó là cái đầu tiên."
+    },
+    {
+      "id": "S0144",
+      "start": 251.92,
+      "end": 253.68,
+      "text": "Và cộng đồng rất là lớn."
+    },
+    {
+      "id": "S0145",
+      "start": 253.68,
+      "end": 255.06,
+      "text": "Nó cũng dễ học nữa."
+    },
+    {
+      "id": "S0146",
+      "start": 255.06,
+      "end": 256.92,
+      "text": "Nếu mà các bạn."
+    },
+    {
+      "id": "S0147",
+      "start": 256.92,
+      "end": 257.66,
+      "text": "Học trên trường đại học."
+    },
+    {
+      "id": "S0148",
+      "start": 257.66,
+      "end": 258.24,
+      "text": "Ví dụ như Bích."
+    },
+    {
+      "id": "S0149",
+      "start": 258.24,
+      "end": 258.92,
+      "text": "Học trên trường đại học."
+    },
+    {
+      "id": "S0150",
+      "start": 258.92,
+      "end": 259.82,
+      "text": "Mà học về Java."
+    },
+    {
+      "id": "S0151",
+      "start": 259.82,
+      "end": 261.24,
+      "text": "Java, JavaScript."
+    },
+    {
+      "id": "S0152",
+      "start": 261.24,
+      "end": 262.64,
+      "text": "Thì lúc mà học Solidity."
+    },
+    {
+      "id": "S0153",
+      "start": 262.64,
+      "end": 263.48,
+      "text": "Nó cũng rất là đơn giản."
+    },
+    {
+      "id": "S0154",
+      "start": 263.48,
+      "end": 264.98,
+      "text": "Thì khi mà chúng ta."
+    },
+    {
+      "id": "S0155",
+      "start": 264.98,
+      "end": 265.98,
+      "text": "Học được Solidity rồi."
+    },
+    {
+      "id": "S0156",
+      "start": 265.98,
+      "end": 266.86,
+      "text": "Thì chúng ta sẽ có."
+    },
+    {
+      "id": "S0157",
+      "start": 266.86,
+      "end": 267.62,
+      "text": "Cái base, cái nền tảng."
+    },
+    {
+      "id": "S0158",
+      "start": 267.62,
+      "end": 268.06,
+      "text": "Để chúng ta học."
+    },
+    {
+      "id": "S0159",
+      "start": 268.06,
+      "end": 268.74,
+      "text": "Những cái blockchain khác."
+    },
+    {
+      "id": "S0160",
+      "start": 268.74,
+      "end": 269.52,
+      "text": "Ví dụ như Solana."
+    },
+    {
+      "id": "S0161",
+      "start": 269.52,
+      "end": 270.22,
+      "text": "Sui."
+    },
+    {
+      "id": "S0162",
+      "start": 270.22,
+      "end": 271.94,
+      "text": "Hay là TON."
+    },
+    {
+      "id": "S0163",
+      "start": 271.94,
+      "end": 273.44,
+      "text": "Đó là những cái blockchain."
+    },
+    {
+      "id": "S0164",
+      "start": 273.44,
+      "end": 274.08,
+      "text": "Rất là."
+    },
+    {
+      "id": "S0165",
+      "start": 274.08,
+      "end": 275.6,
+      "text": "Hiện tại nó đang là."
+    },
+    {
+      "id": "S0166",
+      "start": 275.6,
+      "end": 276.12,
+      "text": "Những cái blockchain."
+    },
+    {
+      "id": "S0167",
+      "start": 276.12,
+      "end": 276.9,
+      "text": "Dẫn đầu xu hướng."
+    },
+    {
+      "id": "S0168",
+      "start": 276.9,
+      "end": 278.12,
+      "text": "Hay là ví dụ như."
+    },
+    {
+      "id": "S0169",
+      "start": 278.12,
+      "end": 278.7,
+      "text": "Chúng ta có."
+    },
+    {
+      "id": "S0170",
+      "start": 278.7,
+      "end": 279.96,
+      "text": "Những cái blockchain Layer 2."
+    },
+    {
+      "id": "S0171",
+      "start": 279.96,
+      "end": 280.92,
+      "text": "Là blockchain."
+    },
+    {
+      "id": "S0172",
+      "start": 280.92,
+      "end": 281.82,
+      "text": "Nó được base trên Ethereum."
+    },
+    {
+      "id": "S0173",
+      "start": 281.82,
+      "end": 282.54,
+      "text": "Thì nó cũng được viết."
+    },
+    {
+      "id": "S0174",
+      "start": 282.54,
+      "end": 283.28,
+      "text": "Bằng cái."
+    },
+    {
+      "id": "S0175",
+      "start": 283.28,
+      "end": 285.25,
+      "text": "Với ngôn ngữ là Solidity."
+    },
+    {
+      "id": "S0176",
+      "start": 285.25,
+      "end": 289.34,
+      "text": "Cho nên khi chúng ta học về blockchain, học về Web3."
+    },
+    {
+      "id": "S0177",
+      "start": 289.34,
+      "end": 290.24,
+      "text": "Web3 nó khác với blockchain."
+    },
+    {
+      "id": "S0178",
+      "start": 290.24,
+      "end": 292.22,
+      "text": "Blockchain thì chúng ta chỉ cần biết viết smart contract thôi."
+    },
+    {
+      "id": "S0179",
+      "start": 292.22,
+      "end": 293.24,
+      "text": "Còn Web3 thì chúng ta phải biết."
+    },
+    {
+      "id": "S0180",
+      "start": 293.24,
+      "end": 294.63,
+      "text": "Viết nguyên một dApp luôn."
+    },
+    {
+      "id": "S0181",
+      "start": 294.63,
+      "end": 298.38,
+      "text": "Có thể chạy cả frontend, cả sự tương tác ở trên nhiều chain khác nhau."
+    },
+    {
+      "id": "S0182",
+      "start": 298.38,
+      "end": 298.76,
+      "text": "Nếu mà."
+    },
+    {
+      "id": "S0183",
+      "start": 298.76,
+      "end": 302.42,
+      "text": "Chúng ta chỉ muốn trở thành một Web3 developer, thì cái đầu tiên chúng ta nên học là chúng ta."
+    },
+    {
+      "id": "S0184",
+      "start": 302.42,
+      "end": 303.59,
+      "text": "Nên học làm Web2."
+    },
+    {
+      "id": "S0185",
+      "start": 303.59,
+      "end": 307.45,
+      "text": "Các bạn muốn biết cách để làm Web3 thì nên học làm Web2."
+    },
+    {
+      "id": "S0186",
+      "start": 307.45,
+      "end": 308.9,
+      "text": "Nếu mà chúng ta chưa."
+    },
+    {
+      "id": "S0187",
+      "start": 308.9,
+      "end": 310.56,
+      "text": "Chưa biết gì, thì chúng ta cần phải học là."
+    },
+    {
+      "id": "S0188",
+      "start": 310.56,
+      "end": 312.08,
+      "text": "HTML, JavaScript."
+    },
+    {
+      "id": "S0189",
+      "start": 312.08,
+      "end": 313.32,
+      "text": "Rồi."
+    },
+    {
+      "id": "S0190",
+      "start": 313.32,
+      "end": 316.82,
+      "text": "HTML nè."
+    },
+    {
+      "id": "S0191",
+      "start": 316.82,
+      "end": 318.44,
+      "text": "Rồi CSS nè, framework."
+    },
+    {
+      "id": "S0192",
+      "start": 318.44,
+      "end": 320.74,
+      "text": "Rồi học framework, mà cái framework phổ biến nhất."
+    },
+    {
+      "id": "S0193",
+      "start": 320.74,
+      "end": 322.68,
+      "text": "Hiện tại mà hầu hết tất cả những cái app đều dùng."
+    },
+    {
+      "id": "S0194",
+      "start": 322.68,
+      "end": 323.38,
+      "text": "Là React."
+    },
+    {
+      "id": "S0195",
+      "start": 323.38,
+      "end": 326.48,
+      "text": "Chúng ta học React và chúng ta học Next.js."
+    },
+    {
+      "id": "S0196",
+      "start": 326.48,
+      "end": 328.4,
+      "text": "Rồi chúng ta thử là chúng ta."
+    },
+    {
+      "id": "S0197",
+      "start": 328.4,
+      "end": 330.46,
+      "text": "Nếu mà chúng ta có thời gian nha, chúng ta không có gấp."
+    },
+    {
+      "id": "S0198",
+      "start": 330.46,
+      "end": 332.46,
+      "text": "Trong cái việc mà chúng ta phải chuyển đổi thành."
+    },
+    {
+      "id": "S0199",
+      "start": 332.46,
+      "end": 334.32,
+      "text": "Web app hoàn chỉnh, chúng ta nên biết cách build."
+    },
+    {
+      "id": "S0200",
+      "start": 334.32,
+      "end": 335.96,
+      "text": "Cái backend, bạn cũng có thể viết một backend."
+    },
+    {
+      "id": "S0201",
+      "start": 335.96,
+      "end": 338.22,
+      "text": "Và bằng chính ngôn ngữ JavaScript luôn."
+    },
+    {
+      "id": "S0202",
+      "start": 338.22,
+      "end": 339.72,
+      "text": "Thì khi mà chúng ta biết backend rồi."
+    },
+    {
+      "id": "S0203",
+      "start": 339.72,
+      "end": 341.0,
+      "text": "Và chúng ta học thêm Smart Contract."
+    },
+    {
+      "id": "S0204",
+      "start": 341.0,
+      "end": 342.34,
+      "text": "Thì chúng ta áp dụng vào những cái dApp."
+    },
+    {
+      "id": "S0205",
+      "start": 342.34,
+      "end": 343.46,
+      "text": "Chúng ta sẽ biết là."
+    },
+    {
+      "id": "S0206",
+      "start": 343.46,
+      "end": 345.72,
+      "text": "Cái gì cần để làm backend."
+    },
+    {
+      "id": "S0207",
+      "start": 345.72,
+      "end": 348.06,
+      "text": "Mình nghĩ là nếu các bạn xem video này."
+    },
+    {
+      "id": "S0208",
+      "start": 348.06,
+      "end": 349.34,
+      "text": "Cũng có thể hiểu được là."
+    },
+    {
+      "id": "S0209",
+      "start": 349.34,
+      "end": 350.22,
+      "text": "On-chain và Off-chain là gì."
+    },
+    {
+      "id": "S0210",
+      "start": 350.22,
+      "end": 351.3,
+      "text": "Nhưng mà nếu không hiểu."
+    },
+    {
+      "id": "S0211",
+      "start": 351.3,
+      "end": 352.44,
+      "text": "Các bạn hãy ngay lập tức."
+    },
+    {
+      "id": "S0212",
+      "start": 352.44,
+      "end": 354.18,
+      "text": "Vào cái outline của các bạn."
+    },
+    {
+      "id": "S0213",
+      "start": 354.18,
+      "end": 355.44,
+      "text": "Để xem On-chain và Off-chain là gì."
+    },
+    {
+      "id": "S0214",
+      "start": 355.44,
+      "end": 357.08,
+      "text": "Thì chúng ta sẽ biết được là."
+    },
+    {
+      "id": "S0215",
+      "start": 357.08,
+      "end": 358.26,
+      "text": "Cái gì nên để cho On-chain."
+    },
+    {
+      "id": "S0216",
+      "start": 358.26,
+      "end": 359.88,
+      "text": "Cái gì nên để Off-chain."
+    },
+    {
+      "id": "S0217",
+      "start": 359.88,
+      "end": 362.46,
+      "text": "Và cái gì nên để ở Decentralized Storage."
+    },
+    {
+      "id": "S0218",
+      "start": 362.46,
+      "end": 364.66,
+      "text": "Khi mà chúng ta biết được những điều đó."
+    },
+    {
+      "id": "S0219",
+      "start": 364.66,
+      "end": 375.68,
+      "text": "Thực sự việc mà chúng ta học nó sẽ giúp chúng ta về việc làm lập trình cũng như trang trí hoàn toàn giao diện hơn, mà đó sẽ là HTML, CSS."
+    },
+    {
+      "id": "S0220",
+      "start": 375.68,
+      "end": 376.98,
+      "text": "JavaScript."
+    },
+    {
+      "id": "S0221",
+      "start": 376.98,
+      "end": 379.56,
+      "text": "Và chúng ta sẽ học thêm backend."
+    },
+    {
+      "id": "S0222",
+      "start": 379.56,
+      "end": 382.26,
+      "text": "Và bây giờ nói về vấn đề ngôn ngữ."
+    },
+    {
+      "id": "S0223",
+      "start": 382.26,
+      "end": 384.48,
+      "text": "Ở JavaScript ở đây thì chắc hơn chúng ta sẽ phải viết."
+    },
+    {
+      "id": "S0224",
+      "start": 384.48,
+      "end": 384.92,
+      "text": "TypeScript."
+    },
+    {
+      "id": "S0225",
+      "start": 384.92,
+      "end": 386.32,
+      "text": "Tại sao các bạn nên học TypeScript?"
+    },
+    {
+      "id": "S0226",
+      "start": 386.32,
+      "end": 387.72,
+      "text": "Tại vì TypeScript các bạn học xong."
+    },
+    {
+      "id": "S0227",
+      "start": 387.72,
+      "end": 389.48,
+      "text": "Thằng Solidity nó còn giống."
+    },
+    {
+      "id": "S0228",
+      "start": 389.48,
+      "end": 390.4,
+      "text": "Solidity."
+    },
+    {
+      "id": "S0229",
+      "start": 390.4,
+      "end": 392.76,
+      "text": "Khá giống syntax."
+    },
+    {
+      "id": "S0230",
+      "start": 392.76,
+      "end": 396.64,
+      "text": "Rồi, tiếp theo nữa là những ngôn ngữ mà viết backend phổ biến hiện tại."
+    },
+    {
+      "id": "S0231",
+      "start": 396.64,
+      "end": 400.84,
+      "text": "Các bạn cũng có thể học thêm thằng Python nếu mà các bạn familiar với Python."
+    },
+    {
+      "id": "S0232",
+      "start": 401.22,
+      "end": 412.56,
+      "text": "Tại vì nếu mà viết trên những blockchain như là Ethereum hay là Layer 2 của Ethereum, ví dụ như là Binance Smart Chain này, Base này, Arbitrum này, AVAX này, Avalanche."
+    },
+    {
+      "id": "S0233",
+      "start": 413.18,
+      "end": 415.3,
+      "text": "Rồi, chúng ta sẽ có thêm nữa là Optimism này."
+    },
+    {
+      "id": "S0234",
+      "start": 415.52,
+      "end": 418.98,
+      "text": "Đó, thì tất cả những blockchain EVM nào nó cũng sẽ hỗ trợ thêm ngôn ngữ là Vyper."
+    },
+    {
+      "id": "S0235",
+      "start": 418.98,
+      "end": 422.28,
+      "text": "Và ngôn ngữ Vyper là ngôn ngữ được based trên ngôn ngữ Python."
+    },
+    {
+      "id": "S0236",
+      "start": 422.28,
+      "end": 423.92,
+      "text": "Cho nên là khi mà chúng ta biết Python."
+    },
+    {
+      "id": "S0237",
+      "start": 423.92,
+      "end": 425.2,
+      "text": "Chúng ta cũng có thể sử dụng."
+    },
+    {
+      "id": "S0238",
+      "start": 425.2,
+      "end": 426.92,
+      "text": "Và chúng ta sẽ viết được Smart Contract luôn."
+    },
+    {
+      "id": "S0239",
+      "start": 426.92,
+      "end": 430.16,
+      "text": "Rồi có một ngôn ngữ về viết backend nữa."
+    },
+    {
+      "id": "S0240",
+      "start": 430.16,
+      "end": 432.32,
+      "text": "Mà mình không biết là nên khuyên mọi người học không."
+    },
+    {
+      "id": "S0241",
+      "start": 432.32,
+      "end": 433.92,
+      "text": "Nhưng mà mọi người biết thì cũng tốt."
+    },
+    {
+      "id": "S0242",
+      "start": 433.92,
+      "end": 434.68,
+      "text": "Đó là Golang."
+    },
+    {
+      "id": "S0243",
+      "start": 434.68,
+      "end": 437.94,
+      "text": "Học ngay chính cái lúc mà chúng ta viết."
+    },
+    {
+      "id": "S0244",
+      "start": 437.94,
+      "end": 439.66,
+      "text": "Hay chính cái lúc chúng ta học backend."
+    },
+    {
+      "id": "S0245",
+      "start": 439.66,
+      "end": 441.84,
+      "text": "Chúng ta cũng có thể học luôn ngôn ngữ Rust ở đây rồi."
+    },
+    {
+      "id": "S0246",
+      "start": 441.84,
+      "end": 444.0,
+      "text": "Nhưng mà nếu mà các bạn thực sự mạnh."
+    },
+    {
+      "id": "S0247",
+      "start": 444.0,
+      "end": 446.14,
+      "text": "Trước đã các bạn thực sự biết."
+    },
+    {
+      "id": "S0248",
+      "start": 446.14,
+      "end": 447.62,
+      "text": "Về những cái ngôn ngữ lập trình trước."
+    },
+    {
+      "id": "S0249",
+      "start": 447.62,
+      "end": 450.78,
+      "text": "Ví dụ như Java thì Rust nó không có vấn đề."
+    },
+    {
+      "id": "S0250",
+      "start": 450.78,
+      "end": 452.62,
+      "text": "Nhưng mà các bạn là một người."
+    },
+    {
+      "id": "S0251",
+      "start": 452.62,
+      "end": 453.98,
+      "text": "Học trái ngành đi lên nha."
+    },
+    {
+      "id": "S0252",
+      "start": 453.98,
+      "end": 455.94,
+      "text": "Thì một bạn vừa bắt đầu vào."
+    },
+    {
+      "id": "S0253",
+      "start": 455.94,
+      "end": 457.92,
+      "text": "Học Rust luôn thì nó rất là khó."
+    },
+    {
+      "id": "S0254",
+      "start": 457.92,
+      "end": 460.88,
+      "text": "Nó giống kiểu đang đi cái đập đầu vào tường vậy đó."
+    },
+    {
+      "id": "S0255",
+      "start": 460.88,
+      "end": 462.8,
+      "text": "Thì rất là khó cho cái vấn đề đó."
+    },
+    {
+      "id": "S0256",
+      "start": 462.8,
+      "end": 464.16,
+      "text": "Cho nên là."
+    },
+    {
+      "id": "S0257",
+      "start": 464.16,
+      "end": 465.78,
+      "text": "Cái hướng của mình nó vẫn sẽ là."
+    },
+    {
+      "id": "S0258",
+      "start": 465.78,
+      "end": 467.64,
+      "text": "Các bạn phải học từ những thứ cơ bản nhất."
+    },
+    {
+      "id": "S0259",
+      "start": 467.64,
+      "end": 468.34,
+      "text": "Của lập trình web."
+    },
+    {
+      "id": "S0260",
+      "start": 468.34,
+      "end": 471.8,
+      "text": "HTML, CSS, JavaScript."
+    },
+    {
+      "id": "S0261",
+      "start": 471.8,
+      "end": 473.6,
+      "text": "Rồi chúng ta có thể nào đó là."
+    },
+    {
+      "id": "S0262",
+      "start": 473.6,
+      "end": 474.82,
+      "text": "Chúng ta nâng cấp lên TypeScript."
+    },
+    {
+      "id": "S0263",
+      "start": 474.82,
+      "end": 477.76,
+      "text": "Rồi chúng ta sẽ học cái viết backend mà nó chất."
+    },
+    {
+      "id": "S0264",
+      "start": 477.76,
+      "end": 481.1,
+      "text": "Thì chọn thêm một số ngôn ngữ."
+    },
+    {
+      "id": "S0265",
+      "start": 481.1,
+      "end": 482.88,
+      "text": "Ví dụ như là Python, Go hoặc Rust."
+    },
+    {
+      "id": "S0266",
+      "start": 482.88,
+      "end": 484.94,
+      "text": "Tùy theo sở thích của chúng ta nha."
+    },
+    {
+      "id": "S0267",
+      "start": 484.94,
+      "end": 487.42,
+      "text": "Tại vì là mình không có biết Go."
+    },
+    {
+      "id": "S0268",
+      "start": 487.42,
+      "end": 489.74,
+      "text": "Mình cũng chưa biết Python luôn."
+    },
+    {
+      "id": "S0269",
+      "start": 489.74,
+      "end": 491.68,
+      "text": "Mình chỉ biết sơ sơ về Rust và TypeScript thôi."
+    },
+    {
+      "id": "S0270",
+      "start": 491.68,
+      "end": 492.8,
+      "text": "Là mình đủ để làm rồi."
+    },
+    {
+      "id": "S0271",
+      "start": 492.8,
+      "end": 494.74,
+      "text": "Nên mình vẫn hướng các bạn là học TypeScript."
+    },
+    {
+      "id": "S0272",
+      "start": 494.74,
+      "end": 497.74,
+      "text": "Và khi mà chúng ta build được fully một cái dApp rồi."
+    },
+    {
+      "id": "S0273",
+      "start": 497.74,
+      "end": 498.84,
+      "text": "Fully một cái Web2."
+    },
+    {
+      "id": "S0274",
+      "start": 498.84,
+      "end": 502.74,
+      "text": "Thì bắt đầu chúng ta sẽ học về smart contract."
+    },
+    {
+      "id": "S0275",
+      "start": 502.74,
+      "end": 504.26,
+      "text": "Về Solidity."
+    },
+    {
+      "id": "S0276",
+      "start": 504.26,
+      "end": 506.76,
+      "text": "Nếu các bạn nào mà biết về Python."
+    },
+    {
+      "id": "S0277",
+      "start": 506.76,
+      "end": 507.86,
+      "text": "Thì chúng ta sẽ học Viper."
+    },
+    {
+      "id": "S0278",
+      "start": 507.86,
+      "end": 509.02,
+      "text": "Tại sao mình giới thiệu Solidity?"
+    },
+    {
+      "id": "S0279",
+      "start": 509.02,
+      "end": 510.52,
+      "text": "Tại vì mình có sản xuất khóa học Solidity."
+    },
+    {
+      "id": "S0280",
+      "start": 510.52,
+      "end": 512.96,
+      "text": "Ngay trong cái kênh channel luôn."
+    },
+    {
+      "id": "S0281",
+      "start": 512.96,
+      "end": 515.62,
+      "text": "Để chúng ta học dài tầm 18 tiếng thôi."
+    },
+    {
+      "id": "S0282",
+      "start": 515.62,
+      "end": 517.22,
+      "text": "Một bình oxy là học hết."
+    },
+    {
+      "id": "S0283",
+      "start": 517.22,
+      "end": 520.42,
+      "text": "Sau khi mà học xong được cái phần Web2 rồi."
+    },
+    {
+      "id": "S0284",
+      "start": 520.42,
+      "end": 521.66,
+      "text": "Các bạn biết là ngôn ngữ gì rồi."
+    },
+    {
+      "id": "S0285",
+      "start": 521.66,
+      "end": 524.04,
+      "text": "Thì hai cái ngôn ngữ chắc chắn chúng ta phải học."
+    },
+    {
+      "id": "S0286",
+      "start": 524.04,
+      "end": 526.4,
+      "text": "Khi mà chúng ta trở thành một Web3 Developer."
+    },
+    {
+      "id": "S0287",
+      "start": 526.4,
+      "end": 527.82,
+      "text": "Đó chính là Solidity."
+    },
+    {
+      "id": "S0288",
+      "start": 527.82,
+      "end": 529.16,
+      "text": "Và Rust."
+    },
+    {
+      "id": "S0289",
+      "start": 529.16,
+      "end": 529.88,
+      "text": "Tại sao nha?"
+    },
+    {
+      "id": "S0290",
+      "start": 529.88,
+      "end": 531.76,
+      "text": "Tại vì hồi nãy mình nói trên DefiLlama."
+    },
+    {
+      "id": "S0291",
+      "start": 531.76,
+      "end": 533.08,
+      "text": "Là Ethereum."
+    },
+    {
+      "id": "S0292",
+      "start": 533.08,
+      "end": 535.82,
+      "text": "Hiện tại nó vẫn đang chiếm 55% Total Value Locked."
+    },
+    {
+      "id": "S0293",
+      "start": 535.82,
+      "end": 537.38,
+      "text": "Và kiểu gì chúng ta làm việc."
+    },
+    {
+      "id": "S0294",
+      "start": 537.38,
+      "end": 538.94,
+      "text": "Cũng sẽ theo một cách nào đó."
+    },
+    {
+      "id": "S0295",
+      "start": 538.94,
+      "end": 540.3,
+      "text": "Nó cũng sẽ dính tới Ethereum."
+    },
+    {
+      "id": "S0296",
+      "start": 540.3,
+      "end": 542.84,
+      "text": "Và cái nền tảng công nghệ bây giờ chúng ta không còn."
+    },
+    {
+      "id": "S0297",
+      "start": 542.84,
+      "end": 545.2,
+      "text": "Ở một trên nữa, khi mà chúng ta build một cái app."
+    },
+    {
+      "id": "S0298",
+      "start": 545.2,
+      "end": 546.6,
+      "text": "Này Web3 đó là."
+    },
+    {
+      "id": "S0299",
+      "start": 546.6,
+      "end": 548.98,
+      "text": "Multichain, multichain chắc chắn."
+    },
+    {
+      "id": "S0300",
+      "start": 548.98,
+      "end": 549.96,
+      "text": "Sẽ dính Ethereum."
+    },
+    {
+      "id": "S0301",
+      "start": 549.96,
+      "end": 552.42,
+      "text": "Cho nên là chúng ta sẽ cần phải biết."
+    },
+    {
+      "id": "S0302",
+      "start": 552.42,
+      "end": 554.94,
+      "text": "Cái ngôn ngữ là Solidity."
+    },
+    {
+      "id": "S0303",
+      "start": 554.94,
+      "end": 557.14,
+      "text": "Để chúng ta OK về thằng Ethereum trước."
+    },
+    {
+      "id": "S0304",
+      "start": 557.14,
+      "end": 558.76,
+      "text": "Và Ethereum cũng rất là dễ học."
+    },
+    {
+      "id": "S0305",
+      "start": 558.76,
+      "end": 560.0,
+      "text": "Sau khi mà chúng ta đã học được rồi."
+    },
+    {
+      "id": "S0306",
+      "start": 560.0,
+      "end": 561.96,
+      "text": "Thì chúng ta bắt đầu chúng ta sẽ học."
+    },
+    {
+      "id": "S0307",
+      "start": 561.96,
+      "end": 563.96,
+      "text": "Những cái blockchain khác, ví dụ như Solana."
+    },
+    {
+      "id": "S0308",
+      "start": 563.96,
+      "end": 568.56,
+      "text": "Cách phân tán data của Solana sẽ khác với Ethereum."
+    },
+    {
+      "id": "S0309",
+      "start": 568.56,
+      "end": 572.16,
+      "text": "Nhưng mà tương lai, Bích sẽ có những cái video nói về vấn đề đó."
+    },
+    {
+      "id": "S0310",
+      "start": 572.16,
+      "end": 574.76,
+      "text": "Thì các bạn có thể ấn subscribe Bích và bật cái nút chuông lên."
+    },
+    {
+      "id": "S0311",
+      "start": 574.76,
+      "end": 576.76,
+      "text": "Thì các bạn có thể coi được những nội dung của Bích làm."
+    },
+    {
+      "id": "S0312",
+      "start": 576.76,
+      "end": 578.76,
+      "text": "Bích gửi trong team mình thôi."
+    },
+    {
+      "id": "S0313",
+      "start": 578.76,
+      "end": 582.76,
+      "text": "Cho nên là các bạn có thể tự tin về cái vấn đề, cái nội dung của video đó."
+    },
+    {
+      "id": "S0314",
+      "start": 582.76,
+      "end": 585.56,
+      "text": "Khi mà chúng ta học được Solana rồi, chúng ta sẽ có thể."
+    },
+    {
+      "id": "S0315",
+      "start": 585.56,
+      "end": 587.06,
+      "text": "1. Các bạn học luôn Solana."
+    },
+    {
+      "id": "S0316",
+      "start": 587.06,
+      "end": 590.36,
+      "text": "2. Các bạn học thêm những cái blockchain khác cũng viết bằng Rust."
+    },
+    {
+      "id": "S0317",
+      "start": 590.36,
+      "end": 592.32,
+      "text": "Là Near."
+    },
+    {
+      "id": "S0318",
+      "start": 592.32,
+      "end": 594.28,
+      "text": "Nhưng mà có một cái là."
+    },
+    {
+      "id": "S0319",
+      "start": 594.28,
+      "end": 596.4,
+      "text": "TypeScript cũng có thể viết Smart Contract trên Near."
+    },
+    {
+      "id": "S0320",
+      "start": 596.4,
+      "end": 598.04,
+      "text": "Đó, cho nên khi mà chúng ta biết."
+    },
+    {
+      "id": "S0321",
+      "start": 598.04,
+      "end": 599.76,
+      "text": "Ngữ Tiescript thì nó cũng rất là đơn giản."
+    },
+    {
+      "id": "S0322",
+      "start": 599.76,
+      "end": 602.1,
+      "text": "Chúng ta có thể viết được trên Smart Contract trên Nia."
+    },
+    {
+      "id": "S0323",
+      "start": 602.1,
+      "end": 604.16,
+      "text": "Chúng ta cũng cần phải học thêm."
+    },
+    {
+      "id": "S0324",
+      "start": 604.16,
+      "end": 605.09,
+      "text": "Một số blockchain khác."
+    },
+    {
+      "id": "S0325",
+      "start": 605.09,
+      "end": 605.74,
+      "text": "Nếu mà chúng ta."
+    },
+    {
+      "id": "S0326",
+      "start": 605.74,
+      "end": 608.18,
+      "text": "Đã được học làm thư cập sinh thì yêu cầu."
+    },
+    {
+      "id": "S0327",
+      "start": 608.18,
+      "end": 610.48,
+      "text": "Phải học một blockchain nào thì phải làm blockchain đó thôi."
+    },
+    {
+      "id": "S0328",
+      "start": 610.48,
+      "end": 612.1,
+      "text": "Cho nên là chúng ta hãy nên học."
+    },
+    {
+      "id": "S0329",
+      "start": 612.1,
+      "end": 613.38,
+      "text": "Solidity trước, tại vì nó dễ."
+    },
+    {
+      "id": "S0330",
+      "start": 613.38,
+      "end": 615.26,
+      "text": "Sau đó thì chúng ta học Rust."
+    },
+    {
+      "id": "S0331",
+      "start": 615.26,
+      "end": 617.62,
+      "text": "Và chúng ta biết được."
+    },
+    {
+      "id": "S0332",
+      "start": 617.62,
+      "end": 620.12,
+      "text": "Solana Chain này, rồi chúng ta nên biết."
+    },
+    {
+      "id": "S0333",
+      "start": 620.12,
+      "end": 625.32,
+      "text": "Những cái blockchain mà hiện tại đang rất là hot hiện tại cho cộng đồng developer chính là SWE."
+    },
+    {
+      "id": "S0334",
+      "start": 625.32,
+      "end": 630.32,
+      "text": "ATOS, đúng rồi, ATOS, cô biết bằng ngôn ngữ MOOC."
+    },
+    {
+      "id": "S0335",
+      "start": 630.32,
+      "end": 633.32,
+      "text": "Thì cái ngôn ngữ đó là nó được bay trên Rust."
+    },
+    {
+      "id": "S0336",
+      "start": 633.32,
+      "end": 636.32,
+      "text": "Cho nên là chúng ta biết Rust thì học MOOC nó không có một vấn đề cả."
+    },
+    {
+      "id": "S0337",
+      "start": 636.32,
+      "end": 641.32,
+      "text": "Rồi khi mà chúng ta học xong được Rust rồi chúng ta mới biết về."
+    },
+    {
+      "id": "S0338",
+      "start": 641.32,
+      "end": 643.92,
+      "text": "Biết các smart contract cơ bản ở trên những cái blockchain đó rồi á."
+    },
+    {
+      "id": "S0339",
+      "start": 643.92,
+      "end": 648.12,
+      "text": "Thì khi mà cái yêu cầu của chúng ta hay chúng ta tham gia một cuộc thi hackathon nào đó đi."
+    },
+    {
+      "id": "S0340",
+      "start": 648.12,
+      "end": 649.62,
+      "text": "Của một cái blockchain nào đó đi."
+    },
+    {
+      "id": "S0341",
+      "start": 649.62,
+      "end": 650.18,
+      "text": "Ví dụ như là."
+    },
+    {
+      "id": "S0342",
+      "start": 650.18,
+      "end": 650.8,
+      "text": "Bukkin Street."
+    },
+    {
+      "id": "S0343",
+      "start": 650.8,
+      "end": 651.76,
+      "text": "Thì chúng ta mới cần họ."
+    },
+    {
+      "id": "S0344",
+      "start": 651.76,
+      "end": 652.16,
+      "text": "Học bu."
+    },
+    {
+      "id": "S0345",
+      "start": 652.16,
+      "end": 653.32,
+      "text": "Hay là ví dụ như."
+    },
+    {
+      "id": "S0346",
+      "start": 653.32,
+      "end": 654.08,
+      "text": "Chúng ta thi."
+    },
+    {
+      "id": "S0347",
+      "start": 654.08,
+      "end": 655.12,
+      "text": "Một cái."
+    },
+    {
+      "id": "S0348",
+      "start": 655.12,
+      "end": 656.1,
+      "text": "Các bạn có tham gia."
+    },
+    {
+      "id": "S0349",
+      "start": 656.1,
+      "end": 657.52,
+      "text": "Cộng đồng của Solana Super Team."
+    },
+    {
+      "id": "S0350",
+      "start": 657.52,
+      "end": 658.26,
+      "text": "Thì các bạn sẽ có."
+    },
+    {
+      "id": "S0351",
+      "start": 658.26,
+      "end": 659.42,
+      "text": "Những cái hackathon."
+    },
+    {
+      "id": "S0352",
+      "start": 659.42,
+      "end": 660.62,
+      "text": "Của Solana."
+    },
+    {
+      "id": "S0353",
+      "start": 660.62,
+      "end": 661.4,
+      "text": "Thì Solana."
+    },
+    {
+      "id": "S0354",
+      "start": 661.4,
+      "end": 662.22,
+      "text": "Cho các bạn biết."
+    },
+    {
+      "id": "S0355",
+      "start": 662.22,
+      "end": 663.02,
+      "text": "Các bạn phải đào sâu."
+    },
+    {
+      "id": "S0356",
+      "start": 663.02,
+      "end": 663.84,
+      "text": "Vào trong framework."
+    },
+    {
+      "id": "S0357",
+      "start": 663.84,
+      "end": 664.84,
+      "text": "Của cái blockchain đó."
+    },
+    {
+      "id": "S0358",
+      "start": 664.84,
+      "end": 666.08,
+      "text": "Ví dụ như Solana là Anchor."
+    },
+    {
+      "id": "S0359",
+      "start": 666.08,
+      "end": 667.12,
+      "text": "Khi mà chúng ta đã học."
+    },
+    {
+      "id": "S0360",
+      "start": 667.12,
+      "end": 667.96,
+      "text": "Từ cái trình độ đó rồi."
+    },
+    {
+      "id": "S0361",
+      "start": 667.96,
+      "end": 669.02,
+      "text": "Bây giờ."
+    },
+    {
+      "id": "S0362",
+      "start": 669.02,
+      "end": 670.24,
+      "text": "Nó sẽ thi."
+    },
+    {
+      "id": "S0363",
+      "start": 670.24,
+      "end": 670.96,
+      "text": "Về cái phương mà."
+    },
+    {
+      "id": "S0364",
+      "start": 670.96,
+      "end": 671.7,
+      "text": "Framework."
+    },
+    {
+      "id": "S0365",
+      "start": 671.7,
+      "end": 673.36,
+      "text": "Thì khi mà chúng ta học."
+    },
+    {
+      "id": "S0366",
+      "start": 673.36,
+      "end": 673.7,
+      "text": "Framework."
+    },
+    {
+      "id": "S0367",
+      "start": 673.7,
+      "end": 674.42,
+      "text": "Chúng ta biết ngôn ngữ."
+    },
+    {
+      "id": "S0368",
+      "start": 674.42,
+      "end": 675.04,
+      "text": "Thì bây giờ."
+    },
+    {
+      "id": "S0369",
+      "start": 675.04,
+      "end": 675.82,
+      "text": "Mình sẽ nói."
+    },
+    {
+      "id": "S0370",
+      "start": 675.82,
+      "end": 676.42,
+      "text": "Tới cái framework."
+    },
+    {
+      "id": "S0371",
+      "start": 676.42,
+      "end": 677.4,
+      "text": "Ví dụ như Solana."
+    },
+    {
+      "id": "S0372",
+      "start": 677.4,
+      "end": 679.64,
+      "text": "Nó sẽ có framework để viết smart contract."
+    },
+    {
+      "id": "S0373",
+      "start": 679.64,
+      "end": 680.55,
+      "text": "Nó là Anchor."
+    },
+    {
+      "id": "S0374",
+      "start": 680.55,
+      "end": 681.52,
+      "text": "Trên Solidity."
+    },
+    {
+      "id": "S0375",
+      "start": 681.52,
+      "end": 683.44,
+      "text": "Của Ethereum, nó sẽ viết smart contract."
+    },
+    {
+      "id": "S0376",
+      "start": 683.44,
+      "end": 684.23,
+      "text": "Bằng Solidity."
+    },
+    {
+      "id": "S0377",
+      "start": 684.23,
+      "end": 685.46,
+      "text": "Nếu mà các bạn có học."
+    },
+    {
+      "id": "S0378",
+      "start": 685.46,
+      "end": 687.38,
+      "text": "Khóa học của mình, nó cũng sẽ là, nó cũng sẽ nói."
+    },
+    {
+      "id": "S0379",
+      "start": 687.38,
+      "end": 688.17,
+      "text": "Về Solidity."
+    },
+    {
+      "id": "S0380",
+      "start": 688.17,
+      "end": 689.36,
+      "text": "Rồi chúng ta viết."
+    },
+    {
+      "id": "S0381",
+      "start": 689.36,
+      "end": 690.9,
+      "text": "Bằng Sui, Sui dùng framework gì đâu?"
+    },
+    {
+      "id": "S0382",
+      "start": 691.52,
+      "end": 693.38,
+      "text": "Sui, Sui framework của Move."
+    },
+    {
+      "id": "S0383",
+      "start": 693.38,
+      "end": 694.41,
+      "text": "Move à?"
+    },
+    {
+      "id": "S0384",
+      "start": 694.41,
+      "end": 695.58,
+      "text": "Move là."
+    },
+    {
+      "id": "S0385",
+      "start": 695.58,
+      "end": 696.7,
+      "text": "Framework mà đúng không?"
+    },
+    {
+      "id": "S0386",
+      "start": 696.7,
+      "end": 696.84,
+      "text": "Dạ."
+    },
+    {
+      "id": "S0387",
+      "start": 696.84,
+      "end": 696.98,
+      "text": "Đó."
+    },
+    {
+      "id": "S0388",
+      "start": 696.98,
+      "end": 697.5,
+      "text": "Thế nên là."
+    },
+    {
+      "id": "S0389",
+      "start": 697.5,
+      "end": 699.36,
+      "text": "Chúng ta biết ngữ rồi thì cái Move."
+    },
+    {
+      "id": "S0390",
+      "start": 699.36,
+      "end": 701.14,
+      "text": "Language, nó cũng sẽ là kiểu nó."
+    },
+    {
+      "id": "S0391",
+      "start": 701.14,
+      "end": 703.4,
+      "text": "Là một framework để chúng ta có thể code smart contract vậy á."
+    },
+    {
+      "id": "S0392",
+      "start": 703.4,
+      "end": 705.2,
+      "text": "Khi mà chúng ta học một cái framework."
+    },
+    {
+      "id": "S0393",
+      "start": 705.2,
+      "end": 707.26,
+      "text": "Nó sẽ phụ thuộc vào cái công việc."
+    },
+    {
+      "id": "S0394",
+      "start": 707.26,
+      "end": 707.95,
+      "text": "Của chúng ta."
+    },
+    {
+      "id": "S0395",
+      "start": 707.95,
+      "end": 709.12,
+      "text": "Nó có liên quan nhiều."
+    },
+    {
+      "id": "S0396",
+      "start": 709.12,
+      "end": 710.57,
+      "text": "Tới cái blockchain đó hay không?"
+    },
+    {
+      "id": "S0397",
+      "start": 710.57,
+      "end": 711.2,
+      "text": "Nó có yêu cầu."
+    },
+    {
+      "id": "S0398",
+      "start": 711.2,
+      "end": 712.76,
+      "text": "Đúng với cái công việc đó hay không?"
+    },
+    {
+      "id": "S0399",
+      "start": 713.18,
+      "end": 715.2,
+      "text": "Nên là nếu mà chúng ta đã học được tới hết."
+    },
+    {
+      "id": "S0400",
+      "start": 715.2,
+      "end": 717.22,
+      "text": "Cái ngôn ngữ rồi á, thì không có lý do."
+    },
+    {
+      "id": "S0401",
+      "start": 717.22,
+      "end": 719.0,
+      "text": "Gì chúng ta không có học những cái framework."
+    },
+    {
+      "id": "S0402",
+      "start": 719.0,
+      "end": 720.38,
+      "text": "Mà để hỗ trợ ngôn ngữ đó hết."
+    },
+    {
+      "id": "S0403",
+      "start": 720.38,
+      "end": 721.0,
+      "text": "Cái phần này."
+    },
+    {
+      "id": "S0404",
+      "start": 721.0,
+      "end": 722.66,
+      "text": "Mình sẽ không khuyên các bạn là nên học cái nào được."
+    },
+    {
+      "id": "S0405",
+      "start": 723.26,
+      "end": 724.92,
+      "text": "Nó tùy thuộc vào cái hành trình của các bạn."
+    },
+    {
+      "id": "S0406",
+      "start": 724.92,
+      "end": 726.8,
+      "text": "Mới học tới đâu và các bạn thi."
+    },
+    {
+      "id": "S0407",
+      "start": 726.8,
+      "end": 728.46,
+      "text": "Cái hackathon nào."
+    },
+    {
+      "id": "S0408",
+      "start": 729.4,
+      "end": 730.7,
+      "text": "Các bạn thi cái hackathon nào."
+    },
+    {
+      "id": "S0409",
+      "start": 731.3,
+      "end": 732.96,
+      "text": "Mình sẽ chuyển qua cái phần là."
+    },
+    {
+      "id": "S0410",
+      "start": 732.96,
+      "end": 744.29,
+      "text": "Khi mà chúng ta làm roadmap, khi mà chúng ta theo roadmap thì thực ra là nên cơ sở hữu rất khó."
+    },
+    {
+      "id": "S0411",
+      "start": 745.11,
+      "end": 746.65,
+      "text": "Mình chỉ cần nói vài ba phương thức."
+    },
+    {
+      "id": "S0412",
+      "start": 746.65,
+      "end": 747.63,
+      "text": "Thì các bạn bắt đầu học rồi."
+    },
+    {
+      "id": "S0413",
+      "start": 748.69,
+      "end": 749.93,
+      "text": "Còn để mà."
+    },
+    {
+      "id": "S0414",
+      "start": 749.93,
+      "end": 752.31,
+      "text": "Làm sao để chúng ta có thể dễ dàng kiếm việc hơn."
+    },
+    {
+      "id": "S0415",
+      "start": 752.31,
+      "end": 754.39,
+      "text": "Thì chúng ta phải chứng minh bản thân của chúng ta."
+    },
+    {
+      "id": "S0416",
+      "start": 754.39,
+      "end": 756.51,
+      "text": "Mà muốn chứng minh đó thì để người khác tin."
+    },
+    {
+      "id": "S0417",
+      "start": 756.51,
+      "end": 758.47,
+      "text": "Chúng ta không thể làm những cái dự án."
+    },
+    {
+      "id": "S0418",
+      "start": 758.47,
+      "end": 760.79,
+      "text": "Mà làm theo mình ở trên tutorial của mình được."
+    },
+    {
+      "id": "S0419",
+      "start": 760.79,
+      "end": 762.31,
+      "text": "Tại vì là cái đó là của mình."
+    },
+    {
+      "id": "S0420",
+      "start": 762.31,
+      "end": 763.37,
+      "text": "Nó không phải là của các bạn."
+    },
+    {
+      "id": "S0421",
+      "start": 763.37,
+      "end": 764.35,
+      "text": "Cho nên là các bạn phải có."
+    },
+    {
+      "id": "S0422",
+      "start": 764.35,
+      "end": 765.01,
+      "text": "Riêng cho chúng mình."
+    },
+    {
+      "id": "S0423",
+      "start": 765.01,
+      "end": 766.23,
+      "text": "Và phải có những cái."
+    },
+    {
+      "id": "S0424",
+      "start": 766.23,
+      "end": 767.09,
+      "text": "Ai mà verify."
+    },
+    {
+      "id": "S0425",
+      "start": 767.09,
+      "end": 767.77,
+      "text": "Cho các bạn."
+    },
+    {
+      "id": "S0426",
+      "start": 767.77,
+      "end": 768.37,
+      "text": "Thông qua những cái."
+    },
+    {
+      "id": "S0427",
+      "start": 768.37,
+      "end": 769.47,
+      "text": "Cuộc thi là hackathon."
+    },
+    {
+      "id": "S0428",
+      "start": 769.47,
+      "end": 770.81,
+      "text": "Có những cái giải hackathon."
+    },
+    {
+      "id": "S0429",
+      "start": 770.81,
+      "end": 771.93,
+      "text": "Bích cũng là một người."
+    },
+    {
+      "id": "S0430",
+      "start": 771.93,
+      "end": 772.97,
+      "text": "Tham gia hackathon."
+    },
+    {
+      "id": "S0431",
+      "start": 772.97,
+      "end": 774.51,
+      "text": "Nếu mà tính từ trước."
+    },
+    {
+      "id": "S0432",
+      "start": 774.51,
+      "end": 775.23,
+      "text": "Giờ thi hackathon."
+    },
+    {
+      "id": "S0433",
+      "start": 775.23,
+      "end": 775.97,
+      "text": "Là được cái giải rồi."
+    },
+    {
+      "id": "S0434",
+      "start": 775.97,
+      "end": 778.05,
+      "text": "Chắc có."
+    },
+    {
+      "id": "S0435",
+      "start": 778.05,
+      "end": 779.17,
+      "text": "Hơn năm."
+    },
+    {
+      "id": "S0436",
+      "start": 779.17,
+      "end": 779.85,
+      "text": "Hơn năm."
+    },
+    {
+      "id": "S0437",
+      "start": 779.85,
+      "end": 780.83,
+      "text": "Hơn năm."
+    },
+    {
+      "id": "S0438",
+      "start": 780.83,
+      "end": 781.39,
+      "text": "Mà giải nào."
+    },
+    {
+      "id": "S0439",
+      "start": 781.39,
+      "end": 782.23,
+      "text": "Cũng rất là nhiều tiền."
+    },
+    {
+      "id": "S0440",
+      "start": 782.23,
+      "end": 783.43,
+      "text": "Đúng không?"
+    },
+    {
+      "id": "S0441",
+      "start": 783.43,
+      "end": 784.59,
+      "text": "Cũng tính bằng tiền."
+    },
+    {
+      "id": "S0442",
+      "start": 784.59,
+      "end": 785.27,
+      "text": "Ngàn đô không?"
+    },
+    {
+      "id": "S0443",
+      "start": 785.27,
+      "end": 786.69,
+      "text": "Thì Bích."
+    },
+    {
+      "id": "S0444",
+      "start": 786.69,
+      "end": 787.15,
+      "text": "Cũng là một người."
+    },
+    {
+      "id": "S0445",
+      "start": 787.15,
+      "end": 787.65,
+      "text": "Rất là tài năng."
+    },
+    {
+      "id": "S0446",
+      "start": 787.65,
+      "end": 788.63,
+      "text": "Cho nên là VPI."
+    },
+    {
+      "id": "S0447",
+      "start": 788.63,
+      "end": 789.63,
+      "text": "Tụi mình mới."
+    },
+    {
+      "id": "S0448",
+      "start": 789.63,
+      "end": 790.29,
+      "text": "Mới."
+    },
+    {
+      "id": "S0449",
+      "start": 790.29,
+      "end": 792.17,
+      "text": "Rất là trọng dụng."
+    },
+    {
+      "id": "S0450",
+      "start": 792.17,
+      "end": 792.69,
+      "text": "Nhân tài."
+    },
+    {
+      "id": "S0451",
+      "start": 792.69,
+      "end": 793.47,
+      "text": "Rồi."
+    },
+    {
+      "id": "S0452",
+      "start": 793.47,
+      "end": 794.81,
+      "text": "Nếu mà giải lớn nhất."
+    },
+    {
+      "id": "S0453",
+      "start": 794.81,
+      "end": 796.97,
+      "text": "Mới đi Thái Lan."
+    },
+    {
+      "id": "S0454",
+      "start": 796.97,
+      "end": 801.21,
+      "text": "Nhưng mà có cái là."
+    },
+    {
+      "id": "S0455",
+      "start": 801.21,
+      "end": 802.19,
+      "text": "Bạn đó thi."
+    },
+    {
+      "id": "S0456",
+      "start": 802.19,
+      "end": 803.15,
+      "text": "Là thi tại."
+    },
+    {
+      "id": "S0457",
+      "start": 803.15,
+      "end": 803.79,
+      "text": "Thành phố Hồ Chí Minh."
+    },
+    {
+      "id": "S0458",
+      "start": 803.79,
+      "end": 804.61,
+      "text": "Mà đạt giải."
+    },
+    {
+      "id": "S0459",
+      "start": 804.61,
+      "end": 805.57,
+      "text": "Và bắt đầu qua."
+    },
+    {
+      "id": "S0460",
+      "start": 805.57,
+      "end": 807.09,
+      "text": "Bên phía của Thái Lan."
+    },
+    {
+      "id": "S0461",
+      "start": 807.09,
+      "end": 807.81,
+      "text": "Và đạt giải."
+    },
+    {
+      "id": "S0462",
+      "start": 807.81,
+      "end": 808.39,
+      "text": "Và được sponsor."
+    },
+    {
+      "id": "S0463",
+      "start": 808.39,
+      "end": 808.93,
+      "text": "Để qua Thái Lan."
+    },
+    {
+      "id": "S0464",
+      "start": 808.93,
+      "end": 809.35,
+      "text": "Thi một lần."
+    },
+    {
+      "id": "S0465",
+      "start": 809.35,
+      "end": 809.83,
+      "text": "Và thắng tiếp."
+    },
+    {
+      "id": "S0466",
+      "start": 809.83,
+      "end": 811.31,
+      "text": "Khi mà các bạn hỏi mình."
+    },
+    {
+      "id": "S0467",
+      "start": 811.31,
+      "end": 812.07,
+      "text": "Các bạn đặt mục tiêu."
+    },
+    {
+      "id": "S0468",
+      "start": 812.07,
+      "end": 812.99,
+      "text": "Là các bạn phải được đi làm."
+    },
+    {
+      "id": "S0469",
+      "start": 812.99,
+      "end": 813.27,
+      "text": "Đúng không?"
+    },
+    {
+      "id": "S0470",
+      "start": 813.27,
+      "end": 814.65,
+      "text": "Nhưng mà các bạn phải biết."
+    },
+    {
+      "id": "S0471",
+      "start": 814.65,
+      "end": 815.37,
+      "text": "Rằng là."
+    },
+    {
+      "id": "S0472",
+      "start": 815.37,
+      "end": 816.61,
+      "text": "Chúng ta."
+    },
+    {
+      "id": "S0473",
+      "start": 816.61,
+      "end": 817.55,
+      "text": "Phải thể hiện ra."
+    },
+    {
+      "id": "S0474",
+      "start": 817.55,
+      "end": 818.45,
+      "text": "Cho cái nhà tuyển dụng."
+    },
+    {
+      "id": "S0475",
+      "start": 818.45,
+      "end": 818.79,
+      "text": "Của chúng ta."
+    },
+    {
+      "id": "S0476",
+      "start": 818.79,
+      "end": 819.67,
+      "text": "Là chúng ta làm được gì."
+    },
+    {
+      "id": "S0477",
+      "start": 819.67,
+      "end": 820.05,
+      "text": "Cho họ."
+    },
+    {
+      "id": "S0478",
+      "start": 820.05,
+      "end": 821.23,
+      "text": "Nhưng mà."
+    },
+    {
+      "id": "S0479",
+      "start": 821.23,
+      "end": 822.53,
+      "text": "Nếu mà các bạn."
+    },
+    {
+      "id": "S0480",
+      "start": 822.53,
+      "end": 824.61,
+      "text": "Cái resume hay là cái CV của bạn."
+    },
+    {
+      "id": "S0481",
+      "start": 824.61,
+      "end": 826.47,
+      "text": "Nó toàn là những cái dự án mà code."
+    },
+    {
+      "id": "S0482",
+      "start": 826.47,
+      "end": 827.83,
+      "text": "Theo trên mạng, nó rất là khó."
+    },
+    {
+      "id": "S0483",
+      "start": 827.83,
+      "end": 830.25,
+      "text": "Chúng ta phải tham gia những cái cuộc thi hackathon."
+    },
+    {
+      "id": "S0484",
+      "start": 830.25,
+      "end": 832.61,
+      "text": "Mà muốn tham gia mà code được ra sản phẩm mà có giải."
+    },
+    {
+      "id": "S0485",
+      "start": 832.61,
+      "end": 834.27,
+      "text": "Thì chúng ta phải bắt đầu học theo cái roadmap hồi nãy."
+    },
+    {
+      "id": "S0486",
+      "start": 834.27,
+      "end": 836.23,
+      "text": "Mình mới nói, các bạn có thể dừng video lại."
+    },
+    {
+      "id": "S0487",
+      "start": 836.23,
+      "end": 838.07,
+      "text": "Mình sẽ edit một cái bản roadmap để các bạn."
+    },
+    {
+      "id": "S0488",
+      "start": 838.07,
+      "end": 840.47,
+      "text": "Có thể thấy được là chúng ta nên học từ cái gì, cái gì, cái gì."
+    },
+    {
+      "id": "S0489",
+      "start": 840.47,
+      "end": 841.93,
+      "text": "Như blockchain dev."
+    },
+    {
+      "id": "S0490",
+      "start": 841.93,
+      "end": 844.43,
+      "text": "Thực ra là nó rất là một cái ngành nó rất là."
+    },
+    {
+      "id": "S0491",
+      "start": 844.43,
+      "end": 846.69,
+      "text": "Khó để tiếp cận, tại vì là blockchain dev."
+    },
+    {
+      "id": "S0492",
+      "start": 846.69,
+      "end": 848.39,
+      "text": "Hầu hết là mọi người đều biết hết tất cả mọi thứ."
+    },
+    {
+      "id": "S0493",
+      "start": 848.39,
+      "end": 850.63,
+      "text": "Thì team member của mình là chỉ có mỗi Hải."
+    },
+    {
+      "id": "S0494",
+      "start": 850.63,
+      "end": 851.99,
+      "text": "Hải là Zoraide đúng không?"
+    },
+    {
+      "id": "S0495",
+      "start": 851.99,
+      "end": 853.35,
+      "text": "Còn như mình."
+    },
+    {
+      "id": "S0496",
+      "start": 853.35,
+      "end": 854.43,
+      "text": "Hay là Bích."
+    },
+    {
+      "id": "S0497",
+      "start": 854.43,
+      "end": 856.61,
+      "text": "Hay là có bạn Thắng nữa."
+    },
+    {
+      "id": "S0498",
+      "start": 856.61,
+      "end": 857.39,
+      "text": "Lê Đại Thắng."
+    },
+    {
+      "id": "S0499",
+      "start": 857.39,
+      "end": 857.99,
+      "text": "Thì."
+    },
+    {
+      "id": "S0500",
+      "start": 857.99,
+      "end": 860.17,
+      "text": "Tất cả mọi anh em."
+    },
+    {
+      "id": "S0501",
+      "start": 860.17,
+      "end": 860.75,
+      "text": "Đều có thể viết."
+    },
+    {
+      "id": "S0502",
+      "start": 860.75,
+      "end": 861.15,
+      "text": "Smart Run and."
+    },
+    {
+      "id": "S0503",
+      "start": 861.15,
+      "end": 861.53,
+      "text": "Bad End."
+    },
+    {
+      "id": "S0504",
+      "start": 861.53,
+      "end": 862.11,
+      "text": "Và Smart Contract."
+    },
+    {
+      "id": "S0505",
+      "start": 862.11,
+      "end": 863.65,
+      "text": "Đó chính là."
+    },
+    {
+      "id": "S0506",
+      "start": 863.65,
+      "end": 864.47,
+      "text": "Anh em đều có thể."
+    },
+    {
+      "id": "S0507",
+      "start": 864.47,
+      "end": 865.09,
+      "text": "Tự nhận mình là."
+    },
+    {
+      "id": "S0508",
+      "start": 865.09,
+      "end": 865.71,
+      "text": "Web Developer."
+    },
+    {
+      "id": "S0509",
+      "start": 865.71,
+      "end": 866.83,
+      "text": "Còn nếu mà các bạn."
+    },
+    {
+      "id": "S0510",
+      "start": 866.83,
+      "end": 867.39,
+      "text": "Chỉ biết code."
+    },
+    {
+      "id": "S0511",
+      "start": 867.39,
+      "end": 868.07,
+      "text": "Smart Contract thôi."
+    },
+    {
+      "id": "S0512",
+      "start": 868.07,
+      "end": 868.63,
+      "text": "Nó chỉ là."
+    },
+    {
+      "id": "S0513",
+      "start": 868.63,
+      "end": 869.33,
+      "text": "Một nấc trên đếp thôi."
+    },
+    {
+      "id": "S0514",
+      "start": 869.33,
+      "end": 870.21,
+      "text": "Nhưng mà tại sao?"
+    },
+    {
+      "id": "S0515",
+      "start": 870.21,
+      "end": 871.01,
+      "text": "Chúng ta nên học hết."
+    },
+    {
+      "id": "S0516",
+      "start": 871.01,
+      "end": 871.91,
+      "text": "Khi mà chúng ta học xong."
+    },
+    {
+      "id": "S0517",
+      "start": 871.91,
+      "end": 872.61,
+      "text": "Thì chúng ta."
+    },
+    {
+      "id": "S0518",
+      "start": 872.61,
+      "end": 873.71,
+      "text": "Focus được một cái thôi."
+    },
+    {
+      "id": "S0519",
+      "start": 873.71,
+      "end": 874.53,
+      "text": "Chúng ta sẽ biết."
+    },
+    {
+      "id": "S0520",
+      "start": 874.53,
+      "end": 875.15,
+      "text": "Chúng ta mạnh cái gì."
+    },
+    {
+      "id": "S0521",
+      "start": 875.15,
+      "end": 876.19,
+      "text": "Mạnh Front-end."
+    },
+    {
+      "id": "S0522",
+      "start": 876.19,
+      "end": 877.71,
+      "text": "Mạnh Back-end."
+    },
+    {
+      "id": "S0523",
+      "start": 877.71,
+      "end": 878.57,
+      "text": "Thì làm Back-end."
+    },
+    {
+      "id": "S0524",
+      "start": 878.57,
+      "end": 879.65,
+      "text": "Mạnh Smart Contract."
+    },
+    {
+      "id": "S0525",
+      "start": 879.65,
+      "end": 880.33,
+      "text": "Thì viết Smart Contract."
+    },
+    {
+      "id": "S0526",
+      "start": 880.33,
+      "end": 881.25,
+      "text": "Tại vì khi mà chúng ta."
+    },
+    {
+      "id": "S0527",
+      "start": 881.99,
+      "end": 884.69,
+      "text": "Thì chúng ta không thể đào sâu được."
+    },
+    {
+      "id": "S0528",
+      "start": 884.69,
+      "end": 886.25,
+      "text": "Mà các bạn học tới mức biết thôi."
+    },
+    {
+      "id": "S0529",
+      "start": 886.25,
+      "end": 887.83,
+      "text": "Tại vì khi mà chúng ta kiếm team member."
+    },
+    {
+      "id": "S0530",
+      "start": 887.83,
+      "end": 889.53,
+      "text": "Có thể là thiếu người."
+    },
+    {
+      "id": "S0531",
+      "start": 889.53,
+      "end": 891.11,
+      "text": "Cho nên là chúng ta phải code cái dự án."
+    },
+    {
+      "id": "S0532",
+      "start": 891.11,
+      "end": 891.73,
+      "text": "Cho nên là chúng ta phải thiếu người."
+    },
+    {
+      "id": "S0533",
+      "start": 891.73,
+      "end": 893.69,
+      "text": "Cái lộ trình tiếp theo là khi các bạn học xong."
+    },
+    {
+      "id": "S0534",
+      "start": 893.69,
+      "end": 896.13,
+      "text": "Là các bạn nên thi Hackathon."
+    },
+    {
+      "id": "S0535",
+      "start": 896.13,
+      "end": 897.15,
+      "text": "Tại sao các bạn nên thi?"
+    },
+    {
+      "id": "S0536",
+      "start": 897.15,
+      "end": 899.59,
+      "text": "Thì tại vì là những cuộc thi về lập trình."
+    },
+    {
+      "id": "S0537",
+      "start": 899.59,
+      "end": 901.67,
+      "text": "Nó có thể giúp cho profile của người ta."
+    },
+    {
+      "id": "S0538",
+      "start": 901.67,
+      "end": 902.81,
+      "text": "Nó vững hơn, nó cứng hơn."
+    },
+    {
+      "id": "S0539",
+      "start": 902.81,
+      "end": 905.09,
+      "text": "Và nó có một cái gì đó mà để cho nó."
+    },
+    {
+      "id": "S0540",
+      "start": 905.09,
+      "end": 906.71,
+      "text": "Người ta tin hơn."
+    },
+    {
+      "id": "S0541",
+      "start": 906.71,
+      "end": 908.47,
+      "text": "Rồi biết các bạn có thể có phản ánh."
+    },
+    {
+      "id": "S0542",
+      "start": 908.47,
+      "end": 909.13,
+      "text": "Các bạn làm tới đâu."
+    },
+    {
+      "id": "S0543",
+      "start": 909.13,
+      "end": 910.43,
+      "text": "Nó rất là tốt."
+    },
+    {
+      "id": "S0544",
+      "start": 910.43,
+      "end": 912.77,
+      "text": "Như bây giờ đâu cần phải ghi là kinh nghiệm."
+    },
+    {
+      "id": "S0545",
+      "start": 912.77,
+      "end": 916.13,
+      "text": "Chỉ cần ghi Award thôi là hết một trang rồi."
+    },
+    {
+      "id": "S0546",
+      "start": 916.13,
+      "end": 919.43,
+      "text": "Rồi mình sẽ tới cái phần là."
+    },
+    {
+      "id": "S0547",
+      "start": 919.43,
+      "end": 921.73,
+      "text": "Hỏi những cái câu hỏi của các bạn."
+    },
+    {
+      "id": "S0548",
+      "start": 921.73,
+      "end": 923.19,
+      "text": "Có 2 bạn mà nhắn tin hỏi mình."
+    },
+    {
+      "id": "S0549",
+      "start": 923.19,
+      "end": 926.41,
+      "text": "Thì đầu tiên là sẽ có bạn."
+    },
+    {
+      "id": "S0550",
+      "start": 926.41,
+      "end": 928.89,
+      "text": "Nguyễn Hoàng Phúc à."
+    },
+    {
+      "id": "S0551",
+      "start": 928.89,
+      "end": 930.73,
+      "text": "Em biết anh có một video trên YouTube."
+    },
+    {
+      "id": "S0552",
+      "start": 930.73,
+      "end": 932.65,
+      "text": "Em đang làm lập trình viên web."
+    },
+    {
+      "id": "S0553",
+      "start": 932.65,
+      "end": 933.67,
+      "text": "Và muốn chuyển sang Blockchain."
+    },
+    {
+      "id": "S0554",
+      "start": 933.67,
+      "end": 936.37,
+      "text": "Thì thị trường ở Việt Nam về Blockchain có đang ổn không vậy ạ?"
+    },
+    {
+      "id": "S0555",
+      "start": 936.37,
+      "end": 938.77,
+      "text": "Thì ổn hay không thì hỏi thằng này có nhiều tiền hay không."
+    },
+    {
+      "id": "S0556",
+      "start": 938.77,
+      "end": 939.73,
+      "text": "Nhiều tiền lắm."
+    },
+    {
+      "id": "S0557",
+      "start": 939.73,
+      "end": 941.59,
+      "text": "Nếu mà một cái thị trường mới."
+    },
+    {
+      "id": "S0558",
+      "start": 941.59,
+      "end": 943.67,
+      "text": "Cách trắng người ta cần phải có dự án."
+    },
+    {
+      "id": "S0559",
+      "start": 943.67,
+      "end": 945.19,
+      "text": "Người ta sẽ bơm tiền vào trong thị trường."
+    },
+    {
+      "id": "S0560",
+      "start": 945.19,
+      "end": 947.77,
+      "text": "Và Việt Nam mình may mắn một cái là."
+    },
+    {
+      "id": "S0561",
+      "start": 947.77,
+      "end": 949.09,
+      "text": "Nhà nước rất là ủng hộ thị trường này."
+    },
+    {
+      "id": "S0562",
+      "start": 949.09,
+      "end": 952.85,
+      "text": "Nó không có pháp lý để sử dụng."
+    },
+    {
+      "id": "S0563",
+      "start": 952.85,
+      "end": 954.19,
+      "text": "Nhưng mà chúng ta vẫn có pháp lý."
+    },
+    {
+      "id": "S0564",
+      "start": 954.19,
+      "end": 955.11,
+      "text": "Để chúng ta build được."
+    },
+    {
+      "id": "S0565",
+      "start": 955.11,
+      "end": 957.35,
+      "text": "Ví dụ như là một cái bài báo về."
+    },
+    {
+      "id": "S0566",
+      "start": 957.35,
+      "end": 959.45,
+      "text": "Chính thức ban hành chiến lược blockchain quốc gia."
+    },
+    {
+      "id": "S0567",
+      "start": 959.45,
+      "end": 960.89,
+      "text": "Giống như mình gửi cho bạn Phúc."
+    },
+    {
+      "id": "S0568",
+      "start": 960.89,
+      "end": 962.43,
+      "text": "Nếu mà Phúc có việc có xem video này."
+    },
+    {
+      "id": "S0569",
+      "start": 962.43,
+      "end": 964.43,
+      "text": "Khi mà nhà nước đã được ban hành ra rồi."
+    },
+    {
+      "id": "S0570",
+      "start": 964.43,
+      "end": 967.29,
+      "text": "Thì chắc chắn trong tương lai nhà nước sẽ muốn để mặt ra."
+    },
+    {
+      "id": "S0571",
+      "start": 967.29,
+      "end": 968.73,
+      "text": "Và nhà nước cần gì?"
+    },
+    {
+      "id": "S0572",
+      "start": 968.73,
+      "end": 970.13,
+      "text": "Chiến lược để mở cái gì?"
+    },
+    {
+      "id": "S0573",
+      "start": 970.13,
+      "end": 972.27,
+      "text": "Đặc khu à?"
+    },
+    {
+      "id": "S0574",
+      "start": 972.27,
+      "end": 972.87,
+      "text": "Đặc khu blockchain."
+    },
+    {
+      "id": "S0575",
+      "start": 972.87,
+      "end": 973.77,
+      "text": "Đúng rồi."
+    },
+    {
+      "id": "S0576",
+      "start": 973.77,
+      "end": 974.91,
+      "text": "Rồi."
+    },
+    {
+      "id": "S0577",
+      "start": 974.91,
+      "end": 975.79,
+      "text": "Thành phố Hồ Chí Minh."
+    },
+    {
+      "id": "S0578",
+      "start": 975.79,
+      "end": 977.65,
+      "text": "Cũng mới tạo ra một cái gọi là."
+    },
+    {
+      "id": "S0579",
+      "start": 977.65,
+      "end": 981.91,
+      "text": "Vietnam Blockchain Association."
+    },
+    {
+      "id": "S0580",
+      "start": 981.91,
+      "end": 983.03,
+      "text": "Của những cái bác."
+    },
+    {
+      "id": "S0581",
+      "start": 983.03,
+      "end": 984.07,
+      "text": "Rất là lớn tuổi đúng không?"
+    },
+    {
+      "id": "S0582",
+      "start": 984.07,
+      "end": 985.39,
+      "text": "Của bác."
+    },
+    {
+      "id": "S0583",
+      "start": 985.39,
+      "end": 986.41,
+      "text": "Giáo sư."
+    },
+    {
+      "id": "S0584",
+      "start": 986.41,
+      "end": 986.99,
+      "text": "Thì."
+    },
+    {
+      "id": "S0585",
+      "start": 986.99,
+      "end": 988.03,
+      "text": "Tại vì là."
+    },
+    {
+      "id": "S0586",
+      "start": 988.03,
+      "end": 988.73,
+      "text": "Khi mà chúng ta build."
+    },
+    {
+      "id": "S0587",
+      "start": 988.73,
+      "end": 990.09,
+      "text": "Ở trong cái lộ trình roadmap."
+    },
+    {
+      "id": "S0588",
+      "start": 990.09,
+      "end": 991.77,
+      "text": "Mà chúng ta muốn đi xa."
+    },
+    {
+      "id": "S0589",
+      "start": 991.77,
+      "end": 992.45,
+      "text": "Thì cái."
+    },
+    {
+      "id": "S0590",
+      "start": 992.45,
+      "end": 993.45,
+      "text": "Cái quan trọng nhất của chúng ta."
+    },
+    {
+      "id": "S0591",
+      "start": 993.45,
+      "end": 994.19,
+      "text": "Nó phải là niềm tin."
+    },
+    {
+      "id": "S0592",
+      "start": 994.19,
+      "end": 995.61,
+      "text": "Chúng ta phải tin."
+    },
+    {
+      "id": "S0593",
+      "start": 995.61,
+      "end": 996.61,
+      "text": "Là chúng ta vô thị trường."
+    },
+    {
+      "id": "S0594",
+      "start": 996.61,
+      "end": 997.43,
+      "text": "Mà chúng ta làm được."
+    },
+    {
+      "id": "S0595",
+      "start": 997.43,
+      "end": 998.73,
+      "text": "Còn chúng ta cứ đứng thế này."
+    },
+    {
+      "id": "S0596",
+      "start": 998.73,
+      "end": 999.53,
+      "text": "Nay cái này mai nhảy qua cái khác."
+    },
+    {
+      "id": "S0597",
+      "start": 999.53,
+      "end": 1000.71,
+      "text": "Thì khó lắm."
+    },
+    {
+      "id": "S0598",
+      "start": 1000.71,
+      "end": 1001.25,
+      "text": "Ví dụ như."
+    },
+    {
+      "id": "S0599",
+      "start": 1001.25,
+      "end": 1001.89,
+      "text": "Tại vì AI."
+    },
+    {
+      "id": "S0600",
+      "start": 1001.89,
+      "end": 1003.09,
+      "text": "Rất là nhiều cuộc thi nè."
+    },
+    {
+      "id": "S0601",
+      "start": 1003.09,
+      "end": 1003.87,
+      "text": "Blockchain."
+    },
+    {
+      "id": "S0602",
+      "start": 1003.87,
+      "end": 1005.09,
+      "text": "Rất là nhiều cuộc thi nè."
+    },
+    {
+      "id": "S0603",
+      "start": 1005.09,
+      "end": 1006.07,
+      "text": "Hay kể cả Web2."
+    },
+    {
+      "id": "S0604",
+      "start": 1006.07,
+      "end": 1007.01,
+      "text": "Nó cũng có những cuộc thi."
+    },
+    {
+      "id": "S0605",
+      "start": 1007.01,
+      "end": 1007.63,
+      "text": "Nhưng mà cái cuộc thi."
+    },
+    {
+      "id": "S0606",
+      "start": 1007.63,
+      "end": 1008.47,
+      "text": "Nó bão hòa rồi."
+    },
+    {
+      "id": "S0607",
+      "start": 1008.47,
+      "end": 1009.75,
+      "text": "Rất là nhiều người làm rồi."
+    },
+    {
+      "id": "S0608",
+      "start": 1009.75,
+      "end": 1010.83,
+      "text": "Cho nên là."
+    },
+    {
+      "id": "S0609",
+      "start": 1010.83,
+      "end": 1011.61,
+      "text": "Khi mà chúng ta làm."
+    },
+    {
+      "id": "S0610",
+      "start": 1011.61,
+      "end": 1012.23,
+      "text": "Về blockchain."
+    },
+    {
+      "id": "S0611",
+      "start": 1012.23,
+      "end": 1013.55,
+      "text": "Thì rất là dễ."
+    },
+    {
+      "id": "S0612",
+      "start": 1013.55,
+      "end": 1014.03,
+      "text": "Chúng ta có thể."
+    },
+    {
+      "id": "S0613",
+      "start": 1014.03,
+      "end": 1014.85,
+      "text": "Chiến thắng được hackathon."
+    },
+    {
+      "id": "S0614",
+      "start": 1014.85,
+      "end": 1015.87,
+      "text": "Chỉ cần ý tưởng."
+    },
+    {
+      "id": "S0615",
+      "start": 1015.87,
+      "end": 1016.65,
+      "text": "Chúng ta đủ thực tế."
+    },
+    {
+      "id": "S0616",
+      "start": 1016.65,
+      "end": 1017.09,
+      "text": "Thôi là được."
+    },
+    {
+      "id": "S0617",
+      "start": 1017.09,
+      "end": 1018.63,
+      "text": "Và chúng ta phải build."
+    },
+    {
+      "id": "S0618",
+      "start": 1018.63,
+      "end": 1019.63,
+      "text": "Một sản phẩm demo được."
+    },
+    {
+      "id": "S0619",
+      "start": 1019.63,
+      "end": 1020.11,
+      "text": "Mà muốn build."
+    },
+    {
+      "id": "S0620",
+      "start": 1020.11,
+      "end": 1020.79,
+      "text": "Thì phải học rồi."
+    },
+    {
+      "id": "S0621",
+      "start": 1020.79,
+      "end": 1022.81,
+      "text": "Rồi Việt Nam mình."
+    },
+    {
+      "id": "S0622",
+      "start": 1022.81,
+      "end": 1024.01,
+      "text": "Nó cũng có những cái dự án."
+    },
+    {
+      "id": "S0623",
+      "start": 1024.01,
+      "end": 1024.75,
+      "text": "Mà gọi là list luôn."
+    },
+    {
+      "id": "S0624",
+      "start": 1024.75,
+      "end": 1025.97,
+      "text": "Ví dụ như là."
+    },
+    {
+      "id": "S0625",
+      "start": 1025.97,
+      "end": 1026.61,
+      "text": "Axie Infinity."
+    },
+    {
+      "id": "S0626",
+      "start": 1026.61,
+      "end": 1028.43,
+      "text": "List trên GameFi."
+    },
+    {
+      "id": "S0627",
+      "start": 1028.43,
+      "end": 1029.85,
+      "text": "List thị trường blockchain luôn."
+    },
+    {
+      "id": "S0628",
+      "start": 1029.85,
+      "end": 1030.47,
+      "text": "Cho nên là."
+    },
+    {
+      "id": "S0629",
+      "start": 1030.47,
+      "end": 1030.97,
+      "text": "Mọi con mắt."
+    },
+    {
+      "id": "S0630",
+      "start": 1030.97,
+      "end": 1031.53,
+      "text": "Ở trên thế giới."
+    },
+    {
+      "id": "S0631",
+      "start": 1031.53,
+      "end": 1032.41,
+      "text": "Đều đổ dồn blockchain."
+    },
+    {
+      "id": "S0632",
+      "start": 1032.41,
+      "end": 1033.79,
+      "text": "Blockchain tại Việt Nam."
+    },
+    {
+      "id": "S0633",
+      "start": 1033.79,
+      "end": 1035.07,
+      "text": "Nếu mà các bạn."
+    },
+    {
+      "id": "S0634",
+      "start": 1035.07,
+      "end": 1036.21,
+      "text": "Có nền tảng ngôn ngữ."
+    },
+    {
+      "id": "S0635",
+      "start": 1036.21,
+      "end": 1037.33,
+      "text": "Tiếng Anh rất là tốt nữa."
+    },
+    {
+      "id": "S0636",
+      "start": 1037.33,
+      "end": 1038.53,
+      "text": "Thì cái khả năng."
+    },
+    {
+      "id": "S0637",
+      "start": 1038.53,
+      "end": 1039.45,
+      "text": "Mà chúng ta ngồi ở nhà."
+    },
+    {
+      "id": "S0638",
+      "start": 1039.45,
+      "end": 1040.35,
+      "text": "Chúng ta làm việc."
+    },
+    {
+      "id": "S0639",
+      "start": 1040.35,
+      "end": 1040.83,
+      "text": "Ở nước ngoài."
+    },
+    {
+      "id": "S0640",
+      "start": 1040.83,
+      "end": 1041.47,
+      "text": "Rất là dễ."
+    },
+    {
+      "id": "S0641",
+      "start": 1041.47,
+      "end": 1043.07,
+      "text": "Việt Nam mình đang mở cửa mà."
+    },
+    {
+      "id": "S0642",
+      "start": 1043.07,
+      "end": 1044.01,
+      "text": "Các bạn có thấy là."
+    },
+    {
+      "id": "S0643",
+      "start": 1044.01,
+      "end": 1044.91,
+      "text": "Nó rất là phát triển."
+    },
+    {
+      "id": "S0644",
+      "start": 1044.91,
+      "end": 1046.63,
+      "text": "Và Mỹ đang hội nhập."
+    },
+    {
+      "id": "S0645",
+      "start": 1046.63,
+      "end": 1047.55,
+      "text": "Với lại Việt Nam."
+    },
+    {
+      "id": "S0646",
+      "start": 1047.55,
+      "end": 1048.63,
+      "text": "Cho nên là Việt Nam mình."
+    },
+    {
+      "id": "S0647",
+      "start": 1048.63,
+      "end": 1049.67,
+      "text": "Là một trong những đối tác."
+    },
+    {
+      "id": "S0648",
+      "start": 1049.67,
+      "end": 1050.81,
+      "text": "Rất là lớn của Mỹ rồi."
+    },
+    {
+      "id": "S0649",
+      "start": 1050.81,
+      "end": 1051.95,
+      "text": "Các bạn cũng có thể ngồi nhà."
+    },
+    {
+      "id": "S0650",
+      "start": 1051.95,
+      "end": 1053.05,
+      "text": "Các bạn làm việc nước ngoài."
+    },
+    {
+      "id": "S0651",
+      "start": 1053.05,
+      "end": 1054.19,
+      "text": "Đó chính là roadmap."
+    },
+    {
+      "id": "S0652",
+      "start": 1054.19,
+      "end": 1056.27,
+      "text": "Cái roadmap luôn luôn, và trong roadmap là phải học tiếng Anh."
+    },
+    {
+      "id": "S0653",
+      "start": 1056.55,
+      "end": 1057.73,
+      "text": "Chắc chắn là phải học tiếng Anh rất là tốt."
+    },
+    {
+      "id": "S0654",
+      "start": 1058.39,
+      "end": 1061.35,
+      "text": "Thì khi mà chúng ta go global thì chắc chắn là chúng ta phải học rất là tốt."
+    },
+    {
+      "id": "S0655",
+      "start": 1061.43,
+      "end": 1062.99,
+      "text": "Vậy mà tiếng Anh thì chúng ta có thể làm gì tốt được."
+    },
+    {
+      "id": "S0656",
+      "start": 1063.25,
+      "end": 1067.49,
+      "text": "Với lại là blog của mình của mấy cái này toàn tiếng Anh thôi."
+    },
+    {
+      "id": "S0657",
+      "start": 1067.89,
+      "end": 1069.91,
+      "text": "Có dịch qua thì chưa chắc gì nó sát nghĩa hết."
+    },
+    {
+      "id": "S0658",
+      "start": 1070.09,
+      "end": 1071.43,
+      "text": "Đây là kiểu gì chúng ta phải học à?"
+    },
+    {
+      "id": "S0659",
+      "start": 1072.21,
+      "end": 1076.83,
+      "text": "Rồi bên phía bạn Nguyễn Anh Hoàng có một cái tin nhắn khá là dài ha."
+    },
+    {
+      "id": "S0660",
+      "start": 1077.21,
+      "end": 1079.05,
+      "text": "Sinh viên năm 4 tại Úc."
+    },
+    {
+      "id": "S0661",
+      "start": 1079.17,
+      "end": 1080.01,
+      "text": "Có theo web."
+    },
+    {
+      "id": "S0662",
+      "start": 1080.39,
+      "end": 1083.19,
+      "text": "Đây là bạn first supporter cho anh hồi nãy á."
+    },
+    {
+      "id": "S0663",
+      "start": 1083.19,
+      "end": 1085.63,
+      "text": "Hồi sáng anh mới nói em á."
+    },
+    {
+      "id": "S0664",
+      "start": 1085.63,
+      "end": 1087.23,
+      "text": "Trong cái clip này."
+    },
+    {
+      "id": "S0665",
+      "start": 1087.23,
+      "end": 1089.01,
+      "text": "Ở đầu tiên thì mình cũng có để tên là cái loại."
+    },
+    {
+      "id": "S0666",
+      "start": 1089.01,
+      "end": 1089.79,
+      "text": "Tính là cái loại này đây."
+    },
+    {
+      "id": "S0667",
+      "start": 1089.79,
+      "end": 1091.21,
+      "text": "Sinh viên năm 4 tại Úc."
+    },
+    {
+      "id": "S0668",
+      "start": 1091.21,
+      "end": 1094.27,
+      "text": "Em có theo web dev nhưng đang khó khăn trong việc kiếm intern."
+    },
+    {
+      "id": "S0669",
+      "start": 1094.27,
+      "end": 1097.69,
+      "text": "Bị từ chối thực tập cũng 60-70 công ty rồi nè."
+    },
+    {
+      "id": "S0670",
+      "start": 1097.69,
+      "end": 1098.97,
+      "text": "Nên em có nản với ngành."
+    },
+    {
+      "id": "S0671",
+      "start": 1098.97,
+      "end": 1100.65,
+      "text": "Và cũng đang hơi mất đam mê với lập trình."
+    },
+    {
+      "id": "S0672",
+      "start": 1100.65,
+      "end": 1102.25,
+      "text": "Hiện nay chỉ đang học thêm."
+    },
+    {
+      "id": "S0673",
+      "start": 1102.25,
+      "end": 1104.49,
+      "text": "Full-stack của Meta trên Coursera."
+    },
+    {
+      "id": "S0674",
+      "start": 1104.49,
+      "end": 1114.91,
+      "text": "Chứ không phải là cứ gửi resume thực tập rồi cứ gửi resume liên hồi sai rồi."
+    },
+    {
+      "id": "S0675",
+      "start": 1114.91,
+      "end": 1116.07,
+      "text": "Mình phải cải thiện kỹ năng ra."
+    },
+    {
+      "id": "S0676",
+      "start": 1116.07,
+      "end": 1116.69,
+      "text": "Rồi phải đi thi."
+    },
+    {
+      "id": "S0677",
+      "start": 1116.69,
+      "end": 1117.91,
+      "text": "So với cái việc mà chúng ta nộp."
+    },
+    {
+      "id": "S0678",
+      "start": 1117.91,
+      "end": 1119.55,
+      "text": "60-70 cái công ty á."
+    },
+    {
+      "id": "S0679",
+      "start": 1119.55,
+      "end": 1120.55,
+      "text": "Thì chúng ta chỉ cần nộp."
+    },
+    {
+      "id": "S0680",
+      "start": 1120.55,
+      "end": 1121.55,
+      "text": "6-7 chỗ thôi."
+    },
+    {
+      "id": "S0681",
+      "start": 1121.55,
+      "end": 1122.55,
+      "text": "Là có khi là chúng ta đã ăn."
+    },
+    {
+      "id": "S0682",
+      "start": 1122.55,
+      "end": 1123.45,
+      "text": "Một hackathon rồi đúng không?"
+    },
+    {
+      "id": "S0683",
+      "start": 1123.45,
+      "end": 1124.25,
+      "text": "Okay bà Hoàng nha."
+    },
+    {
+      "id": "S0684",
+      "start": 1124.25,
+      "end": 1125.25,
+      "text": "Và các bạn khác nữa nha."
+    },
+    {
+      "id": "S0685",
+      "start": 1125.25,
+      "end": 1126.07,
+      "text": "Bà Hoàng nha."
+    },
+    {
+      "id": "S0686",
+      "start": 1126.07,
+      "end": 1126.75,
+      "text": "Mình khuyên là."
+    },
+    {
+      "id": "S0687",
+      "start": 1126.75,
+      "end": 1129.49,
+      "text": "Bạn nên đi thi hackathon nha."
+    },
+    {
+      "id": "S0688",
+      "start": 1129.49,
+      "end": 1131.73,
+      "text": "Và thấy video vlog trên của anh Ớt hay."
+    },
+    {
+      "id": "S0689",
+      "start": 1131.73,
+      "end": 1132.73,
+      "text": "Nhưng sẽ em xin remark."
+    },
+    {
+      "id": "S0690",
+      "start": 1132.73,
+      "end": 1133.81,
+      "text": "Remark là vừa nói xong."
+    },
+    {
+      "id": "S0691",
+      "start": 1133.81,
+      "end": 1135.07,
+      "text": "Mình nghĩ là cả hai bạn."
+    },
+    {
+      "id": "S0692",
+      "start": 1135.07,
+      "end": 1136.85,
+      "text": "Bạn Phúc và bạn Hoàng hỏi mình."
+    },
+    {
+      "id": "S0693",
+      "start": 1136.85,
+      "end": 1139.27,
+      "text": "Thì hai bạn đều có nền tảng truyền tốt."
+    },
+    {
+      "id": "S0694",
+      "start": 1139.27,
+      "end": 1140.09,
+      "text": "Đều là sinh viên cả."
+    },
+    {
+      "id": "S0695",
+      "start": 1140.09,
+      "end": 1142.05,
+      "text": "Nhưng mà các bạn đang thiếu cái định hướng thôi."
+    },
+    {
+      "id": "S0696",
+      "start": 1142.05,
+      "end": 1144.51,
+      "text": "Và mình đã định hướng cho các bạn là hãy đi thi hackathon."
+    },
+    {
+      "id": "S0697",
+      "start": 1144.51,
+      "end": 1145.35,
+      "text": "Nếu mà các bạn chưa kiếm việc."
+    },
+    {
+      "id": "S0698",
+      "start": 1145.35,
+      "end": 1148.15,
+      "text": "Và ngoài ra cũng muốn kiếm mentor cho bạn này luôn."
+    },
+    {
+      "id": "S0699",
+      "start": 1148.15,
+      "end": 1149.11,
+      "text": "Nếu em nhận làm mentor."
+    },
+    {
+      "id": "S0700",
+      "start": 1149.11,
+      "end": 1150.47,
+      "text": "Cái này thì chắc chắn là."
+    },
+    {
+      "id": "S0701",
+      "start": 1150.47,
+      "end": 1152.99,
+      "text": "Hoàng biết rồi ha."
+    },
+    {
+      "id": "S0702",
+      "start": 1152.99,
+      "end": 1155.49,
+      "text": "Chắc chắn là mình sẽ không lấy một đồng xu của các bạn."
+    },
+    {
+      "id": "S0703",
+      "start": 1155.49,
+      "end": 1157.01,
+      "text": "Khi mà các bạn tham gia."
+    },
+    {
+      "id": "S0704",
+      "start": 1157.01,
+      "end": 1160.47,
+      "text": "Kể cả các bạn có vào trong cái VBA Academy."
+    },
+    {
+      "id": "S0705",
+      "start": 1160.47,
+      "end": 1162.37,
+      "text": "Các bạn hỏi thì anh em mình rất là sẵn sàng."
+    },
+    {
+      "id": "S0706",
+      "start": 1162.37,
+      "end": 1164.57,
+      "text": "Vì chúng ta sẽ trả lời hết tất cả mọi câu hỏi."
+    },
+    {
+      "id": "S0707",
+      "start": 1164.57,
+      "end": 1166.79,
+      "text": "Và bọn mình sẽ không có."
+    },
+    {
+      "id": "S0708",
+      "start": 1166.79,
+      "end": 1169.15,
+      "text": "Thu phí hay lấy tiền của bất kỳ ai."
+    },
+    {
+      "id": "S0709",
+      "start": 1169.15,
+      "end": 1171.57,
+      "text": "Chứ thậm chí các bạn vô học."
+    },
+    {
+      "id": "S0710",
+      "start": 1171.57,
+      "end": 1172.63,
+      "text": "Có khi còn được có tiền."
+    },
+    {
+      "id": "S0711",
+      "start": 1172.63,
+      "end": 1174.09,
+      "text": "Đã nói gì mà tụi mình lấy tiền của các bạn."
+    },
+    {
+      "id": "S0712",
+      "start": 1174.09,
+      "end": 1175.73,
+      "text": "Tụi mình đang lấy tiền của Corporation."
+    },
+    {
+      "id": "S0713",
+      "start": 1175.73,
+      "end": 1177.91,
+      "text": "Xong rồi tụi mình đưa lại cho những bạn học viên."
+    },
+    {
+      "id": "S0714",
+      "start": 1177.91,
+      "end": 1179.95,
+      "text": "Cho nên là hãy cứ tập trung vào và học thôi."
+    },
+    {
+      "id": "S0715",
+      "start": 1179.95,
+      "end": 1181.83,
+      "text": "Học full-time theo quyết cái bài lên này."
+    },
+    {
+      "id": "S0716",
+      "start": 1181.83,
+      "end": 1183.63,
+      "text": "Mình không biết được mỗi người mỗi khác mà."
+    },
+    {
+      "id": "S0717",
+      "start": 1183.63,
+      "end": 1186.27,
+      "text": "Giúp sửa resume."
+    },
+    {
+      "id": "S0718",
+      "start": 1186.27,
+      "end": 1187.31,
+      "text": "Và hỏi đáp lập."
+    },
+    {
+      "id": "S0719",
+      "start": 1187.31,
+      "end": 1188.83,
+      "text": "Cái này thì ok."
+    },
+    {
+      "id": "S0720",
+      "start": 1188.83,
+      "end": 1190.93,
+      "text": "Hoàng cứ thoải mái nhắn tin cho mình hỏi."
+    },
+    {
+      "id": "S0721",
+      "start": 1190.93,
+      "end": 1192.87,
+      "text": "Sau roadmap."
+    },
+    {
+      "id": "S0722",
+      "start": 1192.87,
+      "end": 1195.21,
+      "text": "Đăng free YouTube cũng thoải mái."
+    },
+    {
+      "id": "S0723",
+      "start": 1195.21,
+      "end": 1197.35,
+      "text": "Thì roadmap thì anh đã nói với em."
+    },
+    {
+      "id": "S0724",
+      "start": 1197.35,
+      "end": 1198.79,
+      "text": "Trong lúc mà mình nhắn tin với nhau rồi."
+    },
+    {
+      "id": "S0725",
+      "start": 1198.79,
+      "end": 1201.07,
+      "text": "Thì chắc chắn là ngày mùng 7."
+    },
+    {
+      "id": "S0726",
+      "start": 1201.07,
+      "end": 1202.11,
+      "text": "Chính là cái ngày mà."
+    },
+    {
+      "id": "S0727",
+      "start": 1202.11,
+      "end": 1204.81,
+      "text": "Sinh nhật của cái kênh YouTube của mình."
+    },
+    {
+      "id": "S0728",
+      "start": 1204.81,
+      "end": 1206.73,
+      "text": "Thì mình sẽ đăng luôn cả roadmap lên."
+    },
+    {
+      "id": "S0729",
+      "start": 1206.73,
+      "end": 1208.83,
+      "text": "Và từ nãy giờ thì mình cũng nói luôn rồi."
+    },
+    {
+      "id": "S0730",
+      "start": 1208.83,
+      "end": 1210.37,
+      "text": "Đó là roadmap các bạn học xong."
+    },
+    {
+      "id": "S0731",
+      "start": 1210.37,
+      "end": 1211.71,
+      "text": "Các bạn sử dụng cái skill của các bạn."
+    },
+    {
+      "id": "S0732",
+      "start": 1211.71,
+      "end": 1214.21,
+      "text": "Khi mà các bạn học xong, chúng ta đem đi intern liền."
+    },
+    {
+      "id": "S0733",
+      "start": 1214.21,
+      "end": 1216.33,
+      "text": "Rất là khó, tại vì hiện tại thị trường blockchain."
+    },
+    {
+      "id": "S0734",
+      "start": 1216.33,
+      "end": 1218.51,
+      "text": "Nó không phải mỗi thị trường blockchain."
+    },
+    {
+      "id": "S0735",
+      "start": 1218.51,
+      "end": 1220.87,
+      "text": "Đó là toàn ngành dev luôn, toàn ngành lập trình luôn."
+    },
+    {
+      "id": "S0736",
+      "start": 1220.87,
+      "end": 1222.27,
+      "text": "Ai cũng khó khăn hết."
+    },
+    {
+      "id": "S0737",
+      "start": 1222.27,
+      "end": 1224.57,
+      "text": "Chứ không phải mỗi là blockchain dev không."
+    },
+    {
+      "id": "S0738",
+      "start": 1224.57,
+      "end": 1226.91,
+      "text": "Cho nên là nếu mà toàn bộ ngành nó đi lùi lại."
+    },
+    {
+      "id": "S0739",
+      "start": 1226.91,
+      "end": 1228.31,
+      "text": "Thì chúng ta lại có cơ hội thôi."
+    },
+    {
+      "id": "S0740",
+      "start": 1228.31,
+      "end": 1230.21,
+      "text": "Còn cái việc mà chúng ta tham gia."
+    },
+    {
+      "id": "S0741",
+      "start": 1230.21,
+      "end": 1231.79,
+      "text": "Chúng ta chưa biết chúng ta nên làm gì."
+    },
+    {
+      "id": "S0742",
+      "start": 1231.79,
+      "end": 1234.13,
+      "text": "Thì giống như bạn Hoàng."
+    },
+    {
+      "id": "S0743",
+      "start": 1234.13,
+      "end": 1235.71,
+      "text": "Cũng có thể học thêm những cái thứ khác."
+    },
+    {
+      "id": "S0744",
+      "start": 1235.71,
+      "end": 1238.29,
+      "text": "Kiếm thêm những cái certificates, những cái chứng chỉ."
+    },
+    {
+      "id": "S0745",
+      "start": 1238.29,
+      "end": 1240.57,
+      "text": "Tốt nhất là chúng ta nên học."
+    },
+    {
+      "id": "S0746",
+      "start": 1240.57,
+      "end": 1242.37,
+      "text": "OpenEdX, lấy những cái chứng chỉ."
+    },
+    {
+      "id": "S0747",
+      "start": 1242.37,
+      "end": 1243.19,
+      "text": "Của những cái foundation."
+    },
+    {
+      "id": "S0748",
+      "start": 1243.19,
+      "end": 1245.65,
+      "text": "Người ta nhìn vào các bạn, ờ các bạn có tham gia."
+    },
+    {
+      "id": "S0749",
+      "start": 1245.65,
+      "end": 1248.01,
+      "text": "Cái blockchain này, tham gia blockchain kia."
+    },
+    {
+      "id": "S0750",
+      "start": 1248.01,
+      "end": 1249.89,
+      "text": "Thì người ta sẽ có niềm tin hơn là khi mà các bạn."
+    },
+    {
+      "id": "S0751",
+      "start": 1249.89,
+      "end": 1250.85,
+      "text": "Gia nhập vào một công ty blockchain."
+    },
+    {
+      "id": "S0752",
+      "start": 1250.85,
+      "end": 1252.35,
+      "text": "Thì người ta sẽ có niềm tin hơn là."
+    },
+    {
+      "id": "S0753",
+      "start": 1252.35,
+      "end": 1253.97,
+      "text": "Ồ, biết về blockchain rồi."
+    },
+    {
+      "id": "S0754",
+      "start": 1253.97,
+      "end": 1256.41,
+      "text": "Thì người ta sẽ dễ dàng hơn là."
+    },
+    {
+      "id": "S0755",
+      "start": 1256.41,
+      "end": 1257.93,
+      "text": "Để cái việc là tuyển dụng các bạn."
+    },
+    {
+      "id": "S0756",
+      "start": 1257.93,
+      "end": 1260.21,
+      "text": "Còn bên VBI của mình."
+    },
+    {
+      "id": "S0757",
+      "start": 1260.21,
+      "end": 1261.93,
+      "text": "Cũng mở rộng ra để tuyển intern."
+    },
+    {
+      "id": "S0758",
+      "start": 1261.93,
+      "end": 1263.27,
+      "text": "Cho nên là chắc chắn là."
+    },
+    {
+      "id": "S0759",
+      "start": 1263.27,
+      "end": 1265.11,
+      "text": "Sẽ có những cơ hội cho những anh em nào."
+    },
+    {
+      "id": "S0760",
+      "start": 1265.11,
+      "end": 1266.19,
+      "text": "Thực sự đi vào VBI."
+    },
+    {
+      "id": "S0761",
+      "start": 1266.19,
+      "end": 1267.39,
+      "text": "Và sống được ở trong cái."
+    },
+    {
+      "id": "S0762",
+      "start": 1267.39,
+      "end": 1269.59,
+      "text": "Một cơ hội chứa năng động."
+    },
+    {
+      "id": "S0763",
+      "start": 1269.59,
+      "end": 1270.69,
+      "text": "Như là VBI Academy."
+    },
+    {
+      "id": "S0764",
+      "start": 1270.69,
+      "end": 1271.41,
+      "text": "Và các bạn cứ."
+    },
+    {
+      "id": "S0765",
+      "start": 1271.41,
+      "end": 1272.79,
+      "text": "Nếu mà các bạn muốn tìm hiểu."
+    },
+    {
+      "id": "S0766",
+      "start": 1272.79,
+      "end": 1273.69,
+      "text": "Về intern trên VBI."
+    },
+    {
+      "id": "S0767",
+      "start": 1273.69,
+      "end": 1274.85,
+      "text": "Thì có thể là follow fanpage."
+    },
+    {
+      "id": "S0768",
+      "start": 1274.85,
+      "end": 1275.97,
+      "text": "Của VBI Academy."
+    },
+    {
+      "id": "S0769",
+      "start": 1275.97,
+      "end": 1277.85,
+      "text": "Sẽ thỉnh thoảng có đăng những cái nội dung."
+    },
+    {
+      "id": "S0770",
+      "start": 1277.85,
+      "end": 1278.97,
+      "text": "Để tuyển intern."
+    },
+    {
+      "id": "S0771",
+      "start": 1278.97,
+      "end": 1280.45,
+      "text": "Thì chúng ta có thể vào."
+    },
+    {
+      "id": "S0772",
+      "start": 1280.45,
+      "end": 1281.21,
+      "text": "Trong công ty VBI."
+    },
+    {
+      "id": "S0773",
+      "start": 1281.21,
+      "end": 1281.93,
+      "text": "Có chữ cấp luôn."
+    },
+    {
+      "id": "S0774",
+      "start": 1281.93,
+      "end": 1283.87,
+      "text": "Chúng ta có thể làm việc."
+    },
+    {
+      "id": "S0775",
+      "start": 1283.87,
+      "end": 1284.73,
+      "text": "Tại VBI Academy."
+    },
+    {
+      "id": "S0776",
+      "start": 1284.73,
+      "end": 1285.59,
+      "text": "Ngoài ra thì."
+    },
+    {
+      "id": "S0777",
+      "start": 1285.59,
+      "end": 1286.15,
+      "text": "Ở Việt Nam."
+    },
+    {
+      "id": "S0778",
+      "start": 1286.15,
+      "end": 1286.65,
+      "text": "Giống như hồi nãy."
+    },
+    {
+      "id": "S0779",
+      "start": 1286.65,
+      "end": 1287.33,
+      "text": "Mình có nói."
+    },
+    {
+      "id": "S0780",
+      "start": 1287.33,
+      "end": 1289.03,
+      "text": "Có rất nhiều công ty."
+    },
+    {
+      "id": "S0781",
+      "start": 1289.03,
+      "end": 1289.57,
+      "text": "Giữa đầu ngành."
+    },
+    {
+      "id": "S0782",
+      "start": 1289.57,
+      "end": 1290.19,
+      "text": "Ví dụ như."
+    },
+    {
+      "id": "S0783",
+      "start": 1290.19,
+      "end": 1291.05,
+      "text": "Asset Infinity."
+    },
+    {
+      "id": "S0784",
+      "start": 1291.05,
+      "end": 1291.81,
+      "text": "Bây giờ là đổi thành."
+    },
+    {
+      "id": "S0785",
+      "start": 1291.81,
+      "end": 1292.43,
+      "text": "Ronin Chain."
+    },
+    {
+      "id": "S0786",
+      "start": 1292.43,
+      "end": 1293.67,
+      "text": "Ronin."
+    },
+    {
+      "id": "S0787",
+      "start": 1293.67,
+      "end": 1294.15,
+      "text": "Không phải đổi."
+    },
+    {
+      "id": "S0788",
+      "start": 1294.15,
+      "end": 1294.87,
+      "text": "Mở rộng ra."
+    },
+    {
+      "id": "S0789",
+      "start": 1294.87,
+      "end": 1295.61,
+      "text": "Giống như Facebook."
+    },
+    {
+      "id": "S0790",
+      "start": 1295.61,
+      "end": 1296.37,
+      "text": "Thành Vieta."
+    },
+    {
+      "id": "S0791",
+      "start": 1296.37,
+      "end": 1297.87,
+      "text": "Hay là bên."
+    },
+    {
+      "id": "S0792",
+      "start": 1297.87,
+      "end": 1298.83,
+      "text": "KV SWAT."
+    },
+    {
+      "id": "S0793",
+      "start": 1298.83,
+      "end": 1300.89,
+      "text": "Thì công ty cũng rất là lớn."
+    },
+    {
+      "id": "S0794",
+      "start": 1300.89,
+      "end": 1301.35,
+      "text": "Hay là."
+    },
+    {
+      "id": "S0795",
+      "start": 1301.35,
+      "end": 1302.45,
+      "text": "Coi 98."
+    },
+    {
+      "id": "S0796",
+      "start": 1302.45,
+      "end": 1303.77,
+      "text": "Gọi là."
+    },
+    {
+      "id": "S0797",
+      "start": 1303.77,
+      "end": 1304.61,
+      "text": "Bây giờ đổi tên."
+    },
+    {
+      "id": "S0798",
+      "start": 1304.61,
+      "end": 1305.39,
+      "text": "Được Rebrand."
+    },
+    {
+      "id": "S0799",
+      "start": 1305.39,
+      "end": 1306.33,
+      "text": "Cũng giống như kiểu."
+    },
+    {
+      "id": "S0800",
+      "start": 1306.33,
+      "end": 1307.51,
+      "text": "Này."
+    },
+    {
+      "id": "S0801",
+      "start": 1307.51,
+      "end": 1311.13,
+      "text": "Thì những cái công ty này."
+    },
+    {
+      "id": "S0802",
+      "start": 1311.13,
+      "end": 1313.25,
+      "text": "Hoàn toàn nhận những cái chương trình thực tập."
+    },
+    {
+      "id": "S0803",
+      "start": 1313.25,
+      "end": 1315.67,
+      "text": "Của mọi người, không chỉ là ở VBA Academy."
+    },
+    {
+      "id": "S0804",
+      "start": 1315.67,
+      "end": 1317.47,
+      "text": "Thì chắc chắn là nếu mà chúng ta."
+    },
+    {
+      "id": "S0805",
+      "start": 1317.47,
+      "end": 1319.09,
+      "text": "Có khả năng tiếng Anh nè, chúng ta biết."
+    },
+    {
+      "id": "S0806",
+      "start": 1319.09,
+      "end": 1321.41,
+      "text": "Hiểu về blockchain, cái cơ bản blockchain."
+    },
+    {
+      "id": "S0807",
+      "start": 1321.41,
+      "end": 1323.07,
+      "text": "Thì ở trong roadmap."
+    },
+    {
+      "id": "S0808",
+      "start": 1323.07,
+      "end": 1324.61,
+      "text": "Khi song song với cái việc chúng ta lập trình."
+    },
+    {
+      "id": "S0809",
+      "start": 1324.61,
+      "end": 1326.33,
+      "text": "Chúng ta phải hiểu về blockchain nữa."
+    },
+    {
+      "id": "S0810",
+      "start": 1326.33,
+      "end": 1328.41,
+      "text": "Tại vì khi mà chúng ta vừa đi học về blockchain."
+    },
+    {
+      "id": "S0811",
+      "start": 1328.41,
+      "end": 1330.75,
+      "text": "Chúng ta hiểu về blockchain thì."
+    },
+    {
+      "id": "S0812",
+      "start": 1330.75,
+      "end": 1332.85,
+      "text": "Nó là cái nền tảng chúng ta học bất kỳ ngôn ngữ."
+    },
+    {
+      "id": "S0813",
+      "start": 1332.85,
+      "end": 1333.49,
+      "text": "Blockchain nào khác."
+    },
+    {
+      "id": "S0814",
+      "start": 1333.49,
+      "end": 1336.61,
+      "text": "Và nó kết hợp với cái ngôn ngữ của chúng ta nữa."
+    },
+    {
+      "id": "S0815",
+      "start": 1336.61,
+      "end": 1338.81,
+      "text": "Thì nó rất dễ để chúng ta có thể là."
+    },
+    {
+      "id": "S0816",
+      "start": 1338.81,
+      "end": 1341.43,
+      "text": "Thi một cái blockchain nào đó."
+    },
+    {
+      "id": "S0817",
+      "start": 1341.43,
+      "end": 1343.39,
+      "text": "Build dự án chỉ trong vòng 2 tuần."
+    },
+    {
+      "id": "S0818",
+      "start": 1343.39,
+      "end": 1344.85,
+      "text": "Để chúng ta kịp để thi."
+    },
+    {
+      "id": "S0819",
+      "start": 1344.85,
+      "end": 1346.65,
+      "text": "Rồi trong quá trình chúng ta thi."
+    },
+    {
+      "id": "S0820",
+      "start": 1346.65,
+      "end": 1348.03,
+      "text": "Thì chúng ta cũng có thể nên là."
+    },
+    {
+      "id": "S0821",
+      "start": 1348.03,
+      "end": 1349.37,
+      "text": "Tìm kiếm những cơ hội intern."
+    },
+    {
+      "id": "S0822",
+      "start": 1349.37,
+      "end": 1350.27,
+      "text": "Không chỉ ở trong nước."
+    },
+    {
+      "id": "S0823",
+      "start": 1350.27,
+      "end": 1351.05,
+      "text": "Mà ở nước ngoài nữa."
+    },
+    {
+      "id": "S0824",
+      "start": 1351.05,
+      "end": 1352.43,
+      "text": "Mà có những cái lúc."
+    },
+    {
+      "id": "S0825",
+      "start": 1352.43,
+      "end": 1353.49,
+      "text": "Foundation mà người ta."
+    },
+    {
+      "id": "S0826",
+      "start": 1353.49,
+      "end": 1354.37,
+      "text": "Cho mọi người các bạn."
+    },
+    {
+      "id": "S0827",
+      "start": 1354.37,
+      "end": 1355.93,
+      "text": "Vô một trong dự án bất kỳ đó."
+    },
+    {
+      "id": "S0828",
+      "start": 1355.93,
+      "end": 1356.49,
+      "text": "Kéo xuống dưới."
+    },
+    {
+      "id": "S0829",
+      "start": 1356.49,
+      "end": 1357.87,
+      "text": "Có phần hiring á."
+    },
+    {
+      "id": "S0830",
+      "start": 1357.87,
+      "end": 1359.05,
+      "text": "We are hiring á."
+    },
+    {
+      "id": "S0831",
+      "start": 1359.05,
+      "end": 1359.45,
+      "text": "Thì ấn vào."
+    },
+    {
+      "id": "S0832",
+      "start": 1359.45,
+      "end": 1361.13,
+      "text": "Để xem thử cái như thế nào."
+    },
+    {
+      "id": "S0833",
+      "start": 1361.13,
+      "end": 1362.85,
+      "text": "Và kể cả là người ta."
+    },
+    {
+      "id": "S0834",
+      "start": 1362.85,
+      "end": 1364.39,
+      "text": "Không có tuyển cái vị trí intern."
+    },
+    {
+      "id": "S0835",
+      "start": 1364.39,
+      "end": 1365.63,
+      "text": "Chúng ta vẫn nên gửi."
+    },
+    {
+      "id": "S0836",
+      "start": 1365.63,
+      "end": 1366.11,
+      "text": "Cái CV."
+    },
+    {
+      "id": "S0837",
+      "start": 1366.11,
+      "end": 1367.53,
+      "text": "Biết đâu được."
+    },
+    {
+      "id": "S0838",
+      "start": 1367.53,
+      "end": 1368.19,
+      "text": "Biết đâu được."
+    },
+    {
+      "id": "S0839",
+      "start": 1368.19,
+      "end": 1369.05,
+      "text": "Đúng không?"
+    },
+    {
+      "id": "S0840",
+      "start": 1369.05,
+      "end": 1370.47,
+      "text": "Có thể là người ta không muốn."
+    },
+    {
+      "id": "S0841",
+      "start": 1370.47,
+      "end": 1371.07,
+      "text": "Tùy tình thế."
+    },
+    {
+      "id": "S0842",
+      "start": 1371.07,
+      "end": 1371.65,
+      "text": "Nhưng mà biết đâu được."
+    },
+    {
+      "id": "S0843",
+      "start": 1371.65,
+      "end": 1372.31,
+      "text": "Cái skill."
+    },
+    {
+      "id": "S0844",
+      "start": 1372.31,
+      "end": 1372.97,
+      "text": "Cái năng lực của các bạn."
+    },
+    {
+      "id": "S0845",
+      "start": 1372.97,
+      "end": 1373.47,
+      "text": "Rất là tuyệt."
+    },
+    {
+      "id": "S0846",
+      "start": 1373.47,
+      "end": 1374.15,
+      "text": "Người ta muốn."
+    },
+    {
+      "id": "S0847",
+      "start": 1374.15,
+      "end": 1375.21,
+      "text": "Đem các bạn vào."
+    },
+    {
+      "id": "S0848",
+      "start": 1375.21,
+      "end": 1376.11,
+      "text": "Trong một vị trí."
+    },
+    {
+      "id": "S0849",
+      "start": 1376.11,
+      "end": 1376.55,
+      "text": "Trong công ty."
+    },
+    {
+      "id": "S0850",
+      "start": 1376.55,
+      "end": 1377.47,
+      "text": "Để người ta huấn luyện lên."
+    },
+    {
+      "id": "S0851",
+      "start": 1377.47,
+      "end": 1377.83,
+      "text": "Cho phù hợp."
+    },
+    {
+      "id": "S0852",
+      "start": 1377.83,
+      "end": 1378.67,
+      "text": "Cái vị trí đó thì sao?"
+    },
+    {
+      "id": "S0853",
+      "start": 1378.67,
+      "end": 1380.03,
+      "text": "Cho nên là."
+    },
+    {
+      "id": "S0854",
+      "start": 1380.03,
+      "end": 1380.79,
+      "text": "Mình hy vọng là."
+    },
+    {
+      "id": "S0855",
+      "start": 1380.79,
+      "end": 1381.39,
+      "text": "Nếu mà các bạn."
+    },
+    {
+      "id": "S0856",
+      "start": 1381.39,
+      "end": 1383.03,
+      "text": "Chưa có công việc."
+    },
+    {
+      "id": "S0857",
+      "start": 1383.03,
+      "end": 1384.51,
+      "text": "Hay là các bạn bắt đầu học."
+    },
+    {
+      "id": "S0858",
+      "start": 1384.51,
+      "end": 1385.19,
+      "text": "Thì hãy giữ."
+    },
+    {
+      "id": "S0859",
+      "start": 1385.19,
+      "end": 1385.91,
+      "text": "Vẫn niềm tin."
+    },
+    {
+      "id": "S0860",
+      "start": 1385.91,
+      "end": 1386.95,
+      "text": "Như Bích."
+    },
+    {
+      "id": "S0861",
+      "start": 1386.95,
+      "end": 1387.85,
+      "text": "Giữ vững như Bích."
+    },
+    {
+      "id": "S0862",
+      "start": 1387.85,
+      "end": 1389.37,
+      "text": "Thì mới có."
+    },
+    {
+      "id": "S0863",
+      "start": 1389.37,
+      "end": 1391.23,
+      "text": "Chúng ta mới có thể."
+    },
+    {
+      "id": "S0864",
+      "start": 1391.23,
+      "end": 1391.77,
+      "text": "Thành công được."
+    },
+    {
+      "id": "S0865",
+      "start": 1391.77,
+      "end": 1393.09,
+      "text": "Bích mới là CV 53 thôi."
+    },
+    {
+      "id": "S0866",
+      "start": 1396.11,
+      "end": 1398.75,
+      "text": "Cũng phải cần rất là nhiều niềm tin."
+    },
+    {
+      "id": "S0867",
+      "start": 1398.75,
+      "end": 1400.45,
+      "text": "Cần nhiều niềm tin hơn những cái bạn mà học."
+    },
+    {
+      "id": "S0868",
+      "start": 1400.45,
+      "end": 1401.85,
+      "text": "Học đúng ngành đó."
+    },
+    {
+      "id": "S0869",
+      "start": 1401.85,
+      "end": 1403.07,
+      "text": "Để chúng ta có thể là."
+    },
+    {
+      "id": "S0870",
+      "start": 1403.07,
+      "end": 1405.33,
+      "text": "Học từ những cái nền tảng nhỏ nhất."
+    },
+    {
+      "id": "S0871",
+      "start": 1405.33,
+      "end": 1409.05,
+      "text": "Cho tới học những cách để chúng ta có thể build full một cái DApp."
+    },
+    {
+      "id": "S0872",
+      "start": 1409.05,
+      "end": 1410.99,
+      "text": "Và chúng ta tham gia."
+    },
+    {
+      "id": "S0873",
+      "start": 1410.99,
+      "end": 1412.51,
+      "text": "Nếu mà chúng ta không có việc."
+    },
+    {
+      "id": "S0874",
+      "start": 1412.51,
+      "end": 1413.41,
+      "text": "Thì chúng ta phải thể hiện ra."
+    },
+    {
+      "id": "S0875",
+      "start": 1413.41,
+      "end": 1414.05,
+      "text": "Chúng ta biết là."
+    },
+    {
+      "id": "S0876",
+      "start": 1414.05,
+      "end": 1415.73,
+      "text": "Chúng ta phải tham gia những cái hackathon."
+    },
+    {
+      "id": "S0877",
+      "start": 1415.73,
+      "end": 1418.59,
+      "text": "Thì sẽ có người verify được cái project mà chúng ta làm."
+    },
+    {
+      "id": "S0878",
+      "start": 1418.59,
+      "end": 1419.49,
+      "text": "Đó chính là của các bạn."
+    },
+    {
+      "id": "S0879",
+      "start": 1419.49,
+      "end": 1422.27,
+      "text": "Chứ không phải là đem một cái project nào trên tutorial."
+    },
+    {
+      "id": "S0880",
+      "start": 1422.27,
+      "end": 1423.39,
+      "text": "Xong rồi bỏ vào CV."
+    },
+    {
+      "id": "S0881",
+      "start": 1423.39,
+      "end": 1424.91,
+      "text": "Rồi nữa là."
+    },
+    {
+      "id": "S0882",
+      "start": 1424.91,
+      "end": 1426.87,
+      "text": "Hãy kiên trì với ngành."
+    },
+    {
+      "id": "S0883",
+      "start": 1426.87,
+      "end": 1428.33,
+      "text": "Tại vì không có cái gì mà nó làm."
+    },
+    {
+      "id": "S0884",
+      "start": 1428.33,
+      "end": 1429.55,
+      "text": "Một ngày, một ngày hai."
+    },
+    {
+      "id": "S0885",
+      "start": 1429.55,
+      "end": 1430.49,
+      "text": "Nó phát triển cái đồn lên được."
+    },
+    {
+      "id": "S0886",
+      "start": 1430.49,
+      "end": 1431.13,
+      "text": "Đúng không?"
+    },
+    {
+      "id": "S0887",
+      "start": 1431.25,
+      "end": 1432.61,
+      "text": "Ví dụ như là blockchain."
+    },
+    {
+      "id": "S0888",
+      "start": 1432.61,
+      "end": 1434.15,
+      "text": "Thì tại cái chính sách."
+    },
+    {
+      "id": "S0889",
+      "start": 1434.15,
+      "end": 1435.13,
+      "text": "Tại chính cái bài báo này."
+    },
+    {
+      "id": "S0890",
+      "start": 1435.13,
+      "end": 1436.45,
+      "text": "Để xem cái bài báo."
+    },
+    {
+      "id": "S0891",
+      "start": 1436.45,
+      "end": 1439.07,
+      "text": "Cái chiến lược blockchain quốc gia."
+    },
+    {
+      "id": "S0892",
+      "start": 1439.07,
+      "end": 1439.83,
+      "text": "Cái bài báo này."
+    },
+    {
+      "id": "S0893",
+      "start": 1439.83,
+      "end": 1440.71,
+      "text": "Mới tháng 10."
+    },
+    {
+      "id": "S0894",
+      "start": 1440.71,
+      "end": 1441.79,
+      "text": "Nó 2024 à?"
+    },
+    {
+      "id": "S0895",
+      "start": 1441.79,
+      "end": 1443.73,
+      "text": "Thì bây giờ mới là tháng 1."
+    },
+    {
+      "id": "S0896",
+      "start": 1443.73,
+      "end": 1445.99,
+      "text": "22 tháng 10 là cuối tháng 10."
+    },
+    {
+      "id": "S0897",
+      "start": 1445.99,
+      "end": 1447.31,
+      "text": "Nó bây giờ mới đầu tháng 1 à?"
+    },
+    {
+      "id": "S0898",
+      "start": 1447.31,
+      "end": 1448.75,
+      "text": "Không thể có cái nào."
+    },
+    {
+      "id": "S0899",
+      "start": 1448.75,
+      "end": 1449.59,
+      "text": "Trong vòng 2 tháng."
+    },
+    {
+      "id": "S0900",
+      "start": 1449.59,
+      "end": 1450.65,
+      "text": "Nó phát triển nhanh như vậy được."
+    },
+    {
+      "id": "S0901",
+      "start": 1450.65,
+      "end": 1451.39,
+      "text": "Các bạn ít nhất."
+    },
+    {
+      "id": "S0902",
+      "start": 1451.39,
+      "end": 1452.39,
+      "text": "Các bạn phải chờ 6 tháng."
+    },
+    {
+      "id": "S0903",
+      "start": 1452.39,
+      "end": 1453.05,
+      "text": "1 năm gì đó."
+    },
+    {
+      "id": "S0904",
+      "start": 1453.05,
+      "end": 1454.29,
+      "text": "Cho nên là."
+    },
+    {
+      "id": "S0905",
+      "start": 1454.29,
+      "end": 1455.33,
+      "text": "Hãy giữ niềm tin đi."
+    },
+    {
+      "id": "S0906",
+      "start": 1455.33,
+      "end": 1456.85,
+      "text": "Hãy giữ niềm tin đó."
+    },
+    {
+      "id": "S0907",
+      "start": 1456.85,
+      "end": 1457.73,
+      "text": "Mình đang đưa cho các bạn."
+    },
+    {
+      "id": "S0908",
+      "start": 1457.73,
+      "end": 1458.27,
+      "text": "Một ví dụ."
+    },
+    {
+      "id": "S0909",
+      "start": 1458.27,
+      "end": 1459.33,
+      "text": "Về sự thành công."
+    },
+    {
+      "id": "S0910",
+      "start": 1459.33,
+      "end": 1460.49,
+      "text": "Của một bạn sinh viên."
+    },
+    {
+      "id": "S0911",
+      "start": 1460.49,
+      "end": 1461.57,
+      "text": "Khi mà."
+    },
+    {
+      "id": "S0912",
+      "start": 1461.57,
+      "end": 1462.95,
+      "text": "Làm việc."
+    },
+    {
+      "id": "S0913",
+      "start": 1462.95,
+      "end": 1464.01,
+      "text": "Về Blockchain."
+    },
+    {
+      "id": "S0914",
+      "start": 1464.01,
+      "end": 1465.55,
+      "text": "Hay là Web3."
+    },
+    {
+      "id": "S0915",
+      "start": 1465.55,
+      "end": 1466.99,
+      "text": "Và cũng là một người."
+    },
+    {
+      "id": "S0916",
+      "start": 1466.99,
+      "end": 1467.91,
+      "text": "Tìm bug rất là xuất sắc."
+    },
+    {
+      "id": "S0917",
+      "start": 1467.91,
+      "end": 1468.43,
+      "text": "Trong tiền của mình."
+    },
+    {
+      "id": "S0918",
+      "start": 1468.43,
+      "end": 1469.31,
+      "text": "Xin chào tạm biệt."
+    },
+    {
+      "id": "S0919",
+      "start": 1469.31,
+      "end": 1470.37,
+      "text": "Và hy vọng các bạn sẽ."
+    },
+    {
+      "id": "S0920",
+      "start": 1470.37,
+      "end": 1471.93,
+      "text": "Học tập thật tốt."
+    },
+    {
+      "id": "S0921",
+      "start": 1471.93,
+      "end": 1472.41,
+      "text": "Và tìm kiếm."
+    },
+    {
+      "id": "S0922",
+      "start": 1472.41,
+      "end": 1473.29,
+      "text": "Cái công việc trong tương lai."
+    },
+    {
+      "id": "S0923",
+      "start": 1473.29,
+      "end": 1474.29,
+      "text": "Hay là phát triển bản thân."
+    },
+    {
+      "id": "S0924",
+      "start": 1474.29,
+      "end": 1475.11,
+      "text": "Thành công của mình."
+    },
+    {
+      "id": "S0925",
+      "start": 1475.11,
+      "end": 1477.25,
+      "text": "Đây là lần đầu tiên."
+    },
+    {
+      "id": "S0926",
+      "start": 1477.25,
+      "end": 1477.91,
+      "text": "Đây là lần đầu tiên."
+    },
+    {
+      "id": "S0927",
+      "start": 1477.91,
+      "end": 1478.19,
+      "text": "Quay video."
+    }
+  ]
+}

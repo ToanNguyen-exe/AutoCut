@@ -15,6 +15,7 @@ from typing import Optional, Dict, Any, List
 
 from .models import TranscriptOutput, Sentence
 from .config_loader import default_ai_config
+from .post_processor import sanitize_transcript_stem
 
 logger = logging.getLogger("AutoCut.AI.Groq")
 
@@ -207,8 +208,9 @@ def transcribe_with_groq(
     )
 
     # 3. Ghi ra các file theo yêu cầu:
-    # 3.1. transcripts/<tên_video>_transcript.json
-    dedicated_file = TRANSCRIPTS_DIR / f"{stem}_transcript.json"
+    # 3.1. transcripts/<tên_video>_transcript.json (chuẩn hóa không dấu, không khoảng cách)
+    safe_stem = sanitize_transcript_stem(stem)
+    dedicated_file = TRANSCRIPTS_DIR / f"{safe_stem}_transcript.json"
     json_str = transcript_out.model_dump_json(indent=2, exclude_none=True)
     with open(dedicated_file, "w", encoding="utf-8") as f:
         f.write(json_str)
@@ -223,6 +225,9 @@ def transcribe_with_groq(
     # 3.3. File output chỉ định (nếu có)
     if output_file:
         out_p = Path(output_file)
+        if out_p.parent.resolve() == TRANSCRIPTS_DIR.resolve():
+            clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+            out_p = TRANSCRIPTS_DIR / f"{clean_stem}_transcript.json"
         out_p.parent.mkdir(parents=True, exist_ok=True)
         with open(out_p, "w", encoding="utf-8") as f:
             f.write(json_str)

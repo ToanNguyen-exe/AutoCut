@@ -19,7 +19,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from .gemini_transcriber import GeminiTranscriber
-from .post_processor import post_process_transcript
+from .post_processor import post_process_transcript, sanitize_transcript_stem
 from .models import Sentence, TranscriptOutput
 from .whisper_service import format_duration
 
@@ -36,15 +36,15 @@ def clean_video_filename(raw_name: str) -> str:
 
 
 def get_dedicated_transcript_path(video_name: str) -> Path:
-    """Trả về đường dẫn chuẩn trong thư mục riêng: transcripts/<tên_video>_transcript.json."""
+    """Trả về đường dẫn chuẩn trong thư mục riêng: transcripts/<tên_video_khong_dau_khong_cach>_transcript.json."""
     TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
     clean_name = clean_video_filename(video_name or "video.mp4")
-    stem = Path(clean_name).stem or "video"
+    stem = sanitize_transcript_stem(clean_name)
     return TRANSCRIPTS_DIR / f"{stem}_transcript.json"
 
 
 def save_to_dedicated_transcripts_folder(transcript: TranscriptOutput, video_name: Optional[str] = None) -> Path:
-    """Lưu file transcript trực tiếp vào thư mục transcripts/<tên_video>_transcript.json (không tạo thư mục con riêng)."""
+    """Lưu file transcript trực tiếp vào thư mục transcripts/<tên_video>_transcript.json (không dấu, không khoảng cách)."""
     clean_name = clean_video_filename(video_name or transcript.video)
     transcript.video = clean_name
     dedicated_path = get_dedicated_transcript_path(clean_name)
@@ -68,6 +68,9 @@ def clean_existing_transcript_file(
         return
 
     out_p = Path(output_path or file_path)
+    if out_p.parent.resolve() == TRANSCRIPTS_DIR.resolve():
+        clean_out_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+        out_p = TRANSCRIPTS_DIR / f"{clean_out_stem}_transcript.json"
     print(f"[*] Đang đọc dữ liệu từ: {p.name}...")
     with open(p, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -123,6 +126,16 @@ def _find_matching_transcript_or_video(
                 t_obj = TranscriptOutput.model_validate(data)
                 processed = post_process_transcript(t_obj)
                 processed.video = clean_vname
+                return processed
+            # Cũng kiểm tra nếu tồn tại file theo stem thô cũ (legacy)
+            legacy_file = TRANSCRIPTS_DIR / f"{Path(candidate_name).stem}_transcript.json"
+            if legacy_file.exists() and legacy_file != dedicated_file:
+                with open(legacy_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                t_obj = TranscriptOutput.model_validate(data)
+                processed = post_process_transcript(t_obj)
+                processed.video = clean_vname
+                save_to_dedicated_transcripts_folder(processed, clean_vname)
                 return processed
 
     # 2. Kiểm tra cache theo SHA-256 hash nếu có
@@ -205,14 +218,16 @@ def _find_matching_transcript_or_video(
             t_obj = TranscriptOutput.model_validate(data)
             t_vid = clean_video_filename(t_obj.video).strip().lower()
             t_stem = Path(t_vid).stem.lower()
+            sanitized_stem = sanitize_transcript_stem(clean_vname)
+            sanitized_lesson = sanitize_transcript_stem(lesson) if lesson else ""
 
             if jc.name == "transcript.json" and fallback_root_transcript is None:
                 fallback_root_transcript = t_obj
 
             if (
                 (norm_video and t_vid == norm_video)
-                or (norm_stem and t_stem == norm_stem)
-                or (norm_lesson and (t_stem == norm_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
+                or (norm_stem and (t_stem == norm_stem or t_stem == sanitized_stem or t_stem.replace("-", "_") == sanitized_stem.replace("-", "_")))
+                or (norm_lesson and (t_stem == norm_lesson or t_stem == sanitized_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
             ):
                 # Bỏ qua nếu là file transcript cũ chứa ca từ mẫu cứng
                 first_text = t_obj.sentences[0].text if t_obj.sentences else ""
@@ -393,13 +408,17 @@ def main():
             print(f"[!] Lỗi khi chạy Gemini Refiner: {e}")
         refine_elapsed = time.perf_counter() - refine_start
 
-    # Luôn lưu vào cả thư mục riêng transcripts/<tên_video>_transcript.json và transcripts/<tên_video>/transcript.json
+    # Luôn lưu vào cả thư mục riêng transcripts/<tên_video>_transcript.json (không dấu, không khoảng cách)
     saved_dedicated = save_to_dedicated_transcripts_folder(res, clean_vname)
-    if target_output and Path(target_output).resolve() != saved_dedicated.resolve():
+    if target_output:
         out_p = Path(target_output)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_p, "w", encoding="utf-8") as f:
-            f.write(res.model_dump_json(indent=2, exclude_none=True))
+        if out_p.parent.resolve() == TRANSCRIPTS_DIR.resolve():
+            clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+            out_p = TRANSCRIPTS_DIR / f"{clean_stem}_transcript.json"
+        if out_p.resolve() != saved_dedicated.resolve():
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_p, "w", encoding="utf-8") as f:
+                f.write(res.model_dump_json(indent=2, exclude_none=True))
 
     total_elapsed = time.perf_counter() - pipeline_start
     print("\n" + "=" * 58)
