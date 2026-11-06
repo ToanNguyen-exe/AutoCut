@@ -39,6 +39,24 @@ def strip_accents(s: str) -> str:
     return no_dia.replace('đ', 'd').replace('Đ', 'D').lower()
 
 
+def sanitize_to_safe_slug(raw: str) -> str:
+    """Quy ước đặt tên chuẩn tuyệt đối: không dấu, không khoảng trắng, chỉ gồm chữ thường a-z, 0-9 và _."""
+    import unicodedata, re
+    if not raw:
+        return "video"
+    raw_str = str(raw).strip()
+    m = re.search(r"\(([^)]+)\)", raw_str)
+    if m and "." in m.group(1):
+        raw_str = m.group(1).strip()
+
+    clean = clean_video_filename(raw_str)
+    stem = Path(clean).stem or "video"
+    nfkd = unicodedata.normalize('NFKD', stem)
+    ascii_str = "".join([c for c in nfkd if not unicodedata.combining(c)]).replace('đ', 'd').replace('Đ', 'D')
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", ascii_str).strip("_").lower()
+    return slug or "video"
+
+
 def clean_video_filename(raw_name: str) -> str:
     """Loại bỏ tiền tố mã băm SHA-256 (nếu file nằm trong uploads/<hash>_<name>.mp4) để lấy đúng tên file gốc."""
     name = Path(raw_name).name
@@ -46,15 +64,14 @@ def clean_video_filename(raw_name: str) -> str:
 
 
 def get_dedicated_transcript_path(video_name: str) -> Path:
-    """Trả về đường dẫn chuẩn trong thư mục riêng: transcripts/<tên_video>_transcript.json."""
+    """Trả về đường dẫn chuẩn trong thư mục riêng: transcripts/<safe_slug>_transcript.json."""
     TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
-    clean_name = clean_video_filename(video_name or "video.mp4")
-    stem = Path(clean_name).stem or "video"
-    return TRANSCRIPTS_DIR / f"{stem}_transcript.json"
+    slug = sanitize_to_safe_slug(video_name or "video.mp4")
+    return TRANSCRIPTS_DIR / f"{slug}_transcript.json"
 
 
 def save_to_dedicated_transcripts_folder(transcript: TranscriptOutput, video_name: Optional[str] = None) -> Path:
-    """Lưu file transcript trực tiếp vào thư mục transcripts/<tên_video>_transcript.json (không tạo thư mục con riêng)."""
+    """Lưu file transcript trực tiếp vào thư mục transcripts/<safe_slug>_transcript.json."""
     clean_name = clean_video_filename(video_name or transcript.video)
     transcript.video = clean_name
     dedicated_path = get_dedicated_transcript_path(clean_name)

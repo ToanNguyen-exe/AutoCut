@@ -5,6 +5,7 @@ Bóc băng âm thanh siêu tốc (~1-3 giây) trực tiếp từ Groq Cloud mà 
 
 import os
 import re
+import time
 import json
 import logging
 import urllib.request
@@ -134,8 +135,8 @@ def transcribe_with_groq(
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 1. Trích xuất âm thanh nhẹ sang file tạm
-    temp_mp3 = CACHE_DIR / f"groq_audio_{p.stem}_{os.getpid()}.mp3"
+    # 1. Trích xuất âm thanh nhẹ sang file tạm (dùng tên chuẩn thuần ASCII để ffmpeg không lỗi)
+    temp_mp3 = CACHE_DIR / f"groq_audio_{os.getpid()}_{int(time.time())}.mp3"
     logger.info(f"[*] Đang chuẩn bị âm thanh nén cho Groq từ: {p.name}...")
     extracted = extract_audio_mp3(str(p), str(temp_mp3))
     target_audio = str(temp_mp3) if extracted else str(p)
@@ -207,8 +208,10 @@ def transcribe_with_groq(
     )
 
     # 3. Ghi ra các file theo yêu cầu:
-    # 3.1. transcripts/<tên_video>_transcript.json
-    dedicated_file = TRANSCRIPTS_DIR / f"{stem}_transcript.json"
+    # 3.1. transcripts/<safe_slug>_transcript.json (chuẩn hóa không dấu, không khoảng trắng)
+    from .cli import sanitize_to_safe_slug
+    safe_slug = sanitize_to_safe_slug(clean_name)
+    dedicated_file = TRANSCRIPTS_DIR / f"{safe_slug}_transcript.json"
     json_str = transcript_out.model_dump_json(indent=2, exclude_none=True)
     with open(dedicated_file, "w", encoding="utf-8") as f:
         f.write(json_str)

@@ -166,7 +166,12 @@ public class VideoController {
 
             String hash = cacheService.computeSha256(tempFile);
 
-
+            String safeSlug = sanitizeToSafeSlug(originalFilename);
+            String ext = "";
+            int dot = originalFilename.lastIndexOf('.');
+            if (dot > 0) ext = originalFilename.substring(dot).toLowerCase();
+            if (ext.isBlank()) ext = ".mp4";
+            String safeFilename = safeSlug + ext;
 
             // Lưu một bản sao tại uploads/ để phục vụ phát trực tiếp hoặc phân tích sau này
             Path projectRoot = resolveProjectRoot();
@@ -174,11 +179,11 @@ public class VideoController {
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
-            Path localFile = uploadDir.resolve(hash + "_" + originalFilename);
+            Path localFile = uploadDir.resolve(hash + "_" + safeFilename);
             Files.copy(tempFile, localFile, StandardCopyOption.REPLACE_EXISTING);
 
             String publicUrl;
-            String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + originalFilename;
+            String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + safeFilename;
 
             // Thử upload lên Cloudflare R2 trước, nếu chưa cấu hình thì dùng link stream cục bộ
             try {
@@ -200,7 +205,7 @@ public class VideoController {
             videoRepository.save(videoEntity);
 
             // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
-            String transcriptFile = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
+            String transcriptFile = generateTranscriptForUploadedVideo(localFile, safeFilename, hash);
             TranscriptDTO transcriptDTO = null;
             SegmentsDTO segmentsDTO = null;
 
@@ -310,7 +315,7 @@ public class VideoController {
 
         Path transcriptsDir = projectRoot.resolve("transcripts");
 
-        String videoStem = stripExtension(originalFilename);
+        String videoStem = sanitizeToSafeSlug(originalFilename);
 
         String fileName = videoStem + "_transcript.json";
 
@@ -853,11 +858,19 @@ public class VideoController {
 
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
+        String safeStem = sanitizeToSafeSlug(videoName);
+
         String videoStem = stripExtension(videoName);
 
         Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
 
-        Path candidateTranscript = transcriptsDir.resolve(videoStem + "_transcript.json");
+        Path candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+
+        if (!Files.exists(candidateTranscript)) {
+
+            candidateTranscript = transcriptsDir.resolve(videoStem + "_transcript.json");
+
+        }
 
         if (!Files.exists(candidateTranscript)) {
 
@@ -916,7 +929,9 @@ public class VideoController {
                     // Chỉ sử dụng transcript nếu khớp tên video hoặc thời lượng tương đương
                     // Tránh gán nhầm transcript 2 tiếng của video dài cho video ngắn 2 phút
                     boolean matchesVideo = (duration > 0 && transDur > 0 && Math.abs(transDur - duration) / Math.max(transDur, duration) < 0.3)
-                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())));
+                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())))
+                            || candidateTranscript.getFileName().toString().toLowerCase().contains(safeStem)
+                            || safeStem.contains(candidateTranscript.getFileName().toString().replace("_transcript.json", "").toLowerCase());
 
                     if (matchesVideo) {
                         List<Sentence> sents = existingDto.sentences();
@@ -1002,11 +1017,7 @@ public class VideoController {
 
         TranscriptDTO transcriptDTO = new TranscriptDTO(videoName, cut4, sentences);
 
-        if (!hash.isBlank()) {
-
-            cacheService.saveTranscriptCache(hash, transcriptDTO);
-
-        }
+        // Không lưu vào cache nếu là dữ liệu mẫu dự phòng (để lần sau có file thật sẽ phân tích lại)
 
         SegmentsDTO segmentsDTO = new SegmentsDTO(videoName, lessonName, "analyzed", false, segments);
 
@@ -1302,6 +1313,29 @@ public class VideoController {
 
         return Paths.get(relativePath);
 
+    }
+
+    public static String sanitizeToSafeSlug(String raw) {
+        if (raw == null || raw.isBlank()) return "video";
+        String name = raw;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(raw);
+        if (m.find()) {
+            String inner = m.group(1).trim();
+            if (inner.contains(".")) {
+                name = inner;
+            }
+        }
+        int dotIdx = name.lastIndexOf('.');
+        if (dotIdx > 0) {
+            name = name.substring(0, dotIdx);
+        }
+        String nfd = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD);
+        String ascii = nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                          .replace('đ', 'd').replace('Đ', 'D');
+        String slug = ascii.replaceAll("[^a-zA-Z0-9]+", "_")
+                           .replaceAll("^_+|_+$", "")
+                           .toLowerCase();
+        return slug.isBlank() ? "video" : slug;
     }
 
     private String normalizeSearchKey(String str) {
