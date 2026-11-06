@@ -1,0 +1,600 @@
+[
+  {
+    "id": "vid_01",
+    "name": "Bai05_VongLap.mp4",
+    "lesson": "Bai05_VongLap",
+    "title": "Bài 05: Cấu trúc lặp For, While và Do-While",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 5700,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình C/C++ Cơ Bản",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 14:15",
+    "segments": [
+      {
+        "id": "seg01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Vòng lặp for",
+        "slug": "for",
+        "start_id": "S0001",
+        "end_id": "S0040",
+        "start": 0.0,
+        "end": 350.2,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 350.2,
+            "file": "01_LyThuyet/01_for.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg02",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 2,
+        "topic": "Vòng lặp while",
+        "slug": "while",
+        "start_id": "S0041",
+        "end_id": "S0078",
+        "start": 350.2,
+        "end": 620.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 350.2,
+            "end": 620.0,
+            "file": "01_LyThuyet/02_while.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg03",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 3,
+        "topic": "Thực hành ví dụ: tính tổng 1 đến n, in bảng cửu chương",
+        "slug": "tinh-tong-1-den-n",
+        "start_id": "S0079",
+        "end_id": "S0150",
+        "start": 620.0,
+        "end": 1850.5,
+        "parts": [
+          {
+            "part": 1,
+            "start": 620.0,
+            "end": 1030.1,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1030.1,
+            "end": 1440.3,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 1440.3,
+            "end": 1850.5,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg04",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 4,
+        "topic": "Bài tập: kiểm tra số nguyên tố, đảo ngược số",
+        "slug": "so-nguyen-to",
+        "start_id": "S0151",
+        "end_id": "S0210",
+        "start": 1850.5,
+        "end": 5700.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1850.5,
+            "end": 2260.0,
+            "file": "03_BaiTap/04_so-nguyen-to_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 2260.0,
+            "end": 5700.0,
+            "file": "03_BaiTap/04_so-nguyen-to_Phan2.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vid_02",
+    "name": "Bai04_HamVaThamSo.mp4",
+    "lesson": "Bai04_HamVaThamSo",
+    "title": "Bài 04: Hàm và Truyền tham số trong C++",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "duration": 2700,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình C/C++ Cơ Bản",
+    "segmentsCount": 3,
+    "updatedAt": "28/10/2026 11:30",
+    "segments": [
+      {
+        "id": "seg_04_01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Định nghĩa hàm và cú pháp khai báo",
+        "slug": "dinh-nghia-ham",
+        "start_id": "S0001",
+        "end_id": "S0035",
+        "start": 0.0,
+        "end": 750.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 420.0,
+            "file": "01_LyThuyet/01_dinh-nghia-ham_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 420.0,
+            "end": 750.0,
+            "file": "01_LyThuyet/01_dinh-nghia-ham_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_04_02",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 2,
+        "topic": "Truyền tham trị và tham chiếu (&)",
+        "slug": "truyen-tham-tri",
+        "start_id": "S0036",
+        "end_id": "S0090",
+        "start": 750.0,
+        "end": 1800.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 750.0,
+            "end": 1200.0,
+            "file": "02_ThucHanh/02_truyen-tham-tri_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1200.0,
+            "end": 1800.0,
+            "file": "02_ThucHanh/02_truyen-tham-tri_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_04_03",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 3,
+        "topic": "Bài tập: Hoán vị hai số và tính giai thừa đệ quy",
+        "slug": "bai-tap-ham",
+        "start_id": "S0091",
+        "end_id": "S0140",
+        "start": 1800.0,
+        "end": 2700.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1800.0,
+            "end": 2250.0,
+            "file": "03_BaiTap/03_bai-tap-ham_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 2250.0,
+            "end": 2700.0,
+            "file": "03_BaiTap/03_bai-tap-ham_Phan2.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vid_03",
+    "name": "Bai06_CauTrucDuLieu.mp4",
+    "lesson": "Bai06_CauTrucDuLieu",
+    "title": "Bài 06: Mảng một chiều và Con trỏ trong bộ nhớ",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "duration": 3600,
+    "status": "pending",
+    "statusLabel": "Chưa sửa",
+    "category": "Cấu Trúc Dữ Liệu",
+    "segmentsCount": 2,
+    "updatedAt": "27/10/2026 16:40",
+    "segments": [
+      {
+        "id": "seg_06_01",
+        "section_no": 1,
+        "section": "01_Raw_Record",
+        "topic_no": 1,
+        "topic": "Toàn bộ bài giảng Mảng một chiều (Chưa phân đoạn)",
+        "slug": "mang-mot-chieu",
+        "start_id": "s001",
+        "end_id": "s050",
+        "start": 0.0,
+        "end": 1800.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 1800.0,
+            "file": "01_Raw_Record/01_mang-mot-chieu.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_06_02",
+        "section_no": 2,
+        "section": "02_Raw_ConTro",
+        "topic_no": 2,
+        "topic": "Khái niệm con trỏ và địa chỉ bộ nhớ (Chưa phân đoạn)",
+        "slug": "con-tro",
+        "start_id": "s051",
+        "end_id": "s110",
+        "start": 1800.0,
+        "end": 3600.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1800.0,
+            "end": 3600.0,
+            "file": "02_Raw_ConTro/02_con-tro.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vid_04",
+    "name": "Bai07_ThuatToanSapXep.mp4",
+    "lesson": "Bai07_ThuatToanSapXep",
+    "title": "Bài 07: Các thuật toán sắp xếp (Bubble, QuickSort)",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 5100,
+    "status": "pending",
+    "statusLabel": "Chưa sửa",
+    "category": "Giải Thuật & Thuật Toán",
+    "segmentsCount": 3,
+    "updatedAt": "26/10/2026 09:15",
+    "segments": [
+      {
+        "id": "seg_07_01",
+        "section_no": 1,
+        "section": "01_SapXep_TongQuan",
+        "topic_no": 1,
+        "topic": "Khái niệm độ phức tạp O(n) và O(n^2)",
+        "slug": "do-phuc-tap",
+        "start_id": "s001",
+        "end_id": "s030",
+        "start": 0.0,
+        "end": 1200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 1200.0,
+            "file": "01_SapXep_TongQuan/01_do-phuc-tap.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_02",
+        "section_no": 2,
+        "section": "02_BubbleSort",
+        "topic_no": 2,
+        "topic": "Sắp xếp nổi bọt (Bubble Sort)",
+        "slug": "bubble-sort",
+        "start_id": "s031",
+        "end_id": "s075",
+        "start": 1200.0,
+        "end": 3000.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1200.0,
+            "end": 3000.0,
+            "file": "02_BubbleSort/02_bubble-sort.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_03",
+        "section_no": 3,
+        "section": "03_QuickSort",
+        "topic_no": 3,
+        "topic": "Sắp xếp nhanh (QuickSort) và chia để trị",
+        "slug": "quick-sort",
+        "start_id": "s076",
+        "end_id": "s120",
+        "start": 3000.0,
+        "end": 5100.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3000.0,
+            "end": 5100.0,
+            "file": "03_QuickSort/03_quick-sort.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vid_05",
+    "name": "BaiGiang_TriTueNhanTao_Full.mp4",
+    "lesson": "BaiGiang_TriTueNhanTao_Full",
+    "title": "Bài giảng: Trí tuệ Nhân tạo & Machine Learning căn bản",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "duration": 6900,
+    "status": "added",
+    "statusLabel": "Đã thêm",
+    "category": "Trí Tuệ Nhân Tạo (AI)",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 13:40",
+    "segments": [
+      {
+        "id": "seg_ai_01",
+        "section_no": 1,
+        "section": "01_GioiThieuAI",
+        "topic_no": 1,
+        "topic": "Giới thiệu lịch sử và định hướng AI hiện đại",
+        "slug": "gioi-thieu-ai",
+        "start_id": "s001",
+        "end_id": "s040",
+        "start": 0.0,
+        "end": 1035.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 517.5,
+            "file": "01_GioiThieuAI/01_gioi-thieu-ai_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 517.5,
+            "end": 1035.0,
+            "file": "01_GioiThieuAI/01_gioi-thieu-ai_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_02",
+        "section_no": 2,
+        "section": "02_HocCoGiamSat",
+        "topic_no": 2,
+        "topic": "Học có giám sát (Supervised Learning): Hồi quy tuyến tính",
+        "slug": "hoc-co-giam-sat",
+        "start_id": "s041",
+        "end_id": "s095",
+        "start": 1035.0,
+        "end": 3450.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1035.0,
+            "end": 1840.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1840.0,
+            "end": 2645.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 2645.0,
+            "end": 3450.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_03",
+        "section_no": 3,
+        "section": "03_MangNeural",
+        "topic_no": 3,
+        "topic": "Mạng nơ-ron nhân tạo (ANN) và hàm kích hoạt",
+        "slug": "mang-neural",
+        "start_id": "s096",
+        "end_id": "s140",
+        "start": 3450.0,
+        "end": 5650.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3450.0,
+            "end": 4200.0,
+            "file": "03_MangNeural/03_mang-neural_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 4200.0,
+            "end": 4950.0,
+            "file": "03_MangNeural/03_mang-neural_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 4950.0,
+            "end": 5650.0,
+            "file": "03_MangNeural/03_mang-neural_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_04",
+        "section_no": 4,
+        "section": "04_TongKetAI",
+        "topic_no": 4,
+        "topic": "Đạo đức AI và ứng dụng vào thực tiễn bài tập",
+        "slug": "tong-ket-ai",
+        "start_id": "s141",
+        "end_id": "s180",
+        "start": 5650.0,
+        "end": 6900.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 5650.0,
+            "end": 6275.0,
+            "file": "04_TongKetAI/04_tong-ket-ai_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 6275.0,
+            "end": 6900.0,
+            "file": "04_TongKetAI/04_tong-ket-ai_Phan2.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vid_06",
+    "name": "BaiGiang_LapTrinhWeb_2Gio.mp4",
+    "lesson": "BaiGiang_LapTrinhWeb_2Gio",
+    "title": "Full Khóa Lập Trình Web Hiện Đại với React & Next.js",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 7200,
+    "status": "added",
+    "statusLabel": "Đã thêm",
+    "category": "Lập Trình Web",
+    "segmentsCount": 4,
+    "updatedAt": "28/10/2026 14:20",
+    "segments": [
+      {
+        "id": "seg_web_01",
+        "section_no": 1,
+        "section": "01_KienTrucWeb",
+        "topic_no": 1,
+        "topic": "Kiến trúc Client - Server và HTTP/HTTPS",
+        "slug": "kien-truc-web",
+        "start_id": "s001",
+        "end_id": "s035",
+        "start": 0.0,
+        "end": 1080.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 540.0,
+            "file": "01_KienTrucWeb/01_kien-truc-web_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 540.0,
+            "end": 1080.0,
+            "file": "01_KienTrucWeb/01_kien-truc-web_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_02",
+        "section_no": 2,
+        "section": "02_ReactCoBan",
+        "topic_no": 2,
+        "topic": "React Hooks: useState, useEffect và Component Lifecycle",
+        "slug": "react-co-ban",
+        "start_id": "s036",
+        "end_id": "s090",
+        "start": 1080.0,
+        "end": 3600.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1080.0,
+            "end": 1920.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1920.0,
+            "end": 2760.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 2760.0,
+            "end": 3600.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_03",
+        "section_no": 3,
+        "section": "03_NextJsRouter",
+        "topic_no": 3,
+        "topic": "App Router Next.js 14 và Server Components",
+        "slug": "nextjs-router",
+        "start_id": "s091",
+        "end_id": "s140",
+        "start": 3600.0,
+        "end": 5900.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3600.0,
+            "end": 4366.6,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 4366.6,
+            "end": 5133.3,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 5133.3,
+            "end": 5900.0,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_04",
+        "section_no": 4,
+        "section": "04_DeployProduction",
+        "topic_no": 4,
+        "topic": "Tối ưu hóa và đóng gói triển khai Production",
+        "slug": "deploy-production",
+        "start_id": "s141",
+        "end_id": "s175",
+        "start": 5900.0,
+        "end": 7200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 5900.0,
+            "end": 6550.0,
+            "file": "04_DeployProduction/04_deploy-production_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 6550.0,
+            "end": 7200.0,
+            "file": "04_DeployProduction/04_deploy-production_Phan2.mp4"
+          }
+        ]
+      }
+    ]
+  }
+]
