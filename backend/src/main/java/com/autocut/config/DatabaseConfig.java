@@ -27,8 +27,14 @@ public class DatabaseConfig {
         Dotenv dotenv = configService.getDotenv();
         String databaseUrl = dotenv.get("DATABASE_URL");
 
-        if (databaseUrl == null || databaseUrl.isBlank()) {
-            throw new IllegalStateException("Chưa cấu hình DATABASE_URL trong .env. Vui lòng cung cấp chuỗi kết nối PostgreSQL của Neon!");
+        if (databaseUrl == null || databaseUrl.isBlank() || databaseUrl.contains("ep-xyz")) {
+            log.warn("Chưa cấu hình DATABASE_URL Neon trong .env, sử dụng H2 in-memory tạm thời!");
+            return DataSourceBuilder.create()
+                    .driverClassName("org.h2.Driver")
+                    .url("jdbc:h2:mem:autocut_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL")
+                    .username("sa")
+                    .password("")
+                    .build();
         }
 
         try {

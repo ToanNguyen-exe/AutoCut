@@ -1,4 +1,12 @@
 {
+  "name": "autocut",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "backend": "cd backend && .\\mvnw.cmd spring-boot:run"
+  },
   "dependencies": {
     "@neon/config": "^1.9.5",
     "@neon/env": "^1.6.6"
