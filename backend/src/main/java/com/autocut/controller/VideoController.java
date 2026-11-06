@@ -420,12 +420,6 @@ public class VideoController {
 
                 objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), fallbackDto);
 
-                if (hash != null && !hash.isBlank()) {
-
-                    cacheService.saveTranscriptCache(hash, fallbackDto);
-
-                }
-
             }
 
         } catch (IOException ioEx) {
