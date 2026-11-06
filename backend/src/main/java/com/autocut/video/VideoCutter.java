@@ -75,7 +75,7 @@ public class VideoCutter {
      * Cắt video chính xác từ mốc start đến mốc end (Accurate Cut).
      *
      * Câu lệnh chuẩn:
-     * ffmpeg -y -ss <start> -to <end> -i <in> -c:v libx264 -preset fast -crf 22 -c:a aac -avoid_negative_ts make_zero <out>
+     * ffmpeg -y -ss <start> -to <end> -i <in> -c:v libx264 -preset fast -crf 22 -c:a aac -avoid_negative_ts make_zero -movflags +faststart <out>
      *
      * @param inputFile  Tệp video nguồn gốc
      * @param outputFile Tệp video con xuất ra
@@ -129,19 +129,7 @@ public class VideoCutter {
         String startStr = String.format(Locale.US, "%.3f", start);
         String endStr = String.format(Locale.US, "%.3f", end);
 
-        List<String> command = List.of(
-            videoProps.getFfmpegPath(),
-            "-y",
-            "-ss", startStr,
-            "-to", endStr,
-            "-i", inputFile.getAbsolutePath(),
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "22",
-            "-c:a", "aac",
-            "-avoid_negative_ts", "make_zero",
-            outputFile.getAbsolutePath()
-        );
+        List<String> command = buildCommand(inputFile, outputFile, startStr, endStr);
 
         log.info("Bắt đầu cắt clip [{} -> {}]: start={}, end={}", inputFile.getName(), outputFile.getName(), startStr, endStr);
 
@@ -201,6 +189,27 @@ public class VideoCutter {
             return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
                 ErrorCode.UNKNOWN_ERROR, "Lỗi không xác định khi cắt video: " + e.getMessage());
         }
+    }
+
+    /**
+     * Xây dựng danh sách tham số FFmpeg (package-private để test kiểm tra).
+     * Bao gồm -movflags +faststart để tối ưu phát trực tuyến web (moov atom ở đầu file).
+     */
+    List<String> buildCommand(File inputFile, File outputFile, String startStr, String endStr) {
+        return List.of(
+            videoProps.getFfmpegPath(),
+            "-y",
+            "-ss", startStr,
+            "-to", endStr,
+            "-i", inputFile.getAbsolutePath(),
+            "-c:v", "libx264",
+            "-preset", "fast",
+            "-crf", "22",
+            "-c:a", "aac",
+            "-avoid_negative_ts", "make_zero",
+            "-movflags", "+faststart",
+            outputFile.getAbsolutePath()
+        );
     }
 
     /**
