@@ -29,6 +29,16 @@ TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
 SHA256_PREFIX_RE = re.compile(r"^[0-9a-fA-F]{64}_")
 
 
+def strip_accents(s: str) -> str:
+    """Loại bỏ dấu tiếng Việt và chuẩn hóa về chữ thường không dấu để so khớp linh hoạt."""
+    import unicodedata
+    if not s:
+        return ""
+    nfkd = unicodedata.normalize('NFKD', s)
+    no_dia = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    return no_dia.replace('đ', 'd').replace('Đ', 'D').lower()
+
+
 def clean_video_filename(raw_name: str) -> str:
     """Loại bỏ tiền tố mã băm SHA-256 (nếu file nằm trong uploads/<hash>_<name>.mp4) để lấy đúng tên file gốc."""
     name = Path(raw_name).name
@@ -209,11 +219,19 @@ def _find_matching_transcript_or_video(
             if jc.name == "transcript.json" and fallback_root_transcript is None:
                 fallback_root_transcript = t_obj
 
-            if (
-                (norm_video and t_vid == norm_video)
-                or (norm_stem and t_stem == norm_stem)
-                or (norm_lesson and (t_stem == norm_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
-            ):
+            k_vid = strip_accents(t_vid).replace(" ", "_")
+            k_stem = strip_accents(t_stem).replace(" ", "_")
+            q_vid = strip_accents(norm_video).replace(" ", "_")
+            q_stem = strip_accents(norm_stem).replace(" ", "_")
+            q_lesson = strip_accents(norm_lesson).replace(" ", "_")
+
+            matched = (
+                (q_vid and (k_vid == q_vid or q_vid in k_vid or k_vid in q_vid))
+                or (q_stem and (k_stem == q_stem or q_stem in k_stem or k_stem in q_stem))
+                or (q_lesson and (k_stem == q_lesson or q_lesson in k_stem or k_stem in q_lesson))
+            )
+
+            if matched:
                 # Bỏ qua nếu là file transcript cũ chứa ca từ mẫu cứng
                 first_text = t_obj.sentences[0].text if t_obj.sentences else ""
                 if "Anh đừng lặng im nếu anh giận lòng em" in first_text and clean_vname != "Download.mp4":

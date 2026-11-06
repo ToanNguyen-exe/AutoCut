@@ -876,6 +876,30 @@ public class VideoController {
             }
         }
 
+        if (!Files.exists(candidateTranscript) && Files.exists(transcriptsDir)) {
+            String normKey = normalizeSearchKey(videoStem);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
+            String innerNorm = m.find() ? normalizeSearchKey(stripExtension(m.group(1).trim())) : "";
+
+            try (var stream = Files.list(transcriptsDir)) {
+                List<Path> files = stream.filter(p -> p.getFileName().toString().endsWith("_transcript.json")).toList();
+                for (Path p : files) {
+                    String base = p.getFileName().toString().replace("_transcript.json", "");
+                    String fileNorm = normalizeSearchKey(base);
+                    if (!fileNorm.isBlank() && (
+                            fileNorm.equals(normKey) ||
+                            fileNorm.equals(innerNorm) ||
+                            normKey.contains(fileNorm) ||
+                            fileNorm.contains(normKey) ||
+                            (!innerNorm.isBlank() && (innerNorm.contains(fileNorm) || fileNorm.contains(innerNorm)))
+                    )) {
+                        candidateTranscript = p;
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         if (!Files.exists(candidateTranscript) && Files.exists(resolveProjectRoot().resolve("transcript.json"))) {
 
             candidateTranscript = resolveProjectRoot().resolve("transcript.json");
@@ -1280,5 +1304,13 @@ public class VideoController {
 
     }
 
+    private String normalizeSearchKey(String str) {
+        if (str == null) return "";
+        String nfd = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        return nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replace('đ', 'd').replace('Đ', 'D')
+                .replaceAll("[^a-zA-Z0-9]", "")
+                .toLowerCase();
+    }
 }
 
