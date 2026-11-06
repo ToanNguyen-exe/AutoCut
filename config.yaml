@@ -20,10 +20,11 @@ outline:
   text: ""
 
 duration:
-  max_duration: 420            # 7 phút = 420 giây
-  max_overflow: 10             # Dung sai 10% (tối đa 462 giây)
-  min_duration: 30             # Bỏ/gộp đoạn < 30 giây
-  split_strategy: balanced     # balanced | greedy
+  enforce_max_duration: false  # Tắt cưỡng chế cắt theo trần 7 phút (chuyển sang cắt theo nội dung)
+  max_duration: 0              # Không giới hạn thời lượng tối đa
+  max_overflow: 0
+  min_duration: 30             # Vẫn giữ: Bỏ/gộp đoạn < 30 giây để tránh clip rác
+  split_strategy: none         # none: không chia nhỏ theo thời lượng, 1 chủ đề = 1 clip con
   split_search_window: 60      # Cửa sổ tìm kiếm điểm ngắt (giây)
   part_overlap: 0
 

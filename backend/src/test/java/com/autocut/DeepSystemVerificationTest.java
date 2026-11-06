@@ -48,7 +48,7 @@ public class DeepSystemVerificationTest {
     @DisplayName("1. Kiểm tra cấu hình config.yaml và .env nạp đầy đủ")
     void testConfigIntegrity() {
         Assertions.assertNotNull(configService.getRawConfig(), "Config Map không được null");
-        Assertions.assertTrue(configService.getMaxDuration() > 0, "Max duration phải > 0");
+        Assertions.assertTrue(configService.getMaxDuration() >= 0, "Max duration phải >= 0");
         Assertions.assertNotNull(configService.getDotenv(), "Dotenv không được null");
         Assertions.assertFalse(configService.getDotenv().get("DATABASE_URL", "").isBlank(), "DATABASE_URL phải tồn tại");
     }
