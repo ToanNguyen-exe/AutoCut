@@ -281,12 +281,12 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col text-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-800">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-600 shadow-2xs">
               <Film className="w-5 h-5" />
             </div>
             <div>
@@ -299,14 +299,14 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switch */}
-        <div className="flex border-b border-slate-200 bg-slate-100/60 p-1">
+        <div className="flex border-b border-slate-200 bg-slate-100 p-1">
           <button
             type="button"
             onClick={() => setTab("url")}

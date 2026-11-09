@@ -67,12 +67,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.nio.file.StandardCopyOption;
-
 import java.util.*;
-
 import java.util.concurrent.TimeUnit;
-
-
 
 @RestController
 
@@ -313,11 +309,44 @@ public class VideoController {
 
 
     /**
-
-     * Kích hoạt Whisper + Gemini tạo file transcript riêng cho video vừa upload tại transcripts/<tên_video>_transcript.json.
-
+     * Lấy danh sách video từ Neon Postgres (P18).
+     * SV4 gọi API này để lấy link video stream R2 và metadata.
      */
+    @GetMapping("/list")
+    public ResponseEntity<List<VideoEntity>> listVideos() {
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
+        return ResponseEntity.ok(list);
+    }
 
+    /**
+     * Lấy thông tin 1 video cụ thể theo ID hoặc lấy video mới nhất (P18).
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getVideoById(@PathVariable Long id) {
+        return videoRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Lấy video mới nhất để SV4 mở lên xem ngay không cần truyền ID.
+     */
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestVideo() {
+        List<VideoEntity> list = videoRepository.findAll().stream()
+                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
+                .toList();
+        if (list.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(list.get(list.size() - 1));
+    }
+
+    /**
+     * Kích hoạt Whisper + Gemini tạo file transcript riêng cho video vừa upload tại transcripts/<tên_video>_transcript.json.
+     */
     private String generateTranscriptForUploadedVideo(Path localVideoFile, String originalFilename, String hash) {
 
         Path projectRoot = resolveProjectRoot();
@@ -508,36 +537,7 @@ public class VideoController {
 
 
     /**
-
-     * API lấy danh sách video đã lưu trữ từ Database cho Thư viện Video của Frontend (SV4).
-
-     */
-
-    @GetMapping("/list")
-    public ResponseEntity<List<VideoEntity>> listVideos() {
-        List<VideoEntity> list = videoRepository.findAll().stream()
-                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
-                .toList();
-        return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/latest")
-    public ResponseEntity<?> getLatestVideo() {
-        List<VideoEntity> list = videoRepository.findAll().stream()
-                .filter(v -> v.getFileName() == null || !v.getFileName().startsWith("temp_test"))
-                .toList();
-        if (list.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(list.get(list.size() - 1));
-    }
-
-
-
-    /**
-
      * Trả về dữ liệu mock segments_sample.json cho Frontend hiển thị lên bảng duyệt (SV4).
-
      */
 
     @GetMapping("/mock-segments")
@@ -930,11 +930,65 @@ public class VideoController {
                     )) || candidateTranscript.getFileName().toString().replace("_transcript.json", "").equalsIgnoreCase(safeStem);
 
                     if (matchesVideo) {
-                        List<Sentence> sents = existingDto.sentences();
+                        List<Sentence> rawSents = existingDto.sentences();
                         double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
+
+                        // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
+                        List<Sentence> filledSents = new ArrayList<>();
+                        if (rawSents.get(0).start() > 1.5) {
+                            filledSents.add(new Sentence(
+                                    "S0000",
+                                    0.0,
+                                    Math.round(rawSents.get(0).start() * 10.0) / 10.0,
+                                    "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
+                                    null
+                            ));
+                        }
+                        for (int s = 0; s < rawSents.size(); s++) {
+                            Sentence curr = rawSents.get(s);
+                            filledSents.add(curr);
+                            if (s < rawSents.size() - 1) {
+                                Sentence next = rawSents.get(s + 1);
+                                double gap = next.start() - curr.end();
+                                if (gap >= 8.0) {
+                                    filledSents.add(new Sentence(
+                                            "S_gap_" + s,
+                                            Math.round(curr.end() * 10.0) / 10.0,
+                                            Math.round(next.start() * 10.0) / 10.0,
+                                            "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
+                                            null
+                                    ));
+                                }
+                            }
+                        }
+                        if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
+                            filledSents.add(new Sentence(
+                                    "S_outro",
+                                    Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
+                                    Math.round(totalDur * 10.0) / 10.0,
+                                    "Giai điệu kết thúc (Outro Fade)",
+                                    null
+                            ));
+                        }
+
+                        // Đánh số lại thứ tự câu S0001, S0002...
+                        List<Sentence> sents = new ArrayList<>();
+                        for (int s = 0; s < filledSents.size(); s++) {
+                            Sentence item = filledSents.get(s);
+                            sents.add(new Sentence(
+                                    String.format("S%04d", s + 1),
+                                    item.start(),
+                                    item.end(),
+                                    item.text(),
+                                    item.words()
+                            ));
+                        }
+
+                        // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
                         int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
                         int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
                         List<Segment> segList = new ArrayList<>();
+                        double currentStart = 0.0;
 
                         for (int i = 0; i < segCount; i++) {
                             int sIdx = i * chunkSize;
@@ -942,10 +996,24 @@ public class VideoController {
                             int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
                             Sentence fSent = sents.get(sIdx);
                             Sentence lSent = sents.get(eIdx);
-                            double sStart = (i == 0) ? 0.0 : fSent.start();
-                            double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
+
+                            double sStart = currentStart;
+                            double sEnd;
+                            if (i == segCount - 1 || eIdx == sents.size() - 1) {
+                                sEnd = totalDur;
+                            } else {
+                                int nextSIdx = (i + 1) * chunkSize;
+                                Sentence nextSent = sents.get(Math.min(nextSIdx, sents.size() - 1));
+                                sEnd = Math.round(((lSent.end() + nextSent.start()) / 2.0) * 10.0) / 10.0;
+                                if (sEnd <= sStart) {
+                                    sEnd = Math.round(lSent.end() * 10.0) / 10.0;
+                                }
+                            }
+                            currentStart = sEnd;
+
                             String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-                            String topName = "Đoạn " + (i + 1);
+                            String topName = fSent.text().length() > 35 ? fSent.text().substring(0, 35) + "..." : fSent.text();
+
                             segList.add(new Segment(
                                     "seg_ai_" + (i + 1),
                                     i + 1,
@@ -961,16 +1029,17 @@ public class VideoController {
                             ));
                         }
 
+                        TranscriptDTO normalizedDto = new TranscriptDTO(existingDto.video(), totalDur, sents);
                         SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
                         if (!hash.isBlank()) {
-                            cacheService.saveTranscriptCache(hash, existingDto);
+                            cacheService.saveTranscriptCache(hash, normalizedDto);
                         }
 
                         return ResponseEntity.ok(Map.of(
                                 "status", "SUCCESS",
                                 "mode", "analyzed",
                                 "segmentsData", segsDto,
-                                "transcript", existingDto
+                                "transcript", normalizedDto
                         ));
                     } else {
                         log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",

@@ -105,26 +105,26 @@ const renderSceneGraphic = (
     const subBadge = isDrop ? "DROP BASS" : isVocal ? "VOCAL" : isIntro ? "INTRO" : "AUDIO";
 
     return (
-      <div className="w-full h-full bg-gradient-to-br from-pink-100 via-rose-50 to-purple-100 p-1.5 flex flex-col justify-between text-[8px] select-none overflow-hidden border border-pink-300">
-        <div className="flex items-center justify-between border-b border-pink-200 pb-0.5 mb-0.5">
-          <span className="text-[7px] text-pink-800 font-bold truncate max-w-[65px] font-sans">
+      <div className="w-full h-full bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-1.5 flex flex-col justify-between text-[8px] select-none overflow-hidden border border-slate-200 group-hover:border-indigo-300 transition-colors">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-0.5 mb-0.5">
+          <span className="text-[7px] text-slate-800 font-bold truncate max-w-[65px] font-sans">
             {badgeTitle}
           </span>
-          <Music className="w-2.5 h-2.5 text-pink-600" />
+          <Music className="w-2.5 h-2.5 text-indigo-600" />
         </div>
-        {/* Equalizer Waveform Graphic */}
+        {/* Modern Studio Equalizer Waveform Graphic */}
         <div className="flex-1 flex items-end justify-center gap-1 px-1 py-1">
-          <div className="w-1 bg-pink-500 rounded-t h-3" />
-          <div className="w-1 bg-purple-500 rounded-t h-5" />
-          <div className="w-1 bg-pink-400 rounded-t h-2" />
-          <div className="w-1 bg-indigo-500 rounded-t h-6" />
-          <div className="w-1 bg-pink-500 rounded-t h-4" />
-          <div className="w-1 bg-purple-600 rounded-t h-7" />
-          <div className="w-1 bg-pink-400 rounded-t h-3" />
+          <div className="w-1 bg-indigo-300 rounded-full h-3" />
+          <div className="w-1 bg-indigo-500 rounded-full h-5" />
+          <div className="w-1 bg-indigo-400 rounded-full h-2" />
+          <div className="w-1 bg-indigo-600 rounded-full h-6" />
+          <div className="w-1 bg-indigo-400 rounded-full h-4" />
+          <div className="w-1 bg-indigo-500 rounded-full h-7" />
+          <div className="w-1 bg-indigo-300 rounded-full h-3" />
         </div>
-        <div className="flex items-center justify-between text-[7px] text-slate-600 pt-0.5 border-t border-pink-200 font-semibold">
-          <span className="text-pink-800 font-bold">{subBadge}</span>
-          <span className="text-slate-500">AUDIO</span>
+        <div className="flex items-center justify-between text-[7px] text-slate-500 pt-0.5 border-t border-slate-100 font-semibold">
+          <span className="text-indigo-700 font-bold">{subBadge}</span>
+          <span className="text-slate-400 font-mono">TRACK</span>
         </div>
       </div>
     );
@@ -313,9 +313,9 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   };
 
   return (
-    <div className="w-[380px] lg:w-[430px] xl:w-[470px] shrink-0 flex flex-col bg-slate-50 border-l border-slate-300 overflow-hidden select-none text-slate-800">
+    <div className="w-[380px] lg:w-[430px] xl:w-[470px] shrink-0 flex flex-col bg-white border-l border-slate-200/90 overflow-hidden select-none text-slate-800">
       {/* Top Project Bar */}
-      <div className="h-14 border-b border-slate-300 px-4 flex items-center justify-between shrink-0 bg-slate-100">
+      <div className="h-14 border-b border-slate-200/90 px-4 flex items-center justify-between shrink-0 bg-white/95 backdrop-blur-md">
         <div className="flex items-center gap-2 flex-1 mr-2 min-w-0">
           {isEditingTitle ? (
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -342,27 +342,27 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
               <h2 className="text-sm lg:text-base font-bold text-slate-900 tracking-tight truncate max-w-[200px] lg:max-w-[240px]">
                 {lessonName || "Learn Demo Project"}
               </h2>
-              <Edit3 className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-600 transition shrink-0" />
+              <Edit3 className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition shrink-0" />
             </div>
           )}
 
           {/* Status Badge */}
           {isDemo ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shrink-0">
               Demo Mẫu
             </span>
           ) : isAnalyzing ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300 animate-pulse flex items-center gap-1 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 animate-pulse flex items-center gap-1 shrink-0">
               <RefreshCw className="w-2.5 h-2.5 animate-spin" />
               Đang phân tích...
             </span>
           ) : isRaw ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0">
               Chưa phân tích
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 shrink-0">
-              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-700" />
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1 shrink-0">
+              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
               Đã phân tích AI
             </span>
           )}
@@ -372,7 +372,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
         {isAnalyzing ? (
           <button
             disabled
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-500 cursor-not-allowed shrink-0 border border-slate-300"
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed shrink-0 border border-slate-200"
           >
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
             <span>Đang chạy...</span>
@@ -380,7 +380,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
         ) : isRaw && onAnalyzeAI ? (
           <button
             onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
             title="Khởi chạy Whisper & AI để phân tích video và phân đoạn"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
@@ -389,16 +389,16 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
         ) : onAnalyzeAI ? (
           <button
             onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-indigo-800 border border-slate-300 transition shrink-0 shadow-2xs"
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-indigo-700 border border-slate-200 transition shrink-0 shadow-2xs"
             title="Chạy lại phân tích AI nếu nội dung chưa vừa ý"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-700" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
             <span>Chạy lại AI</span>
           </button>
         ) : (
           <button
             onClick={() => alert("Tính năng Auto-Segment LLM đang đồng bộ với transcript!")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 transition shrink-0 shadow-2xs"
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition shrink-0 shadow-2xs"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
             <span>Rewrite</span>
@@ -409,9 +409,9 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
       {/* Main split: Thumbnails column on left + Script text column on right */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sub-strip: Numbered Scene Thumbnails */}
-        <div className="w-28 sm:w-32 bg-slate-200/50 border-r border-slate-300 p-2 overflow-y-auto space-y-2.5 shrink-0 select-none">
+        <div className="w-28 sm:w-32 bg-slate-50 border-r border-slate-200/90 p-2 overflow-y-auto space-y-2.5 shrink-0 select-none">
           {/* Header hint */}
-          <div className="text-[9px] font-bold text-indigo-800 flex items-center justify-center gap-1 py-1 px-1 bg-indigo-100 rounded border border-indigo-300 text-center leading-tight">
+          <div className="text-[10px] font-semibold text-slate-600 flex items-center justify-center gap-1 py-1 px-1 bg-white rounded-md border border-slate-200/80 text-center leading-tight shadow-2xs">
             <span>{isAnalyzing ? "Đang xử lý..." : "Kéo / Bấm phát"}</span>
           </div>
 
@@ -420,10 +420,10 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
             [1, 2, 3].map((n) => (
               <div
                 key={n}
-                className="aspect-[16/10] bg-slate-100 rounded-lg border border-indigo-200 animate-pulse flex flex-col items-center justify-center gap-1 shadow-2xs"
+                className="aspect-[16/10] bg-white rounded-xl border border-indigo-200 animate-pulse flex flex-col items-center justify-center gap-1 shadow-2xs"
               >
-                <div className="w-4 h-4 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />
-                <span className="text-[7px] text-indigo-700 font-mono font-bold">Phân đoạn #{n}</span>
+                <div className="w-4 h-4 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
+                <span className="text-[7px] text-indigo-600 font-mono font-bold">Phân đoạn #{n}</span>
               </div>
             ))
           ) : (
@@ -450,14 +450,14 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                     onSeek(seg.start);
                     if (onPlay) onPlay();
                   }}
-                  className={`group relative rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 transform hover:scale-[1.03] hover:shadow-md ${
+                  className={`group relative rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 transform hover:scale-[1.02] hover:shadow-xs ${
                     isSelected
-                      ? "ring-2 ring-indigo-600 shadow-sm scale-[1.02]"
-                      : "border border-slate-300 hover:border-indigo-400 opacity-95 hover:opacity-100"
+                      ? "ring-2 ring-indigo-600 shadow-sm"
+                      : "border border-slate-200/90 hover:border-indigo-400"
                   }`}
                   title={`Kéo vào màn hình hoặc bấm để phát: "${seg.topic}" (${formatTime(seg.start)} - ${formatTime(seg.end)})`}
                 >
-                  <div className="aspect-[16/10] bg-slate-100 rounded relative overflow-hidden flex items-center justify-center">
+                  <div className="aspect-[16/10] bg-white rounded-xl relative overflow-hidden flex items-center justify-center">
                     {renderSceneGraphic(seg, idx, isRaw, lessonName)}
 
                     <span className="absolute top-1 left-1 bg-slate-900/80 backdrop-blur-xs text-[9px] font-mono font-bold text-white px-1.5 py-0.2 rounded shadow-2xs z-10">
@@ -518,11 +518,11 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                 onUpdateSegments([...segments, newSeg]);
               }
             }}
-            className="w-full aspect-[16/10] rounded-lg border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50/60 text-slate-600 hover:text-indigo-700 flex flex-col items-center justify-center gap-1 transition group bg-slate-100/70 shadow-2xs"
+            className="w-full aspect-[16/10] rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-500 hover:text-indigo-600 flex flex-col items-center justify-center gap-1 transition group bg-white shadow-2xs"
             title="Thêm video mới từ URL hoặc tải lên từ máy (+)"
           >
-            <Plus className="w-4 h-4 group-hover:scale-110 transition-transform text-slate-600 group-hover:text-indigo-600" />
-            <span className="text-[9px] font-bold text-slate-700 group-hover:text-indigo-700">Thêm URL</span>
+            <Plus className="w-4 h-4 group-hover:scale-110 transition-transform text-slate-400 group-hover:text-indigo-600" />
+            <span className="text-[9px] font-semibold text-slate-600 group-hover:text-indigo-600">Thêm URL</span>
           </button>
         </div>
 
@@ -582,7 +582,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
             <>
               {/* Demo Notice Banner if Demo */}
               {isDemo && (
-                <div className="p-2.5 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 text-xs flex items-center justify-between shrink-0 font-medium">
+                <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-800 text-xs flex items-center justify-between shrink-0 font-medium">
                   <div className="flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span><strong>Dữ liệu mẫu (Demo):</strong> Bài giảng C++ để thử giao diện. Tải video của bạn để AI phân tích thật!</span>
@@ -590,7 +590,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                   {onOpenAddVideo && (
                     <button
                       onClick={onOpenAddVideo}
-                      className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline ml-2 shrink-0"
+                      className="text-[11px] font-bold text-amber-900 hover:underline ml-2 shrink-0"
                     >
                       Thêm video
                     </button>
@@ -600,8 +600,8 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
 
               {/* Analyzed Success Notice */}
               {!isDemo && (
-                <div className="p-2 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900 text-[11px] flex items-center justify-between shrink-0 font-semibold">
-                  <span className="flex items-center gap-1">
+                <div className="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-[11px] flex items-center justify-between shrink-0 font-medium">
+                  <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>Đã phân tích nội dung bởi AI ({segments.length} phân đoạn)</span>
                   </span>
@@ -611,7 +611,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                       className="text-indigo-700 hover:text-indigo-900 font-bold flex items-center gap-1 hover:underline ml-2"
                       title="Chạy lại nếu kết quả chưa vừa ý"
                     >
-                      <Sparkles className="w-3 h-3 text-indigo-700" />
+                      <Sparkles className="w-3 h-3 text-indigo-600" />
                       <span>Chạy lại</span>
                     </button>
                   )}
@@ -619,14 +619,14 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
               )}
 
               {/* Mode Selector: Detailed Timeline vs Segments */}
-              <div className="flex items-center justify-between p-1 bg-slate-200/80 rounded-xl border border-slate-300 shrink-0 select-none">
+              <div className="flex items-center justify-between p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0 select-none">
                 <button
                   type="button"
                   onClick={() => setViewMode("timeline")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition ${
                     viewMode === "timeline"
-                      ? "bg-indigo-600 text-white shadow-xs font-bold"
-                      : "text-slate-700 hover:text-slate-900 hover:bg-slate-300/60"
+                      ? "bg-white text-indigo-700 shadow-sm font-bold border border-slate-200/60"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                   }`}
                   title="Hiển thị timeline chi tiết từng câu/lời thoại với mốc thời gian"
                 >
@@ -638,8 +638,8 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                   onClick={() => setViewMode("segments")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition ${
                     viewMode === "segments"
-                      ? "bg-indigo-600 text-white shadow-xs font-bold"
-                      : "text-slate-700 hover:text-slate-900 hover:bg-slate-300/60"
+                      ? "bg-white text-indigo-700 shadow-sm font-bold border border-slate-200/60"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                   }`}
                   title="Hiển thị gom nhóm theo phân đoạn chủ đề"
                 >
@@ -650,7 +650,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
 
               {/* View 1: Detailed Sentence Timeline */}
               {viewMode === "timeline" ? (
-                <div className="space-y-2.5 relative pl-4 border-l-2 border-indigo-300 ml-2 mt-1">
+                <div className="space-y-2.5 relative pl-4 border-l-2 border-slate-200 ml-2 mt-1">
                   {transcript?.sentences && transcript.sentences.length > 0 ? (
                     transcript.sentences.map((sent, sentIdx) => {
                       const isWordActive = currentTime >= sent.start && currentTime <= sent.end;
@@ -665,16 +665,16 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                           }}
                           className={`group relative pl-3.5 pr-3 py-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
                             isWordActive
-                              ? "bg-indigo-100 border-indigo-500 shadow-xs ring-1 ring-indigo-300"
-                              : "bg-slate-100/90 border-slate-300 hover:bg-slate-200/70 hover:border-slate-400 shadow-2xs"
+                              ? "bg-indigo-50/80 border-indigo-300 shadow-xs ring-1 ring-indigo-200/60"
+                              : "bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-2xs"
                           }`}
                         >
                           {/* Timeline node marker on the vertical track */}
                           <div
                             className={`absolute -left-[23px] top-3.5 w-3 h-3 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
                               isWordActive
-                                ? "bg-indigo-600 border-white ring-4 ring-indigo-200 scale-125"
-                                : "bg-slate-100 border-indigo-400 group-hover:border-indigo-600 group-hover:scale-110"
+                                ? "bg-indigo-600 border-white ring-4 ring-indigo-100 scale-125"
+                                : "bg-white border-slate-300 group-hover:border-indigo-500 group-hover:scale-110"
                             }`}
                           >
                             {isWordActive && <div className="w-1 h-1 rounded-full bg-white animate-ping" />}
@@ -683,30 +683,30 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                           {/* Header: ID + Timestamp badge + Duration */}
                           <div className="flex items-center justify-between gap-1 mb-1.5 select-none">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-mono text-[10px] font-bold text-indigo-800 bg-indigo-100 border border-indigo-300 px-1.5 py-0.5 rounded">
+                              <span className="font-mono text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
                                 {sent.id}
                               </span>
 
-                              <span className="font-mono text-[11px] font-bold text-slate-800 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded flex items-center gap-1">
-                                <Clock className="w-2.5 h-2.5 text-slate-500" />
+                              <span className="font-mono text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 text-slate-400" />
                                 <span>{formatTime(sent.start)}</span>
                                 <span className="text-slate-400">➔</span>
                                 <span>{formatTime(sent.end)}</span>
                               </span>
 
-                              <span className="text-[10px] font-mono font-semibold text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                                 {durationSec.toFixed(1)}s
                               </span>
                             </div>
 
                             {/* Playing badge */}
                             {isWordActive ? (
-                              <span className="text-[10px] font-bold text-indigo-800 flex items-center gap-1 bg-indigo-200/80 border border-indigo-300 px-1.5 py-0.5 rounded animate-pulse">
+                              <span className="text-[10px] font-semibold text-indigo-700 flex items-center gap-1 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded animate-pulse">
                                 <Play className="w-2.5 h-2.5 fill-current" />
                                 <span>Đang phát</span>
                               </span>
                             ) : (
-                              <div className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 text-[10px] text-indigo-700 font-bold">
+                              <div className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 text-[10px] text-indigo-600 font-semibold">
                                 <Play className="w-2.5 h-2.5 fill-current" />
                                 <span>Phát</span>
                               </div>
@@ -716,7 +716,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                           {/* Dialogue or Lyric Sentence text */}
                           <p
                             className={`text-xs leading-relaxed transition-colors ${
-                              isWordActive ? "text-indigo-950 font-bold" : "text-slate-800 group-hover:text-slate-950 font-normal"
+                              isWordActive ? "text-slate-950 font-semibold" : "text-slate-700 group-hover:text-slate-900 font-normal"
                             }`}
                           >
                             {sent.text}
@@ -725,7 +725,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                       );
                     })
                   ) : (
-                    <div className="p-4 text-center text-xs text-slate-500 italic font-medium">
+                    <div className="p-4 text-center text-xs text-slate-400 italic font-medium">
                       Chưa có câu transcript nào. Hãy bấm &quot;Phân Tích AI&quot; để bóc băng chi tiết!
                     </div>
                   )}
@@ -747,21 +747,21 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                       id={`seg-block-${seg.id}`}
                       className={`p-3.5 rounded-xl transition border ${
                         isSelected
-                          ? "bg-indigo-100/70 border-indigo-400 shadow-2xs"
+                          ? "bg-indigo-50/80 border-indigo-300 ring-1 ring-indigo-200/60 shadow-xs"
                           : isCurrentPlaying
-                          ? "bg-slate-100 border-slate-300"
-                          : "bg-slate-100/70 border-slate-200 hover:bg-slate-200/60"
+                          ? "bg-slate-50 border-slate-300"
+                          : "bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs"
                       }`}
                     >
                       {/* Speaker / Section Tag */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-indigo-800">{seg.section}</span>
-                          <span className="text-slate-400 text-xs">•</span>
-                          <span className="text-xs text-slate-600 font-mono font-bold">#{idx + 1}</span>
+                          <span className="text-xs font-semibold text-indigo-700">{seg.section}</span>
+                          <span className="text-slate-300 text-xs">•</span>
+                          <span className="text-xs text-slate-500 font-mono font-medium">#{idx + 1}</span>
                         </div>
 
-                        <span className="text-[11px] font-mono font-bold text-slate-800 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded">
+                        <span className="text-[11px] font-mono font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
                           {formatTime(seg.start)} - {formatTime(seg.end)}
                         </span>
                       </div>
@@ -798,7 +798,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                       </div>
 
                       {/* Sentence transcript */}
-                      <div className="text-xs text-slate-800 leading-relaxed space-y-2 mt-2 font-normal">
+                      <div className="text-xs text-slate-700 leading-relaxed space-y-2 mt-2 font-normal">
                         {segSentences.length > 0 ? (
                           segSentences.map((sent) => {
                             const isWordActive = currentTime >= sent.start && currentTime <= sent.end;
@@ -809,22 +809,22 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                                   onSeek(sent.start);
                                   if (onPlay) onPlay();
                                 }}
-                                className={`cursor-pointer transition p-2 rounded-lg border ${
+                                className={`cursor-pointer transition p-2.5 rounded-lg border ${
                                   isWordActive
-                                    ? "bg-indigo-100 text-indigo-950 border-indigo-400 font-semibold shadow-2xs"
-                                    : "bg-slate-100/90 border-slate-300 hover:bg-slate-200/80 text-slate-800"
+                                    ? "bg-indigo-100/80 text-indigo-950 border-indigo-300 font-medium shadow-2xs"
+                                    : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700"
                                 }`}
                               >
                                 <div className="flex items-center gap-1.5 mb-1 font-mono text-[10px]">
-                                  <span className="text-indigo-800 font-bold">[{sent.id}]</span>
-                                  <span className="text-slate-800 bg-slate-200 px-1.5 py-0.2 rounded border border-slate-300 font-bold">
+                                  <span className="text-indigo-700 font-semibold">[{sent.id}]</span>
+                                  <span className="text-slate-700 bg-white px-1.5 py-0.2 rounded border border-slate-200 font-semibold">
                                     {formatTime(sent.start)} ➔ {formatTime(sent.end)}
                                   </span>
-                                  <span className="text-slate-500 font-medium">
+                                  <span className="text-slate-400 font-medium">
                                     ({(sent.end - sent.start).toFixed(1)}s)
                                   </span>
                                   {isWordActive && (
-                                    <span className="ml-auto text-[9px] text-indigo-800 font-bold animate-pulse">
+                                    <span className="ml-auto text-[9px] text-indigo-700 font-semibold animate-pulse">
                                       ● Đang phát
                                     </span>
                                   )}
@@ -836,7 +836,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                         ) : (
                           <div
                             onClick={() => onSeek(seg.start)}
-                            className="cursor-pointer hover:text-slate-900 text-slate-500 italic font-medium"
+                            className="cursor-pointer hover:text-slate-900 text-slate-400 italic font-medium"
                           >
                             Đoạn video từ {formatTime(seg.start)} đến {formatTime(seg.end)}. Nhấp để nhảy tới điểm phát.
                           </div>
@@ -845,9 +845,9 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
 
                       {/* Subparts note if split > 7 min */}
                       {seg.parts.length > 1 && (
-                        <div className="mt-3 pt-2 border-t border-slate-300 flex items-center justify-between text-[11px] text-amber-800 font-mono font-bold">
+                        <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-amber-700 font-mono font-semibold">
                           <span>⚡ Vượt 7 phút: Tự tách thành {seg.parts.length} phần</span>
-                          <span className="text-slate-600">
+                          <span className="text-slate-500">
                             {seg.parts.map((p) => p.file.split("/")[1]).join(", ")}
                           </span>
                         </div>

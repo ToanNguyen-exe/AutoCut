@@ -18,58 +18,58 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ data, onToggleReviewed }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 my-6">
       {/* 1. Tên bài & Video */}
-      <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 shadow-2xs">
-        <div className="flex items-center justify-between text-slate-600 mb-2 font-semibold">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+        <div className="flex items-center justify-between text-slate-500 mb-2 font-medium">
           <span className="text-xs">Bài học & Video gốc</span>
-          <Film className="w-4 h-4 text-indigo-700" />
+          <Film className="w-4 h-4 text-indigo-600" />
         </div>
         <div className="text-base font-bold text-slate-900 truncate" title={data.lesson || data.video}>
           {data.lesson || data.video}
         </div>
-        <div className="text-xs text-slate-500 truncate mt-1">{data.video}</div>
+        <div className="text-xs text-slate-400 truncate mt-1">{data.video}</div>
       </div>
 
       {/* 2. Tổng thời lượng */}
-      <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 shadow-2xs">
-        <div className="flex items-center justify-between text-slate-600 mb-2 font-semibold">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+        <div className="flex items-center justify-between text-slate-500 mb-2 font-medium">
           <span className="text-xs">Tổng thời lượng</span>
-          <Clock className="w-4 h-4 text-indigo-700" />
+          <Clock className="w-4 h-4 text-indigo-600" />
         </div>
         <div className="text-2xl font-bold text-slate-900 tracking-tight">
           {formatTime(totalDuration)}
         </div>
-        <div className="text-xs text-slate-600 mt-1 font-mono font-semibold">
+        <div className="text-xs text-slate-500 mt-1 font-mono font-medium">
           {totalDuration.toFixed(1)} giây
         </div>
       </div>
 
       {/* 3. Số lượng chủ đề */}
-      <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 shadow-2xs">
-        <div className="flex items-center justify-between text-slate-600 mb-2 font-semibold">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+        <div className="flex items-center justify-between text-slate-500 mb-2 font-medium">
           <span className="text-xs">Chủ đề phân đoạn</span>
-          <BookOpen className="w-4 h-4 text-emerald-700" />
+          <BookOpen className="w-4 h-4 text-emerald-600" />
         </div>
         <div className="text-2xl font-bold text-slate-900 tracking-tight">
           {data.segments.length}
         </div>
-        <div className="text-xs text-slate-500 mt-1">
+        <div className="text-xs text-slate-400 mt-1">
           {data.segments.length > 0 ? "2 cấp: Phần → Chủ đề" : "Chưa có chủ đề"}
         </div>
       </div>
 
       {/* 4. Tổng file xuất bản */}
-      <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 shadow-2xs">
-        <div className="flex items-center justify-between text-slate-600 mb-2 font-semibold">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+        <div className="flex items-center justify-between text-slate-500 mb-2 font-medium">
           <span className="text-xs">Video con xuất bản</span>
-          <Layers className="w-4 h-4 text-indigo-700" />
+          <Layers className="w-4 h-4 text-indigo-600" />
         </div>
-        <div className="text-2xl font-bold text-indigo-800 tracking-tight">
+        <div className="text-2xl font-bold text-indigo-700 tracking-tight">
           {totalParts}{" "}
-          <span className="text-xs font-normal text-slate-500">files</span>
+          <span className="text-xs font-normal text-slate-400">files</span>
         </div>
-        <div className="text-xs text-slate-500 mt-1">
+        <div className="text-xs text-slate-400 mt-1">
           {longSegmentsCount > 0 ? (
-            <span className="text-amber-800 font-bold">
+            <span className="text-amber-700 font-semibold">
               {longSegmentsCount} đoạn đã tách &gt; 7 phút
             </span>
           ) : (
@@ -79,22 +79,22 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ data, onToggleReviewed }
       </div>
 
       {/* 5. Trạng thái duyệt */}
-      <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-        <div className="flex items-center justify-between text-slate-600 mb-1 font-semibold">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="flex items-center justify-between text-slate-500 mb-1 font-medium">
           <span className="text-xs">Trạng thái duyệt</span>
           {data.reviewed ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <AlertCircle className="w-4 h-4 text-amber-500" />
           )}
         </div>
         <div>
           <button
             onClick={onToggleReviewed}
-            className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 ${
+            className={`w-full py-1.5 px-3 rounded-xl text-xs font-semibold transition border flex items-center justify-center gap-1.5 ${
               data.reviewed
-                ? "bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
-                : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+                : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
             }`}
           >
             {data.reviewed ? "✓ Đã duyệt (Reviewed)" : "⚠ Chờ duyệt (Click đổi)"}
