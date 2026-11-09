@@ -51,21 +51,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
 import java.io.InputStream;
-
 import java.nio.charset.StandardCharsets;
-
 import java.nio.file.Files;
-
 import java.nio.file.Path;
-
 import java.nio.file.Paths;
-
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 
@@ -1214,6 +1211,93 @@ public class VideoController {
                 "status", "ERROR",
                 "error", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Tải về clip con đã cắt trong thư mục output (GET /api/video/download-clip?path=...).
+     */
+    @GetMapping("/download-clip")
+    public ResponseEntity<Resource> downloadClip(@RequestParam("path") String filePath) {
+        try {
+            Path target = Paths.get(filePath);
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                target = Paths.get("output").resolve(filePath);
+            }
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                target = resolveProjectRoot().resolve("output").resolve(filePath);
+            }
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                log.warn("Không tìm thấy tệp clip để tải về: {}", filePath);
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new FileSystemResource(target);
+            String fileName = target.getFileName().toString();
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
+                .body(resource);
+        } catch (Exception e) {
+            log.error("Lỗi khi tải file clip: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Nén toàn bộ các clip đã cắt trong thư mục output của bài học thành file ZIP và tải về (GET /api/video/download-zip?lesson=...).
+     */
+    @GetMapping("/download-zip")
+    public ResponseEntity<byte[]> downloadZip(
+            @RequestParam("lesson") String lesson,
+            @RequestParam(value = "user", required = false) String user) {
+        try {
+            Path outputDir;
+            if (user != null && !user.isBlank()) {
+                String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+                outputDir = Paths.get("output", "users", safeUser, lesson);
+                if (!Files.exists(outputDir)) {
+                    outputDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(lesson);
+                }
+            } else {
+                outputDir = Paths.get("output", lesson);
+                if (!Files.exists(outputDir)) {
+                    outputDir = resolveProjectRoot().resolve("output").resolve(lesson);
+                }
+            }
+
+            if (!Files.exists(outputDir) || !Files.isDirectory(outputDir)) {
+                log.warn("Không tìm thấy thư mục xuất bản để nén ZIP: {}", outputDir.toAbsolutePath());
+                return ResponseEntity.notFound().build();
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+                final Path base = outputDir;
+                try (var stream = Files.walk(base)) {
+                    stream.filter(Files::isRegularFile).forEach(p -> {
+                        String entryName = base.relativize(p).toString().replace("\\", "/");
+                        try {
+                            zos.putNextEntry(new ZipEntry(entryName));
+                            Files.copy(p, zos);
+                            zos.closeEntry();
+                        } catch (IOException ex) {
+                            log.warn("Lỗi thêm file vào ZIP: {}", ex.getMessage());
+                        }
+                    });
+                }
+            }
+
+            byte[] zipBytes = baos.toByteArray();
+            String zipFileName = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_") + "_exported_clips.zip";
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFileName + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/zip")
+                .body(zipBytes);
+        } catch (Exception e) {
+            log.error("Lỗi nén ZIP các file clip: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 
