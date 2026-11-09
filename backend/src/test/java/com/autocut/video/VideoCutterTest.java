@@ -105,6 +105,55 @@ class VideoCutterTest {
     }
 
     @Test
+    @DisplayName("Hàm kẹp biên clamp: Giá trị nằm trong [min, max] được giữ nguyên")
+    void testClamp_ValueInsideRange() {
+        double result = VideoCutter.clamp(5.0, 0.0, 10.0);
+        assertEquals(5.0, result, 0.0001);
+    }
+
+    @Test
+    @DisplayName("Hàm kẹp biên clamp: Giá trị nhỏ hơn min được kẹp về min (chống âm đầu)")
+    void testClamp_ValueBelowMin() {
+        double result = VideoCutter.clamp(-0.3, 0.0, 10.0);
+        assertEquals(0.0, result, 0.0001);
+
+        double startNearZero = 0.1;
+        double paddingStart = 0.3;
+        double padded = VideoCutter.clamp(startNearZero - paddingStart, 0.0, 10.0);
+        assertEquals(0.0, padded, 0.0001);
+    }
+
+    @Test
+    @DisplayName("Hàm kẹp biên clamp: Giá trị lớn hơn max được kẹp về duration (chống vượt trần)")
+    void testClamp_ValueAboveMax() {
+        double result = VideoCutter.clamp(12.5, 0.0, 10.0);
+        assertEquals(10.0, result, 0.0001);
+
+        double endNearDuration = 9.8;
+        double paddingEnd = 0.5;
+        double duration = 10.0;
+        double padded = VideoCutter.clamp(endNearDuration + paddingEnd, 0.0, duration);
+        assertEquals(10.0, padded, 0.0001);
+    }
+
+    @Test
+    @DisplayName("Kiểm tra thông số padding_start (0.3s) và padding_end (0.5s) mặc định")
+    void testEffectivePadding_DefaultValues() {
+        assertEquals(0.3, videoCutter.getEffectivePaddingStart(), 0.0001);
+        assertEquals(0.5, videoCutter.getEffectivePaddingEnd(), 0.0001);
+    }
+
+    @Test
+    @DisplayName("Kiểm tra thông số padding tùy chỉnh qua VideoProps")
+    void testEffectivePadding_CustomProps() {
+        VideoProps customProps = new VideoProps("ffprobe", "ffmpeg", 10, 60, 0.4, 0.8);
+        VideoCutter customCutter = new VideoCutter(customProps);
+
+        assertEquals(0.4, customCutter.getEffectivePaddingStart(), 0.0001);
+        assertEquals(0.8, customCutter.getEffectivePaddingEnd(), 0.0001);
+    }
+
+    @Test
     @DisplayName("Cắt danh sách theo lô (cutBatch): Xử lý tuần tự không bị crash khi có clip lỗi")
     void testCutBatch_FaultTolerance() throws IOException {
         Path source = tempDir.resolve("source.mp4");

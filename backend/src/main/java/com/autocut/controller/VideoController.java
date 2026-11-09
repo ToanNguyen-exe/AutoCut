@@ -88,7 +88,7 @@ public class VideoController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService));
     }
 
     @Autowired
@@ -97,7 +97,7 @@ public class VideoController {
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
-        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
+        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps(), configService);
     }
 
 
