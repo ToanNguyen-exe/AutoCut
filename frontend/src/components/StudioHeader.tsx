@@ -12,6 +12,8 @@ import {
   User as UserIcon,
   KeyRound,
   ChevronDown,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
 
@@ -34,8 +36,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   user,
   data,
   isRendering,
+  isAnalyzing = false,
   onExport,
   onRender,
+  onAnalyzeAI,
   onUserUpdate,
 }) => {
   const router = useRouter();
@@ -83,10 +87,17 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             </span>
 
             {/* Trạng thái dữ liệu */}
-            <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 ml-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Đã phân tích bởi AI
-            </span>
+            {data.mode === "raw" ? (
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center gap-1.5 ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Chưa phân tích AI
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Đã phân tích bởi AI
+              </span>
+            )}
           </div>
         </div>
 
@@ -96,7 +107,33 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
 
         {/* Right: Actions & User Account */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Nút Phân Tích AI / Chạy Lại AI */}
+          {onAnalyzeAI && (
+            <button
+              onClick={onAnalyzeAI}
+              disabled={isAnalyzing}
+              title="Phân tích nội dung video, trích xuất âm thanh và bóc băng lời thoại bằng AI"
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition shadow-2xs cursor-pointer ${
+                data.mode === "raw"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-200"
+                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang phân tích AI...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-200" />
+                  <span>{data.mode === "raw" ? "Phân tích AI" : "Chạy lại AI"}</span>
+                </>
+              )}
+            </button>
+          )}
+
           {/* Nút Xuất JSON */}
           {onExport && (
             <button

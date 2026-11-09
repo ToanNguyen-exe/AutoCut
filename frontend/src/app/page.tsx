@@ -1269,7 +1269,14 @@ export default function Home() {
             <VideoLibraryColumn
               currentVideoName={data.video}
               videos={libraryCards}
+              currentSegments={data.segments}
+              activeSegmentId={activeSegmentId}
               onSelectVideo={handleSelectLibraryCard}
+              onSelectSegment={(seg, idx) => {
+                handleOpenSegmentDetail(seg, idx);
+                setActiveSegmentId(seg.id);
+                handleSeek(seg.start);
+              }}
               onOpenAddVideo={() => setIsAddVideoOpen(true)}
             />
 
@@ -1302,6 +1309,9 @@ export default function Home() {
               segments={data.segments}
               videoTitle={data.video}
               activeSegmentId={activeSegmentId}
+              sentences={transcript?.sentences || []}
+              isAnalyzing={isAnalyzing}
+              onAnalyzeAI={handleAnalyzeAI}
               onMergeSegments={handleMergeSegments}
               onOpenSegmentDetail={handleOpenSegmentDetail}
             />
@@ -1397,10 +1407,17 @@ export default function Home() {
         segmentIndex={selectedDetailIndex}
         videoTitle={data.video}
         sentences={transcript?.sentences || []}
+        allSegments={data.segments}
         currentTime={currentTime}
         onClose={() => setIsDetailModalOpen(false)}
         onSeek={handleSeek}
         onPlay={() => setIsPlaying(true)}
+        onSelectSegment={(seg, idx) => {
+          setSelectedDetailSegment(seg);
+          setSelectedDetailIndex(idx);
+          setActiveSegmentId(seg.id);
+          handleSeek(seg.start);
+        }}
       />
 
       {/* Transcript Drawer */}
