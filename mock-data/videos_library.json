@@ -1,5 +1,75 @@
 [
   {
+    "id": "r2_vid_01",
+    "name": "vibe_short.mp4",
+    "lesson": "vibe_short",
+    "title": "Bài giảng mẫu 2 phút (Cloudflare R2)",
+    "url": "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
+    "duration": 120,
+    "status": "added",
+    "statusLabel": "Chưa phân tích",
+    "category": "Cloudflare R2 Streaming",
+    "segmentsCount": 1,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "raw_vibe_short",
+        "section_no": 1,
+        "section": "01_VideoGoc",
+        "topic_no": 1,
+        "topic": "Toàn bộ video gốc (Chưa phân tích)",
+        "slug": "vibe-short",
+        "start_id": "S0001",
+        "end_id": "S0001",
+        "start": 0.0,
+        "end": 120.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 120.0,
+            "file": "01_VideoGoc/01_vibe_short.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "r2_vid_02",
+    "name": "Vibe-Coding-4.mp4",
+    "lesson": "Vibe-Coding-4",
+    "title": "Bài giảng Lập trình Web Full khóa (2 Giờ) • Cloudflare R2 Faststart",
+    "url": "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4",
+    "duration": 7200,
+    "status": "added",
+    "statusLabel": "Chưa phân tích",
+    "category": "Cloudflare R2 Streaming",
+    "segmentsCount": 1,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "raw_vibe_coding_4",
+        "section_no": 1,
+        "section": "01_VideoGoc",
+        "topic_no": 1,
+        "topic": "Toàn bộ video gốc (Chưa phân tích)",
+        "slug": "vibe-coding-4",
+        "start_id": "S0001",
+        "end_id": "S0001",
+        "start": 0.0,
+        "end": 7200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 7200.0,
+            "file": "01_VideoGoc/01_vibe-coding-4.mp4"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "vid_01",
     "name": "Bai05_VongLap.mp4",
     "lesson": "Bai05_VongLap",

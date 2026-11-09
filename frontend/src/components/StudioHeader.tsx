@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   Scissors,
   Download,
+  Save,
   RefreshCw,
   LogOut,
   User as UserIcon,
@@ -14,6 +15,7 @@ import {
   ChevronDown,
   Sparkles,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
 
@@ -23,9 +25,11 @@ interface StudioHeaderProps {
   backendOnline?: boolean;
   isRendering: boolean;
   isAnalyzing?: boolean;
+  isSaving?: boolean;
   isDemo?: boolean;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
+  onSave?: () => void;
   onRender: () => void;
   onOpenAddVideo: () => void;
   onAnalyzeAI?: () => void;
@@ -37,7 +41,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   data,
   isRendering,
   isAnalyzing = false,
+  isSaving = false,
+  onOpenAddVideo,
   onExport,
+  onSave,
   onRender,
   onAnalyzeAI,
   onUserUpdate,
@@ -129,6 +136,38 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-200" />
                   <span>{data.mode === "raw" ? "Phân tích AI" : "Chạy lại AI"}</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Nút Thêm Video trên Taskbar */}
+          <button
+            onClick={onOpenAddVideo}
+            title="Thêm video từ liên kết URL hoặc tệp máy tính"
+            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm Video</span>
+          </button>
+
+          {/* Nút Lưu Dự Án (Ctrl+S) */}
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              title="Lưu trạng thái dự án phân lập User và đồng bộ Cloudflare R2 (Ctrl + S)"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs transition disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                  <span className="hidden sm:inline">Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="hidden sm:inline">Lưu (Ctrl+S)</span>
                 </>
               )}
             </button>

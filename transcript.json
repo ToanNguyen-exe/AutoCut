@@ -1,90 +1,29 @@
 {
-  "video": "Download.mp4",
-  "duration": 356.3,
-  "sentences": [
-    {
-      "id": "S0001",
-      "start": 0.0,
-      "end": 60.0,
-      "text": "Giai điệu mở màn & Dạo nhạc (Intro Beat)"
-    },
-    {
-      "id": "S0002",
-      "start": 60.0,
-      "end": 65.5,
-      "text": "Anh đừng lặng im nếu anh giận lòng em"
-    },
-    {
-      "id": "S0003",
-      "start": 65.5,
-      "end": 69.5,
-      "text": "Cứ vô tâm vậy tại sao?"
-    },
-    {
-      "id": "S0004",
-      "start": 69.5,
-      "end": 74.5,
-      "text": "Tình yêu mà em đang có dẫu nhỏ nhoi"
-    },
-    {
-      "id": "S0005",
-      "start": 74.5,
-      "end": 80.0,
-      "text": "Cũng để lại cho anh, chẳng ai vượt qua anh"
-    },
-    {
-      "id": "S0006",
-      "start": 80.0,
-      "end": 85.0,
-      "text": "Chẳng lẽ tình yêu làm em như say mê rồi"
-    },
-    {
-      "id": "S0007",
-      "start": 85.0,
-      "end": 96.0,
-      "text": "Thì hãy để lại, em sẽ không thể nào quên tình yêu anh trao"
-    },
-    {
-      "id": "S0008",
-      "start": 96.0,
-      "end": 233.0,
-      "text": "Đoạn cao trào Drop Bass Remix (Nonstop Beat)"
-    },
-    {
-      "id": "S0009",
-      "start": 233.0,
-      "end": 240.5,
-      "text": "Để lại sao, tình yêu làm em cay đắng"
-    },
-    {
-      "id": "S0010",
-      "start": 240.5,
-      "end": 246.0,
-      "text": "Dù nhỏ thôi cũng để lại cho anh, chẳng ai vượt qua anh"
-    },
-    {
-      "id": "S0011",
-      "start": 246.0,
-      "end": 251.0,
-      "text": "Và giấc mơ em trông chờ, làm em như say mê rồi"
-    },
-    {
-      "id": "S0012",
-      "start": 251.0,
-      "end": 258.5,
-      "text": "Thế nhưng để lại là em sẽ không thể nào quên"
-    },
-    {
-      "id": "S0013",
-      "start": 258.5,
-      "end": 266.0,
-      "text": "Đến lúc em có tất cả quay lại lại chẳng có anh"
-    },
-    {
-      "id": "S0014",
-      "start": 266.0,
-      "end": 356.3,
-      "text": "Giai điệu kết thúc (Outro Fade)"
-    }
-  ]
+  "video" : "Desktop 2026.11.06 - 14.47.24.02.mp4",
+  "duration" : 27.76,
+  "sentences" : [ {
+    "id" : "S0001",
+    "start" : 0.0,
+    "end" : 5.64,
+    "text" : "Thường là Khoai sẽ không dùng cái đầu ngón tay để bấm mà sẽ dùng cái nguyên cái lòng bàn tay.",
+    "words" : null
+  }, {
+    "id" : "S0002",
+    "start" : 5.64,
+    "end" : 16.72,
+    "text" : "Ấn nhẹ thôi là mình sẽ cảm giác nó bị cứng hay không Bồn bòn Thái cũng đang vô mua, trong siêu thị người ta bán cỡ 69 bạc 1 ký.",
+    "words" : null
+  }, {
+    "id" : "S0003",
+    "start" : 16.72,
+    "end" : 22.68,
+    "text" : "Khoai bóc thêm mấy chùm để tối về nhà mấy anh em ăn Đây nó có dân mở nữa kìa.",
+    "words" : null
+  }, {
+    "id" : "S0004",
+    "start" : 22.68,
+    "end" : 27.76,
+    "text" : "Tình hình là trời mưa lớn quá nên là kế hoạch mà đi chợ đêm phá sản rồi.",
+    "words" : null
+  } ]
 }

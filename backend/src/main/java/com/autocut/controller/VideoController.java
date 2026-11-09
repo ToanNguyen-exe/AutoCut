@@ -21,6 +21,9 @@ import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
+import com.autocut.service.CutPointService;
+import com.autocut.dto.Models.CutPointsDTO;
+import com.autocut.dto.Models.CutPoint;
 import java.io.File;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
@@ -82,19 +85,25 @@ public class VideoController {
 
     private final VideoRepository videoRepository;
     private final VideoCutter videoCutter;
+    private final CutPointService cutPointService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()));
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()));
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
         this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps(), configService);
+        this.cutPointService = cutPointService != null ? cutPointService : new CutPointService(configService, objectMapper);
     }
 
 
@@ -159,7 +168,12 @@ public class VideoController {
 
             String hash = cacheService.computeSha256(tempFile);
 
-
+            String safeSlug = sanitizeToSafeSlug(originalFilename);
+            String ext = "";
+            int dot = originalFilename.lastIndexOf('.');
+            if (dot > 0) ext = originalFilename.substring(dot).toLowerCase();
+            if (ext.isBlank()) ext = ".mp4";
+            String safeFilename = safeSlug + ext;
 
             // Lưu một bản sao tại uploads/ để phục vụ phát trực tiếp hoặc phân tích sau này
             Path projectRoot = resolveProjectRoot();
@@ -167,11 +181,11 @@ public class VideoController {
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
-            Path localFile = uploadDir.resolve(hash + "_" + originalFilename);
+            Path localFile = uploadDir.resolve(hash + "_" + safeFilename);
             Files.copy(tempFile, localFile, StandardCopyOption.REPLACE_EXISTING);
 
             String publicUrl;
-            String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + originalFilename;
+            String r2Key = "sample_videos/" + hash.substring(0, Math.min(12, hash.length())) + "_" + safeFilename;
 
             // Thử upload lên Cloudflare R2 trước, nếu chưa cấu hình thì dùng link stream cục bộ
             try {
@@ -193,7 +207,7 @@ public class VideoController {
             videoRepository.save(videoEntity);
 
             // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
-            String transcriptFile = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
+            String transcriptFile = generateTranscriptForUploadedVideo(localFile, safeFilename, hash);
             TranscriptDTO transcriptDTO = null;
             SegmentsDTO segmentsDTO = null;
 
@@ -336,7 +350,7 @@ public class VideoController {
 
         Path transcriptsDir = projectRoot.resolve("transcripts");
 
-        String videoStem = stripExtension(originalFilename);
+        String videoStem = sanitizeToSafeSlug(originalFilename);
 
         String fileName = videoStem + "_transcript.json";
 
@@ -375,6 +389,10 @@ public class VideoController {
             ProcessBuilder pb = new ProcessBuilder(command);
 
             pb.directory(projectRoot.toFile());
+
+            pb.environment().put("PYTHONPATH", ".");
+
+            pb.environment().put("PYTHONIOENCODING", "utf-8");
 
             pb.redirectErrorStream(true);
 
@@ -436,12 +454,6 @@ public class VideoController {
                 );
 
                 objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), fallbackDto);
-
-                if (hash != null && !hash.isBlank()) {
-
-                    cacheService.saveTranscriptCache(hash, fallbackDto);
-
-                }
 
             }
 
@@ -759,6 +771,10 @@ public class VideoController {
 
             pb.directory(projectRoot.toFile());
 
+            pb.environment().put("PYTHONPATH", ".");
+
+            pb.environment().put("PYTHONIOENCODING", "utf-8");
+
             pb.redirectErrorStream(true);
 
 
@@ -784,33 +800,40 @@ public class VideoController {
 
 
                 if (!hash.isBlank() && transcriptDTO != null) {
-
                     cacheService.saveTranscriptCache(hash, transcriptDTO);
-        try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), transcriptDTO); } catch (Exception ignored) {}
-
+                    try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), transcriptDTO); } catch (Exception ignored) {}
                 }
 
+                // B3 & B6 (Thẻ 3.2): Tính điểm cắt âm học cut_points.json và căn chỉnh ranh giới Boundary Snapping
+                CutPointsDTO cutPointsDTO = null;
+                if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
+                    try {
+                        cutPointsDTO = cutPointService.calculateCutPoints(transcriptDTO);
+                        Path cutPointsPath = projectRoot.resolve("cut_points.json");
+                        cutPointService.exportCutPointsJson(cutPointsDTO, cutPointsPath);
+                        if (segmentsDTO != null) {
+                            segmentsDTO = cutPointService.snapAndFilterSegments(segmentsDTO, transcriptDTO, cutPointsDTO);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Lỗi khi chấm điểm cut_points hoặc snapping: {}", ex.getMessage());
+                    }
+                }
 
-
-                log.info("Module Python AI hoàn tất: {} câu transcript, {} phân đoạn.",
-
+                log.info("Module Python AI hoàn tất: {} câu transcript, {} phân đoạn, {} điểm cắt.",
                         transcriptDTO != null ? transcriptDTO.sentences().size() : 0,
+                        segmentsDTO != null ? segmentsDTO.segments().size() : 0,
+                        cutPointsDTO != null ? cutPointsDTO.cutPoints().size() : 0);
 
-                        segmentsDTO != null ? segmentsDTO.segments().size() : 0);
+                Map<String, Object> respMap = new LinkedHashMap<>();
+                respMap.put("status", "SUCCESS");
+                respMap.put("mode", "analyzed");
+                respMap.put("segmentsData", segmentsDTO);
+                respMap.put("transcript", transcriptDTO);
+                if (cutPointsDTO != null) {
+                    respMap.put("cutPoints", cutPointsDTO);
+                }
 
-
-
-                return ResponseEntity.ok(Map.of(
-
-                        "status", "SUCCESS",
-
-                        "mode", "analyzed",
-
-                        "segmentsData", segmentsDTO,
-
-                        "transcript", transcriptDTO
-
-                ));
+                return ResponseEntity.ok(respMap);
 
             } else {
 
@@ -842,11 +865,19 @@ public class VideoController {
 
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
+        String safeStem = sanitizeToSafeSlug(videoName);
+
         String videoStem = stripExtension(videoName);
 
         Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
 
-        Path candidateTranscript = transcriptsDir.resolve(videoStem + "_transcript.json");
+        Path candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+
+        if (!Files.exists(candidateTranscript)) {
+
+            candidateTranscript = transcriptsDir.resolve(videoStem + "_transcript.json");
+
+        }
 
         if (!Files.exists(candidateTranscript)) {
 
@@ -854,23 +885,46 @@ public class VideoController {
 
         }
 
-        if (!Files.exists(candidateTranscript) && Files.exists(resolveProjectRoot().resolve("transcript.json"))) {
-
-            candidateTranscript = resolveProjectRoot().resolve("transcript.json");
-
+        if (!Files.exists(candidateTranscript)) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
+            if (m.find()) {
+                String innerStem = stripExtension(m.group(1).trim());
+                Path innerP = transcriptsDir.resolve(innerStem + "_transcript.json");
+                if (Files.exists(innerP)) {
+                    candidateTranscript = innerP;
+                }
+            }
         }
 
+        if (!Files.exists(candidateTranscript) && Files.exists(transcriptsDir)) {
+            String normKey = normalizeSearchKey(videoStem);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
+            String innerNorm = m.find() ? normalizeSearchKey(stripExtension(m.group(1).trim())) : "";
 
+            try (var stream = Files.list(transcriptsDir)) {
+                List<Path> files = stream.filter(p -> p.getFileName().toString().endsWith("_transcript.json")).toList();
+                for (Path p : files) {
+                    String base = p.getFileName().toString().replace("_transcript.json", "");
+                    String fileNorm = normalizeSearchKey(base);
+                    if (!fileNorm.isBlank() && (fileNorm.equals(normKey) || (!innerNorm.isBlank() && fileNorm.equals(innerNorm)))) {
+                        candidateTranscript = p;
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
 
         if (Files.exists(candidateTranscript)) {
             try {
                 TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
                 if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
                     double transDur = existingDto.duration();
-                    // Chỉ sử dụng transcript nếu khớp tên video hoặc thời lượng tương đương
-                    // Tránh gán nhầm transcript 2 tiếng của video dài cho video ngắn 2 phút
-                    boolean matchesVideo = (duration > 0 && transDur > 0 && Math.abs(transDur - duration) / Math.max(transDur, duration) < 0.3)
-                            || (existingDto.video() != null && (existingDto.video().toLowerCase().contains(videoStem.toLowerCase()) || videoStem.toLowerCase().contains(existingDto.video().toLowerCase())));
+                    // Chỉ sử dụng transcript nếu khớp chính xác tên video hoặc slug
+                    boolean matchesVideo = (existingDto.video() != null && (
+                            sanitizeToSafeSlug(existingDto.video()).equals(safeStem) ||
+                            existingDto.video().equalsIgnoreCase(videoName) ||
+                            existingDto.video().equalsIgnoreCase(videoStem)
+                    )) || candidateTranscript.getFileName().toString().replace("_transcript.json", "").equalsIgnoreCase(safeStem);
 
                     if (matchesVideo) {
                         List<Sentence> rawSents = existingDto.sentences();
@@ -1025,11 +1079,7 @@ public class VideoController {
 
         TranscriptDTO transcriptDTO = new TranscriptDTO(videoName, cut4, sentences);
 
-        if (!hash.isBlank()) {
-
-            cacheService.saveTranscriptCache(hash, transcriptDTO);
-
-        }
+        // Không lưu vào cache nếu là dữ liệu mẫu dự phòng (để lần sau có file thật sẽ phân tích lại)
 
         SegmentsDTO segmentsDTO = new SegmentsDTO(videoName, lessonName, "analyzed", false, segments);
 
@@ -1052,17 +1102,20 @@ public class VideoController {
 
 
     /**
-     * Lưu trạng thái chỉnh sửa video/dự án của người dùng vào thư mục riêng biệt liên kết với User.
+     * API Lưu dự án phân lập theo người dùng và đồng bộ Cloudflare R2 (Thẻ 3.1).
+     * Tạo thư mục: output/users/{user}/{lesson}/
+     * Ghi 2 file: project.json và segments.json
+     * Đồng bộ metadata project.json lên Cloudflare R2: autocut/users/{user}/{lesson}/project.json
      */
     @PostMapping("/save")
     public ResponseEntity<?> saveProject(@RequestBody Map<String, Object> payload) {
-        String user = (String) payload.getOrDefault("user", "admin");
-        if (user == null || user.isBlank()) {
-            user = "admin";
-        }
-        String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
-        String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
-        String safeLesson = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_");
+        String rawUser = String.valueOf(payload.getOrDefault("user", "admin"));
+        String rawLesson = String.valueOf(payload.getOrDefault("lesson", "BaiGiang"));
+
+        String safeUser = rawUser.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeLesson = rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (safeUser.isBlank()) safeUser = "admin";
+        if (safeLesson.isBlank()) safeLesson = "BaiGiang";
 
         try {
             Path userDir = Paths.get("output", "users", safeUser, safeLesson);
@@ -1070,20 +1123,29 @@ public class VideoController {
                 Files.createDirectories(userDir);
             }
 
-            Path projectFile = userDir.resolve("project.json");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), payload);
-
+            // 1. Ghi file segments.json
             Path segmentsFile = userDir.resolve("segments.json");
-            Object segmentsObj = payload.get("segments");
-            if (segmentsObj != null) {
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsObj);
+            Object segmentsData = payload.get("segments");
+            if (segmentsData != null) {
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsData);
             }
 
+            // 2. Ghi file project.json
+            Path projectFile = userDir.resolve("project.json");
+            Map<String, Object> projectMeta = new HashMap<>(payload);
+            long nowMs = System.currentTimeMillis();
+            projectMeta.put("savedAt", nowMs);
+            projectMeta.put("savedDate", java.time.Instant.now().toString());
+            projectMeta.put("schemaVersion", "2.0");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), projectMeta);
+
+            // 3. Đồng bộ project.json lên Cloudflare R2
             String r2Url = null;
             try {
                 if (r2Service != null) {
                     String relativeKey = "users/" + safeUser + "/" + safeLesson + "/project.json";
                     r2Url = r2Service.uploadFile(projectFile, relativeKey);
+                    log.info("Đã đồng bộ project.json lên Cloudflare R2: {}", r2Url);
                 }
             } catch (Exception r2Ex) {
                 log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
@@ -1096,7 +1158,14 @@ public class VideoController {
                 "user", safeUser,
                 "lesson", safeLesson,
                 "directory", userDir.toAbsolutePath().toString(),
+                "localDirectory", userDir.toAbsolutePath().toString(),
                 "r2Url", r2Url != null ? r2Url : "",
+                "cloudUrl", r2Url != null ? r2Url : "",
+                "files", List.of(
+                    "output/users/" + safeUser + "/" + safeLesson + "/project.json",
+                    "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
+                ),
+                "savedAt", nowMs,
                 "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
             ));
         } catch (Exception e) {
@@ -1301,6 +1370,73 @@ public class VideoController {
         }
     }
 
+    /**
+     * API Chấm điểm điểm cắt âm học ứng viên (P05 / Thẻ 3.2):
+     * Tính toán cut_points.json từ transcript theo khoảng lặng và cụm từ nối.
+     */
+    @PostMapping("/cut-points")
+    public ResponseEntity<?> calculateCutPointsEndpoint(@RequestBody(required = false) Map<String, Object> request) {
+        String videoName = request != null ? (String) request.getOrDefault("videoName", "") : "";
+        TranscriptDTO transcript = null;
+
+        if (request != null && request.containsKey("transcript")) {
+            try {
+                transcript = objectMapper.convertValue(request.get("transcript"), TranscriptDTO.class);
+            } catch (Exception ignored) {}
+        }
+
+        if (transcript == null && !videoName.isBlank()) {
+            Path projectRoot = resolveProjectRoot();
+            String safeSlug = sanitizeToSafeSlug(videoName);
+            Path transP = projectRoot.resolve("transcripts").resolve(safeSlug + "_transcript.json");
+            if (Files.exists(transP)) {
+                try {
+                    transcript = objectMapper.readValue(transP.toFile(), TranscriptDTO.class);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (transcript == null) {
+            Path rootTrans = resolveProjectRoot().resolve("transcript.json");
+            if (Files.exists(rootTrans)) {
+                try {
+                    transcript = objectMapper.readValue(rootTrans.toFile(), TranscriptDTO.class);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (transcript == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không tìm thấy transcript để tính cut_points!"));
+        }
+
+        CutPointsDTO cutPoints = cutPointService.calculateCutPoints(transcript);
+        try {
+            Path cutPointsFile = resolveProjectRoot().resolve("cut_points.json");
+            cutPointService.exportCutPointsJson(cutPoints, cutPointsFile);
+        } catch (Exception ex) {
+            log.warn("Lỗi lưu cut_points.json: {}", ex.getMessage());
+        }
+
+        return ResponseEntity.ok(cutPoints);
+    }
+
+    /**
+     * API Đọc file cut_points.json hiện tại (Thẻ 3.2).
+     */
+    @GetMapping("/cut-points")
+    public ResponseEntity<?> getCutPointsEndpoint() {
+        Path cutPointsFile = resolveProjectRoot().resolve("cut_points.json");
+        if (Files.exists(cutPointsFile)) {
+            try {
+                CutPointsDTO cutPoints = objectMapper.readValue(cutPointsFile.toFile(), CutPointsDTO.class);
+                return ResponseEntity.ok(cutPoints);
+            } catch (Exception ex) {
+                return ResponseEntity.status(500).body(Map.of("error", "Không thể đọc file cut_points.json: " + ex.getMessage()));
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     private String resolveVideoSource(String videoName) {
         if (videoName != null && (videoName.startsWith("http://") || videoName.startsWith("https://"))) {
             return videoName;
@@ -1336,25 +1472,22 @@ public class VideoController {
 
 
     private String resolvePythonExecutable() {
-
         String envPython = System.getenv("PYTHON_EXE");
-
         if (envPython != null && Files.exists(Paths.get(envPython))) {
-
             return envPython;
+        }
 
+        Path venvPython = Paths.get(System.getProperty("user.home"), "AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe");
+        if (Files.exists(venvPython)) {
+            return venvPython.toAbsolutePath().toString();
         }
 
         Path userPython = Paths.get(System.getProperty("user.home"), "AppData/Local/Programs/Python/Python312/python.exe");
-
         if (Files.exists(userPython)) {
-
             return userPython.toAbsolutePath().toString();
-
         }
 
         return "python";
-
     }
 
 
@@ -1395,5 +1528,36 @@ public class VideoController {
 
     }
 
+    public static String sanitizeToSafeSlug(String raw) {
+        if (raw == null || raw.isBlank()) return "video";
+        String name = raw;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(raw);
+        if (m.find()) {
+            String inner = m.group(1).trim();
+            if (inner.contains(".")) {
+                name = inner;
+            }
+        }
+        int dotIdx = name.lastIndexOf('.');
+        if (dotIdx > 0) {
+            name = name.substring(0, dotIdx);
+        }
+        String nfd = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD);
+        String ascii = nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                          .replace('đ', 'd').replace('Đ', 'D');
+        String slug = ascii.replaceAll("[^a-zA-Z0-9]+", "_")
+                           .replaceAll("^_+|_+$", "")
+                           .toLowerCase();
+        return slug.isBlank() ? "video" : slug;
+    }
+
+    private String normalizeSearchKey(String str) {
+        if (str == null) return "";
+        String nfd = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        return nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replace('đ', 'd').replace('Đ', 'D')
+                .replaceAll("[^a-zA-Z0-9]", "")
+                .toLowerCase();
+    }
 }
 

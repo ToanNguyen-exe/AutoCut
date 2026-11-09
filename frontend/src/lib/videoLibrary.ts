@@ -14,7 +14,22 @@ export function getLibraryVideos(): VideoLibraryItem[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultVideos));
       return defaultVideos as VideoLibraryItem[];
     }
-    return JSON.parse(raw) as VideoLibraryItem[];
+    const parsed = JSON.parse(raw) as VideoLibraryItem[];
+    // Lọc bỏ triệt để các clip fake không thuộc Cloudflare R2 hoặc luồng stream nội bộ
+    const cleaned = parsed.filter(
+      (v) =>
+        v.url &&
+        (v.url.includes("r2.dev") ||
+          v.url.includes("/stream/") ||
+          v.url.includes("blob:"))
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(cleaned.length > 0 ? cleaned : defaultVideos)
+      );
+    }
+    return (cleaned.length > 0 ? cleaned : defaultVideos) as VideoLibraryItem[];
   } catch {
     return defaultVideos as VideoLibraryItem[];
   }
