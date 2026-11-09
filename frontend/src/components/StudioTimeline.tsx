@@ -69,6 +69,44 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
   const [zoomLevel, setZoomLevel] = useState(100);
 
+  // Resizable timeline height (kéo lên kéo xuống)
+  const [timelineHeight, setTimelineHeight] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("autocut_timeline_height");
+      if (saved) return Math.max(130, Math.min(480, parseInt(saved, 10)));
+    }
+    return 220;
+  });
+  const isResizingRef = useRef(false);
+
+  const handleStartResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    const startY = e.clientY;
+    const startH = timelineHeight;
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      const delta = startY - ev.clientY; // Kéo chuột lên trên -> timeline cao lên
+      const nextH = Math.max(130, Math.min(480, startH + delta));
+      setTimelineHeight(nextH);
+    };
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      try {
+        localStorage.setItem("autocut_timeline_height", timelineHeight.toString());
+      } catch {
+        // ignore storage error
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   // Scrubbing & Hover preview states
   const [isScrubbing, setIsScrubbing] = useState(false);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -272,11 +310,27 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   const playheadPercent = (currentTime / Math.max(1, totalDuration)) * 100;
 
   return (
-    <div className="bg-white border-t border-slate-200/90 shrink-0 select-none flex flex-col z-20 text-slate-800 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
-      {/* 1. Timeline Toolbar matching reference image */}
-      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white">
+    <div
+      style={{ height: `${timelineHeight}px` }}
+      className="bg-white border-t border-slate-200/90 shrink-0 select-none flex flex-col z-20 text-slate-800 shadow-[0_-1px_3px_rgba(0,0,0,0.02)] relative transition-none"
+    >
+      {/* Thanh kéo điều chỉnh độ cao Timeline (Kéo lên kéo xuống) */}
+      <div
+        onMouseDown={handleStartResize}
+        className="w-full h-3.5 -top-1.5 absolute left-0 right-0 z-50 cursor-ns-resize group flex items-center justify-center hover:bg-indigo-500/15 active:bg-indigo-600 transition select-none"
+        title="Kéo lên / kéo xuống để điều chỉnh độ cao của Timeline"
+      >
+        <div className="w-16 h-1 rounded-full bg-slate-300 group-hover:bg-indigo-600 transition shadow-xs flex items-center justify-center gap-1">
+          <div className="w-1 h-1 rounded-full bg-white opacity-60" />
+          <div className="w-1 h-1 rounded-full bg-white opacity-60" />
+          <div className="w-1 h-1 rounded-full bg-white opacity-60" />
+        </div>
+      </div>
+
+      {/* 1. Timeline Toolbar */}
+      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white shrink-0">
         {/* Left Toolbar Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Mouse pointer */}
           <button
             className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
@@ -316,10 +370,10 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           {/* Split / Cắt */}
           <button
             onClick={handleSplitAtPlayhead}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 border border-slate-200/80 transition"
             title="Tách phân đoạn tại con trỏ đỏ"
           >
-            <Scissors className="w-3.5 h-3.5" />
+            <Scissors className="w-4 h-4 text-indigo-600" />
             <span>Cắt</span>
           </button>
 
@@ -368,22 +422,22 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           {/* Chuyển video button */}
           <button
             onClick={() => onSeek(0)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition ml-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition ml-1"
             title="Chuyển video / Phát lại từ đầu"
           >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
+            <ArrowLeftRight className="w-4 h-4" />
             <span className="hidden sm:inline">Chuyển video</span>
           </button>
         </div>
 
         {/* Right Toolbar Controls: Zoom & + Công cụ */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           {/* Zoom Controls */}
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <button
               onClick={() => setZoomLevel(Math.max(100, zoomLevel - 25))}
               className="p-1 hover:text-slate-900 transition"
-              title="Thu nhỏ"
+              title="Thu nhỏ timeline"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
@@ -398,37 +452,37 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             <button
               onClick={() => setZoomLevel(Math.min(250, zoomLevel + 25))}
               className="p-1 hover:text-slate-900 transition"
-              title="Phóng to"
+              title="Phóng to timeline"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Nút "+ Công cụ" matching reference image */}
+          {/* Nút "+ Công cụ" */}
           <button
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold shadow-2xs transition"
             title="Thêm công cụ biên tập"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Công cụ</span>
           </button>
         </div>
       </div>
 
       {/* 2. Multi-Track Timeline Canvas with Red Playhead */}
-      <div className="flex bg-white overflow-x-auto relative">
-        {/* Left Track Names: "Nội dung" and "Âm thanh" matching reference image */}
-        <div className="w-24 bg-white shrink-0 flex flex-col select-none z-20 pl-4 pr-2">
+      <div className="flex bg-white overflow-x-auto overflow-y-auto relative flex-1 min-h-0">
+        {/* Left Track Names: "Nội dung" and "Âm thanh" */}
+        <div className="w-28 bg-white shrink-0 flex flex-col select-none z-20 pl-4 pr-2 border-r border-slate-100">
           {/* Ruler space */}
-          <div className="h-7" />
+          <div className="h-8" />
 
           {/* Track 1 Label: Nội dung */}
-          <div className="h-16 flex items-center text-xs font-semibold text-slate-600">
+          <div className="h-18 flex items-center text-sm font-bold text-slate-800">
             Nội dung
           </div>
 
           {/* Track 2 Label: Âm thanh */}
-          <div className="h-14 flex items-center text-xs font-semibold text-slate-600">
+          <div className="h-16 flex items-center text-sm font-bold text-slate-800">
             Âm thanh
           </div>
         </div>
@@ -445,7 +499,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           }`}
         >
           {/* Top Ruler Bar */}
-          <div className="h-7 relative text-[11px] font-mono text-slate-400 flex items-center overflow-hidden">
+          <div className="h-8 relative text-xs font-mono font-medium text-slate-500 flex items-center overflow-hidden border-b border-slate-100">
             {rulerTicks.map((tick, i) => (
               <div
                 key={i}
@@ -458,7 +512,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           </div>
 
           {/* Track 1: Nội dung (Segment Clips in Lavender/Indigo Pastel) */}
-          <div className="h-16 relative w-full flex items-center">
+          <div className="h-18 relative w-full flex items-center">
             {segments.map((seg, idx) => {
               const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
               const widthPct = Math.min(
@@ -483,31 +537,31 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                     left: `${leftPct}%`,
                     width: `${Math.max(1.8, widthPct)}%`,
                   }}
-                  className={`absolute top-1 bottom-1 rounded-xl border transition-all duration-150 flex flex-col justify-between p-2 cursor-pointer shadow-2xs ${
+                  className={`absolute top-1 bottom-1 rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs ${
                     isSelected
-                      ? "bg-[#e0e7ff] border-indigo-400 ring-2 ring-indigo-200 z-10"
-                      : "bg-[#eef2ff] border-indigo-100 hover:border-indigo-300 z-0"
+                      ? "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
+                      : "bg-[#eef2ff] border-indigo-200 hover:border-indigo-400 z-0"
                   }`}
                 >
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-800 truncate">
+                  <div className="flex items-center justify-between text-sm font-bold text-slate-900 truncate">
                     <span className="truncate">
                       #{idx + 1} {seg.topic}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-500 ml-1 shrink-0">
+                    <span className="text-xs font-mono font-bold text-indigo-700 ml-1.5 shrink-0 bg-white/70 px-1.5 py-0.5 rounded">
                       {formatTime(seg.end - seg.start)}
                     </span>
                   </div>
 
                   {/* Small decorative bar at bottom */}
-                  <div className="w-12 h-1 bg-indigo-300/60 rounded-full" />
+                  <div className="w-14 h-1.5 bg-indigo-400/70 rounded-full" />
                 </div>
               );
             })}
           </div>
 
           {/* Track 2: Âm thanh (Emerald green waveform inside mint pill container) */}
-          <div className="h-14 relative w-full flex items-center py-1">
-            <div className="w-full h-full bg-[#ecfdf5] rounded-2xl border border-emerald-100/90 flex items-center justify-between px-3 gap-0.5 overflow-hidden">
+          <div className="h-16 relative w-full flex items-center py-1">
+            <div className="w-full h-full bg-[#ecfdf5] rounded-2xl border border-emerald-200/90 flex items-center justify-between px-3 gap-0.5 overflow-hidden">
               {waveformBars.map((height, i) => (
                 <div
                   key={i}
@@ -524,9 +578,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             className="absolute top-0 bottom-0 pointer-events-none z-30 -ml-[1px] flex flex-col items-center"
           >
             {/* Red knob on ruler */}
-            <div className="w-3.5 h-3.5 bg-[#ef4444] rounded-full shadow-md -mt-0.5" />
+            <div className="w-4 h-4 bg-[#ef4444] rounded-full shadow-md -mt-0.5 ring-2 ring-white" />
             {/* Red vertical needle line */}
-            <div className="w-[1.5px] bg-[#ef4444] flex-1" />
+            <div className="w-[2px] bg-[#ef4444] flex-1" />
           </div>
         </div>
       </div>

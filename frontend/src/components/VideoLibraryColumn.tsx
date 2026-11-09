@@ -50,12 +50,12 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
   const [viewMode, setViewMode] = useState<"segments" | "library">(hasSegments ? "segments" : "library");
 
   return (
-    <aside className="w-60 lg:w-64 bg-white border-r border-slate-200/90 flex flex-col shrink-0 select-none z-10 text-slate-800 shadow-[1px_0_3px_rgba(0,0,0,0.02)]">
+    <aside className="w-64 lg:w-72 bg-white border-r border-slate-200/90 flex flex-col shrink-0 select-none z-10 text-slate-800 shadow-[1px_0_3px_rgba(0,0,0,0.02)]">
       {/* Column Header: Thư viện video */}
-      <div className="h-12 border-b border-slate-200/90 px-3.5 flex items-center justify-between bg-white shrink-0">
+      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-base">📁</span>
-          <span className="font-bold text-sm text-slate-900 tracking-tight">
+          <span className="text-lg">📁</span>
+          <span className="font-bold text-base text-slate-900 tracking-tight">
             Thư viện video
           </span>
         </div>
@@ -66,32 +66,32 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
         <div className="px-3 pt-2.5 pb-1 bg-slate-50/70 border-b border-slate-200/80 flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setViewMode("segments")}
-            className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               viewMode === "segments"
                 ? "bg-white text-indigo-700 shadow-2xs border border-indigo-200/80"
                 : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
             }`}
           >
-            <Sparkles className="w-3 h-3 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
             <span>Phân đoạn AI ({currentSegments.length})</span>
           </button>
 
           <button
             onClick={() => setViewMode("library")}
-            className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               viewMode === "library"
                 ? "bg-white text-indigo-700 shadow-2xs border border-indigo-200/80"
                 : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
             }`}
           >
-            <Film className="w-3 h-3 text-slate-400" />
+            <Film className="w-3.5 h-3.5 text-slate-400" />
             <span>Thư viện ({videos.length})</span>
           </button>
         </div>
       )}
 
       {/* Video Cards List */}
-      <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-slate-50/40 min-h-0">
+      <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-slate-50/40 min-h-0">
         {viewMode === "segments" && hasSegments ? (
           // Hiển thị danh sách các phân đoạn video mà AI đã phân tích
           currentSegments.map((seg, idx) => {
@@ -103,7 +103,7 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               <div
                 key={seg.id || `seg-${idx}`}
                 onClick={() => onSelectSegment?.(seg, idx + 1)}
-                className={`p-2.5 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2 ${
+                className={`p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2.5 ${
                   isCurrent
                     ? "bg-white border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
                     : "bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
@@ -111,27 +111,27 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               >
                 {/* Pastel Gradient Thumbnail matching reference image */}
                 <div
-                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
+                  className={`w-full h-26 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
                 >
                   {/* Badge số phân đoạn ở góc trái */}
-                  <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs">
+                  <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-xs text-white text-xs font-bold px-2 py-0.5 rounded-lg shadow-2xs">
                     #{idx + 1}
                   </div>
 
                   {/* Duration chip on top-right */}
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-slate-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs border border-white/60">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
                     {formatTime(durationSec)}
                   </div>
                 </div>
 
                 {/* Title below thumbnail */}
                 <div className="px-0.5">
-                  <div className="text-[10px] font-bold text-indigo-600 mb-0.5">
+                  <div className="text-xs font-bold text-indigo-600 mb-0.5">
                     Mục #{seg.topic_no || idx + 1}
                   </div>
                   <h4
-                    className={`text-xs font-semibold leading-snug line-clamp-2 ${
-                      isCurrent ? "text-indigo-950 font-bold" : "text-slate-700"
+                    className={`text-sm font-bold leading-snug line-clamp-2 ${
+                      isCurrent ? "text-indigo-950" : "text-slate-800"
                     }`}
                   >
                     {seg.topic}
@@ -151,7 +151,7 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               <div
                 key={item.id}
                 onClick={() => onSelectVideo(item)}
-                className={`p-2.5 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2 ${
+                className={`p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2.5 ${
                   isActive
                     ? "bg-white border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
                     : "bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
@@ -159,10 +159,10 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               >
                 {/* Pastel Gradient Thumbnail */}
                 <div
-                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5`}
+                  className={`w-full h-26 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5`}
                 >
                   {/* Duration chip on top-right */}
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-slate-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs border border-white/60">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
                     {item.durationStr}
                   </div>
                 </div>
@@ -170,8 +170,8 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
                 {/* Title below thumbnail */}
                 <div className="px-0.5">
                   <h4
-                    className={`text-xs font-semibold leading-snug line-clamp-2 ${
-                      isActive ? "text-indigo-950 font-bold" : "text-slate-700"
+                    className={`text-sm font-bold leading-snug line-clamp-2 ${
+                      isActive ? "text-indigo-950" : "text-slate-800"
                     }`}
                   >
                     {item.title}
@@ -185,9 +185,9 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
         {/* Nút "+ Thêm video" nét đứt ở đáy */}
         <button
           onClick={onOpenAddVideo}
-          className="w-full py-3 px-3 rounded-2xl border border-dashed border-slate-300 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 text-slate-600 hover:text-indigo-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition duration-150 mt-1 cursor-pointer"
+          className="w-full py-3.5 px-3 rounded-2xl border border-dashed border-slate-300 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 text-slate-700 hover:text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 transition duration-150 mt-1 cursor-pointer shadow-2xs"
         >
-          <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+          <Plus className="w-4 h-4 text-slate-500 group-hover:text-indigo-600" />
           <span>+ Thêm video</span>
         </button>
       </div>

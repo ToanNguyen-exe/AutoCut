@@ -213,14 +213,14 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
   const currentModelObj = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
 
   return (
-    <aside className="w-80 lg:w-96 bg-white border-l border-slate-200/90 flex flex-col shrink-0 select-none z-10 text-slate-800 shadow-[-1px_0_3px_rgba(0,0,0,0.02)]">
+    <aside className="w-[420px] md:w-[460px] lg:w-[500px] xl:w-[540px] bg-white border-l border-slate-200/90 flex flex-col shrink-0 select-none z-10 text-slate-800 shadow-[-1px_0_3px_rgba(0,0,0,0.02)]">
       {/* Header: Trợ lý AI & Model Selector Dropdown */}
-      <div className="h-12 border-b border-slate-200/90 px-3.5 flex items-center justify-between bg-white shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-2xs">
-            <Bot className="w-3.5 h-3.5" />
+      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+            <Bot className="w-4 h-4" />
           </div>
-          <span className="font-bold text-sm text-slate-900 tracking-tight">
+          <span className="font-bold text-base text-slate-900 tracking-tight">
             Trợ lý AI
           </span>
         </div>
@@ -229,17 +229,17 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-xs font-semibold text-slate-700 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-xs font-bold text-slate-800 transition cursor-pointer shadow-2xs"
             title="Chọn mô hình AI (ChatGPT, Gemini, Claude, Groq)"
           >
-            <span className={`w-2 h-2 rounded-full ${currentModelObj.iconBg}`} />
-            <span className="text-[11px] font-bold text-slate-800">{currentModelObj.name}</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
+            <span className={`w-2.5 h-2.5 rounded-full ${currentModelObj.iconBg}`} />
+            <span className="text-xs font-bold text-slate-800">{currentModelObj.name}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
           </button>
 
           {isModelDropdownOpen && (
-            <div className="absolute right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-              <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 Chọn mô hình AI
               </div>
               {AI_MODELS.map((item) => (
@@ -249,17 +249,17 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
                     setSelectedModel(item.id);
                     setIsModelDropdownOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer ${
                     selectedModel === item.id
                       ? "bg-indigo-50 text-indigo-700 font-bold"
                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${item.iconBg}`} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${item.iconBg}`} />
+                    <span className="text-xs">{item.name}</span>
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-normal">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-semibold">
                     {item.badge}
                   </span>
                 </button>
@@ -271,25 +271,25 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
 
       {/* Re-analyze banner if video not analyzed or quick trigger */}
       {onAnalyzeAI && (
-        <div className="px-3.5 py-2 bg-gradient-to-r from-indigo-50/60 to-purple-50/60 border-b border-indigo-100/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-900">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="px-4 py-2 bg-gradient-to-r from-indigo-50/70 via-purple-50/60 to-blue-50/70 border-b border-indigo-100/90 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-950">
+            <Sparkles className="w-4 h-4 text-indigo-600" />
             <span>Phân tích giọng nói & bóc băng AI</span>
           </div>
           <button
             onClick={onAnalyzeAI}
             disabled={isAnalyzing}
-            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition flex items-center gap-1 disabled:opacity-50"
+            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             title="Chạy Whisper AI để phân tích video và bóc băng toàn bộ câu thoại"
           >
             {isAnalyzing ? (
               <>
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Đang chạy...</span>
               </>
             ) : (
               <>
-                <Zap className="w-3 h-3" />
+                <Zap className="w-3.5 h-3.5" />
                 <span>Chạy AI</span>
               </>
             )}
@@ -298,7 +298,7 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
       )}
 
       {/* Chat Messages Body */}
-      <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-slate-50/40 min-h-0">
+      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/40 min-h-0">
         {messages.map((msg) => {
           const isUser = msg.sender === "user";
           return (
@@ -307,15 +307,15 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
               className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
             >
               <div
-                className={`text-xs leading-relaxed max-w-[88%] rounded-2xl p-3 shadow-2xs ${
+                className={`text-sm leading-relaxed max-w-[90%] rounded-2xl p-3.5 shadow-2xs ${
                   isUser
                     ? "bg-indigo-600 text-white rounded-tr-xs font-medium"
                     : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-xs"
                 }`}
               >
                 {!isUser && msg.provider && (
-                  <div className="text-[10px] font-bold text-indigo-600 mb-1 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <div className="text-xs font-bold text-indigo-600 mb-1 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
                     <span>{msg.provider}</span>
                   </div>
                 )}
@@ -328,9 +328,9 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
         {/* Loading Bubble */}
         {isLoading && (
           <div className="flex flex-col items-start animate-in fade-in duration-150">
-            <div className="bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-xs flex items-center gap-2 text-xs">
-              <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
-              <span className="text-[11px] text-slate-500 italic">
+            <div className="bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 shadow-xs flex items-center gap-2.5 text-sm">
+              <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+              <span className="text-xs text-slate-500 italic">
                 {currentModelObj.name} đang suy nghĩ...
               </span>
             </div>
@@ -338,22 +338,22 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
         )}
 
         {/* Quick Action Suggestion Chips */}
-        <div className="pt-2 flex flex-wrap gap-1.5">
+        <div className="pt-2 flex flex-wrap gap-2">
           <button
             onClick={handleConfirmMerge}
-            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition"
+            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition cursor-pointer"
           >
             Xác nhận gộp #2 & #3
           </button>
           <button
             onClick={handleSplitMore}
-            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition"
+            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition cursor-pointer"
           >
             Tách thêm phân đoạn
           </button>
           <button
             onClick={handleSummarizeVideo}
-            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition"
+            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-indigo-400 hover:text-indigo-600 transition cursor-pointer"
           >
             Tóm tắt video
           </button>
@@ -363,10 +363,10 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
       </div>
 
       {/* Input Form at Bottom */}
-      <div className="p-3 border-t border-slate-200/90 bg-white shrink-0">
+      <div className="p-3.5 border-t border-slate-200/90 bg-white shrink-0">
         <form
           onSubmit={handleSendMessage}
-          className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition"
+          className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition"
         >
           <input
             type="text"
@@ -374,15 +374,15 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
             placeholder={`Hỏi ${currentModelObj.name} về video...`}
-            className="flex-1 text-xs bg-transparent outline-none text-slate-800 placeholder:text-slate-400 py-1 disabled:opacity-50"
+            className="flex-1 text-sm bg-transparent outline-none text-slate-800 placeholder:text-slate-400 py-1 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="w-8 h-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed shadow-xs shrink-0"
+            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed shadow-xs shrink-0 cursor-pointer"
             title="Gửi yêu cầu (Enter)"
           >
-            <Send className="w-3.5 h-3.5 ml-0.5" />
+            <Send className="w-4 h-4 ml-0.5" />
           </button>
         </form>
       </div>

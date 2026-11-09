@@ -207,11 +207,11 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
   return (
     <div className="flex-1 flex flex-col bg-white overflow-hidden select-none min-h-0 min-w-0 text-slate-800">
-      {/* Top Header: Trình phát & 16:9 Landscape matching reference image */}
+      {/* Top Header: Trình phát & 16:9 Landscape */}
       <div className="h-12 border-b border-slate-200/90 px-5 flex items-center justify-between shrink-0 bg-white z-20 select-none">
         {/* Left: Tiêu đề Trình phát */}
         <div className="flex items-center gap-2">
-          <span className="font-bold text-sm text-slate-900 tracking-tight">
+          <span className="font-bold text-base text-slate-900 tracking-tight">
             Trình phát
           </span>
         </div>
@@ -220,7 +220,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAspect(aspect === "landscape" ? "portrait" : "landscape")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer shadow-2xs"
             title="Đổi tỉ lệ khung hình (16:9 Landscape / 9:16 Portrait)"
           >
             <span>{aspect === "landscape" ? "16:9 Landscape" : "9:16 Portrait"}</span>
@@ -228,22 +228,22 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         </div>
       </div>
 
-      {/* Main Centered Viewport Screen */}
+      {/* Main Centered Viewport Screen (Thu nhỏ lại để nhường diện tích cho Chatbox AI) */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-4 lg:p-6 relative overflow-hidden bg-white"
+        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-3 lg:p-4 relative overflow-hidden bg-white"
       >
-        {/* Video Canvas Container */}
+        {/* Video Canvas Container (Compact size) */}
         <div
           ref={containerRef}
           className={`relative rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 flex flex-col items-center justify-center transition-all duration-200 group ${
             aspect === "landscape" ? "aspect-video" : "aspect-[9/16]"
           }`}
           style={{
-            maxHeight: "88%",
-            maxWidth: "100%",
+            maxHeight: "75%",
+            maxWidth: "92%",
             height: "100%",
             width: "auto",
           }}
@@ -346,9 +346,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         </div>
 
         {/* Bottom Time Counter & Fullscreen Icon matching reference image */}
-        <div className="w-full max-w-[85%] flex items-center justify-between pt-3 px-2">
+        <div className="w-full max-w-[85%] flex items-center justify-between pt-2.5 px-2">
           {/* Digital Timecode (00:00:02:45 / 00:08:55:00) */}
-          <div className="font-mono text-xs font-semibold text-indigo-600 tracking-wider">
+          <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 tracking-wider">
             {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
           </div>
 
