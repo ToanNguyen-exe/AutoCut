@@ -73,9 +73,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   const [timelineHeight, setTimelineHeight] = useState<number>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("autocut_timeline_height");
-      if (saved) return Math.max(130, Math.min(480, parseInt(saved, 10)));
+      if (saved) return Math.max(160, Math.min(500, parseInt(saved, 10)));
     }
-    return 220;
+    return 240;
   });
   const isResizingRef = useRef(false);
 
@@ -88,7 +88,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     const handleMouseMove = (ev: MouseEvent) => {
       if (!isResizingRef.current) return;
       const delta = startY - ev.clientY; // Kéo chuột lên trên -> timeline cao lên
-      const nextH = Math.max(130, Math.min(480, startH + delta));
+      const nextH = Math.max(160, Math.min(500, startH + delta));
       setTimelineHeight(nextH);
     };
 
@@ -472,12 +472,12 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
       {/* 2. Multi-Track Timeline Canvas with Red Playhead */}
       <div className="flex bg-white overflow-x-auto overflow-y-auto relative flex-1 min-h-0">
         {/* Left Track Names: "Nội dung" and "Âm thanh" */}
-        <div className="w-28 bg-white shrink-0 flex flex-col select-none z-20 pl-4 pr-2 border-r border-slate-100">
+        <div className="w-28 bg-white shrink-0 flex flex-col select-none z-20 pl-4 pr-2 border-r border-slate-100 sticky left-0">
           {/* Ruler space */}
           <div className="h-8" />
 
           {/* Track 1 Label: Nội dung */}
-          <div className="h-18 flex items-center text-sm font-bold text-slate-800">
+          <div className="h-20 flex items-center text-sm font-bold text-slate-800">
             Nội dung
           </div>
 
@@ -512,7 +512,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           </div>
 
           {/* Track 1: Nội dung (Segment Clips in Lavender/Indigo Pastel) */}
-          <div className="h-18 relative w-full flex items-center">
+          <div className="h-20 relative w-full flex items-center">
             {segments.map((seg, idx) => {
               const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
               const widthPct = Math.min(
@@ -524,36 +524,49 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
               return (
                 <div
                   key={seg.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectSegment(seg.id);
-                    onSeek(seg.start);
-                    // Mở Modal chi tiết phân đoạn khi click
-                    if (onOpenSegmentDetail) {
-                      onOpenSegmentDetail(seg, idx + 1);
-                    }
-                  }}
                   style={{
                     left: `${leftPct}%`,
-                    width: `${Math.max(1.8, widthPct)}%`,
+                    width: `${widthPct}%`,
                   }}
-                  className={`absolute top-1 bottom-1 rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs ${
-                    isSelected
-                      ? "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
-                      : "bg-[#eef2ff] border-indigo-200 hover:border-indigo-400 z-0"
-                  }`}
+                  className="absolute top-1 bottom-1 px-0.5"
                 >
-                  <div className="flex items-center justify-between text-sm font-bold text-slate-900 truncate">
-                    <span className="truncate">
-                      #{idx + 1} {seg.topic}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-indigo-700 ml-1.5 shrink-0 bg-white/70 px-1.5 py-0.5 rounded">
-                      {formatTime(seg.end - seg.start)}
-                    </span>
-                  </div>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectSegment(seg.id);
+                      onSeek(seg.start);
+                      // Mở Modal chi tiết phân đoạn khi click
+                      if (onOpenSegmentDetail) {
+                        onOpenSegmentDetail(seg, idx + 1);
+                      }
+                    }}
+                    title={`#${idx + 1} ${seg.topic} (${formatTime(seg.end - seg.start)}) - Nhấp để xem chi tiết`}
+                    className={`w-full h-full rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs overflow-hidden select-none ${
+                      isSelected
+                        ? "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
+                        : "bg-[#eef2ff] border-indigo-200 hover:border-indigo-400 z-0"
+                    }`}
+                  >
+                    {/* Top Row: Title + Duration */}
+                    <div className="flex items-center justify-between gap-1.5 min-w-0">
+                      <span className="text-sm font-bold text-slate-900 truncate min-w-0">
+                        #{idx + 1} {seg.topic}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-indigo-700 ml-1 shrink-0 bg-white/80 px-1.5 py-0.5 rounded shadow-2xs">
+                        {formatTime(seg.end - seg.start)}
+                      </span>
+                    </div>
 
-                  {/* Small decorative bar at bottom */}
-                  <div className="w-14 h-1.5 bg-indigo-400/70 rounded-full" />
+                    {/* Bottom Row: Decorative Accent bar + optional slug */}
+                    <div className="flex items-center gap-2 mt-auto">
+                      <div className="w-14 sm:w-20 h-1.5 bg-indigo-400/80 rounded-full shrink-0" />
+                      {seg.slug && seg.slug !== slugify(seg.topic) && (
+                        <span className="text-[11px] font-mono text-slate-500 truncate min-w-0 opacity-80">
+                          {seg.slug}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}

@@ -111,7 +111,7 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               >
                 {/* Pastel Gradient Thumbnail matching reference image */}
                 <div
-                  className={`w-full h-26 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
+                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
                 >
                   {/* Badge số phân đoạn ở góc trái */}
                   <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-xs text-white text-xs font-bold px-2 py-0.5 rounded-lg shadow-2xs">
@@ -159,7 +159,7 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
               >
                 {/* Pastel Gradient Thumbnail */}
                 <div
-                  className={`w-full h-26 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5`}
+                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5`}
                 >
                   {/* Duration chip on top-right */}
                   <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
