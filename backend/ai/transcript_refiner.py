@@ -9,6 +9,7 @@ Nhiệm vụ trong Pipeline:
 
 import json
 import logging
+from pathlib import Path
 import re
 import sys
 import time
@@ -28,6 +29,7 @@ from .post_processor import (
 from .whisper_service import format_duration, build_progress_bar
 
 logger = logging.getLogger("AutoCut.AI.Refiner")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FALLBACK_MODELS = [
     "gemini-3.5-flash-lite",
@@ -306,7 +308,7 @@ DANH SÁCH ĐẦU VÀO:
         self,
         transcript: TranscriptOutput,
         lesson_name: str,
-        max_part_duration: float = 720.0
+        max_part_duration: float = 420.0
     ) -> Dict[str, Any]:
         """Phân tích ngữ nghĩa danh sách câu S0001..Sxxxx và chia thành các phân đoạn chủ đề (SegmentsDTO)."""
         sentences = transcript.sentences
@@ -349,7 +351,9 @@ QUY TẮC BẮT BUỘC:
 3. Các topics phải nối tiếp nhau liên tục theo thứ tự thời gian tăng dần (end_id của topic trước liền kề với start_id của topic sau).
 4. CẢNH BÁO QUAN TRỌNG VỀ MÃ CÂU: "start_id" và "end_id" BẮT BUỘC phải là mã câu ID thực tế có trong danh sách bên dưới (chỉ từ {first_id} đến {last_id}). TUYỆT ĐỐI KHÔNG lấy số giây thời gian (như 828s hay 1330s) để ghép thành mã câu giả (như S0828 hay S1330)!
 5. "slug" phải là chuỗi không dấu, cách nhau bằng dấu gạch ngang (ví dụ: "bien-va-khoi-tao", "cau-truc-if-else").
-6. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
+6. QUY TẮC THỜI LƯỢNG (TỐI ĐA 7 PHÚT / 420 GIÂY MỖI ĐOẠN VIDEO):
+   Mỗi bài học / chủ đề (topic) KHÔNG ĐƯỢC dài quá 7 phút (420 giây). Nếu một chủ đề kiến thức có nội dung dài hơn 7 phút, BẮT BUỘC phải chia chủ đề đó thành nhiều đoạn nhỏ nối tiếp nhau trong cùng section với tiêu đề kèm '(Phần 1)', '(Phần 2)' (ví dụ: 'Khai báo biến (Phần 1)', 'Khai báo biến (Phần 2)'), sao cho mỗi đoạn đều có thời lượng không vượt quá 7 phút (<= 420s).
+7. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
 
 {{
   "sections": [
@@ -411,7 +415,7 @@ DANH SÁCH CÂU TRANSCRIPT:
             # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
             if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
                 try:
-                    llm_raw_path = Path("cache") / "llm_raw.json"
+                    llm_raw_path = PROJECT_ROOT / "cache" / "llm_raw.json"
                     llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
                     with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
                         json.dump(parsed, f_raw, ensure_ascii=False, indent=2)
@@ -502,43 +506,102 @@ DANH SÁCH CÂU TRANSCRIPT:
             topic_title = str(item.get("topic") or f"Phần {idx}: {lesson_name}").strip()
             slug = slugify_vi(str(item.get("slug") or topic_title))
 
-            # Chia parts nếu đoạn dài hơn max_part_duration
-            parts: List[Dict[str, Any]] = []
+            # Chia nhỏ chủ đề nếu thời lượng dài hơn max_part_duration (tối đa 7 phút = 420 giây)
             seg_dur = seg_end - seg_start
             if seg_dur <= max_part_duration or max_part_duration <= 0:
-                parts.append({
-                    "part": 1,
+                seg_idx = len(segments_out) + 1
+                segments_out.append({
+                    "id": f"seg_ai_{seg_idx:02d}",
+                    "section_no": section_no,
+                    "section": section_name,
+                    "topic_no": topic_no,
+                    "topic": topic_title,
+                    "slug": slug,
+                    "start_id": s_obj.id,
+                    "end_id": e_obj.id,
                     "start": seg_start,
                     "end": seg_end,
-                    "file": f"{section_name}/{topic_no:02d}_{slug}.mp4"
+                    "parts": [{
+                        "part": 1,
+                        "start": seg_start,
+                        "end": seg_end,
+                        "file": f"{section_name}/{topic_no:02d}_{slug}.mp4"
+                    }]
                 })
             else:
-                num_parts = int((seg_dur + max_part_duration - 0.01) // max_part_duration)
-                part_len = seg_dur / num_parts
                 p_start = seg_start
-                for p_idx in range(1, num_parts + 1):
-                    p_end = seg_end if p_idx == num_parts else round(p_start + part_len, 2)
-                    parts.append({
-                        "part": p_idx,
+                p_idx = 1
+
+                # Danh sách câu trong phạm vi của topic này để map mốc câu chuẩn xác
+                seg_sentences = [
+                    s for s in sentences
+                    if s.start >= seg_start - 0.5 and s.end <= seg_end + 0.5
+                ]
+
+                while p_start < seg_end - 0.05:
+                    remaining_time = seg_end - p_start
+                    if remaining_time <= max_part_duration:
+                        p_end = seg_end
+                        sub_e_obj = e_obj
+                    else:
+                        rem_parts = max(2, int((remaining_time + max_part_duration - 0.01) // max_part_duration))
+                        target_len = remaining_time / rem_parts
+                        target_end = p_start + target_len
+                        max_allowed_rem = (rem_parts - 1) * max_part_duration
+
+                        # Tìm câu kết thúc trong khoảng hợp lệ:
+                        # vừa đảm bảo phần này <= max_part_duration,
+                        # vừa đảm bảo thời gian còn lại không bắt các phần sau phải vượt quá max_part_duration
+                        valid_candidates = [
+                            s for s in seg_sentences
+                            if (p_start + 1.0) <= s.end <= (p_start + max_part_duration)
+                            and (seg_end - s.end) <= max_allowed_rem
+                        ]
+                        if valid_candidates:
+                            best_sent = min(valid_candidates, key=lambda s: abs(s.end - target_end))
+                            p_end = round(best_sent.end, 2)
+                            sub_e_obj = best_sent
+                        else:
+                            p_end = round(min(seg_end, target_end), 2)
+                            sub_e_obj = min(sentences, key=lambda s: abs(s.end - p_end))
+
+                    # Đảm bảo p_end luôn tiến về phía trước và không vượt quá seg_end
+                    if p_end <= p_start:
+                        p_end = round(min(seg_end, p_start + max_part_duration), 2)
+                    if p_end > seg_end:
+                        p_end = seg_end
+
+                    if p_idx == 1:
+                        sub_s_obj = s_obj
+                    else:
+                        candidates_start = [s for s in seg_sentences if s.start >= p_start - 0.5]
+                        sub_s_obj = candidates_start[0] if candidates_start else min(sentences, key=lambda s: abs(s.start - p_start))
+
+                    sub_title = f"{topic_title} (Phần {p_idx})"
+                    sub_slug = f"{slug}-phan-{p_idx}"
+                    sub_file = f"{section_name}/{topic_no:02d}_{slug}_Phan{p_idx}.mp4"
+                    seg_idx = len(segments_out) + 1
+
+                    segments_out.append({
+                        "id": f"seg_ai_{seg_idx:02d}",
+                        "section_no": section_no,
+                        "section": section_name,
+                        "topic_no": topic_no,
+                        "topic": sub_title,
+                        "slug": sub_slug,
+                        "start_id": sub_s_obj.id,
+                        "end_id": sub_e_obj.id,
                         "start": round(p_start, 2),
-                        "end": p_end,
-                        "file": f"{section_name}/{topic_no:02d}_{slug}_Phan{p_idx}.mp4"
+                        "end": round(p_end, 2),
+                        "parts": [{
+                            "part": 1,
+                            "start": round(p_start, 2),
+                            "end": round(p_end, 2),
+                            "file": sub_file
+                        }]
                     })
                     p_start = p_end
-
-            segments_out.append({
-                "id": f"seg_ai_{idx:02d}",
-                "section_no": section_no,
-                "section": section_name,
-                "topic_no": topic_no,
-                "topic": topic_title,
-                "slug": slug,
-                "start_id": s_obj.id,
-                "end_id": e_obj.id,
-                "start": seg_start,
-                "end": seg_end,
-                "parts": parts
-            })
+                    p_idx += 1
 
         return {
             "video": transcript.video,
@@ -562,16 +625,18 @@ DANH SÁCH CÂU TRANSCRIPT:
                 "end_id": sentences[-1].id
             }]
 
-        # Chia thành 5 phân đoạn cân đối theo số câu và ranh giới tự nhiên
-        num_segs = min(6, max(4, n // 80 + 4))
+        # Chia thành các phân đoạn cân đối theo thời lượng (mỗi đoạn không quá 7 phút = 420s) và ranh giới câu tự nhiên
+        total_dur = sentences[-1].end - sentences[0].start if sentences else 0.0
+        min_segs_by_dur = max(1, int((total_dur + 419.99) // 420.0))
+        num_segs = max(min_segs_by_dur, min(24, max(4, n // 80 + 4)))
         chunk_size = max(1, n // num_segs)
-        section_labels = [
-            "01_GioiThieu",
-            "02_KhaiNiemCoBan",
-            "03_NoiDungTrongTam",
-            "04_PhanTichChiTiet",
-            "05_ThucHanhUngDung",
-            "06_TongKetBaiGiang",
+        base_section_labels = [
+            "GioiThieu",
+            "KhaiNiemCoBan",
+            "NoiDungTrongTam",
+            "PhanTichChiTiet",
+            "ThucHanhUngDung",
+            "TongKetBaiGiang",
         ]
 
         topics: List[Dict[str, Any]] = []
@@ -586,7 +651,8 @@ DANH SÁCH CÂU TRANSCRIPT:
             if len(first_sent_text) > 68:
                 first_sent_text = first_sent_text[:65].rsplit(" ", 1)[0] + "..."
 
-            sec_label = section_labels[min(i, len(section_labels) - 1)]
+            base_label = base_section_labels[min(i, len(base_section_labels) - 1)]
+            sec_label = f"{i + 1:02d}_{base_label}"
             topics.append({
                 "section_no": i + 1,
                 "section": sec_label,

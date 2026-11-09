@@ -199,53 +199,8 @@ public class VideoController {
             videoEntity.setStatus("UPLOADED");
             videoRepository.save(videoEntity);
 
-            // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
-            String transcriptFile = generateTranscriptForUploadedVideo(localFile, originalFilename, hash);
-            TranscriptDTO transcriptDTO = null;
-            SegmentsDTO segmentsDTO = null;
-
-            Path transPath = projectRoot.resolve(transcriptFile);
-            if (Files.exists(transPath)) {
-                try {
-                    transcriptDTO = objectMapper.readValue(transPath.toFile(), TranscriptDTO.class);
-                } catch (Exception ex) {
-                    log.warn("Không thể đọc transcript vừa tạo {}: {}", transPath, ex.getMessage());
-                }
-            }
-
-            if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
-                List<Sentence> sents = transcriptDTO.sentences();
-                double totalDur = transcriptDTO.duration() > 0 ? transcriptDTO.duration() : 180.0;
-                int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
-                int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-                List<Segment> segList = new ArrayList<>();
-
-                for (int i = 0; i < segCount; i++) {
-                    int sIdx = i * chunkSize;
-                    if (sIdx >= sents.size()) break;
-                    int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-                    Sentence fSent = sents.get(sIdx);
-                    Sentence lSent = sents.get(eIdx);
-                    double sStart = (i == 0) ? 0.0 : fSent.start();
-                    double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
-                    String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-                    String topName = "Đoạn " + (i + 1);
-                    segList.add(new Segment(
-                            "seg_ai_" + (i + 1),
-                            i + 1,
-                            secFolder,
-                            i + 1,
-                            topName,
-                            "doan-" + (i + 1),
-                            fSent.id(),
-                            lSent.id(),
-                            Math.round(sStart * 10.0) / 10.0,
-                            Math.round(sEnd * 10.0) / 10.0,
-                            List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
-                    ));
-                }
-                segmentsDTO = new SegmentsDTO(originalFilename, originalFilename, "analyzed", false, segList);
-            }
+            // Khi thêm video: CHỈ upload lên hệ thống, KHÔNG chạy AI phân tích vội (chờ user bấm nút 'Phân tích AI')
+            log.info("Đã upload video '{}' (SHA-256: {}) thành công vào hệ thống. Đang chờ người dùng bấm 'Phân tích AI'...", originalFilename, hash);
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "SUCCESS");
@@ -253,14 +208,7 @@ public class VideoController {
             response.put("file_size", file.getSize());
             response.put("sha256", hash);
             response.put("cloud_url", publicUrl);
-            response.put("transcript_file", transcriptFile);
-            if (transcriptDTO != null) {
-                response.put("transcript", transcriptDTO);
-            }
-            if (segmentsDTO != null) {
-                response.put("segmentsData", segmentsDTO);
-            }
-            response.put("message", "Tải video lên và phân tích AI thành công!");
+            response.put("message", "Đã tải video lên hệ thống thành công! Hãy bấm 'Phân tích AI' để bắt đầu trích xuất và cắt video.");
 
             return ResponseEntity.ok(response);
 
@@ -298,141 +246,6 @@ public class VideoController {
 
 
 
-    /**
-
-     * Kích hoạt Whisper + Gemini tạo file transcript riêng cho video vừa upload tại transcripts/<tên_video>_transcript.json.
-
-     */
-
-    private String generateTranscriptForUploadedVideo(Path localVideoFile, String originalFilename, String hash) {
-
-        Path projectRoot = resolveProjectRoot();
-
-        Path transcriptsDir = projectRoot.resolve("transcripts");
-
-        String videoStem = stripExtension(originalFilename);
-
-        String fileName = videoStem + "_transcript.json";
-
-        Path transcriptPath = transcriptsDir.resolve(fileName);
-
-
-
-        try {
-
-            if (!Files.exists(transcriptsDir)) {
-
-                Files.createDirectories(transcriptsDir);
-
-            }
-
-
-
-            List<String> command = List.of(
-
-                    resolvePythonExecutable(), "-m", "backend.ai.cli",
-
-                    "--input", localVideoFile.toAbsolutePath().toString(),
-
-                    "--engine", "whisper",
-
-                    "--refine",
-
-                    "--output", transcriptPath.toAbsolutePath().toString()
-
-            );
-
-
-
-            log.info("Đang chạy Whisper + Gemini tạo transcript cho video mới '{}' tại {}...", originalFilename, transcriptPath);
-
-            ProcessBuilder pb = new ProcessBuilder(command);
-
-            pb.directory(projectRoot.toFile());
-
-            pb.redirectErrorStream(true);
-
-
-
-            Process process = pb.start();
-
-            String outputLog = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-            boolean finished = process.waitFor(30, TimeUnit.MINUTES);
-
-
-
-            if (finished && process.exitValue() == 0 && Files.exists(transcriptPath)) {
-
-                TranscriptDTO dto = objectMapper.readValue(transcriptPath.toFile(), TranscriptDTO.class);
-
-                if (hash != null && !hash.isBlank()) {
-
-                    cacheService.saveTranscriptCache(hash, dto);
-
-                }
-
-                log.info("Đã xuất thành công file transcript tại: {}", transcriptPath.toAbsolutePath());
-
-                try { Files.copy(transcriptPath, projectRoot.resolve("transcript.json"), StandardCopyOption.REPLACE_EXISTING); } catch (Exception ignored) {}
-                return "transcripts/" + fileName;
-
-            } else {
-
-                log.warn("Whisper CLI không thể giải mã tệp (exit={}): {}. Khởi tạo file transcript mặc định tại {}.",
-
-                        finished ? process.exitValue() : "TIMEOUT", outputLog, transcriptPath);
-
-            }
-
-        } catch (Exception e) {
-
-            log.warn("Lỗi khi gọi Whisper CLI lúc upload ({}): khởi tạo file transcript mặc định.", e.getMessage());
-
-        }
-
-
-
-        // Đảm bảo file transcripts/<tên_video>_transcript.json luôn được tạo ra kể cả với tệp test giả định
-
-        try {
-
-            if (!Files.exists(transcriptPath)) {
-
-                TranscriptDTO fallbackDto = new TranscriptDTO(
-
-                        originalFilename,
-
-                        60.0,
-
-                        List.of(new Sentence("S0001", 0.0, 60.0, "Nội dung bóc băng của video " + originalFilename + ".", null))
-
-                );
-
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), fallbackDto);
-
-                if (hash != null && !hash.isBlank()) {
-
-                    cacheService.saveTranscriptCache(hash, fallbackDto);
-
-                }
-
-            }
-
-        } catch (IOException ioEx) {
-
-            log.error("Không thể tạo file transcript tại {}: {}", transcriptPath, ioEx.getMessage());
-
-        }
-
-
-
-        return "transcripts/" + fileName;
-
-    }
-
-
-
     private String stripExtension(String filename) {
 
         if (filename == null || filename.isBlank()) {
@@ -445,6 +258,53 @@ public class VideoController {
 
         return (dotIdx > 0) ? filename.substring(0, dotIdx) : filename;
 
+    }
+
+    private String sanitizeStem(String name) {
+        if (name == null || name.isBlank()) return "video";
+        String raw = name.contains(".") ? stripExtension(name) : name;
+        String s = raw.replace("đ", "d").replace("Đ", "D");
+        s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
+        s = s.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        s = s.replaceAll("[\\s()\\[\\]{}]+", "-");
+        s = s.replaceAll("[^a-zA-Z0-9_-]", "-");
+        s = s.replaceAll("-+", "-").replaceAll("^-+|-+$", "").toLowerCase();
+        return s.isEmpty() ? "video" : s;
+    }
+
+    private void saveSegmentsToOutput(SegmentsDTO segmentsDTO, String lessonName, String videoName) {
+        if (segmentsDTO == null) return;
+        try {
+            Path outputDir = resolveProjectRoot().resolve("output");
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+            String chosenName = (lessonName != null && !lessonName.isBlank()) ? lessonName : videoName;
+            String cleanLesson = sanitizeStem(chosenName);
+
+            Path planFileLesson = outputDir.resolve("segments_" + cleanLesson + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(planFileLesson.toFile(), segmentsDTO);
+
+            log.info("Đã xuất duy nhất 1 file json phân đoạn vào output: {}", planFileLesson.toAbsolutePath());
+        } catch (Exception ex) {
+            log.warn("Lỗi khi lưu file segments vào output: {}", ex.getMessage());
+        }
+    }
+
+    private void saveTranscriptToTranscripts(TranscriptDTO transcriptDTO, String videoName) {
+        if (transcriptDTO == null) return;
+        try {
+            Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
+            if (!Files.exists(transcriptsDir)) {
+                Files.createDirectories(transcriptsDir);
+            }
+            String cleanStem = sanitizeStem(videoName);
+            Path transcriptFile = transcriptsDir.resolve(cleanStem + "_transcript.json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptFile.toFile(), transcriptDTO);
+            log.info("Đã xuất duy nhất 1 file transcript vào transcripts: {}", transcriptFile.toAbsolutePath());
+        } catch (Exception ex) {
+            log.warn("Lỗi khi lưu file transcript vào transcripts: {}", ex.getMessage());
+        }
     }
 
 
@@ -789,9 +649,9 @@ public class VideoController {
                 if (!hash.isBlank() && transcriptDTO != null) {
 
                     cacheService.saveTranscriptCache(hash, transcriptDTO);
-        try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), transcriptDTO); } catch (Exception ignored) {}
 
                 }
+                saveTranscriptToTranscripts(transcriptDTO, videoName);
 
 
 
@@ -801,18 +661,14 @@ public class VideoController {
 
                         segmentsDTO != null ? segmentsDTO.segments().size() : 0);
 
-
+                saveSegmentsToOutput(segmentsDTO, lessonName, videoName);
 
                 return ResponseEntity.ok(Map.of(
-
                         "status", "SUCCESS",
-
                         "mode", "analyzed",
-
                         "segmentsData", segmentsDTO,
-
-                        "transcript", transcriptDTO
-
+                        "transcript", transcriptDTO,
+                        "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
                 ));
 
             } else {
@@ -878,7 +734,8 @@ public class VideoController {
                     if (matchesVideo) {
                         List<Sentence> sents = existingDto.sentences();
                         double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
-                        int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
+                        int minSegs = (int) Math.ceil(totalDur / 420.0);
+                        int segCount = Math.max(minSegs, Math.min(10, Math.max(2, (int) Math.ceil(sents.size() / 3.0))));
                         int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
                         List<Segment> segList = new ArrayList<>();
 
@@ -912,11 +769,14 @@ public class VideoController {
                             cacheService.saveTranscriptCache(hash, existingDto);
                         }
 
+                        saveSegmentsToOutput(segsDto, lessonName, videoName);
+
                         return ResponseEntity.ok(Map.of(
                                 "status", "SUCCESS",
                                 "mode", "analyzed",
                                 "segmentsData", segsDto,
-                                "transcript", existingDto
+                                "transcript", existingDto,
+                                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
                         ));
                     } else {
                         log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",
@@ -931,33 +791,35 @@ public class VideoController {
 
 
         // 3. Chế độ dự phòng (Fallback) nếu chưa có transcript thật
+        int fallbackSegCount = Math.max(4, (int) Math.ceil(duration / 420.0));
+        double partDur = duration / fallbackSegCount;
+        List<Segment> segments = new ArrayList<>();
+        List<Sentence> sentences = new ArrayList<>();
+        double curS = 0.0;
+        for (int i = 1; i <= fallbackSegCount; i++) {
+            double curE = (i == fallbackSegCount) ? duration : Math.round((curS + partDur) * 10.0) / 10.0;
+            String secFolder = String.format("%02d_Doan%d", i, i);
+            String topName = "Phân đoạn " + i;
+            String topSlug = "doan-" + i;
+            String sId = String.format("S%04d", i);
+            segments.add(new Segment(
+                    "seg_ai_" + String.format("%02d", i),
+                    i,
+                    secFolder,
+                    i,
+                    topName,
+                    topSlug,
+                    sId,
+                    sId,
+                    curS,
+                    curE,
+                    List.of(new VideoPart(1, curS, curE, secFolder + "/" + String.format("%02d", i) + "_" + topSlug + ".mp4"))
+            ));
+            sentences.add(new Sentence(sId, curS, curE, "Nội dung phần " + i + " của " + videoName, null));
+            curS = curE;
+        }
 
-        double cut1 = Math.round(duration * 0.16 * 10.0) / 10.0;
-        double cut2 = Math.round(duration * 0.48 * 10.0) / 10.0;
-        double cut3 = Math.round(duration * 0.82 * 10.0) / 10.0;
-        double cut4 = Math.round(duration * 10.0) / 10.0;
-
-        List<Segment> segments = List.of(
-                new Segment("seg_ai_01", 1, "01_Doan1", 1, "Phân đoạn 1", "doan-1", "S0001", "S0001", 0.0, cut1,
-                        List.of(new VideoPart(1, 0.0, cut1, "01_Doan1/01_doan-1.mp4"))),
-                new Segment("seg_ai_02", 2, "02_Doan2", 2, "Phân đoạn 2", "doan-2", "S0002", "S0002", cut1, cut2,
-                        List.of(new VideoPart(1, cut1, cut2, "02_Doan2/02_doan-2.mp4"))),
-                new Segment("seg_ai_03", 3, "03_Doan3", 3, "Phân đoạn 3", "doan-3", "S0003", "S0003", cut2, cut3,
-                        List.of(new VideoPart(1, cut2, cut3, "03_Doan3/03_doan-3.mp4"))),
-                new Segment("seg_ai_04", 4, "04_Doan4", 4, "Phân đoạn 4", "doan-4", "S0004", "S0004", cut3, cut4,
-                        List.of(new VideoPart(1, cut3, cut4, "04_Doan4/04_doan-4.mp4")))
-        );
-
-        List<Sentence> sentences = List.of(
-                new Sentence("S0001", 0.0, cut1, "Nội dung phần 1 của " + videoName, null),
-                new Sentence("S0002", cut1, cut2, "Nội dung phần 2 của " + videoName, null),
-                new Sentence("S0003", cut2, cut3, "Nội dung phần 3 của " + videoName, null),
-                new Sentence("S0004", cut3, cut4, "Nội dung phần 4 của " + videoName, null)
-        );
-
-
-
-        TranscriptDTO transcriptDTO = new TranscriptDTO(videoName, cut4, sentences);
+        TranscriptDTO transcriptDTO = new TranscriptDTO(videoName, duration, sentences);
 
         if (!hash.isBlank()) {
 
@@ -967,18 +829,15 @@ public class VideoController {
 
         SegmentsDTO segmentsDTO = new SegmentsDTO(videoName, lessonName, "analyzed", false, segments);
 
-
+        saveSegmentsToOutput(segmentsDTO, lessonName, videoName);
+        saveTranscriptToTranscripts(transcriptDTO, videoName);
 
         return ResponseEntity.ok(Map.of(
-
                 "status", "SUCCESS",
-
                 "mode", "analyzed",
-
                 "segmentsData", segmentsDTO,
-
-                "transcript", transcriptDTO
-
+                "transcript", transcriptDTO,
+                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
         ));
 
     }
@@ -999,19 +858,13 @@ public class VideoController {
         String safeLesson = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_");
 
         try {
-            Path userDir = Paths.get("output", "users", safeUser, safeLesson);
+            Path userDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(safeLesson);
             if (!Files.exists(userDir)) {
                 Files.createDirectories(userDir);
             }
 
             Path projectFile = userDir.resolve("project.json");
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(projectFile.toFile(), payload);
-
-            Path segmentsFile = userDir.resolve("segments.json");
-            Object segmentsObj = payload.get("segments");
-            if (segmentsObj != null) {
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsObj);
-            }
 
             String r2Url = null;
             try {
@@ -1063,17 +916,14 @@ public class VideoController {
             Path outputDir;
             if (user != null && !user.isBlank()) {
                 String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
-                outputDir = Paths.get("output", "users", safeUser, lesson);
+                outputDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(lesson);
             } else {
-                outputDir = Paths.get("output", lesson);
+                outputDir = resolveProjectRoot().resolve("output").resolve(lesson);
             }
 
             if (!Files.exists(outputDir)) {
                 Files.createDirectories(outputDir);
             }
-            Path planFile = outputDir.resolve("segments_" + lesson + ".json");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(planFile.toFile(), payload);
-            log.info("Đã lưu kế hoạch cắt tại: {}", planFile.toAbsolutePath());
 
             String sourcePath = resolveVideoSource(videoName);
             log.info("Nguồn video để cắt: {}", sourcePath);

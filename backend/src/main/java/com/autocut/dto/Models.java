@@ -1,25 +1,33 @@
 package com.autocut.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class Models {
 
     // --- B2: transcript.json ---
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record WordInfo(
         @JsonProperty("word") String word,
         @JsonProperty("start") double start,
         @JsonProperty("end") double end
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Sentence(
         @JsonProperty("id") String id,
         @JsonProperty("start") double start,
         @JsonProperty("end") double end,
         @JsonProperty("text") String text,
         @JsonProperty("words") List<WordInfo> words
-    ) {}
+    ) {
+        public Sentence(String id, double start, double end, String text) {
+            this(id, start, end, text, null);
+        }
+    }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record TranscriptDTO(
         @JsonProperty("video") String video,
         @JsonProperty("duration") double duration,
@@ -27,6 +35,7 @@ public class Models {
     ) {}
 
     // --- B3: cut_points.json ---
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record CutPoint(
         @JsonProperty("after_id") String afterId,
         @JsonProperty("time") double time,
@@ -34,11 +43,13 @@ public class Models {
         @JsonProperty("reasons") List<String> reasons
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record CutPointsDTO(
         @JsonProperty("cut_points") List<CutPoint> cutPoints
     ) {}
 
     // --- B4: llm_raw.json ---
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record TopicLLM(
         @JsonProperty("title") String title,
         @JsonProperty("slug") String slug,
@@ -46,16 +57,19 @@ public class Models {
         @JsonProperty("end_id") String endId
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record SectionLLM(
         @JsonProperty("label") String label,
         @JsonProperty("topics") List<TopicLLM> topics
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record LLMRawDTO(
         @JsonProperty("sections") List<SectionLLM> sections
     ) {}
 
     // --- B8 / B9 / B10: segments.json ---
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record VideoPart(
         @JsonProperty("part") int part,
         @JsonProperty("start") double start,
@@ -63,6 +77,7 @@ public class Models {
         @JsonProperty("file") String file
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Segment(
         @JsonProperty("id") String id,
         @JsonProperty("section_no") int sectionNo,
@@ -77,6 +92,7 @@ public class Models {
         @JsonProperty("parts") List<VideoPart> parts
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record SegmentsDTO(
         @JsonProperty("video") String video,
         @JsonProperty("lesson") String lesson,

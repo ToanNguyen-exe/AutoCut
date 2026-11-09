@@ -9,11 +9,14 @@ Hỗ trợ:
 
 import argparse
 import json
+import logging
 import re
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+logger = logging.getLogger("AutoCut.AI.CLI")
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -104,6 +107,17 @@ def clean_existing_transcript_file(
     print(f"[+] File xuất kết quả: {out_p} (Đồng bộ tại: {dedicated_p})")
 
 
+def is_valid_real_transcript(data: dict) -> bool:
+    """Kiểm tra xem transcript có chứa lời thoại thật sự do AI bóc băng hay là dữ liệu giả lập."""
+    if not isinstance(data, dict):
+        return False
+    sents = data.get("sentences", [])
+    if not sents or len(sents) < 2:
+        return False
+    dummy_count = sum(1 for s in sents if "Nội dung phần " in str(s.get("text", "")) or "Nội dung bóc băng" in str(s.get("text", "")))
+    return dummy_count < (len(sents) * 0.5)
+
+
 def _find_matching_transcript_or_video(
     video_name: str,
     lesson: str,
@@ -116,42 +130,50 @@ def _find_matching_transcript_or_video(
     backend_uploads_dir = PROJECT_ROOT / "backend" / "uploads"
     clean_vname = clean_video_filename(video_name or "video.mp4")
 
-    # 1. Ưu tiên kiểm tra trong thư mục transcripts/<tên_video>_transcript.json
+    # 1. Kiểm tra xem đã có transcript THẬT SỰ (do AI bóc băng trước đó) trong thư mục transcripts/ chưa
     for candidate_name in [clean_vname, lesson]:
         if candidate_name:
             dedicated_file = get_dedicated_transcript_path(candidate_name)
             if dedicated_file.exists():
-                with open(dedicated_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                t_obj = TranscriptOutput.model_validate(data)
-                processed = post_process_transcript(t_obj)
-                processed.video = clean_vname
-                return processed
+                try:
+                    with open(dedicated_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    if is_valid_real_transcript(data):
+                        t_obj = TranscriptOutput.model_validate(data)
+                        processed = post_process_transcript(t_obj)
+                        processed.video = clean_vname
+                        return processed
+                except Exception:
+                    pass
             # Cũng kiểm tra nếu tồn tại file theo stem thô cũ (legacy)
             legacy_file = TRANSCRIPTS_DIR / f"{Path(candidate_name).stem}_transcript.json"
             if legacy_file.exists() and legacy_file != dedicated_file:
-                with open(legacy_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                t_obj = TranscriptOutput.model_validate(data)
-                processed = post_process_transcript(t_obj)
-                processed.video = clean_vname
-                save_to_dedicated_transcripts_folder(processed, clean_vname)
-                return processed
-
-    # 2. Kiểm tra cache theo SHA-256 hash nếu có
-    if file_hash:
-        for c_dir in [cache_dir, PROJECT_ROOT / "backend" / "cache"]:
-            candidate_cache = c_dir / f"{file_hash}_transcript.json"
-            if candidate_cache.exists():
                 try:
-                    with open(candidate_cache, "r", encoding="utf-8") as f:
+                    with open(legacy_file, "r", encoding="utf-8") as f:
                         data = json.load(f)
+                    if is_valid_real_transcript(data):
+                        t_obj = TranscriptOutput.model_validate(data)
+                        processed = post_process_transcript(t_obj)
+                        processed.video = clean_vname
+                        save_to_dedicated_transcripts_folder(processed, clean_vname)
+                        return processed
+                except Exception:
+                    pass
+
+    # 2. Kiểm tra cache duy nhất của hệ thống (AutoCut/cache) theo SHA-256 hash nếu có
+    if file_hash:
+        candidate_cache = cache_dir / f"{file_hash}_transcript.json"
+        if candidate_cache.exists():
+            try:
+                with open(candidate_cache, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if is_valid_real_transcript(data):
                     t_obj = TranscriptOutput.model_validate(data)
                     processed = post_process_transcript(t_obj)
                     save_to_dedicated_transcripts_folder(processed, clean_vname)
                     return processed
-                except Exception:
-                    continue
+            except Exception:
+                pass
 
     # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
     video_candidates = []
@@ -181,20 +203,39 @@ def _find_matching_transcript_or_video(
             unique_vids.append(vp)
 
     for vid_path in unique_vids:
-        from .whisper_service import WhisperTranscriber, compute_file_sha256
-        transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
-        res = transcriber.transcribe(media_path=str(vid_path))
+        from .whisper_service import compute_file_sha256
+        # Bước 1 & 2: Tách âm thanh & dùng Groq để lấy văn bản từ âm thanh (whisper-large-v3)
+        print(f"[1/4] Đang tách âm thanh & gọi Groq Whisper Cloud bóc băng từ: {vid_path.name}...")
+        res = None
+        try:
+            from .groq_service import transcribe_with_groq
+            res = transcribe_with_groq(str(vid_path))
+        except Exception as groq_err:
+            logger.warning(f"Groq API không khả dụng ({groq_err}), chuyển sang Whisper cục bộ.")
+            from .whisper_service import WhisperTranscriber
+            transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
+            res = transcriber.transcribe(media_path=str(vid_path))
+
+        # Bước 3: Dùng Gemini để sửa lại câu từ và xuất ra file transcript
+        print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
         try:
             from .transcript_refiner import TranscriptRefiner
             refiner = TranscriptRefiner()
             res = refiner.refine_transcript(res)
-            v_hash = file_hash or compute_file_sha256(str(vid_path))
-            c_file = cache_dir / f"{v_hash}_transcript.json"
-            res.video = clean_vname
+        except Exception as ref_err:
+            logger.warning(f"Gemini Refiner không khả dụng ({ref_err}), sử dụng bộ tách câu chuẩn hóa cục bộ.")
+            res = post_process_transcript(res)
+
+        v_hash = file_hash or compute_file_sha256(str(vid_path))
+        c_file = cache_dir / f"{v_hash}_transcript.json"
+        res.video = clean_vname
+        try:
             with open(c_file, "w", encoding="utf-8") as f:
                 f.write(res.model_dump_json(indent=2, exclude_none=True))
         except Exception:
-            res = post_process_transcript(res)
+            pass
+
+        # Xuất ra đúng 1 file transcript duy nhất cho video: transcripts/<clean_vname>_transcript.json
         save_to_dedicated_transcripts_folder(res, clean_vname)
         return res
 
@@ -272,6 +313,21 @@ def _find_matching_transcript_or_video(
     return synth_output
 
 
+def save_segments_to_output_folder(segments_data: Dict[str, Any], lesson_or_video: str):
+    """Lưu duy nhất 1 tệp segments json phân đoạn cho video vào thư mục output/ của AutoCut."""
+    from .post_processor import sanitize_transcript_stem
+
+    output_dir = PROJECT_ROOT / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    clean_stem = sanitize_transcript_stem(lesson_or_video)
+
+    # Chỉ lưu duy nhất 1 tệp: output/segments_<clean_stem>.json
+    seg_file_stem = output_dir / f"segments_{clean_stem}.json"
+    with open(seg_file_stem, "w", encoding="utf-8") as f:
+        json.dump(segments_data, f, ensure_ascii=False, indent=2)
+
+
 def run_backend_analysis(
     video_name: str,
     lesson: str,
@@ -296,6 +352,9 @@ def run_backend_analysis(
         dummy_refiner.models_to_try = []
         dummy_refiner._generate_with_fallback = lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("No API Key"))
         segments_data = TranscriptRefiner.segment_transcript(dummy_refiner, transcript, lesson_name=lesson or video_name)
+
+    # Tự động xuất file json phân đoạn vào thư mục output/ ngay khi phân tích AI
+    save_segments_to_output_folder(segments_data, lesson or video_name)
 
     result_payload = {
         "status": "SUCCESS",
