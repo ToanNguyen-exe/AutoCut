@@ -22,8 +22,11 @@ import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
 import com.autocut.service.CutPointService;
+import com.autocut.service.BatchVideoCutService;
 import com.autocut.dto.Models.CutPointsDTO;
 import com.autocut.dto.Models.CutPoint;
+import com.autocut.dto.Models.CutRequestDTO;
+import com.autocut.dto.Models.CutJobResponse;
 import java.io.File;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
@@ -89,24 +92,30 @@ public class VideoController {
     private final VideoRepository videoRepository;
     private final VideoCutter videoCutter;
     private final CutPointService cutPointService;
+    private final BatchVideoCutService batchVideoCutService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()), new CutPointService(configService, new ObjectMapper()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps()), r2Service, configService, new ObjectMapper()));
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()));
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()));
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()));
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
         this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
         this.cutPointService = cutPointService != null ? cutPointService : new CutPointService(configService, objectMapper);
+        this.batchVideoCutService = batchVideoCutService != null ? batchVideoCutService : new BatchVideoCutService(this.videoCutter, r2Service, configService, objectMapper);
     }
 
 
@@ -1284,6 +1293,37 @@ public class VideoController {
                 "error", e.getMessage()
             ));
         }
+    }
+
+    /**
+     * API Khởi tạo tác vụ cắt video bài giảng theo lô bất đồng bộ (Thẻ 3.3).
+     * Phản hồi ngay HTTP 202 ACCEPTED với jobId để Client theo dõi tiến trình.
+     */
+    @PostMapping("/cut")
+    public ResponseEntity<?> startBatchCut(@RequestBody CutRequestDTO request) {
+        try {
+            CutJobResponse response = batchVideoCutService.submitCutJob(request);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi khởi tạo job cắt video: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi máy chủ nội bộ: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API Thăm dò trạng thái tiến trình cắt video theo jobId (Thẻ 3.3).
+     */
+    @GetMapping("/cut/status")
+    public ResponseEntity<?> getCutJobStatus(@RequestParam("jobId") String jobId) {
+        CutJobResponse response = batchVideoCutService.getJobStatus(jobId);
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Không tìm thấy tác vụ với mã: " + jobId));
+        }
+        return ResponseEntity.ok(response);
     }
 
     /**

@@ -84,4 +84,47 @@ public class Models {
         @JsonProperty("reviewed") boolean reviewed,
         @JsonProperty("segments") List<Segment> segments
     ) {}
+
+    // --- Card 3.3: Async Batch Cut Job ---
+    public enum CutJobStatus {
+        QUEUED,
+        PROCESSING,
+        COMPLETED,
+        FAILED
+    }
+
+    public record CutClipInfo(
+        @JsonProperty("index") int index,
+        @JsonProperty("name") String name,
+        @JsonProperty("topic") String topic,
+        @JsonProperty("start") double start,
+        @JsonProperty("end") double end,
+        @JsonProperty("padded_start") double paddedStart,
+        @JsonProperty("padded_end") double paddedEnd,
+        @JsonProperty("file_size_bytes") long fileSizeBytes,
+        @JsonProperty("execution_time_ms") long executionTimeMs,
+        @JsonProperty("url") String url,
+        @JsonProperty("local_path") String localPath
+    ) {}
+
+    public record CutJobResponse(
+        @JsonProperty("job_id") String jobId,
+        @JsonProperty("status") CutJobStatus status,
+        @JsonProperty("current") int current,
+        @JsonProperty("total") int total,
+        @JsonProperty("percent") int percent,
+        @JsonProperty("message") String message,
+        @JsonProperty("clips") List<CutClipInfo> clips,
+        @JsonProperty("chapters_url") String chaptersUrl,
+        @JsonProperty("report_url") String reportUrl,
+        @JsonProperty("error") String error
+    ) {}
+
+    public record CutRequestDTO(
+        @JsonProperty("user") String user,
+        @JsonProperty("lesson") String lesson,
+        @JsonProperty("video_name") String videoName,
+        @JsonProperty("total_duration") double totalDuration,
+        @JsonProperty("segments") List<Segment> segments
+    ) {}
 }
