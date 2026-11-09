@@ -102,11 +102,10 @@ Thumbs.db
 *.swp
 *~
 
-<<<<<<< HEAD
 # 8. AI Agents & Local DB Cache
 .agents/
 .neon
-=======
+
 # Media & Cache Files
 cache/
 output/
@@ -131,4 +130,3 @@ venv/
 ENV/
 *.egg-info/
 .pytest_cache/
->>>>>>> origin/feature/sv2-whisper-stt

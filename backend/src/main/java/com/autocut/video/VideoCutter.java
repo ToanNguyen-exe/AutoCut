@@ -1,7 +1,10 @@
 package com.autocut.video;
 
+import com.autocut.service.ConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -9,12 +12,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Service cắt video chính xác từng khung hình bằng FFmpeg (Task [P15]).
  * Sử dụng kỹ thuật re-encode (-c:v libx264) để triệt tiêu hoàn toàn lỗi đen hình I-Frame.
+ * Tự động áp dụng lùi padding_start (0.3s) chống cụt âm đầu và tiến padding_end (0.5s) cho thở tự nhiên.
+ * Kẹp biên an toàn trong khoảng [0, duration] bằng hàm clamp().
  * Đo lường thời gian thực thi của từng clip con phục vụ báo cáo.
  */
 @Service
@@ -23,13 +30,109 @@ public class VideoCutter {
     private static final Logger log = LoggerFactory.getLogger(VideoCutter.class);
 
     private final VideoProps videoProps;
+    private final ConfigService configService;
+    private final Map<String, Double> durationCache = new ConcurrentHashMap<>();
+
+    public VideoCutter() {
+        this(new VideoProps(), null);
+    }
 
     public VideoCutter(VideoProps videoProps) {
+        this(videoProps, null);
+    }
+
+    @Autowired
+    public VideoCutter(VideoProps videoProps, @Lazy @Autowired(required = false) ConfigService configService) {
         this.videoProps = videoProps != null ? videoProps : new VideoProps();
+        this.configService = configService;
     }
 
     public VideoProps getVideoProps() {
         return videoProps;
+    }
+
+    public ConfigService getConfigService() {
+        return configService;
+    }
+
+    /**
+     * Lấy giá trị padding_start hiệu lực: ưu tiên từ config.yaml (qua ConfigService),
+     * nếu không có thì lấy từ VideoProps (mặc định 0.3s).
+     */
+    public double getEffectivePaddingStart() {
+        if (configService != null) {
+            return configService.getPaddingStart();
+        }
+        return videoProps.getPaddingStart();
+    }
+
+    /**
+     * Lấy giá trị padding_end hiệu lực: ưu tiên từ config.yaml (qua ConfigService),
+     * nếu không có thì lấy từ VideoProps (mặc định 0.5s).
+     */
+    public double getEffectivePaddingEnd() {
+        if (configService != null) {
+            return configService.getPaddingEnd();
+        }
+        return videoProps.getPaddingEnd();
+    }
+
+    /**
+     * Hàm kẹp biên giá trị trong đoạn [min, max].
+     * Ví dụ: clamp(start - 0.3, 0, duration)
+     *
+     * @param val Giá trị cần kẹp
+     * @param min Biên dưới (thường là 0.0)
+     * @param max Biên trên (thường là duration của video)
+     * @return Giá trị đã được kẹp an toàn trong [min, max]
+     */
+    public static double clamp(double val, double min, double max) {
+        if (val < min) {
+            return min;
+        }
+        if (val > max) {
+            return max;
+        }
+        return val;
+    }
+
+    /**
+     * Trích xuất thời lượng (duration) của video bằng ffprobe để phục vụ kẹp biên max.
+     */
+    public double probeDuration(File videoFile) {
+        if (videoFile == null || !videoFile.exists() || videoFile.length() == 0) {
+            return 0.0;
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                videoProps.getFfprobePath(),
+                "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                videoFile.getAbsolutePath()
+            );
+            Process process = pb.start();
+            CompletableFuture<String> stdoutFuture = StreamUtil.readStreamAsync(process.getInputStream());
+            int timeout = videoProps.getTimeoutSeconds() > 0 ? videoProps.getTimeoutSeconds() : 10;
+            boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
+            if (finished && process.exitValue() == 0) {
+                String out = stdoutFuture.get(1, TimeUnit.SECONDS);
+                if (out != null && !out.isBlank()) {
+                    return Double.parseDouble(out.trim());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Không thể trích xuất duration bằng ffprobe cho tệp {}: {}", videoFile.getName(), e.getMessage());
+        }
+        return 0.0;
+    }
+
+    /**
+     * Lấy thời lượng video từ cache hoặc thăm dò bằng ffprobe nếu chưa có.
+     */
+    public double getOrProbeDuration(File videoFile) {
+        if (videoFile == null) return 0.0;
+        return durationCache.computeIfAbsent(videoFile.getAbsolutePath(), path -> probeDuration(new File(path)));
     }
 
     /**
@@ -38,8 +141,13 @@ public class VideoCutter {
     public record CutRequest(
         File outputFile,
         double start,
-        double end
-    ) {}
+        double end,
+        double duration
+    ) {
+        public CutRequest(File outputFile, double start, double end) {
+            this(outputFile, start, end, 0.0);
+        }
+    }
 
     /**
      * Cắt video chính xác theo đường dẫn String.
@@ -80,15 +188,6 @@ public class VideoCutter {
     }
 
     /**
-     * Hàm kẹp biên giá trị trong khoảng [min, max].
-     */
-    public double clamp(double value, double min, double max) {
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
-    }
-
-    /**
      * Tính toán mốc cắt sau khi áp dụng đệm thở (-paddingStart / +paddingEnd) và kẹp biên an toàn.
      *
      * @param start         Mốc bắt đầu gốc (giây)
@@ -98,10 +197,10 @@ public class VideoCutter {
      */
     public double[] calculatePaddedRange(double start, double end, double totalDuration) {
         double maxBound = totalDuration > 0 ? totalDuration : Double.MAX_VALUE;
-        double paddedStart = clamp(start - videoProps.getPaddingStart(), 0.0, maxBound);
+        double paddedStart = clamp(start - getEffectivePaddingStart(), 0.0, maxBound);
         double paddedEnd = (totalDuration > 0)
-            ? clamp(end + videoProps.getPaddingEnd(), paddedStart, totalDuration)
-            : (end + videoProps.getPaddingEnd());
+            ? clamp(end + getEffectivePaddingEnd(), paddedStart, totalDuration)
+            : (end + getEffectivePaddingEnd());
         return new double[]{paddedStart, paddedEnd};
     }
 
@@ -143,7 +242,7 @@ public class VideoCutter {
                 ErrorCode.UNKNOWN_ERROR, "Tệp đích không được null");
         }
 
-        // 2. Kiểm tra mốc thời gian cắt
+        // 2. Kiểm tra mốc thời gian cắt thô
         if (start < 0 || end <= start) {
             log.warn("Cắt video thất bại: Mốc thời gian không hợp lệ (start={}, end={})", start, end);
             return CutResult.failure(inputPathStr, outputPathStr, start, end, 0L,
@@ -151,7 +250,17 @@ public class VideoCutter {
                 String.format(Locale.US, "Mốc thời gian không hợp lệ: start=%.3f, end=%.3f", start, end));
         }
 
-        // 3. Tự động khởi tạo thư mục cha nếu chưa tồn tại
+        // 3. Áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên
+        double videoDuration = totalDuration > 0 ? totalDuration : getOrProbeDuration(inputFile);
+        double[] paddedRange = calculatePaddedRange(start, end, videoDuration);
+        double paddedStart = paddedRange[0];
+        double paddedEnd = paddedRange[1];
+
+        // Định dạng số với Locale.US để đảm bảo dấu chấm thập phân (ví dụ 12.345 thay vì 12,345)
+        String startStr = String.format(Locale.US, "%.3f", paddedStart);
+        String endStr = String.format(Locale.US, "%.3f", paddedEnd);
+
+        // Tự động khởi tạo thư mục cha nếu chưa tồn tại
         File parentDir = outputFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             boolean created = parentDir.mkdirs();
@@ -160,19 +269,10 @@ public class VideoCutter {
             }
         }
 
-        // 4. Áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên
-        double[] paddedRange = calculatePaddedRange(start, end, totalDuration);
-        double paddedStart = paddedRange[0];
-        double paddedEnd = paddedRange[1];
-
-        // Định dạng số với Locale.US để đảm bảo dấu chấm thập phân (ví dụ 12.345 thay vì 12,345)
-        String startStr = String.format(Locale.US, "%.3f", paddedStart);
-        String endStr = String.format(Locale.US, "%.3f", paddedEnd);
-
         List<String> command = buildCommand(inputFile, outputFile, startStr, endStr);
 
-        log.info("Bắt đầu cắt clip [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}]",
-            inputFile.getName(), outputFile.getName(), start, end, startStr, endStr);
+        log.info("Bắt đầu cắt clip [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}] (duration={}s)",
+            inputFile.getName(), outputFile.getName(), start, end, startStr, endStr, videoDuration);
 
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -190,7 +290,7 @@ public class VideoCutter {
             if (!finished) {
                 process.destroyForcibly();
                 log.error("Cắt video bị timeout sau {} giây đối với tệp: {}", timeoutSec, outputFile.getName());
-                return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
+                return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
                     ErrorCode.TIMEOUT, ErrorCode.TIMEOUT.getDescription());
             }
 
@@ -201,7 +301,7 @@ public class VideoCutter {
                 String errorDetail = (stderr != null && !stderr.isBlank()) ? stderr.trim() : "Exit code: " + exitCode;
                 log.error("Lệnh FFmpeg thất bại khi cắt clip {} (exit code: {}) - Chi tiết: {}",
                     outputFile.getName(), exitCode, errorDetail);
-                return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
+                return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
                     ErrorCode.CUT_FAILED, "FFmpeg lỗi (code " + exitCode + "): " + errorDetail);
             }
 
@@ -216,18 +316,18 @@ public class VideoCutter {
         } catch (java.io.IOException e) {
             long executionTimeMs = System.currentTimeMillis() - startTime;
             log.error("Không thể khởi chạy ffmpeg: {}. Vui lòng kiểm tra cài đặt ffmpeg.", e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
+            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
                 ErrorCode.PROCESS_EXECUTION_FAILED, "Không thể khởi chạy ffmpeg: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             long executionTimeMs = System.currentTimeMillis() - startTime;
             log.error("Tiến trình cắt video bị gián đoạn: {}", e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
+            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
                 ErrorCode.UNKNOWN_ERROR, "Tiến trình cắt bị gián đoạn: " + e.getMessage());
         } catch (Exception e) {
             long executionTimeMs = System.currentTimeMillis() - startTime;
             log.error("Lỗi ngoại lệ khi cắt video {}: {}", outputFile.getName(), e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, start, end, executionTimeMs,
+            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
                 ErrorCode.UNKNOWN_ERROR, "Lỗi không xác định khi cắt video: " + e.getMessage());
         }
     }
@@ -257,7 +357,7 @@ public class VideoCutter {
      * Cắt danh sách nhiều clip con từ cùng 1 video nguồn (Batch cutting).
      *
      * @param inputFile Tệp video nguồn
-     * @param requests  Danh sách yêu cầu cắt (gồm outputFile, start, end)
+     * @param requests  Danh sách yêu cầu cắt (gồm outputFile, start, end, duration)
      * @return Danh sách CutResult tương ứng
      */
     public List<CutResult> cutBatch(File inputFile, List<CutRequest> requests) {
@@ -277,7 +377,8 @@ public class VideoCutter {
 
         for (CutRequest req : requests) {
             if (req == null) continue;
-            CutResult result = cut(inputFile, req.outputFile(), req.start(), req.end(), totalDuration);
+            double dur = req.duration() > 0 ? req.duration() : totalDuration;
+            CutResult result = cut(inputFile, req.outputFile(), req.start(), req.end(), dur);
             results.add(result);
             if (!result.success()) {
                 log.warn("[Batch] Cắt thất bại clip {}: {}",

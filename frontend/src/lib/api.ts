@@ -203,11 +203,38 @@ export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>
   }
 }
 
+export interface RenderedClipItem {
+  file: string;
+  sizeBytes: number;
+  executionMs: number;
+  path: string;
+}
+
 export interface RenderResponse {
   success: boolean;
   status?: string;
   message: string;
   savedPlan?: string;
+  totalRendered?: number;
+  renderedFiles?: RenderedClipItem[];
+  outputDirectory?: string;
+  lesson?: string;
+  engine?: string;
+}
+
+/**
+ * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
+ */
+export function getDownloadClipUrl(filePath: string): string {
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(filePath)}`;
+}
+
+/**
+ * Lấy URL tải về toàn bộ các clip đã cắt dưới dạng file nén ZIP
+ */
+export function getDownloadZipUrl(lesson: string, user?: string): string {
+  const userParam = user ? `&user=${encodeURIComponent(user)}` : "";
+  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(lesson)}${userParam}`;
 }
 
 /**
@@ -241,13 +268,23 @@ export async function submitRenderSegments(
       status?: string;
       message?: string;
       savedPlan?: string;
+      totalRendered?: number;
+      renderedFiles?: RenderedClipItem[];
+      outputDirectory?: string;
+      lesson?: string;
+      engine?: string;
     };
 
     return {
       success: true,
       status: json.status,
-      message: json.message || "Đã tiếp nhận và chuẩn bị cắt phân đoạn.",
+      message: json.message || "Đã hoàn thành cắt phân đoạn video.",
       savedPlan: json.savedPlan,
+      totalRendered: json.totalRendered,
+      renderedFiles: json.renderedFiles,
+      outputDirectory: json.outputDirectory,
+      lesson: json.lesson,
+      engine: json.engine,
     };
   } catch (err) {
     return {
