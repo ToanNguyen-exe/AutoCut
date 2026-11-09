@@ -1184,6 +1184,104 @@ public class VideoController {
         }
     }
 
+    /**
+     * API Nạp lại dự án đã lưu của User (Thẻ 3.1 & Phục hồi Workspace Studio).
+     * Trả về project.json, segments.json và transcript tương ứng nếu có.
+     */
+    @GetMapping({"/project", "/load"})
+    public ResponseEntity<?> loadProject(
+            @RequestParam(value = "lesson", required = false) String rawLesson,
+            @RequestParam(value = "user", defaultValue = "admin") String rawUser,
+            @RequestParam(value = "video", required = false) String rawVideo) {
+
+        String safeUser = rawUser != null ? rawUser.replaceAll("[^a-zA-Z0-9._-]", "_") : "admin";
+        if (safeUser.isBlank()) safeUser = "admin";
+
+        List<String> lessonCandidates = new ArrayList<>();
+        if (rawLesson != null && !rawLesson.isBlank()) {
+            lessonCandidates.add(rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_"));
+            lessonCandidates.add(sanitizeToSafeSlug(rawLesson));
+        }
+        if (rawVideo != null && !rawVideo.isBlank()) {
+            lessonCandidates.add(rawVideo.replaceAll("[^a-zA-Z0-9._-]", "_"));
+            lessonCandidates.add(sanitizeToSafeSlug(rawVideo));
+            String stem = rawVideo.contains(".") ? rawVideo.substring(0, rawVideo.lastIndexOf('.')) : rawVideo;
+            lessonCandidates.add(sanitizeToSafeSlug(stem));
+        }
+
+        Path projectRoot = resolveProjectRoot();
+        Path foundDir = null;
+
+        for (String candidate : lessonCandidates) {
+            Path direct = Paths.get("output", "users", safeUser, candidate);
+            if (Files.exists(direct) && Files.isDirectory(direct)) {
+                foundDir = direct;
+                break;
+            }
+            Path fromRoot = projectRoot.resolve("output").resolve("users").resolve(safeUser).resolve(candidate);
+            if (Files.exists(fromRoot) && Files.isDirectory(fromRoot)) {
+                foundDir = fromRoot;
+                break;
+            }
+        }
+
+        if (foundDir == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "status", "NOT_FOUND",
+                "message", "Chưa có dự án nào được lưu cho bài học này",
+                "user", safeUser
+            ));
+        }
+
+        try {
+            Map<String, Object> responseData = new LinkedHashMap<>();
+            responseData.put("status", "SUCCESS");
+            responseData.put("user", safeUser);
+            responseData.put("directory", foundDir.toAbsolutePath().toString());
+
+            Path projectFile = foundDir.resolve("project.json");
+            if (Files.exists(projectFile)) {
+                JsonNode projectNode = objectMapper.readTree(projectFile.toFile());
+                responseData.put("project", projectNode);
+            }
+
+            Path segmentsFile = foundDir.resolve("segments.json");
+            if (Files.exists(segmentsFile)) {
+                JsonNode segmentsNode = objectMapper.readTree(segmentsFile.toFile());
+                responseData.put("segments", segmentsNode);
+            }
+
+            // Tìm transcript tương ứng nếu có
+            String videoName = rawVideo;
+            if ((videoName == null || videoName.isBlank()) && responseData.containsKey("project")) {
+                JsonNode proj = (JsonNode) responseData.get("project");
+                if (proj.has("video")) {
+                    videoName = proj.get("video").asText();
+                }
+            }
+
+            if (videoName != null && !videoName.isBlank()) {
+                String safeSlug = sanitizeToSafeSlug(videoName);
+                Path transP = projectRoot.resolve("transcripts").resolve(safeSlug + "_transcript.json");
+                if (!Files.exists(transP)) {
+                    transP = Paths.get("transcripts", safeSlug + "_transcript.json");
+                }
+                if (Files.exists(transP)) {
+                    JsonNode transNode = objectMapper.readTree(transP.toFile());
+                    responseData.put("transcript", transNode);
+                }
+            }
+
+            return ResponseEntity.ok(responseData);
+        } catch (Exception e) {
+            log.error("Lỗi khi nạp dự án từ {}: {}", foundDir, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Lỗi đọc tệp dự án: " + e.getMessage()
+            ));
+        }
+    }
+
     public ResponseEntity<?> renderSegments(SegmentsDTO segments) {
         if (segments == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Payload segments null"));
