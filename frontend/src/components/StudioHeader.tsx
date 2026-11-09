@@ -9,11 +9,9 @@ import {
   Download,
   RefreshCw,
   LogOut,
-  Plus,
   User as UserIcon,
   KeyRound,
   ChevronDown,
-  Sparkles,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
 
@@ -36,12 +34,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   user,
   data,
   isRendering,
-  isAnalyzing = false,
-  isDemo = false,
   onExport,
   onRender,
-  onOpenAddVideo,
-  onAnalyzeAI,
   onUserUpdate,
 }) => {
   const router = useRouter();
@@ -77,79 +71,41 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
   return (
     <>
-      <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40 text-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-        {/* Left: LOGO & Project Name */}
+      <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40 text-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)] relative">
+        {/* Left: LOGO & Badge matching reference image */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Scissors className="w-4 h-4" />
             </div>
-            <span className="font-extrabold tracking-wider text-sm text-slate-900 uppercase font-sans">
-              AutoCut
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-indigo-700 border border-slate-200/80 ml-1 hidden sm:inline-block font-semibold">
-              Studio AI
+            <span className="font-black tracking-wider text-sm text-slate-900 uppercase font-sans">
+              AUTOCUT
             </span>
 
-            {/* Trạng thái dữ liệu: Demo vs Đang phân tích vs Chưa phân tích vs Đã phân tích */}
-            {isDemo ? (
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center gap-1.5 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                Demo Mẫu
-              </span>
-            ) : isAnalyzing ? (
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80 animate-pulse flex items-center gap-1.5 shadow-2xs">
-                <RefreshCw className="w-2.5 h-2.5 animate-spin text-indigo-600" />
-                Đang phân tích AI...
-              </span>
-            ) : data.mode === "raw" ? (
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 flex items-center gap-1.5 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-                Chưa phân tích (1 đoạn)
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                ✓ AI Đã phân tích
-              </span>
-            )}
+            {/* Trạng thái dữ liệu */}
+            <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 ml-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Đã phân tích bởi AI
+            </span>
           </div>
+        </div>
+
+        {/* Center: Video Title */}
+        <div className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2 text-xs font-mono text-slate-600 font-medium">
+          {data.video || "Bai08_Ep_kieu_du_lieu.mp4"}
         </div>
 
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Nút Phân Tích AI nổi bật khi video ở trạng thái thô (chưa phân tích) */}
-          {data.mode === "raw" && onAnalyzeAI && (
-            <button
-              onClick={onAnalyzeAI}
-              disabled={isAnalyzing}
-              title="Khởi chạy Whisper & AI để phân tích video và phân đoạn thông minh"
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs transition hover:scale-102 active:scale-98"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Phân Tích AI</span>
-            </button>
-          )}
-
-          {/* Nút Thêm Video trên Taskbar */}
-          <button
-            onClick={onOpenAddVideo}
-            title="Thêm video từ liên kết URL hoặc tệp máy tính"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm Video</span>
-          </button>
-
           {/* Nút Xuất JSON */}
           {onExport && (
             <button
               onClick={onExport}
               title="Tải tệp segments.json về máy tính"
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition"
             >
-              <Download className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">Xuất JSON</span>
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Xuất JSON</span>
             </button>
           )}
 
@@ -157,7 +113,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button
             onClick={onRender}
             disabled={isRendering}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-1.5 rounded-lg shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
           >
             {isRendering ? (
               <>

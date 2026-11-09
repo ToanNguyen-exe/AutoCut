@@ -5,6 +5,8 @@ import cp from "child_process";
 import { Sentence, TranscriptData, Segment, SegmentsData } from "@/types";
 import { recalculateParts } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();

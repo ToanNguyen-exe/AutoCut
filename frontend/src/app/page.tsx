@@ -1,26 +1,27 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
 import {
-  fetchMockSegments,
-  fetchMockTranscript,
   fetchConfig,
   submitRenderSegments,
   checkCache,
   fetchBackendVideos,
   analyzeVideoBackend,
   API_BASE,
-  FALLBACK_SEGMENTS,
 } from "@/lib/api";
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
-import { TranscriptScenesPanel } from "@/components/TranscriptScenesPanel";
+import { VideoLibraryColumn, LibraryVideoCard } from "@/components/VideoLibraryColumn";
 import { VideoCanvasViewport } from "@/components/VideoCanvasViewport";
+import { AiAssistantChatPanel } from "@/components/AiAssistantChatPanel";
 import { StudioTimeline } from "@/components/StudioTimeline";
+import { SegmentDetailModal } from "@/components/SegmentDetailModal";
 import { ReviewTable } from "@/components/ReviewTable";
 import { StatsCards } from "@/components/StatsCards";
 import { TranscriptDrawer } from "@/components/TranscriptDrawer";
@@ -33,8 +34,132 @@ import {
   updateVideoSegmentsInLibrary,
 } from "@/lib/videoLibrary";
 import { getVideoBlob } from "@/lib/videoStorage";
-import { recalculateParts, slugify } from "@/lib/utils";
+import { recalculateParts, slugify, formatTime } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+
+// Dữ liệu chuẩn theo Bài 08 - Ép kiểu dữ liệu Python matching reference image
+const BAI08_SEGMENTS_DATA: SegmentsData = {
+  video: "Bai08_Ep_kieu_du_lieu.mp4",
+  lesson: "Bài 08 - Ép kiểu dữ liệu trong lập trình Python",
+  mode: "analyzed",
+  reviewed: false,
+  segments: [
+    {
+      id: "seg_01",
+      section_no: 1,
+      section: "01_GioiThieu",
+      topic_no: 1,
+      topic: "Xin chào các bạn",
+      slug: "xin-chao-cac-ban",
+      start_id: "S0001",
+      end_id: "S0003",
+      start: 0.0,
+      end: 86.0,
+      parts: recalculateParts(0.0, 86.0, "01_GioiThieu", 1, "xin-chao-cac-ban"),
+    },
+    {
+      id: "seg_02",
+      section_no: 2,
+      section: "02_ThucThi",
+      topic_no: 2,
+      topic: "Thực thi kiếp vấn đề",
+      slug: "thuc-thi-kiep-van-de",
+      start_id: "S0004",
+      end_id: "S0006",
+      start: 86.0,
+      end: 242.0,
+      parts: recalculateParts(86.0, 242.0, "02_ThucThi", 2, "thuc-thi-kiep-van-de"),
+    },
+    {
+      id: "seg_03",
+      section_no: 3,
+      section: "03_KhaiBaoBien",
+      topic_no: 3,
+      topic: "Khi mà chúng ta gặp biến",
+      slug: "khi-ma-chung-ta-gap-bien",
+      start_id: "S0007",
+      end_id: "S0008",
+      start: 242.0,
+      end: 332.0,
+      parts: recalculateParts(242.0, 332.0, "03_KhaiBaoBien", 3, "khi-ma-chung-ta-gap-bien"),
+    },
+    {
+      id: "seg_04",
+      section_no: 4,
+      section: "04_XuLyLoi",
+      topic_no: 4,
+      topic: "Gặp lỗi",
+      slug: "gap-loi",
+      start_id: "S0009",
+      end_id: "S0010",
+      start: 332.0,
+      end: 421.0,
+      parts: recalculateParts(332.0, 421.0, "04_XuLyLoi", 4, "gap-loi"),
+    },
+    {
+      id: "seg_05",
+      section_no: 5,
+      section: "05_LuuY",
+      topic_no: 5,
+      topic: "Bây giờ mình không ép kiểu",
+      slug: "bay-gio-minh-khong-ep-kieu",
+      start_id: "S0011",
+      end_id: "S0012",
+      start: 421.0,
+      end: 535.0,
+      parts: recalculateParts(421.0, 535.0, "05_LuuY", 5, "bay-gio-minh-khong-ep-kieu"),
+    },
+  ],
+};
+
+const BAI08_TRANSCRIPT_DATA: TranscriptData = {
+  video: "Bai08_Ep_kieu_du_lieu.mp4",
+  duration: 535.0,
+  sentences: [
+    { id: "S0001", start: 0.0, end: 15.0, text: "Xin chào các bạn, chào mừng các bạn đến với Bài 08 trong chuỗi bài giảng tự học lập trình Python." },
+    { id: "S0002", start: 15.0, end: 45.0, text: "Hôm nay chúng ta sẽ cùng tìm hiểu về kỹ thuật ép kiểu dữ liệu và tại sao cần ép kiểu." },
+    { id: "S0003", start: 45.0, end: 86.0, text: "Đây là kiến thức nền tảng cực kỳ quan trọng trước khi đi vào xử lý logic phức tạp." },
+    { id: "S0004", start: 86.0, end: 130.0, text: "Thực thi kiếp vấn đề: Khi nhận dữ liệu đầu vào từ hàm input, mặc định Python trả về kiểu chuỗi string." },
+    { id: "S0005", start: 130.0, end: 190.0, text: "Nếu chúng ta thực hiện phép cộng giữa hai chuỗi, chương trình sẽ nối chuỗi thay vì cộng số học." },
+    { id: "S0006", start: 190.0, end: 242.0, text: "Do đó ta phải thực hiện ép kiểu rõ ràng sang kiểu số nguyên int() hoặc số thực float()." },
+    { id: "S0007", start: 242.0, end: 285.0, text: "Khi mà chúng ta gặp biến: Khai báo biến với nhiều định dạng dữ liệu khác nhau trong bộ nhớ." },
+    { id: "S0008", start: 285.0, end: 332.0, text: "Cách kiểm tra kiểu dữ liệu của biến bằng hàm type() để tránh các xung đột ngầm." },
+    { id: "S0009", start: 332.0, end: 375.0, text: "Gặp lỗi: Lỗi thường gặp nhất là ValueError khi ép chuỗi ký tự chữ cái sang số nguyên." },
+    { id: "S0010", start: 375.0, end: 421.0, text: "Cách kiểm soát lỗi và kiểm tra dữ liệu trước khi thực hiện chuyển đổi kiểu." },
+    { id: "S0011", start: 421.0, end: 475.0, text: "Bây giờ mình không ép kiểu thì chương trình sẽ chạy ra kết quả sai lệch như thế nào." },
+    { id: "S0012", start: 475.0, end: 535.0, text: "Tổng kết toàn bộ bài học và bài tập thực hành ép kiểu dữ liệu trong Python." },
+  ],
+};
+
+const DEFAULT_LIBRARY_CARDS: LibraryVideoCard[] = [
+  {
+    id: "lib_01",
+    title: "Bài 08 - Ép kiểu dữ liệu",
+    fileName: "Bai08_Ep_kieu_du_lieu.mp4",
+    durationStr: "08:55",
+    durationSeconds: 535.0,
+    gradientBg: "from-emerald-200 via-teal-100 to-lime-200",
+    segmentCount: 5,
+  },
+  {
+    id: "lib_02",
+    title: "Bài 07 - Biến và hằng",
+    fileName: "Bai07_Bien_va_hang.mp4",
+    durationStr: "12:40",
+    durationSeconds: 760.0,
+    gradientBg: "from-amber-200 via-orange-100 to-yellow-200",
+    segmentCount: 4,
+  },
+  {
+    id: "lib_03",
+    title: "Bài 09 - Chuỗi ký tự",
+    fileName: "Bai09_Chuoi_ky_tu.mp4",
+    durationStr: "10:12",
+    durationSeconds: 612.0,
+    gradientBg: "from-rose-200 via-pink-100 to-purple-200",
+    segmentCount: 6,
+  },
+];
 
 // Lời bài hát & câu thoại thực tế từ video (Download.mp4 / Nonstop CT TikTok)
 const REAL_DOWNLOAD_LYRICS: Sentence[] = [
@@ -153,12 +278,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"studio" | "table">("studio");
 
   const [isSessionLoaded, setIsSessionLoaded] = useState<boolean>(false);
-  const [data, setData] = useState<SegmentsData>(FALLBACK_SEGMENTS);
-  const [transcript, setTranscript] = useState<TranscriptData | undefined>();
+  const [data, setData] = useState<SegmentsData>(BAI08_SEGMENTS_DATA);
+  const [transcript, setTranscript] = useState<TranscriptData | undefined>(BAI08_TRANSCRIPT_DATA);
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [activeSegmentId, setActiveSegmentId] = useState<string | undefined>("seg01");
+  const [activeSegmentId, setActiveSegmentId] = useState<string | undefined>("seg_01");
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState<boolean>(false);
   const [isAddVideoOpen, setIsAddVideoOpen] = useState<boolean>(false);
@@ -169,13 +294,20 @@ export default function Home() {
   const [undoStack, setUndoStack] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
 
+  // Video Library cards on left column
+  const [libraryCards, setLibraryCards] = useState<LibraryVideoCard[]>(DEFAULT_LIBRARY_CARDS);
+
+  // Segment Detail Modal states (Mở khi ấn vào video hoặc phân đoạn)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+  const [selectedDetailSegment, setSelectedDetailSegment] = useState<Segment | null>(null);
+  const [selectedDetailIndex, setSelectedDetailIndex] = useState<number>(1);
+
   // Video Audio States (đồng bộ âm lượng và tắt/bật tiếng toàn Studio)
   const [volume, setVolume] = useState<number>(100);
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   // AI Analysis States
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [analysisStep, setAnalysisStep] = useState<string>("");
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -262,18 +394,10 @@ export default function Home() {
           setExternalVideoUrl(restoredUrl);
         }
       } else {
-        // Chỉ nạp dữ liệu Demo nếu hoàn toàn chưa có phiên làm việc nào trước đó
-        const segRes = await fetchMockSegments();
-        if (segRes.data && !isCancelled) {
-          setData(segRes.data);
-          if (segRes.data.segments.length > 0) {
-            setActiveSegmentId(segRes.data.segments[0].id);
-          }
-        }
-        const transRes = await fetchMockTranscript();
-        if (transRes.data && !isCancelled) {
-          setTranscript(transRes.data);
-        }
+        // Nạp dữ liệu chuẩn Bài 08 nếu chưa có phiên làm việc trước đó
+        setData(BAI08_SEGMENTS_DATA);
+        setTranscript(BAI08_TRANSCRIPT_DATA);
+        setActiveSegmentId(BAI08_SEGMENTS_DATA.segments[0].id);
       }
 
       // Nạp danh sách thư viện video
@@ -489,14 +613,6 @@ export default function Home() {
     showToast("success", `Đang phát video: "${video.title}"`);
   };
 
-  const handleRenameLesson = (newName: string) => {
-    setData((prev) => ({
-      ...prev,
-      lesson: newName,
-    }));
-    showToast("info", `Đã cập nhật tên dự án: "${newName}"`);
-  };
-
   const handleExportJson = () => {
     const dataStr =
       "data:text/json;charset=utf-8," +
@@ -613,6 +729,18 @@ export default function Home() {
       };
       const updatedLib = saveVideoToLibrary(libItem);
       setVideoLibrary(updatedLib);
+      setLibraryCards((prev) => [
+        {
+          id: `lib_${Date.now()}`,
+          title: lessonTitle,
+          fileName: newVideo.name,
+          durationStr: formatTime(totalSecs),
+          durationSeconds: totalSecs,
+          gradientBg: "from-blue-200 via-indigo-100 to-purple-200",
+          segmentCount: newVideo.segmentsData ? newVideo.segmentsData.segments.length : 1,
+        },
+        ...prev,
+      ]);
       setUndoStack([]);
       setRedoStack([]);
       setCurrentTime(0);
@@ -693,6 +821,18 @@ export default function Home() {
     };
     const updatedLib = saveVideoToLibrary(libItem);
     setVideoLibrary(updatedLib);
+    setLibraryCards((prev) => [
+      {
+        id: `lib_${Date.now()}`,
+        title: lessonTitle,
+        fileName: newVideo.name,
+        durationStr: formatTime(totalSecs),
+        durationSeconds: totalSecs,
+        gradientBg: "from-blue-200 via-indigo-100 to-purple-200",
+        segmentCount: 1,
+      },
+      ...prev,
+    ]);
     setUndoStack([]);
     setRedoStack([]);
 
@@ -727,7 +867,6 @@ export default function Home() {
 
   const handleAnalyzeAI = useCallback(async () => {
     setIsAnalyzing(true);
-    setAnalysisStep("Đang kết nối AI Backend & trích xuất đặc trưng âm thanh...");
 
     const totalSecs = Math.max(
       5,
@@ -744,7 +883,6 @@ export default function Home() {
       });
 
       if (res.source === "api" && res.data?.segmentsData) {
-        setAnalysisStep("Đang phân tích ngữ nghĩa và đồng bộ các phân đoạn từ Spring Boot...");
         await new Promise((r) => setTimeout(r, 600));
 
         const segData = res.data.segmentsData;
@@ -771,7 +909,6 @@ export default function Home() {
 
     // 2. Chế độ phân tích bằng Groq Whisper Cloud API
     try {
-      setAnalysisStep("Đang gọi Groq Whisper Cloud API nhận diện ca từ / giọng nói...");
       const groqFormData = new FormData();
       groqFormData.append("videoName", data.video);
       groqFormData.append("lesson", data.lesson);
@@ -795,7 +932,6 @@ export default function Home() {
           setUndoStack([]);
           setRedoStack([]);
           setIsAnalyzing(false);
-          setAnalysisStep("");
           showToast(
             "success",
             `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline.`
@@ -808,18 +944,7 @@ export default function Home() {
     }
 
     // 3. Chế độ fallback nếu các kết nối API đều không phản hồi
-    setAnalysisStep("Đang trích xuất luồng âm thanh & khử nhiễu (Audio Demuxing)...");
-
     await new Promise((res) => setTimeout(res, 800));
-    setAnalysisStep("Đang chạy mô hình Whisper STT nhận diện ca từ / giọng nói...");
-
-    await new Promise((res) => setTimeout(res, 900));
-    setAnalysisStep("Đang phân tích ngữ nghĩa, cấu trúc nội dung và biên giới đoạn...");
-
-    await new Promise((res) => setTimeout(res, 800));
-    setAnalysisStep("Đang khởi tạo các phân đoạn thông minh và đồng bộ hóa Timeline...");
-
-    await new Promise((res) => setTimeout(res, 600));
 
     const isMusicOrAudio = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
       `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
@@ -993,7 +1118,6 @@ export default function Home() {
     setVideoLibrary(getLibraryVideos());
 
     setIsAnalyzing(false);
-    setAnalysisStep("");
     showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
   }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
 
@@ -1018,6 +1142,87 @@ export default function Home() {
     data.segments.find((s) => s.id === activeSegmentId) || data.segments[0];
 
   const isDemo = data.mode === "demo" || data.lesson === "Bai05_VongLap" || data.video === "Bai05_VongLap.mp4";
+
+  // Mở modal thông báo chi tiết khi người dùng ấn vào phân đoạn hoặc video
+  const handleOpenSegmentDetail = useCallback((seg: Segment, index: number) => {
+    setSelectedDetailSegment(seg);
+    setSelectedDetailIndex(index);
+    setIsDetailModalOpen(true);
+  }, []);
+
+  // Chọn video từ cột Thư viện video
+  const handleSelectLibraryCard = useCallback(
+    (card: LibraryVideoCard) => {
+      if (card.fileName === data.video) {
+        // Đang ở video này -> mở Modal thông báo chi tiết phân đoạn đang chọn hoặc phân đoạn đầu
+        const seg = data.segments.find((s) => s.id === activeSegmentId) || data.segments[0];
+        const idx = data.segments.findIndex((s) => s.id === seg?.id) + 1;
+        setSelectedDetailSegment(seg);
+        setSelectedDetailIndex(idx > 0 ? idx : 1);
+        setIsDetailModalOpen(true);
+      } else {
+        // Chuyển sang dự án video mới
+        setData((prev) => ({
+          ...prev,
+          video: card.fileName,
+          lesson: card.title,
+        }));
+        // Mở modal hiển thị nội dung phân đoạn tương ứng
+        if (data.segments.length > 0) {
+          setSelectedDetailSegment(data.segments[0]);
+          setSelectedDetailIndex(1);
+          setIsDetailModalOpen(true);
+        }
+        showToast("info", `Đang mở: ${card.title}`);
+      }
+    },
+    [data.video, data.segments, activeSegmentId, showToast]
+  );
+
+  // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI
+  const handleMergeSegments = useCallback(
+    (segIdx1: number, segIdx2: number) => {
+      setData((prev) => {
+        if (segIdx1 < 0 || segIdx2 >= prev.segments.length || segIdx1 >= segIdx2) {
+          return prev;
+        }
+        const s1 = prev.segments[segIdx1];
+        const s2 = prev.segments[segIdx2];
+
+        // Gộp s1 và s2 thành một đoạn kéo dài từ s1.start đến s2.end
+        const mergedSeg: Segment = {
+          ...s1,
+          id: `${s1.id}_merged`,
+          topic: `${s1.topic} & ${s2.topic}`,
+          slug: slugify(`${s1.slug}-${s2.slug}`),
+          end: s2.end,
+          parts: recalculateParts(
+            s1.start,
+            s2.end,
+            s1.section,
+            s1.topic_no,
+            slugify(`${s1.slug}-${s2.slug}`)
+          ),
+        };
+
+        const newSegments = [...prev.segments];
+        newSegments.splice(segIdx1, 2, mergedSeg);
+
+        // Đánh lại số thứ tự topic_no
+        const renumbered = newSegments.map((seg, idx) => ({
+          ...seg,
+          topic_no: idx + 1,
+        }));
+
+        return {
+          ...prev,
+          segments: renumbered,
+        };
+      });
+      showToast("success", "✓ Đã gộp thành công 2 phân đoạn trên timeline!");
+    },
+    [showToast]
+  );
 
   if (!isSessionLoaded) {
     return (
@@ -1048,7 +1253,7 @@ export default function Home() {
 
       {/* Main Body Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Icon Sidebar */}
+        {/* Left Icon Sidebar (giữ ngoài cùng bên trái) */}
         <StudioSidebar
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -1058,8 +1263,16 @@ export default function Home() {
 
         {/* Content View Switcher */}
         {activeTab === "studio" ? (
-          /* Studio View: CENTER: Large Video Canvas, RIGHT: Text Content & Scenes */
+          /* Studio View: LEFT: Video Library Column, CENTER: Large Video Canvas, RIGHT: AI Assistant Chat Panel */
           <div className="flex-1 flex overflow-hidden min-h-0">
+            {/* LEFT: Video Library Column */}
+            <VideoLibraryColumn
+              currentVideoName={data.video}
+              videos={libraryCards}
+              onSelectVideo={handleSelectLibraryCard}
+              onOpenAddVideo={() => setIsAddVideoOpen(true)}
+            />
+
             {/* CENTER: Big Video Viewport */}
             <VideoCanvasViewport
               currentSegment={activeSegment}
@@ -1084,24 +1297,13 @@ export default function Home() {
               onToggleMute={handleToggleMute}
             />
 
-            {/* RIGHT: Text Content & Scenes Panel */}
-            <TranscriptScenesPanel
+            {/* RIGHT: AI Assistant Chat Panel matching reference image */}
+            <AiAssistantChatPanel
               segments={data.segments}
-              transcript={transcript}
+              videoTitle={data.video}
               activeSegmentId={activeSegmentId}
-              currentTime={currentTime}
-              lessonName={data.lesson || "Learn Demo Project"}
-              mode={data.mode}
-              isDemo={isDemo}
-              isAnalyzing={isAnalyzing}
-              analysisStep={analysisStep}
-              onSelectSegment={(id) => setActiveSegmentId(id)}
-              onSeek={handleSeek}
-              onPlay={() => setIsPlaying(true)}
-              onUpdateSegments={handleUpdateSegments}
-              onRenameLesson={handleRenameLesson}
-              onOpenAddVideo={() => setIsAddVideoOpen(true)}
-              onAnalyzeAI={handleAnalyzeAI}
+              onMergeSegments={handleMergeSegments}
+              onOpenSegmentDetail={handleOpenSegmentDetail}
             />
           </div>
         ) : (
@@ -1185,6 +1387,20 @@ export default function Home() {
         onUpdateSegments={handleUpdateSegments}
         onVolumeChange={setVolume}
         onToggleMute={handleToggleMute}
+        onOpenSegmentDetail={handleOpenSegmentDetail}
+      />
+
+      {/* Segment Detail Modal: Hiển thị chi tiết nội dung phân đoạn khi click video / segment */}
+      <SegmentDetailModal
+        isOpen={isDetailModalOpen}
+        segment={selectedDetailSegment}
+        segmentIndex={selectedDetailIndex}
+        videoTitle={data.video}
+        sentences={transcript?.sentences || []}
+        currentTime={currentTime}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSeek={handleSeek}
+        onPlay={() => setIsPlaying(true)}
       />
 
       {/* Transcript Drawer */}
