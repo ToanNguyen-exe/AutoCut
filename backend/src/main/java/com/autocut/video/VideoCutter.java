@@ -45,6 +45,10 @@ public class VideoCutter {
      * Cắt video chính xác theo đường dẫn String.
      */
     public CutResult cut(String inputPath, String outputPath, double start, double end) {
+        return cut(inputPath, outputPath, start, end, 0.0);
+    }
+
+    public CutResult cut(String inputPath, String outputPath, double start, double end, double totalDuration) {
         if (inputPath == null || inputPath.isBlank()) {
             return CutResult.failure("", outputPath != null ? outputPath : "", start, end, 0L,
                 ErrorCode.FILE_NOT_FOUND, "Đường dẫn tệp video nguồn không được để trống");
@@ -53,13 +57,17 @@ public class VideoCutter {
             return CutResult.failure(inputPath, "", start, end, 0L,
                 ErrorCode.UNKNOWN_ERROR, "Đường dẫn tệp video đích không được để trống");
         }
-        return cut(new File(inputPath), new File(outputPath), start, end);
+        return cut(new File(inputPath), new File(outputPath), start, end, totalDuration);
     }
 
     /**
      * Cắt video chính xác theo Path.
      */
     public CutResult cut(Path inputPath, Path outputPath, double start, double end) {
+        return cut(inputPath, outputPath, start, end, 0.0);
+    }
+
+    public CutResult cut(Path inputPath, Path outputPath, double start, double end, double totalDuration) {
         if (inputPath == null || outputPath == null) {
             return CutResult.failure(
                 inputPath != null ? inputPath.toString() : "",
@@ -68,22 +76,50 @@ public class VideoCutter {
                 ErrorCode.FILE_NOT_FOUND, "Đường dẫn đầu vào/đầu ra không được null"
             );
         }
-        return cut(inputPath.toFile(), outputPath.toFile(), start, end);
+        return cut(inputPath.toFile(), outputPath.toFile(), start, end, totalDuration);
+    }
+
+    /**
+     * Hàm kẹp biên giá trị trong khoảng [min, max].
+     */
+    public double clamp(double value, double min, double max) {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    /**
+     * Tính toán mốc cắt sau khi áp dụng đệm thở (-paddingStart / +paddingEnd) và kẹp biên an toàn.
+     *
+     * @param start         Mốc bắt đầu gốc (giây)
+     * @param end           Mốc kết thúc gốc (giây)
+     * @param totalDuration Thời lượng tổng của video nguồn (giây, <= 0 nếu chưa xác định)
+     * @return mảng 2 phần tử [paddedStart, paddedEnd]
+     */
+    public double[] calculatePaddedRange(double start, double end, double totalDuration) {
+        double maxBound = totalDuration > 0 ? totalDuration : Double.MAX_VALUE;
+        double paddedStart = clamp(start - videoProps.getPaddingStart(), 0.0, maxBound);
+        double paddedEnd = (totalDuration > 0)
+            ? clamp(end + videoProps.getPaddingEnd(), paddedStart, totalDuration)
+            : (end + videoProps.getPaddingEnd());
+        return new double[]{paddedStart, paddedEnd};
     }
 
     /**
      * Cắt video chính xác từ mốc start đến mốc end (Accurate Cut).
+     * Tự động áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên an toàn.
      *
      * Câu lệnh chuẩn:
-     * ffmpeg -y -ss <start> -to <end> -i <in> -c:v libx264 -preset fast -crf 22 -c:a aac -avoid_negative_ts make_zero -movflags +faststart <out>
-     *
-     * @param inputFile  Tệp video nguồn gốc
-     * @param outputFile Tệp video con xuất ra
-     * @param start      Mốc bắt đầu (giây)
-     * @param end        Mốc kết thúc (giây)
-     * @return CutResult chứa trạng thái, thời gian cắt thực tế (ms) và dung lượng file
+     * ffmpeg -y -ss <paddedStart> -to <paddedEnd> -i <in> -c:v libx264 -preset fast -crf 22 -c:a aac -avoid_negative_ts make_zero -movflags +faststart <out>
      */
     public CutResult cut(File inputFile, File outputFile, double start, double end) {
+        return cut(inputFile, outputFile, start, end, 0.0);
+    }
+
+    /**
+     * Cắt video chính xác kèm theo tổng thời lượng (totalDuration) để kẹp biên chính xác.
+     */
+    public CutResult cut(File inputFile, File outputFile, double start, double end, double totalDuration) {
         long startTime = System.currentTimeMillis();
 
         String inputPathStr = inputFile != null ? inputFile.getAbsolutePath() : "";
@@ -124,14 +160,19 @@ public class VideoCutter {
             }
         }
 
-        // 4. Xây dựng câu lệnh FFmpeg Accurate Cut
+        // 4. Áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên
+        double[] paddedRange = calculatePaddedRange(start, end, totalDuration);
+        double paddedStart = paddedRange[0];
+        double paddedEnd = paddedRange[1];
+
         // Định dạng số với Locale.US để đảm bảo dấu chấm thập phân (ví dụ 12.345 thay vì 12,345)
-        String startStr = String.format(Locale.US, "%.3f", start);
-        String endStr = String.format(Locale.US, "%.3f", end);
+        String startStr = String.format(Locale.US, "%.3f", paddedStart);
+        String endStr = String.format(Locale.US, "%.3f", paddedEnd);
 
         List<String> command = buildCommand(inputFile, outputFile, startStr, endStr);
 
-        log.info("Bắt đầu cắt clip [{} -> {}]: start={}, end={}", inputFile.getName(), outputFile.getName(), startStr, endStr);
+        log.info("Bắt đầu cắt clip [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}]",
+            inputFile.getName(), outputFile.getName(), start, end, startStr, endStr);
 
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -165,12 +206,12 @@ public class VideoCutter {
             }
 
             long outputSize = outputFile.length();
-            double durationSec = end - start;
+            double durationSec = paddedEnd - paddedStart;
 
             log.info("Cắt video thành công: {} (Thời lượng: {:.2f}s, Thời gian cắt thực tế: {} ms ({:.2f}s), Dung lượng: {} bytes)",
                 outputFile.getName(), durationSec, executionTimeMs, executionTimeMs / 1000.0, outputSize);
 
-            return CutResult.success(inputPathStr, outputPathStr, start, end, executionTimeMs, outputSize);
+            return CutResult.success(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs, outputSize);
 
         } catch (java.io.IOException e) {
             long executionTimeMs = System.currentTimeMillis() - startTime;
@@ -220,6 +261,13 @@ public class VideoCutter {
      * @return Danh sách CutResult tương ứng
      */
     public List<CutResult> cutBatch(File inputFile, List<CutRequest> requests) {
+        return cutBatch(inputFile, requests, 0.0);
+    }
+
+    /**
+     * Cắt danh sách nhiều clip con kèm tổng thời lượng video gốc để kẹp biên.
+     */
+    public List<CutResult> cutBatch(File inputFile, List<CutRequest> requests, double totalDuration) {
         List<CutResult> results = new ArrayList<>();
         if (requests == null || requests.isEmpty()) {
             return results;
@@ -229,7 +277,7 @@ public class VideoCutter {
 
         for (CutRequest req : requests) {
             if (req == null) continue;
-            CutResult result = cut(inputFile, req.outputFile(), req.start(), req.end());
+            CutResult result = cut(inputFile, req.outputFile(), req.start(), req.end(), totalDuration);
             results.add(result);
             if (!result.success()) {
                 log.warn("[Batch] Cắt thất bại clip {}: {}",

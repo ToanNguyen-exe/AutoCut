@@ -173,4 +173,43 @@ class VideoCutterTest {
         // Kiem tra dung dau cham (.), khong dung dau phay (,)
         assertFalse(cmd.stream().anyMatch(s -> s.contains(",")), "Khong duoc dung dau phay - phai dung Locale.US");
     }
+
+    // =========================================================================
+    // TDD: Dem tho am thanh (-0.3s / +0.5s) va ham kep bien clamp()
+    // =========================================================================
+
+    @Test
+    @DisplayName("clamp: Kep gia tri vao khoang [min, max]")
+    void testClamp() {
+        assertEquals(0.0, videoCutter.clamp(-0.2, 0.0, 100.0), 1e-6);
+        assertEquals(50.0, videoCutter.clamp(50.0, 0.0, 100.0), 1e-6);
+        assertEquals(100.0, videoCutter.clamp(105.0, 0.0, 100.0), 1e-6);
+    }
+
+    @Test
+    @DisplayName("calculatePaddedRange: Kep bien duoi ve 0.0 khi start - 0.3 < 0")
+    void testCalculatePaddedRange_ClampStartToZero() {
+        // start = 0.1s, paddingStart = 0.3s -> phai kep ve 0.0s thay vi -0.2s
+        double[] range = videoCutter.calculatePaddedRange(0.1, 5.0, 100.0);
+        assertEquals(0.0, range[0], 1e-6, "Moc start phai duoc clamp ve 0.0");
+        assertEquals(5.5, range[1], 1e-6, "Moc end phai duoc cong them 0.5s dem tho");
+    }
+
+    @Test
+    @DisplayName("calculatePaddedRange: Ap dung lui 0.3s va tien 0.5s o giua video")
+    void testCalculatePaddedRange_MiddleOfVideo() {
+        // start = 10.0s, end = 20.0s -> paddedStart = 9.7s, paddedEnd = 20.5s
+        double[] range = videoCutter.calculatePaddedRange(10.0, 20.0, 100.0);
+        assertEquals(9.7, range[0], 1e-6, "Moc start phai lui 0.3s");
+        assertEquals(20.5, range[1], 1e-6, "Moc end phai tien 0.5s");
+    }
+
+    @Test
+    @DisplayName("calculatePaddedRange: Kep bien tren ve totalDuration khi end + 0.5 > totalDuration")
+    void testCalculatePaddedRange_ClampEndToTotalDuration() {
+        // end = 99.8s, duration = 100.0s, paddingEnd = 0.5s -> phai clamp ve 100.0s thay vi 100.3s
+        double[] range = videoCutter.calculatePaddedRange(90.0, 99.8, 100.0);
+        assertEquals(89.7, range[0], 1e-6, "Moc start phai lui 0.3s");
+        assertEquals(100.0, range[1], 1e-6, "Moc end phai duoc clamp ve totalDuration (100.0s)");
+    }
 }

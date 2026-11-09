@@ -19,6 +19,8 @@ public class VideoProps {
     private String ffmpegPath = "ffmpeg";
     private int timeoutSeconds = 20;
     private int cutTimeoutSeconds = 300;
+    private double paddingStart = 0.3;
+    private double paddingEnd = 0.5;
 
     public VideoProps() {}
 
@@ -77,5 +79,21 @@ public class VideoProps {
 
     public void setCutTimeoutSeconds(int cutTimeoutSeconds) {
         this.cutTimeoutSeconds = cutTimeoutSeconds;
+    }
+
+    public double getPaddingStart() {
+        return paddingStart;
+    }
+
+    public void setPaddingStart(double paddingStart) {
+        this.paddingStart = paddingStart;
+    }
+
+    public double getPaddingEnd() {
+        return paddingEnd;
+    }
+
+    public void setPaddingEnd(double paddingEnd) {
+        this.paddingEnd = paddingEnd;
     }
 }
