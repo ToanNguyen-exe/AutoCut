@@ -256,5 +256,30 @@ class VideoConcatTest {
         assertEquals("Clip khong ton tai", result.errorMessage());
         assertEquals(0L, result.outputSizeBytes());
     }
+
+    // =========================================================================
+    // Tests cho Safe Concat Filter (ghep 2 video khac chuan)
+    // =========================================================================
+
+    @Test
+    @DisplayName("buildCommandFilter: Xay dung cau lenh filter_complex scale 1080p, pad va concat")
+    void testBuildCommandFilter() {
+        File c1 = tempDir.resolve("video1.mp4").toFile();
+        File c2 = tempDir.resolve("video2.mp4").toFile();
+        File out = tempDir.resolve("merged.mp4").toFile();
+
+        List<String> cmd = videoConcat.buildCommandFilter(List.of(c1, c2), out);
+
+        assertNotNull(cmd);
+        assertTrue(cmd.contains("-filter_complex"), "Phai chua tham so -filter_complex");
+        assertTrue(cmd.contains("-map"), "Phai map video va audio streams");
+        assertTrue(cmd.contains("libx264"), "Phai re-encode bang libx264");
+        assertTrue(cmd.contains("aac"), "Phai re-encode audio bang aac");
+
+        int filterIdx = cmd.indexOf("-filter_complex");
+        String filterStr = cmd.get(filterIdx + 1);
+        assertTrue(filterStr.contains("scale=1920:1080"), "Filter phai chuan hoa ve 1080p");
+        assertTrue(filterStr.contains("concat=n=2:v=1:a=1"), "Filter phai goi concat=n=2");
+    }
 }
 

@@ -89,19 +89,25 @@ public class VideoController {
 
     private final VideoRepository videoRepository;
     private final VideoCutter videoCutter;
+    private final com.autocut.video.VideoConcat videoConcat;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()), new com.autocut.video.VideoConcat(new VideoProps()));
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new com.autocut.video.VideoConcat(new VideoProps()));
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, com.autocut.video.VideoConcat videoConcat) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
         this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
+        this.videoConcat = videoConcat != null ? videoConcat : new com.autocut.video.VideoConcat(new VideoProps());
     }
 
 
@@ -1130,20 +1136,94 @@ public class VideoController {
                 }
             }
 
-            return ResponseEntity.ok(Map.of(
-                "status", "COMPLETED",
-                "engine", "FFmpeg libx264 (SV1)",
-                "lesson", lesson,
-                "totalRendered", successCount,
-                "renderedFiles", renderedFiles,
-                "outputDirectory", outputDir.toAbsolutePath().toString(),
-                "message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson
-            ));
+            // Tự động ghép nối các clip con thành video tổng hợp nếu có yêu cầu hoặc mặc định khi cắt nhiều clip
+            boolean autoConcat = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("autoConcat", "true")));
+            String combinedFilePath = null;
+            if (autoConcat && renderedFiles.size() >= 2) {
+                List<File> clipsToConcat = new ArrayList<>();
+                for (Map<String, Object> rf : renderedFiles) {
+                    Object p = rf.get("path");
+                    if (p != null) {
+                        clipsToConcat.add(new File(String.valueOf(p)));
+                    }
+                }
+                File combinedOut = outputDir.resolve(lesson + "_full.mp4").toFile();
+                com.autocut.video.ConcatResult concatRes = videoConcat.concat(clipsToConcat, combinedOut);
+                if (concatRes.success()) {
+                    combinedFilePath = combinedOut.getAbsolutePath();
+                    log.info("Đã tự động ghép thành công {} clip thành: {}", clipsToConcat.size(), combinedFilePath);
+                } else {
+                    log.warn("Tự động ghép nối {} clip thất bại: {}", clipsToConcat.size(), concatRes.errorMessage());
+                }
+            }
+
+            Map<String, Object> respMap = new HashMap<>();
+            respMap.put("status", "COMPLETED");
+            respMap.put("engine", "FFmpeg libx264 (SV1)");
+            respMap.put("lesson", lesson);
+            respMap.put("totalRendered", successCount);
+            respMap.put("renderedFiles", renderedFiles);
+            respMap.put("outputDirectory", outputDir.toAbsolutePath().toString());
+            respMap.put("message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson);
+            if (combinedFilePath != null) {
+                respMap.put("combinedFile", combinedFilePath);
+            }
+
+            return ResponseEntity.ok(respMap);
         } catch (Exception e) {
             log.error("Không thể hoàn tất cắt video: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
                 "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * API ghép nối các video thành 1 video tổng hợp (Mục 4 SV1).
+     * Hỗ trợ tự động fallback sang Concat Filter khi ghép các video khác nguồn/chuẩn thông số.
+     */
+    @PostMapping("/concat")
+    public ResponseEntity<?> concatVideos(@RequestBody Map<String, Object> payload) {
+        List<?> rawClips = (List<?>) payload.get("clips");
+        if (rawClips == null || rawClips.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Danh sách clips không được để trống"
+            ));
+        }
+
+        String rawOutput = (String) payload.get("output");
+        if (rawOutput == null || rawOutput.isBlank()) {
+            rawOutput = "output/combined_" + System.currentTimeMillis() + ".mp4";
+        }
+
+        boolean forceReencode = Boolean.TRUE.equals(payload.get("forceReencode"));
+
+        List<File> clipFiles = new ArrayList<>();
+        for (Object item : rawClips) {
+            String pathStr = String.valueOf(item);
+            File f = findFilePath(pathStr).toFile();
+            clipFiles.add(f);
+        }
+
+        File outFile = Paths.get(rawOutput).toFile();
+        com.autocut.video.ConcatResult result = videoConcat.concat(clipFiles, outFile, forceReencode);
+
+        if (result.success()) {
+            return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "Ghép video thành công!",
+                "outputFile", result.outputFile(),
+                "outputSizeBytes", result.outputSizeBytes(),
+                "executionTimeMs", result.executionTimeMs(),
+                "totalClips", clipFiles.size()
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "errorCode", result.errorCode() != null ? result.errorCode().name() : "UNKNOWN",
+                "error", result.errorMessage() != null ? result.errorMessage() : "Ghép video thất bại"
             ));
         }
     }
