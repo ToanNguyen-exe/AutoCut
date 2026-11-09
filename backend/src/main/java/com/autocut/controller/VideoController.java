@@ -21,6 +21,9 @@ import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
+import com.autocut.service.CutPointService;
+import com.autocut.dto.Models.CutPointsDTO;
+import com.autocut.dto.Models.CutPoint;
 import java.io.File;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
@@ -89,19 +92,25 @@ public class VideoController {
 
     private final VideoRepository videoRepository;
     private final VideoCutter videoCutter;
+    private final CutPointService cutPointService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()), new CutPointService(configService, new ObjectMapper()));
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()));
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
         this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
+        this.cutPointService = cutPointService != null ? cutPointService : new CutPointService(configService, objectMapper);
     }
 
 
@@ -794,33 +803,40 @@ public class VideoController {
 
 
                 if (!hash.isBlank() && transcriptDTO != null) {
-
                     cacheService.saveTranscriptCache(hash, transcriptDTO);
-        try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), transcriptDTO); } catch (Exception ignored) {}
-
+                    try { objectMapper.writerWithDefaultPrettyPrinter().writeValue(resolveProjectRoot().resolve("transcript.json").toFile(), transcriptDTO); } catch (Exception ignored) {}
                 }
 
+                // B3 & B6 (Thẻ 3.2): Tính điểm cắt âm học cut_points.json và căn chỉnh ranh giới Boundary Snapping
+                CutPointsDTO cutPointsDTO = null;
+                if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
+                    try {
+                        cutPointsDTO = cutPointService.calculateCutPoints(transcriptDTO);
+                        Path cutPointsPath = projectRoot.resolve("cut_points.json");
+                        cutPointService.exportCutPointsJson(cutPointsDTO, cutPointsPath);
+                        if (segmentsDTO != null) {
+                            segmentsDTO = cutPointService.snapAndFilterSegments(segmentsDTO, transcriptDTO, cutPointsDTO);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Lỗi khi chấm điểm cut_points hoặc snapping: {}", ex.getMessage());
+                    }
+                }
 
-
-                log.info("Module Python AI hoàn tất: {} câu transcript, {} phân đoạn.",
-
+                log.info("Module Python AI hoàn tất: {} câu transcript, {} phân đoạn, {} điểm cắt.",
                         transcriptDTO != null ? transcriptDTO.sentences().size() : 0,
+                        segmentsDTO != null ? segmentsDTO.segments().size() : 0,
+                        cutPointsDTO != null ? cutPointsDTO.cutPoints().size() : 0);
 
-                        segmentsDTO != null ? segmentsDTO.segments().size() : 0);
+                Map<String, Object> respMap = new LinkedHashMap<>();
+                respMap.put("status", "SUCCESS");
+                respMap.put("mode", "analyzed");
+                respMap.put("segmentsData", segmentsDTO);
+                respMap.put("transcript", transcriptDTO);
+                if (cutPointsDTO != null) {
+                    respMap.put("cutPoints", cutPointsDTO);
+                }
 
-
-
-                return ResponseEntity.ok(Map.of(
-
-                        "status", "SUCCESS",
-
-                        "mode", "analyzed",
-
-                        "segmentsData", segmentsDTO,
-
-                        "transcript", transcriptDTO
-
-                ));
+                return ResponseEntity.ok(respMap);
 
             } else {
 
@@ -1199,6 +1215,73 @@ public class VideoController {
                 "error", e.getMessage()
             ));
         }
+    }
+
+    /**
+     * API Chấm điểm điểm cắt âm học ứng viên (P05 / Thẻ 3.2):
+     * Tính toán cut_points.json từ transcript theo khoảng lặng và cụm từ nối.
+     */
+    @PostMapping("/cut-points")
+    public ResponseEntity<?> calculateCutPointsEndpoint(@RequestBody(required = false) Map<String, Object> request) {
+        String videoName = request != null ? (String) request.getOrDefault("videoName", "") : "";
+        TranscriptDTO transcript = null;
+
+        if (request != null && request.containsKey("transcript")) {
+            try {
+                transcript = objectMapper.convertValue(request.get("transcript"), TranscriptDTO.class);
+            } catch (Exception ignored) {}
+        }
+
+        if (transcript == null && !videoName.isBlank()) {
+            Path projectRoot = resolveProjectRoot();
+            String safeSlug = sanitizeToSafeSlug(videoName);
+            Path transP = projectRoot.resolve("transcripts").resolve(safeSlug + "_transcript.json");
+            if (Files.exists(transP)) {
+                try {
+                    transcript = objectMapper.readValue(transP.toFile(), TranscriptDTO.class);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (transcript == null) {
+            Path rootTrans = resolveProjectRoot().resolve("transcript.json");
+            if (Files.exists(rootTrans)) {
+                try {
+                    transcript = objectMapper.readValue(rootTrans.toFile(), TranscriptDTO.class);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (transcript == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không tìm thấy transcript để tính cut_points!"));
+        }
+
+        CutPointsDTO cutPoints = cutPointService.calculateCutPoints(transcript);
+        try {
+            Path cutPointsFile = resolveProjectRoot().resolve("cut_points.json");
+            cutPointService.exportCutPointsJson(cutPoints, cutPointsFile);
+        } catch (Exception ex) {
+            log.warn("Lỗi lưu cut_points.json: {}", ex.getMessage());
+        }
+
+        return ResponseEntity.ok(cutPoints);
+    }
+
+    /**
+     * API Đọc file cut_points.json hiện tại (Thẻ 3.2).
+     */
+    @GetMapping("/cut-points")
+    public ResponseEntity<?> getCutPointsEndpoint() {
+        Path cutPointsFile = resolveProjectRoot().resolve("cut_points.json");
+        if (Files.exists(cutPointsFile)) {
+            try {
+                CutPointsDTO cutPoints = objectMapper.readValue(cutPointsFile.toFile(), CutPointsDTO.class);
+                return ResponseEntity.ok(cutPoints);
+            } catch (Exception ex) {
+                return ResponseEntity.status(500).body(Map.of("error", "Không thể đọc file cut_points.json: " + ex.getMessage()));
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
     private String resolveVideoSource(String videoName) {
