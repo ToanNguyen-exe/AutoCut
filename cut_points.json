@@ -1,97 +1,37 @@
 {
   "cut_points" : [ {
     "after_id" : "S0001",
-    "time" : 11.68,
+    "time" : 898.92,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0002",
-    "time" : 19.08,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
+    "time" : 1797.84,
+    "score" : 4,
+    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'tiếp theo'" ]
   }, {
     "after_id" : "S0003",
-    "time" : 25.86,
+    "time" : 2696.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0004",
-    "time" : 34.5,
+    "time" : 3595.68,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0005",
-    "time" : 39.52,
+    "time" : 4494.6,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0006",
-    "time" : 41.58,
+    "time" : 5393.52,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0007",
-    "time" : 46.04,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0008",
-    "time" : 48.24,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0009",
-    "time" : 56.84,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0010",
-    "time" : 73.25,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0011",
-    "time" : 78.69,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0012",
-    "time" : 80.81,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0013",
-    "time" : 87.65,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0014",
-    "time" : 97.25,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0015",
-    "time" : 98.57,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0016",
-    "time" : 103.73,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0017",
-    "time" : 106.05,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0018",
-    "time" : 110.03,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0019",
-    "time" : 116.74,
+    "time" : 6292.44,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   } ]
