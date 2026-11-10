@@ -163,4 +163,23 @@ class SegmentPersistenceServiceTest {
         Assertions.assertTrue(persistenceService.findVideo("vibe.mp4").isPresent());
         Assertions.assertTrue(persistenceService.findVideo("not_exist.mp4").isEmpty());
     }
+
+    @Test
+    @DisplayName("5. Xóa phân đoạn theo segmentId thành công")
+    void testDeleteSegment() {
+        VideoEntity mockVideo = new VideoEntity("Bai08.mp4", "hash888", "UPLOADED", 2048L);
+        mockVideo.setId(20L);
+        SectionEntity sec = new SectionEntity(mockVideo, 1, 1, "01_LyThuyet");
+        sec.setId(100L);
+        TopicEntity top = new TopicEntity(sec, 1, 1, "Chu de 1", "chu_de_1", "S0001", "S0002", 0.0, 10.0);
+        top.setId(500L);
+
+        when(sectionRepository.findByVideoIdOrderByPositionAsc(20L)).thenReturn(List.of(sec));
+        when(topicRepository.findBySectionIdOrderByPositionAsc(100L)).thenReturn(List.of(top));
+
+        boolean deleted = persistenceService.deleteSegment(20L, "seg_db_500");
+        Assertions.assertTrue(deleted);
+        verify(topicRepository).delete(top);
+        verify(sectionRepository).delete(sec);
+    }
 }

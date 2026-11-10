@@ -273,13 +273,72 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     if (segments.length <= 1) {
       return;
     }
+    const segToDelete = segments.find((s) => s.id === activeSegmentId);
     const filtered = segments.filter((s) => s.id !== activeSegmentId);
     onUpdateSegments(filtered);
     if (filtered.length > 0) {
-      onSelectSegment(filtered[0].id);
-      onSeek(filtered[0].start);
+      // Chọn phân đoạn kế tiếp hoặc phân đoạn đầu tiên còn lại và tua đến đó
+      const remainingTarget =
+        filtered.find((s) => s.start >= (segToDelete?.end || 0)) || filtered[0];
+      onSelectSegment(remainingTarget.id);
+      onSeek(remainingTarget.start);
     }
   };
+
+  // Tính toán các khoảng trống đã xóa giữa các phân đoạn để hiển thị trực quan trên Timeline
+  const deletedGaps = useMemo(() => {
+    if (!segments || segments.length === 0) return [];
+    const gaps: { start: number; end: number; duration: number; leftPct: number; widthPct: number }[] = [];
+    const sorted = [...segments].sort((a, b) => a.start - b.start);
+    const totalDur = Math.max(1, totalDuration);
+
+    // 1. Khoảng trống trước phân đoạn đầu tiên (nếu phân đoạn đầu bị xóa, start > 0.5s)
+    if (sorted[0].start > 0.5) {
+      const gStart = 0;
+      const gEnd = sorted[0].start;
+      const gDur = gEnd - gStart;
+      gaps.push({
+        start: gStart,
+        end: gEnd,
+        duration: gDur,
+        leftPct: 0,
+        widthPct: (gDur / totalDur) * 100,
+      });
+    }
+
+    // 2. Khoảng trống giữa các phân đoạn liền kề (đoạn đã bị xóa)
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      const gapDur = next.start - cur.end;
+      if (gapDur > 0.4) {
+        gaps.push({
+          start: cur.end,
+          end: next.start,
+          duration: gapDur,
+          leftPct: (cur.end / totalDur) * 100,
+          widthPct: (gapDur / totalDur) * 100,
+        });
+      }
+    }
+
+    // 3. Khoảng trống sau phân đoạn cuối cùng (nếu phân đoạn cuối bị xóa, end < totalDur - 0.5s)
+    const lastSeg = sorted[sorted.length - 1];
+    if (totalDur - lastSeg.end > 0.5) {
+      const gStart = lastSeg.end;
+      const gEnd = totalDur;
+      const gDur = gEnd - gStart;
+      gaps.push({
+        start: gStart,
+        end: gEnd,
+        duration: gDur,
+        leftPct: (gStart / totalDur) * 100,
+        widthPct: (gDur / totalDur) * 100,
+      });
+    }
+
+    return gaps;
+  }, [segments, totalDuration]);
 
   // Audio waveform vertical bars matching emerald green in reference image
   const waveformBars = useMemo(() => {
@@ -564,6 +623,35 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
           {/* Track 1: Nội dung (Segment Clips in Lavender/Indigo Pastel or Emerald for Appended) */}
           <div className="h-20 relative w-full flex items-center">
+            {/* Hiển thị trực quan các đoạn đã xóa (Tự động bỏ qua khi phát) */}
+            {deletedGaps.map((gap, gIdx) => (
+              <div
+                key={`gap_${gIdx}`}
+                style={{
+                  left: `${gap.leftPct}%`,
+                  width: `${gap.widthPct}%`,
+                }}
+                className="absolute top-1 bottom-1 px-0.5 z-0"
+              >
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSeek(gap.end);
+                  }}
+                  className="w-full h-full rounded-xl border border-dashed border-rose-300 bg-[repeating-linear-gradient(45deg,#fff1f2,#fff1f2_10px,#ffe4e6_10px,#ffe4e6_20px)] flex flex-col items-center justify-center p-2 shadow-2xs select-none cursor-pointer group hover:border-rose-400 transition"
+                  title={`Đoạn đã xóa (${formatTime(gap.duration)}): Từ ${formatTime(gap.start)} đến ${formatTime(gap.end)}. Trình phát sẽ tự động bỏ qua đoạn này.`}
+                >
+                  <span className="text-[11px] font-bold text-rose-700 bg-white/95 px-2 py-0.5 rounded shadow-2xs border border-rose-200/80 flex items-center gap-1">
+                    <Scissors className="w-3 h-3 text-rose-600" />
+                    <span>Đã xóa • Bỏ qua ({formatTime(gap.duration)})</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-rose-500 mt-1 opacity-80 group-hover:opacity-100">
+                    {formatTime(gap.start)} ➔ {formatTime(gap.end)}
+                  </span>
+                </div>
+              </div>
+            ))}
+
             {segments.map((seg, idx) => {
               const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
               const widthPct = Math.min(
@@ -671,13 +759,21 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           {/* Track 2: Âm thanh (Emerald green waveform inside mint pill container) */}
           <div className="h-16 relative w-full flex items-center py-1">
             <div className="w-full h-full bg-[#ecfdf5] rounded-2xl border border-emerald-200/90 flex items-center justify-between px-3 gap-0.5 overflow-hidden">
-              {waveformBars.map((height, i) => (
-                <div
-                  key={i}
-                  style={{ height: `${height}%` }}
-                  className="w-1 bg-[#10b981] rounded-full shrink-0 transition-all duration-150"
-                />
-              ))}
+              {waveformBars.map((height, i) => {
+                const barTime = (i / Math.max(1, waveformBars.length)) * totalDuration;
+                const isInDeletedGap = deletedGaps.some(
+                  (g) => barTime >= g.start && barTime <= g.end
+                );
+                return (
+                  <div
+                    key={i}
+                    style={{ height: `${height}%` }}
+                    className={`w-1 rounded-full shrink-0 transition-all duration-150 ${
+                      isInDeletedGap ? "bg-slate-300 opacity-20" : "bg-[#10b981]"
+                    }`}
+                  />
+                );
+              })}
             </div>
           </div>
 

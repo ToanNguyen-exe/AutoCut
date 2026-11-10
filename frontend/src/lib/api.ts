@@ -1,4 +1,4 @@
-import { SegmentsData, TranscriptData } from "@/types";
+import { SegmentsData, Segment, TranscriptData } from "@/types";
 
 const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
 export const API_BASE = rawBase.endsWith("/api/video")
@@ -524,5 +524,26 @@ export async function submitConcatVideos(
       error: err instanceof Error ? err.message : "Không thể kết nối API ghép nối video (Video Concat)",
       source: "fallback",
     };
+  }
+}
+
+/**
+ * Gửi yêu cầu xóa một phân đoạn (segment) tới Backend API.
+ */
+export async function deleteSegmentBackend(
+  videoId: string | number,
+  segmentId: string
+): Promise<ApiResponse<{ deleted: boolean; message: string; segments?: Segment[] }>> {
+  try {
+    const res = await fetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { data, source: "api" };
+    }
+    return { error: `HTTP ${res.status}`, source: "fallback" };
+  } catch (err) {
+    return { error: String(err), source: "fallback" };
   }
 }

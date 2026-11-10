@@ -557,6 +557,24 @@ export default function Home() {
 
     updateVideoSegmentsInLibrary(data.video, newSegments);
     setVideoLibrary(getLibraryVideos());
+
+    // Nếu số phân đoạn giảm (có phân đoạn bị xóa):
+    if (newSegments.length < data.segments.length) {
+      const deletedSeg = data.segments.find((s) => !newSegments.some((ns) => ns.id === s.id));
+      if (deletedSeg) {
+        showToast("info", `✓ Đã xóa "${deletedSeg.topic}". Trình phát sẽ tự động bỏ qua đoạn này khi phát.`);
+      }
+
+      // Nếu phân đoạn đang chọn bị xóa, chuyển sang phân đoạn còn lại kế tiếp
+      if (!newSegments.some((s) => s.id === activeSegmentId)) {
+        const nextTarget =
+          newSegments.find((s) => s.start >= currentTime) || newSegments[0];
+        if (nextTarget) {
+          setActiveSegmentId(nextTarget.id);
+          handleSeek(nextTarget.start);
+        }
+      }
+    }
   };
 
   const handleUndo = useCallback(() => {
@@ -1377,9 +1395,31 @@ export default function Home() {
 
   const handleSeek = useCallback(
     (time: number) => {
-      const clamped = Math.max(0, Math.min(totalDuration, Number(time.toFixed(1))));
-      setCurrentTime(clamped);
-      const found = data.segments.find((s) => clamped >= s.start && clamped <= s.end);
+      let targetTime = Math.max(0, Math.min(totalDuration, Number(time.toFixed(1))));
+
+      if (data.segments && data.segments.length > 0) {
+        const sorted = [...data.segments].sort((a, b) => a.start - b.start);
+        const first = sorted[0];
+        const last = sorted[sorted.length - 1];
+
+        if (targetTime < first.start) {
+          targetTime = first.start;
+        } else if (targetTime > last.end) {
+          targetTime = last.end;
+        } else {
+          // Nếu rơi vào khoảng đã xóa giữa các phân đoạn, tự động kẹp vào đầu phân đoạn kế tiếp
+          const inside = sorted.some((s) => targetTime >= s.start && targetTime <= s.end);
+          if (!inside) {
+            const nextSeg = sorted.find((s) => s.start > targetTime);
+            if (nextSeg) {
+              targetTime = nextSeg.start;
+            }
+          }
+        }
+      }
+
+      setCurrentTime(targetTime);
+      const found = data.segments.find((s) => targetTime >= s.start && targetTime <= s.end);
       if (found && found.id !== activeSegmentId) {
         setActiveSegmentId(found.id);
       }
@@ -1773,6 +1813,7 @@ export default function Home() {
             {/* CENTER: Big Video Viewport */}
             <VideoCanvasViewport
               currentSegment={activeSegment}
+              segments={data.segments}
               currentTime={currentTime}
               totalDuration={totalDuration}
               videoTitle={data.video}

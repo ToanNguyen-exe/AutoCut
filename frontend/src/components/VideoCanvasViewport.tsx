@@ -17,6 +17,7 @@ import {
 
 interface VideoCanvasViewportProps {
   currentSegment?: Segment;
+  segments?: Segment[];
   currentTime: number;
   totalDuration: number;
   videoTitle: string;
@@ -44,6 +45,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   totalDuration,
   externalVideoUrl,
   joinedVideos = [],
+  segments = [],
   isPlaying = false,
   volume = 100,
   isMuted = false,
@@ -118,6 +120,17 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+  const activeClipRef = useRef(activeClip);
+  activeClipRef.current = activeClip;
+  const onSeekRef = useRef(onSeek);
+  onSeekRef.current = onSeek;
+  const onSelectSegmentRef = useRef(onSelectSegment);
+  onSelectSegmentRef.current = onSelectSegment;
+
   const handleUserUnmute = () => {
     if (videoRef.current) {
       videoRef.current.muted = false;
@@ -169,6 +182,24 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
+        // Kiểm tra nếu currentTime đang rơi vào khoảng đã xóa trước khi phát:
+        const segs = segmentsRef.current;
+        const cTime = currentTimeRef.current;
+        const clip = activeClipRef.current;
+        if (segs && segs.length > 0) {
+          const sorted = [...segs].sort((a, b) => a.start - b.start);
+          const inSeg = sorted.some((s) => cTime >= s.start - 0.1 && cTime < s.end);
+          if (!inSeg) {
+            const next = sorted.find((s) => s.start > cTime) || sorted[0];
+            const localTarget = clip
+              ? Math.max(0, Math.min(clip.duration, next.start - clip.startOffset))
+              : next.start;
+            videoRef.current.currentTime = localTarget;
+            onSeekRef.current?.(next.start);
+            onSelectSegmentRef.current?.(next.id);
+          }
+        }
+
         videoRef.current
           .play()
           .then(() => setNeedsUserUnmute(false))
@@ -194,14 +225,61 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   }, [localTargetTime]);
 
   const handleTimeUpdate = () => {
-    if (videoRef.current && isPlaying && onSeek) {
-      const current = videoRef.current.currentTime;
-      const timelineTime = activeClip
-        ? Number((activeClip.startOffset + current).toFixed(1))
-        : Number(current.toFixed(1));
-      if (Math.abs(timelineTime - currentTime) >= 0.5) {
-        onSeek(timelineTime);
+    if (!videoRef.current || !isPlaying) return;
+
+    const current = videoRef.current.currentTime;
+    const timelineTime = activeClip
+      ? Number((activeClip.startOffset + current).toFixed(1))
+      : Number(current.toFixed(1));
+
+    // Tính năng tự động BỎ QUA các phân đoạn đã xóa khi phát video
+    if (segments && segments.length > 0) {
+      const sortedSegs = [...segments].sort((a, b) => a.start - b.start);
+      const firstSeg = sortedSegs[0];
+      const lastSeg = sortedSegs[sortedSegs.length - 1];
+
+      // 1. Nếu vị trí trước phân đoạn hợp lệ đầu tiên: Nhảy thẳng đến đầu phân đoạn đó
+      if (timelineTime < firstSeg.start - 0.2) {
+        const localTarget = activeClip
+          ? Math.max(0, Math.min(activeClip.duration, firstSeg.start - activeClip.startOffset))
+          : firstSeg.start;
+        videoRef.current.currentTime = localTarget;
+        if (onSeek) onSeek(firstSeg.start);
+        if (onSelectSegment) onSelectSegment(firstSeg.id);
+        return;
       }
+
+      // 2. Nếu vị trí đã vượt qua phân đoạn hợp lệ cuối cùng: Dừng phát
+      if (timelineTime >= lastSeg.end) {
+        videoRef.current.pause();
+        if (onTogglePlay) onTogglePlay();
+        if (onSeek) onSeek(lastSeg.end);
+        return;
+      }
+
+      // 3. Kiểm tra xem timelineTime có nằm trong phân đoạn hợp lệ nào không
+      const inAnySegment = sortedSegs.some(
+        (s) => timelineTime >= s.start - 0.1 && timelineTime < s.end
+      );
+
+      // Nếu timelineTime rơi vào khoảng trống (đoạn đã bị xóa giữa 2 phân đoạn)
+      if (!inAnySegment) {
+        const nextSeg = sortedSegs.find((s) => s.start > timelineTime);
+        if (nextSeg) {
+          // BỎ QUA ĐOẠN ĐÃ XÓA: Tua nhanh tới đầu phân đoạn kế tiếp!
+          const localTarget = activeClip
+            ? Math.max(0, Math.min(activeClip.duration, nextSeg.start - activeClip.startOffset))
+            : nextSeg.start;
+          videoRef.current.currentTime = localTarget;
+          if (onSeek) onSeek(nextSeg.start);
+          if (onSelectSegment) onSelectSegment(nextSeg.id);
+          return;
+        }
+      }
+    }
+
+    if (onSeek && Math.abs(timelineTime - currentTime) >= 0.4) {
+      onSeek(timelineTime);
     }
   };
 

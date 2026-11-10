@@ -1267,6 +1267,24 @@ public class VideoController {
     }
 
     /**
+     * API xóa một phân đoạn (segment) khỏi video trong cơ sở dữ liệu (Thẻ 3.4).
+     */
+    @DeleteMapping("/{id}/segments/{segmentId}")
+    public ResponseEntity<?> deleteSegmentFromDatabase(@PathVariable("id") Long id, @PathVariable("segmentId") String segmentId) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        boolean deleted = segmentPersistenceService.deleteSegment(id, segmentId);
+        SegmentsDTO updated = segmentPersistenceService.getSegmentsFromDatabase(id);
+        return ResponseEntity.ok(Map.of(
+            "deleted", deleted,
+            "segmentId", segmentId,
+            "message", deleted ? ("Đã xóa phân đoạn " + segmentId + " thành công") : ("Không tìm thấy phân đoạn " + segmentId),
+            "segments", updated != null ? updated.segments() : List.of()
+        ));
+    }
+
+    /**
      * API Lấy toàn bộ dữ liệu dự án (segments + transcript) từ Database Neon Postgres (Thẻ 3.4).
      */
     @GetMapping("/{id}/db-project")
