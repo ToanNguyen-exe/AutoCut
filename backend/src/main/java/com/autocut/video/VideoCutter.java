@@ -3,6 +3,7 @@ package com.autocut.video;
 import com.autocut.service.ConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -32,11 +33,16 @@ public class VideoCutter {
     private final ConfigService configService;
     private final Map<String, Double> durationCache = new ConcurrentHashMap<>();
 
+    public VideoCutter() {
+        this(new VideoProps(), null);
+    }
+
     public VideoCutter(VideoProps videoProps) {
         this(videoProps, null);
     }
 
-    public VideoCutter(VideoProps videoProps, @Lazy ConfigService configService) {
+    @Autowired
+    public VideoCutter(VideoProps videoProps, @Lazy @Autowired(required = false) ConfigService configService) {
         this.videoProps = videoProps != null ? videoProps : new VideoProps();
         this.configService = configService;
     }
