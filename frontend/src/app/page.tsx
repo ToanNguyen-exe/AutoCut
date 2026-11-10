@@ -39,6 +39,7 @@ import {
   getLibraryVideos,
   saveVideoToLibrary,
   updateVideoSegmentsInLibrary,
+  resolvePlayableVideoUrl,
 } from "@/lib/videoLibrary";
 import { getVideoBlob } from "@/lib/videoStorage";
 import { recalculateParts, slugify, formatTime } from "@/lib/utils";
@@ -160,7 +161,7 @@ const INITIAL_JOINED_VIDEOS: JoinedVideoClip[] = [
     id: "clip_01",
     title: "Bài 08 - Ép kiểu dữ liệu",
     fileName: "Bai08_Ep_kieu_du_lieu.mp4",
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    url: "/videos/Bai08_Ep_kieu_du_lieu.mp4",
     duration: 535.0,
     startOffset: 0.0,
     endOffset: 535.0,
@@ -293,7 +294,7 @@ export default function Home() {
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState<boolean>(false);
   const [isAddVideoOpen, setIsAddVideoOpen] = useState<boolean>(false);
-  const [externalVideoUrl, setExternalVideoUrl] = useState<string | null>(null);
+  const [externalVideoUrl, setExternalVideoUrl] = useState<string | null>("/videos/Bai08_Ep_kieu_du_lieu.mp4");
   const [currentVideoHash, setCurrentVideoHash] = useState<string>("");
   const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
   const [videoLibrary, setVideoLibrary] = useState<VideoLibraryItem[]>([]);
@@ -361,6 +362,7 @@ export default function Home() {
       let restoredVideoName = "";
       let restoredHash = "";
       let restoredUrl: string | null = null;
+      let restoredTotalDur = 535.0;
 
       if (typeof window !== "undefined") {
         try {
@@ -372,6 +374,7 @@ export default function Home() {
               const cleanSegments = normalizeContiguousSegments(saved.data.segments, totalDur);
               setData({ ...saved.data, segments: cleanSegments });
               restoredVideoName = saved.data.video;
+              restoredTotalDur = totalDur;
               if (saved.transcript) {
                 setTranscript(normalizeTranscript(saved.transcript, totalDur));
               }
@@ -398,25 +401,42 @@ export default function Home() {
 
       // Khôi phục video source
       if (restored) {
-        if (!restoredUrl || restoredUrl.startsWith("blob:")) {
+        let finalUrl: string | null = null;
+        if (!restoredUrl || restoredUrl.startsWith("blob:") || restoredUrl.includes("commondatastorage.googleapis.com")) {
           // Thử lấy blob từ IndexedDB để tạo lại object URL mới
           const cachedBlob = await getVideoBlob(restoredVideoName);
           if (cachedBlob && !isCancelled) {
-            const freshBlobUrl = URL.createObjectURL(cachedBlob);
-            setExternalVideoUrl(freshBlobUrl);
+            finalUrl = URL.createObjectURL(cachedBlob);
           } else if (restoredHash) {
-            setExternalVideoUrl(`${API_BASE}/stream/${restoredHash}`);
+            finalUrl = `${API_BASE}/stream/${restoredHash}`;
           } else {
-            setExternalVideoUrl(null);
+            finalUrl = resolvePlayableVideoUrl(restoredUrl || undefined, restoredVideoName);
           }
         } else {
-          setExternalVideoUrl(restoredUrl);
+          finalUrl = resolvePlayableVideoUrl(restoredUrl, restoredVideoName);
+        }
+
+        if (!isCancelled) {
+          setExternalVideoUrl(finalUrl);
+          setJoinedVideos([
+            {
+              id: "clip_01",
+              title: restoredVideoName.replace(/\.[^/.]+$/, ""),
+              fileName: restoredVideoName,
+              url: finalUrl || "/videos/Bai08_Ep_kieu_du_lieu.mp4",
+              duration: restoredTotalDur,
+              startOffset: 0.0,
+              endOffset: restoredTotalDur,
+            },
+          ]);
         }
       } else {
         // Nạp dữ liệu chuẩn Bài 08 nếu chưa có phiên làm việc trước đó
         setData(BAI08_SEGMENTS_DATA);
         setTranscript(BAI08_TRANSCRIPT_DATA);
         setActiveSegmentId(BAI08_SEGMENTS_DATA.segments[0].id);
+        setExternalVideoUrl("/videos/Bai08_Ep_kieu_du_lieu.mp4");
+        setJoinedVideos(INITIAL_JOINED_VIDEOS);
       }
 
       // Nạp danh sách thư viện video
@@ -906,7 +926,7 @@ export default function Home() {
       setUndoStack([]);
       setRedoStack([]);
       setCurrentTime(0);
-      setIsPlaying(false);
+      setIsPlaying(true);
 
       showToast(
         "success",
@@ -1001,7 +1021,7 @@ export default function Home() {
 
     setActiveSegmentId(singleSegment.id);
     setCurrentTime(0);
-    setIsPlaying(false);
+    setIsPlaying(true);
 
     if (newVideo.transcript) {
       showToast(
@@ -1405,7 +1425,8 @@ export default function Home() {
         ("title" in videoToAppend ? videoToAppend.title : undefined) ||
         ("topicTitle" in videoToAppend ? videoToAppend.topicTitle : undefined) ||
         vName;
-      const appendUrl = ("url" in videoToAppend ? videoToAppend.url : undefined) || "";
+      const rawAppendUrl = ("url" in videoToAppend ? videoToAppend.url : undefined) || "";
+      const appendUrl = resolvePlayableVideoUrl(rawAppendUrl, vName);
       const currentVideoCount = joinedVideos.length || 1;
       const newVideoIndex = currentVideoCount + 1;
 
@@ -1536,6 +1557,7 @@ export default function Home() {
         setActiveSegmentId(newAppendedSegments[0].id);
       }
       handleSeek(offset);
+      setIsPlaying(true);
 
       const newTotal = Number((offset + appendDuration).toFixed(1));
       showToast(
@@ -1549,13 +1571,30 @@ export default function Home() {
   // Mở riêng một video từ cột Thư viện video
   const handleSelectLibraryCard = useCallback(
     (card: LibraryVideoCard) => {
+      const validUrl = resolvePlayableVideoUrl(card.url, card.fileName);
+      setExternalVideoUrl(validUrl);
+
       if (card.fileName === data.video) {
-        // Đang ở video này -> mở Modal thông báo chi tiết phân đoạn đang chọn hoặc phân đoạn đầu
-        const seg = data.segments.find((s) => s.id === activeSegmentId) || data.segments[0];
-        const idx = data.segments.findIndex((s) => s.id === seg?.id) + 1;
-        setSelectedDetailSegment(seg);
-        setSelectedDetailIndex(idx > 0 ? idx : 1);
-        setIsDetailModalOpen(true);
+        // Đang ở video này -> Bật phát video ngay lập tức và đảm bảo đường dẫn nguồn video chuẩn
+        setJoinedVideos((prev) => {
+          if (prev.length > 0 && prev[0].fileName === card.fileName) {
+            return [{ ...prev[0], url: validUrl }, ...prev.slice(1)];
+          }
+          return [
+            {
+              id: card.id,
+              title: card.title,
+              fileName: card.fileName,
+              url: validUrl,
+              duration: card.durationSeconds || 535,
+              startOffset: 0,
+              endOffset: card.durationSeconds || 535,
+            },
+          ];
+        });
+        setCurrentTime(0);
+        setIsPlaying(true);
+        showToast("success", `Đang phát video: "${card.title}"`);
       } else {
         // Chuyển sang dự án video mới
         const rawSegments = card.segments && card.segments.length > 0 ? card.segments : [];
@@ -1605,7 +1644,7 @@ export default function Home() {
             id: card.id,
             title: card.title,
             fileName: card.fileName,
-            url: card.url || "",
+            url: validUrl,
             duration: dur,
             startOffset: 0,
             endOffset: dur,
@@ -1618,18 +1657,14 @@ export default function Home() {
           setTranscript(undefined);
         }
 
-        if (card.url) {
-          setExternalVideoUrl(card.url);
-        }
-
         setActiveSegmentId(targetSegments[0].id);
         setCurrentTime(0);
-        setIsPlaying(false);
+        setIsPlaying(true);
 
-        showToast("info", `Đang mở: ${card.title} (${card.durationStr})`);
+        showToast("success", `Đang mở và phát: ${card.title} (${card.durationStr})`);
       }
     },
-    [data.video, data.segments, activeSegmentId, showToast]
+    [data.video, data.segments, showToast]
   );
 
   // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI

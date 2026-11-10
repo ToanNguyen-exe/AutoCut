@@ -3,13 +3,16 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Segment, JoinedVideoClip } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { resolvePlayableVideoUrl } from "@/lib/videoLibrary";
 import {
   Maximize2,
   Play,
+  RotateCcw,
   Volume2,
   Sparkles,
   Film,
   Link2,
+  UploadCloud,
 } from "lucide-react";
 
 interface VideoCanvasViewportProps {
@@ -71,7 +74,15 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     };
   }, [joinedVideos, currentTime]);
 
-  const activeVideoUrl = activeClip?.url || externalVideoUrl || null;
+  const rawUrl = activeClip?.url || externalVideoUrl || null;
+  const activeVideoUrl = useMemo(() => {
+    const fileName = activeClip?.fileName || activeClip?.title || "Bai08_Ep_kieu_du_lieu.mp4";
+    if (!rawUrl) {
+      return resolvePlayableVideoUrl(undefined, fileName);
+    }
+    return resolvePlayableVideoUrl(rawUrl, fileName);
+  }, [rawUrl, activeClip]);
+
   const localTargetTime = activeClip
     ? Math.max(0, Math.min(activeClip.duration, currentTime - activeClip.startOffset))
     : currentTime;
@@ -87,6 +98,21 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
       setVideoLoadError(null);
     }
   }, [activeVideoUrl]);
+
+  const handleVideoError = () => {
+    const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+    const apiStreamUrl = `/api/stream?file=${encodeURIComponent(fileName)}`;
+
+    if (videoSrc !== apiStreamUrl) {
+      console.warn("Thử fallback video stream cho:", fileName);
+      setVideoSrc(apiStreamUrl);
+      setVideoLoadError(null);
+    } else {
+      setVideoLoadError(
+        "Không thể tải video từ luồng hiện tại. Bạn có thể nhấn 'Thử lại' hoặc 'Tải video lên'."
+      );
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -341,34 +367,58 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleEnded}
                 onClick={onTogglePlay}
-                onError={() => {
-                  setVideoLoadError(
-                    "Không thể phát video từ URL này. Bạn có thể nhấn '+ Thêm video' để tải tệp MP4 từ máy tính lên."
-                  );
-                }}
+                onError={handleVideoError}
                 className="w-full h-full object-contain cursor-pointer"
                 playsInline
               />
 
+              {/* Play overlay when paused */}
+              {!isPlaying && !videoLoadError && (
+                <div
+                  onClick={onTogglePlay}
+                  className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition cursor-pointer group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-indigo-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Play className="w-7 h-7 fill-current ml-1" />
+                  </div>
+                </div>
+              )}
+
               {/* Webpage / Load Error Fallback Overlay */}
               {videoLoadError && (
-                <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur-xs p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-2">
-                    <Sparkles className="w-6 h-6" />
+                <div className="absolute inset-x-4 bottom-4 z-20 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-white">Chế độ Studio Dự Án Phân Đoạn</p>
+                      <p className="text-[11px] text-slate-300 line-clamp-1">{videoLoadError}</p>
+                    </div>
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Chế độ Studio Dự Án Phân Đoạn</h4>
-                  <p className="text-xs text-slate-300 max-w-sm mb-4 leading-relaxed">
-                    {videoLoadError}
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (onOpenAddVideo) onOpenAddVideo();
-                      else fileInputRef.current?.click();
-                    }}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition hover:scale-105 active:scale-95"
-                  >
-                    + Tải tệp MP4 từ máy tính lên
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+                        setVideoSrc(`/api/stream?file=${encodeURIComponent(fileName)}&t=${Date.now()}`);
+                        setVideoLoadError(null);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Thử lại</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onOpenAddVideo) onOpenAddVideo();
+                        else fileInputRef.current?.click();
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>Tải MP4</span>
+                    </button>
+                  </div>
                 </div>
               )}
 

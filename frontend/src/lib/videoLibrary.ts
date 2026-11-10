@@ -4,20 +4,48 @@ import defaultVideos from "@/mock-data/videos_library.json";
 const STORAGE_KEY = "autocut_video_library";
 
 /**
+ * Đảm bảo đường dẫn video luôn hợp lệ, ưu tiên video nội bộ có sẵn trong public/videos
+ * hoặc qua Next.js stream API để người dùng có thể xem và nghe mượt mà không lỗi CORS.
+ */
+export function resolvePlayableVideoUrl(url: string | undefined, name: string): string {
+  const n = (name || "").toLowerCase();
+  if (n.includes("bai08") || n.includes("ep_kieu") || n.includes("ytsave")) {
+    return "/videos/Bai08_Ep_kieu_du_lieu.mp4";
+  }
+  if (n.includes("bai07") || n.includes("bien")) {
+    return "/videos/Bai07_Bien_va_hang.mp4";
+  }
+  if (n.includes("bai09") || n.includes("chuoi")) {
+    return "/videos/Bai09_Chuoi_ky_tu.mp4";
+  }
+  if (url && !url.includes("commondatastorage.googleapis.com")) {
+    return url;
+  }
+  return `/api/stream?file=${encodeURIComponent(name)}`;
+}
+
+/**
  * Lấy danh sách video trong thư viện:
  * - Ưu tiên đọc từ localStorage để giữ lại toàn bộ video người dùng đã thêm/upload sau khi F5.
  * - Tự động hợp nhất với danh sách mặc định để luôn có sẵn các bài học chuẩn.
  */
 export function getLibraryVideos(): VideoLibraryItem[] {
+  const sanitize = (list: VideoLibraryItem[]): VideoLibraryItem[] =>
+    list.map((v) => ({
+      ...v,
+      url: resolvePlayableVideoUrl(v.url, v.name),
+    }));
+
   if (typeof window === "undefined") {
-    return defaultVideos as VideoLibraryItem[];
+    return sanitize(defaultVideos as VideoLibraryItem[]);
   }
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultVideos));
-      return defaultVideos as VideoLibraryItem[];
+      const init = sanitize(defaultVideos as VideoLibraryItem[]);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(init));
+      return init;
     }
     const parsed = JSON.parse(raw) as VideoLibraryItem[];
     if (Array.isArray(parsed) && parsed.length > 0) {
@@ -34,20 +62,22 @@ export function getLibraryVideos(): VideoLibraryItem[] {
         }
       }
 
-      if (hasNewDefaults) {
+      const cleanList = sanitize(merged);
+      if (hasNewDefaults || cleanList.some((v, i) => v.url !== merged[i]?.url)) {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanList));
         } catch {
           // ignore storage limit
         }
       }
 
-      return merged;
+      return cleanList;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultVideos));
-    return defaultVideos as VideoLibraryItem[];
+    const fallbackList = sanitize(defaultVideos as VideoLibraryItem[]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackList));
+    return fallbackList;
   } catch {
-    return defaultVideos as VideoLibraryItem[];
+    return sanitize(defaultVideos as VideoLibraryItem[]);
   }
 }
 
