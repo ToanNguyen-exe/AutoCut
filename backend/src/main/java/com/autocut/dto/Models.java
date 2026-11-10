@@ -1,6 +1,7 @@
 package com.autocut.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -8,24 +9,13 @@ public class Models {
 
     // --- B2: transcript.json ---
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record WordInfo(
-        @JsonProperty("word") String word,
-        @JsonProperty("start") double start,
-        @JsonProperty("end") double end
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Sentence(
         @JsonProperty("id") String id,
         @JsonProperty("start") double start,
         @JsonProperty("end") double end,
-        @JsonProperty("text") String text,
-        @JsonProperty("words") List<WordInfo> words
-    ) {
-        public Sentence(String id, double start, double end, String text) {
-            this(id, start, end, text, null);
-        }
-    }
+        @JsonProperty("text") String text
+    ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record TranscriptDTO(

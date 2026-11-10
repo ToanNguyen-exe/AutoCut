@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
@@ -175,7 +175,9 @@ export default function Home() {
 
   // AI Analysis States
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
   const [analysisStep, setAnalysisStep] = useState<string>("");
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -199,6 +201,9 @@ export default function Home() {
     } else {
       setCurrentUser(user);
     }
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
   }, [router]);
 
   // 1. Phục hồi Active Session từ localStorage & IndexedDB ngay khi mount (F5)
@@ -727,7 +732,47 @@ export default function Home() {
 
   const handleAnalyzeAI = useCallback(async () => {
     setIsAnalyzing(true);
-    setAnalysisStep("Đang kết nối AI Backend & trích xuất đặc trưng âm thanh...");
+    setAnalysisProgress(5);
+    setAnalysisStep("Đang kết nối AI Engine & trích xuất đặc trưng âm thanh...");
+
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    const startTime = Date.now();
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setAnalysisProgress((prev) => {
+        let target = prev;
+        if (elapsed < 3) {
+          target = Math.min(25, 5 + elapsed * 6.5);
+          setAnalysisStep("Đang tách âm thanh & gọi Whisper STT nhận diện lời thoại...");
+        } else if (elapsed < 8) {
+          target = Math.min(55, 25 + (elapsed - 3) * 6);
+          setAnalysisStep("Whisper hoàn tất, Gemini đang sửa chính tả & tách câu đơn...");
+        } else if (elapsed < 14) {
+          target = Math.min(78, 55 + (elapsed - 8) * 3.8);
+          setAnalysisStep("Gemini đang phân tích ngữ nghĩa & chia đoạn theo chủ đề...");
+        } else if (elapsed < 20) {
+          target = Math.min(92, 78 + (elapsed - 14) * 2.3);
+          setAnalysisStep("Đang tối ưu độ dài phân đoạn (< 7 phút) & đồng bộ hóa...");
+        } else {
+          target = Math.min(96, 92 + (elapsed - 20) * 0.4);
+          setAnalysisStep("Đang hoàn tất lưu file phân đoạn và chuẩn bị hiển thị...");
+        }
+        return Number(target.toFixed(1));
+      });
+    }, 200);
+
+    const finishAnalysis = async () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      setAnalysisProgress(100);
+      setAnalysisStep("✓ Hoàn tất phân tích AI 100%!");
+      await new Promise((r) => setTimeout(r, 450));
+      setIsAnalyzing(false);
+      setAnalysisProgress(0);
+      setAnalysisStep("");
+    };
 
     const totalSecs = Math.max(
       5,
@@ -745,7 +790,7 @@ export default function Home() {
 
       if (res.source === "api" && res.data?.segmentsData) {
         setAnalysisStep("Đang phân tích ngữ nghĩa và đồng bộ các phân đoạn từ Spring Boot...");
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 400));
 
         const segData = res.data.segmentsData;
         const normalizedSegs = normalizeContiguousSegments(segData.segments, totalSecs);
@@ -761,7 +806,7 @@ export default function Home() {
         setVideoLibrary(getLibraryVideos());
         setUndoStack([]);
         setRedoStack([]);
-        setIsAnalyzing(false);
+        await finishAnalysis();
         showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công!");
         return;
       }
@@ -794,8 +839,7 @@ export default function Home() {
           setVideoLibrary(getLibraryVideos());
           setUndoStack([]);
           setRedoStack([]);
-          setIsAnalyzing(false);
-          setAnalysisStep("");
+          await finishAnalysis();
           showToast(
             "success",
             `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline.`
@@ -810,16 +854,16 @@ export default function Home() {
     // 3. Chế độ fallback nếu các kết nối API đều không phản hồi
     setAnalysisStep("Đang trích xuất luồng âm thanh & khử nhiễu (Audio Demuxing)...");
 
-    await new Promise((res) => setTimeout(res, 800));
+    await new Promise((res) => setTimeout(res, 500));
     setAnalysisStep("Đang chạy mô hình Whisper STT nhận diện ca từ / giọng nói...");
 
-    await new Promise((res) => setTimeout(res, 900));
+    await new Promise((res) => setTimeout(res, 600));
     setAnalysisStep("Đang phân tích ngữ nghĩa, cấu trúc nội dung và biên giới đoạn...");
 
-    await new Promise((res) => setTimeout(res, 800));
+    await new Promise((res) => setTimeout(res, 500));
     setAnalysisStep("Đang khởi tạo các phân đoạn thông minh và đồng bộ hóa Timeline...");
 
-    await new Promise((res) => setTimeout(res, 600));
+    await new Promise((res) => setTimeout(res, 400));
 
     const isMusicOrAudio = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
       `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
@@ -992,8 +1036,7 @@ export default function Home() {
     updateVideoSegmentsInLibrary(data.video, analyzedSegments);
     setVideoLibrary(getLibraryVideos());
 
-    setIsAnalyzing(false);
-    setAnalysisStep("");
+    await finishAnalysis();
     showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
   }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
 
@@ -1037,6 +1080,7 @@ export default function Home() {
         backendOnline={backendOnline}
         isRendering={isRendering}
         isAnalyzing={isAnalyzing}
+        analysisProgress={analysisProgress}
         isDemo={isDemo}
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
@@ -1072,6 +1116,8 @@ export default function Home() {
               isMuted={isMuted}
               isDemo={isDemo}
               isAnalyzing={isAnalyzing}
+              analysisProgress={analysisProgress}
+              analysisStep={analysisStep}
               mode={data.mode}
               onSeek={handleSeek}
               onTogglePlay={() => setIsPlaying(!isPlaying)}
@@ -1094,6 +1140,7 @@ export default function Home() {
               mode={data.mode}
               isDemo={isDemo}
               isAnalyzing={isAnalyzing}
+              analysisProgress={analysisProgress}
               analysisStep={analysisStep}
               onSelectSegment={(id) => setActiveSegmentId(id)}
               onSeek={handleSeek}

@@ -272,22 +272,22 @@ public class VideoController {
         return s.isEmpty() ? "video" : s;
     }
 
-    private void saveSegmentsToOutput(SegmentsDTO segmentsDTO, String lessonName, String videoName) {
+    private void saveSegmentsToSegmentsFolder(SegmentsDTO segmentsDTO, String lessonName, String videoName) {
         if (segmentsDTO == null) return;
         try {
-            Path outputDir = resolveProjectRoot().resolve("output");
-            if (!Files.exists(outputDir)) {
-                Files.createDirectories(outputDir);
+            Path segmentsDir = resolveProjectRoot().resolve("segments");
+            if (!Files.exists(segmentsDir)) {
+                Files.createDirectories(segmentsDir);
             }
             String chosenName = (lessonName != null && !lessonName.isBlank()) ? lessonName : videoName;
             String cleanLesson = sanitizeStem(chosenName);
 
-            Path planFileLesson = outputDir.resolve("segments_" + cleanLesson + ".json");
+            Path planFileLesson = segmentsDir.resolve("segments_" + cleanLesson + ".json");
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(planFileLesson.toFile(), segmentsDTO);
 
-            log.info("Đã xuất duy nhất 1 file json phân đoạn vào output: {}", planFileLesson.toAbsolutePath());
+            log.info("Đã xuất duy nhất 1 file json phân đoạn vào segments: {}", planFileLesson.toAbsolutePath());
         } catch (Exception ex) {
-            log.warn("Lỗi khi lưu file segments vào output: {}", ex.getMessage());
+            log.warn("Lỗi khi lưu file segments vào segments: {}", ex.getMessage());
         }
     }
 
@@ -661,14 +661,14 @@ public class VideoController {
 
                         segmentsDTO != null ? segmentsDTO.segments().size() : 0);
 
-                saveSegmentsToOutput(segmentsDTO, lessonName, videoName);
+                saveSegmentsToSegmentsFolder(segmentsDTO, lessonName, videoName);
 
                 return ResponseEntity.ok(Map.of(
                         "status", "SUCCESS",
                         "mode", "analyzed",
                         "segmentsData", segmentsDTO,
                         "transcript", transcriptDTO,
-                        "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
+                        "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder segments!"
                 ));
 
             } else {
@@ -760,7 +760,7 @@ public class VideoController {
                                     lSent.id(),
                                     Math.round(sStart * 10.0) / 10.0,
                                     Math.round(sEnd * 10.0) / 10.0,
-                                    List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
+                                    List.of(new VideoPart(1, sStart, sEnd, String.format("%02d_doan-%d.mp4", i + 1, i + 1)))
                             ));
                         }
 
@@ -769,14 +769,14 @@ public class VideoController {
                             cacheService.saveTranscriptCache(hash, existingDto);
                         }
 
-                        saveSegmentsToOutput(segsDto, lessonName, videoName);
+                        saveSegmentsToSegmentsFolder(segsDto, lessonName, videoName);
 
                         return ResponseEntity.ok(Map.of(
                                 "status", "SUCCESS",
                                 "mode", "analyzed",
                                 "segmentsData", segsDto,
                                 "transcript", existingDto,
-                                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
+                                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder segments!"
                         ));
                     } else {
                         log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",
@@ -813,9 +813,9 @@ public class VideoController {
                     sId,
                     curS,
                     curE,
-                    List.of(new VideoPart(1, curS, curE, secFolder + "/" + String.format("%02d", i) + "_" + topSlug + ".mp4"))
+                    List.of(new VideoPart(1, curS, curE, String.format("%02d_%s.mp4", i, topSlug)))
             ));
-            sentences.add(new Sentence(sId, curS, curE, "Nội dung phần " + i + " của " + videoName, null));
+            sentences.add(new Sentence(sId, curS, curE, "Nội dung phần " + i + " của " + videoName));
             curS = curE;
         }
 
@@ -829,7 +829,7 @@ public class VideoController {
 
         SegmentsDTO segmentsDTO = new SegmentsDTO(videoName, lessonName, "analyzed", false, segments);
 
-        saveSegmentsToOutput(segmentsDTO, lessonName, videoName);
+        saveSegmentsToSegmentsFolder(segmentsDTO, lessonName, videoName);
         saveTranscriptToTranscripts(transcriptDTO, videoName);
 
         return ResponseEntity.ok(Map.of(
@@ -837,7 +837,7 @@ public class VideoController {
                 "mode", "analyzed",
                 "segmentsData", segmentsDTO,
                 "transcript", transcriptDTO,
-                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder output!"
+                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder segments!"
         ));
 
     }
@@ -964,7 +964,7 @@ public class VideoController {
                     String section = segMap.get("section") != null ? String.valueOf(segMap.get("section")) : "01_Phan";
                     double start = segMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
                     double end = segMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
-                    String relFile = section + "/" + slug + ".mp4";
+                    String relFile = slug + ".mp4";
 
                     File outFile = outputDir.resolve(relFile).toFile();
                     CutResult cutResult = videoCutter.cut(sourcePath, outFile.getAbsolutePath(), start, end);

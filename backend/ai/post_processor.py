@@ -15,46 +15,17 @@ from typing import List
 from .models import Sentence, TranscriptOutput
 
 
-# Từ điển ánh xạ các thuật ngữ bị Whisper nhận dạng sai âm trong bài giảng CNTT/Web3/JavaScript
+# Từ điển chuẩn hóa các thuật ngữ công nghệ thông tin thông dụng
 DOMAIN_TERM_MAPPINGS = [
-    # Blockchain & Web3
-    (r"\b(?:bởi\s+lúc\s+trên|lúc\s+chain|lốc\s+chen|bởi\s+lúc\s+chen|lúc\s+chen)\b", "blockchain"),
-    (r"\b(?:Blockchain\s+nào\s+đang\s+có\s+thể,\s+chúng\s+ta\s+có\s+thể\s+dễ\s+dàng\s+người\s+ta)\b", "Blockchain nào chúng ta có thể dễ dàng"),
-    (r"\b(?:nào\s+lớp\s+3|lớp\s+3|lớp\s+ba)\b", "Web3"),
-    (r"\b(?:test\s+stack|tét\s+tắc|test\s+tắc)\b", "tech stack"),
-    (r"\b(?:e-roll|e\s+rôn|e\s+dốt|e\s+rốp)\b", "airdrop"),
-    (r"\b(?:Solana\s+Superjip|Superjip)\b", "Solana Superteam"),
-    (r"\b(?:OpenGuy)\b", "OpenGov"),
-    (r"\b(?:suy\s+hấp)\b", "Sui Hub"),
-    (r"\b(?:À\s+suy\s+luôn)\b", "À Sui luôn"),
-    (r"\b(?:mà\s+suy\s+nữa)\b", "mạng Sui nữa"),
-    (r"\b(?:giống\s+như\s+Sui)\b", "giống như Sui"),
-    (r"\b(?:hacker\s+camp)\b", "hacker house"),
-    (r"\b(?:nốt\s+developer|nút\s+developer)\b", "Web3 developer"),
-    (r"\b(?:DefiLlama|đề\s+phi\s+la\s+ma)\b", "DefiLlama"),
-    (r"\b(?:on-chain|on\s+chen)\b", "on-chain"),
-    (r"\b(?:smart\s+contract|xì\s+mát\s+con\s+trắc)\b", "smart contract"),
-    (r"\b(?:Solidity|xô\s+li\s+đi\s+ti)\b", "Solidity"),
-
-    # JavaScript / Web Development
-    (r"\b(?:gia\s+va\s+sờ\s+cờ\s+ríp|gia\s+va\s+sờ\s+cờ\s+rít|javascript)\b", "JavaScript"),
-    (r"\b(?:nốt\s+js|nốt\s+giây\s+ét|nodejs)\b", "Node.js"),
-    (r"\b(?:hát\s+tê\s+mờ\s+lờ|html)\b", "HTML"),
-    (r"\b(?:vê\s+ét\s+cốt|vs\s+cốt|vscode)\b", "VS Code"),
-    (r"\b(?:đốc\s+cơ\s+mừn\s+chấm\s+rai|document\s+chấm\s+write)\b", "document.write"),
-    (r"\b(?:con\s+sôn\s+chấm\s+lốc|console\s+chấm\s+log)\b", "console.log"),
-
-    # Lỗi phát âm & chính tả tiếng Việt phổ biến khi Whisper nghe bài giảng
-    (r"\b(?:hệ\s+sinh\s+tái)\b", "hệ sinh thái"),
-    (r"\b(?:hôn\s+ngữ|muôn\s+ngữ)\b", "ngôn ngữ"),
-    (r"\b(?:hội\s+chữ|hổng\s+hộ)\b", "hỗ trợ"),
-    (r"\b(?:thị\s+trùm)\b", "thị trường"),
-    (r"\b(?:sứng\s+đáng)\b", "xứng đáng"),
-    (r"\b(?:Phương\s+nhận\s+nhất)\b", "Quan trọng nhất"),
-    (r"\b(?:rất\s+tự\s+sự\s+của\s+hợp)\b", "rất thực sự phù hợp"),
-    (r"\b(?:chiến\s+nó\s+thành)\b", "chia nó thành"),
-    (r"\b(?:Ở\s+Lê\s+Lan)\b", "ở level"),
-    (r"\b(?:thể\s+ấn\s+trên\s+hộ)\b", "thể lên trên fanpage"),
+    (r"\b(?:javascript)\b", "JavaScript"),
+    (r"\b(?:nodejs|node\s*js)\b", "Node.js"),
+    (r"\b(?:html)\b", "HTML"),
+    (r"\b(?:css)\b", "CSS"),
+    (r"\b(?:vscode|vs\s*code)\b", "VS Code"),
+    (r"\b(?:document\s*chấm\s*write)\b", "document.write"),
+    (r"\b(?:console\s*chấm\s*log)\b", "console.log"),
+    (r"\b(?:blockchain)\b", "Blockchain"),
+    (r"\b(?:web3)\b", "Web3"),
 ]
 
 # Chỉ coi dấu kết thúc câu hoặc mệnh đề hoàn chỉnh (., ?, !, …, ,, ;, :) là ranh giới đóng segment

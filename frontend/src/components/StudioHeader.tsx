@@ -23,6 +23,7 @@ interface StudioHeaderProps {
   backendOnline?: boolean;
   isRendering: boolean;
   isAnalyzing?: boolean;
+  analysisProgress?: number;
   isDemo?: boolean;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
@@ -37,6 +38,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   data,
   isRendering,
   isAnalyzing = false,
+  analysisProgress = 0,
   isDemo = false,
   onExport,
   onRender,
@@ -118,16 +120,31 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* Nút Phân Tích AI nổi bật khi video ở trạng thái thô (chưa phân tích) */}
-          {data.mode === "raw" && onAnalyzeAI && (
+          {/* Nút Phân Tích AI nổi bật khi video ở trạng thái thô (chưa phân tích) hoặc đang phân tích */}
+          {((data.mode === "raw" && onAnalyzeAI) || isAnalyzing) && (
             <button
               onClick={onAnalyzeAI}
               disabled={isAnalyzing}
               title="Khởi chạy Whisper & AI để phân tích video và phân đoạn thông minh"
-              className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 shadow-2xs transition hover:scale-102 active:scale-98"
+              className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 shadow-2xs transition"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Phân Tích AI</span>
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-700" />
+                  <span>Đang phân tích AI: {Math.round(analysisProgress)}%</span>
+                  <div className="w-12 bg-indigo-200 rounded-full h-1.5 overflow-hidden ml-1">
+                    <div
+                      className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Phân Tích AI</span>
+                </>
+              )}
             </button>
           )}
 

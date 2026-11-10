@@ -31,6 +31,8 @@ interface VideoCanvasViewportProps {
   isMuted?: boolean;
   isDemo?: boolean;
   isAnalyzing?: boolean;
+  analysisProgress?: number;
+  analysisStep?: string;
   mode?: string;
   onSeek?: (time: number) => void;
   onTogglePlay?: () => void;
@@ -54,6 +56,8 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   isMuted = false,
   isDemo = false,
   isAnalyzing = false,
+  analysisProgress = 0,
+  analysisStep = "",
   mode = "guided",
   onSeek,
   onTogglePlay,
@@ -273,8 +277,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               Demo Mẫu
             </span>
           ) : isAnalyzing ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold animate-pulse">
-              ⚡ Đang phân tích AI...
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold animate-pulse flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-indigo-600 animate-spin" />
+              <span>⚡ Đang phân tích AI: {Math.round(analysisProgress)}%</span>
             </span>
           ) : mode === "raw" ? (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-bold">
@@ -408,6 +413,30 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
           )}
 
           {/* Real Video Element OR Simulated Canvas */}
+          {/* AI Analyzing Progress Overlay */}
+          {isAnalyzing && (
+            <div className="absolute inset-0 z-35 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-white text-center animate-in fade-in duration-200">
+              <div className="relative mb-3">
+                <div className="w-16 h-16 rounded-full border-3 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
+                </div>
+              </div>
+              <div className="text-3xl font-black font-mono text-white tracking-tight mb-1">
+                {Math.round(analysisProgress)}%
+              </div>
+              <p className="text-xs font-bold text-indigo-200 mb-3 max-w-xs truncate">
+                {analysisStep || "Đang phân tích video bằng AI..."}
+              </p>
+              <div className="w-64 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700 shadow-inner">
+                <div
+                  className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {videoSrc ? (
             <div className="w-full h-full flex items-center justify-center bg-black relative">
               <video

@@ -1,10 +1,10 @@
-"""Test Suite: Giới hạn phân đoạn tối đa 7 phút (420s) và tự động xuất JSON vào folder output.
+"""Test Suite: Giới hạn phân đoạn tối đa 7 phút (420s) và tự động xuất JSON vào folder segments/.
 
 Yêu cầu kiểm thử:
 1. Mỗi video / phân đoạn không được dài quá 7 phút (420.0 giây).
 2. Nếu một chủ đề dài hơn 7 phút, tự động chia thành các phân đoạn nhỏ trong chủ đề đó (Phần 1, Phần 2...).
-3. Khi phân tích AI (run_backend_analysis), file segments_<lesson>.json và segments.json phải được tự động tạo trong folder output/.
-4. Tên file trong folder output/ không chứa dấu tiếng Việt và không chứa khoảng trắng.
+3. Khi phân tích AI (run_backend_analysis), file segments_<lesson>.json phải được tự động tạo trong folder segments/ (không đưa vào output/).
+4. Tên file trong folder segments/ không chứa dấu tiếng Việt và không chứa khoảng trắng.
 """
 
 import json
@@ -88,10 +88,58 @@ def test_segment_duration_limit_and_sub_segments():
     assert "Cấu trúc điều khiển nâng cao (Phần 2)" in segments[1]["topic"]
     assert "Cấu trúc điều khiển nâng cao (Phần 3)" in segments[2]["topic"]
     assert segments[0]["parts"][0]["file"].endswith("_Phan1.mp4")
+    # Kiểm tra: Khi topic có nhiều hơn 1 video, các file được gom trong folder mang tên topic
+    assert segments[0]["parts"][0]["file"] == "01_cau-truc-dieu-khien-nang-cao/01_cau-truc-dieu-khien-nang-cao_Phan1.mp4"
+    assert segments[1]["parts"][0]["file"] == "01_cau-truc-dieu-khien-nang-cao/01_cau-truc-dieu-khien-nang-cao_Phan2.mp4"
+    assert segments[2]["parts"][0]["file"] == "01_cau-truc-dieu-khien-nang-cao/01_cau-truc-dieu-khien-nang-cao_Phan3.mp4"
 
 
-def test_auto_generate_segments_json_in_output(tmp_path):
-    """Kiểm tra: run_backend_analysis tự động xuất file JSON vào folder output/."""
+def test_single_video_topic_uses_flat_file():
+    """Kiểm tra: Topic chỉ có 1 video (<= 420s) sử dụng file phẳng trực tiếp, không tạo folder con."""
+    sentences = [
+        Sentence(id="S0001", start=0.0, end=50.0, text="Mở đầu bài giảng ngắn."),
+        Sentence(id="S0002", start=50.0, end=120.0, text="Nội dung kết thúc bài giảng.")
+    ]
+    transcript = TranscriptOutput(video="VideoNgan.mp4", duration=120.0, sentences=sentences)
+
+    class MockLLMResponse:
+        text = json.dumps({
+            "sections": [
+                {
+                    "label": "Giới thiệu",
+                    "topics": [
+                        {
+                            "title": "Tổng quan khóa học",
+                            "slug": "tong-quan-khoa-hoc",
+                            "start_id": "S0001",
+                            "end_id": "S0002"
+                        }
+                    ]
+                }
+            ]
+        })
+
+    dummy_refiner = object.__new__(TranscriptRefiner)
+    dummy_refiner.models_to_try = []
+    dummy_refiner._generate_with_fallback = lambda *a, **kw: MockLLMResponse()
+
+    segments_data = TranscriptRefiner.segment_transcript(
+        dummy_refiner,
+        transcript=transcript,
+        lesson_name="Khóa học ngắn",
+        max_part_duration=420.0
+    )
+
+    segments = segments_data.get("segments", [])
+    assert len(segments) == 1
+    # File phẳng, không có dấu /
+    part_file = segments[0]["parts"][0]["file"]
+    assert "/" not in part_file, f"Topic chỉ có 1 video phải là file phẳng, thực tế là: {part_file}"
+    assert part_file == "01_tong-quan-khoa-hoc.mp4"
+
+
+def test_auto_generate_segments_json_in_segments_folder(tmp_path):
+    """Kiểm tra: run_backend_analysis tự động xuất file JSON vào folder segments/ (không đưa vào output/)."""
     # Tạo video name và lesson có dấu và khoảng trắng để test cả việc sanitize tên file
     video_name = "BaiGiang_Test_Output.mp4"
     lesson_name = "Bài Học 01: Giới Thiệu Khóa Học"
@@ -109,18 +157,19 @@ def test_auto_generate_segments_json_in_output(tmp_path):
     # File trả về cho Spring Boot phải tồn tại
     assert output_path.exists(), "Tệp analyze tạm phải tồn tại"
 
-    # Folder output/ của dự án phải có các file segments
-    project_output = Path(__file__).resolve().parent.parent / "output"
-    assert project_output.exists(), "Thư mục output/ phải tồn tại"
+    # Folder segments/ của dự án phải tồn tại và có file segments
+    project_segments = Path(__file__).resolve().parent.parent / "segments"
+    assert project_segments.exists(), "Thư mục segments/ phải tồn tại"
 
     # Tên file cho bài học không được có dấu và khoảng trắng
     clean_stem = "bai-hoc-01-gioi-thieu-khoa-hoc"
-    lesson_segments_file = project_output / f"segments_{clean_stem}.json"
-    assert lesson_segments_file.exists(), f"output/segments_{clean_stem}.json phải được tạo tự động"
+    lesson_segments_file = project_segments / f"segments_{clean_stem}.json"
+    assert lesson_segments_file.exists(), f"segments/segments_{clean_stem}.json phải được tạo tự động"
 
-    # Mỗi video chỉ có duy nhất 1 file segment trong output/ (không tạo file thừa segments.json)
-    root_segments_file = project_output / "segments.json"
-    assert not root_segments_file.exists(), "Không được tạo tệp trùng lặp output/segments.json"
+    # Đảm bảo folder output/ KHÔNG chứa file segment json này
+    project_output = Path(__file__).resolve().parent.parent / "output"
+    assert not (project_output / f"segments_{clean_stem}.json").exists(), "output/ không được chứa file json segment"
+    assert not (project_output / "segments.json").exists(), "output/ không được chứa tệp trùng lặp segments.json"
 
     # Mỗi video chỉ có duy nhất 1 file transcript trong transcripts/ (không tạo file thừa transcript.json ở root)
     root_transcript_file = Path(__file__).resolve().parent.parent / "transcript.json"
@@ -132,8 +181,8 @@ def test_auto_generate_segments_json_in_output(tmp_path):
     assert data["lesson"] == lesson_name
     assert "segments" in data
 
-    # Đảm bảo không tạo folder con trong output/ và không có folder backend/output
-    assert not (project_output / clean_stem).exists(), f"Không được tạo thư mục con {clean_stem} trong output/"
+    # Đảm bảo không tạo folder con trong segments/ và không có folder backend/output
+    assert not (project_segments / clean_stem).exists(), f"Không được tạo thư mục con {clean_stem} trong segments/"
     assert not (Path(__file__).resolve().parent.parent / "backend" / "output").exists(), "Không được tạo thư mục backend/output"
 
 
