@@ -18,7 +18,7 @@ import {
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
-import { VideoLibraryColumn, LibraryVideoCard } from "@/components/VideoLibraryColumn";
+import { VideoLibraryColumn, LibraryVideoCard, PASTEL_GRADIENTS } from "@/components/VideoLibraryColumn";
 import { VideoCanvasViewport } from "@/components/VideoCanvasViewport";
 import { AiAssistantChatPanel } from "@/components/AiAssistantChatPanel";
 import { StudioTimeline } from "@/components/StudioTimeline";
@@ -138,35 +138,22 @@ const BAI08_TRANSCRIPT_DATA: TranscriptData = {
   ],
 };
 
-const DEFAULT_LIBRARY_CARDS: LibraryVideoCard[] = [
-  {
-    id: "lib_01",
-    title: "Bài 08 - Ép kiểu dữ liệu",
-    fileName: "Bai08_Ep_kieu_du_lieu.mp4",
-    durationStr: "08:55",
-    durationSeconds: 535.0,
-    gradientBg: "from-emerald-200 via-teal-100 to-lime-200",
-    segmentCount: 5,
-  },
-  {
-    id: "lib_02",
-    title: "Bài 07 - Biến và hằng",
-    fileName: "Bai07_Bien_va_hang.mp4",
-    durationStr: "12:40",
-    durationSeconds: 760.0,
-    gradientBg: "from-amber-200 via-orange-100 to-yellow-200",
-    segmentCount: 4,
-  },
-  {
-    id: "lib_03",
-    title: "Bài 09 - Chuỗi ký tự",
-    fileName: "Bai09_Chuoi_ky_tu.mp4",
-    durationStr: "10:12",
-    durationSeconds: 612.0,
-    gradientBg: "from-rose-200 via-pink-100 to-purple-200",
-    segmentCount: 6,
-  },
-];
+const syncLibraryCardsFromLibrary = (items: VideoLibraryItem[]): LibraryVideoCard[] => {
+  return items.map((item, idx) => ({
+    id: item.id || `lib_${idx}`,
+    title: item.title || item.lesson || item.name,
+    fileName: item.name,
+    durationStr: formatTime(item.duration),
+    durationSeconds: item.duration,
+    gradientBg: PASTEL_GRADIENTS[idx % PASTEL_GRADIENTS.length],
+    segmentCount: item.segmentsCount || item.segments?.length || 1,
+    url: item.url,
+    segments: item.segments,
+    transcript: item.transcript,
+  }));
+};
+
+const DEFAULT_LIBRARY_CARDS: LibraryVideoCard[] = syncLibraryCardsFromLibrary(getLibraryVideos());
 
 // Lời bài hát & câu thoại thực tế từ video (Download.mp4 / Nonstop CT TikTok)
 const REAL_DOWNLOAD_LYRICS: Sentence[] = [
@@ -421,7 +408,9 @@ export default function Home() {
 
       // Nạp danh sách thư viện video
       if (!isCancelled) {
-        setVideoLibrary(getLibraryVideos());
+        const loadedLib = getLibraryVideos();
+        setVideoLibrary(loadedLib);
+        setLibraryCards(syncLibraryCardsFromLibrary(loadedLib));
         setIsSessionLoaded(true);
       }
 
@@ -458,7 +447,9 @@ export default function Home() {
           setVideoLibrary((prev) => {
             const existingNames = new Set(prev.map((v) => v.name));
             const newOnes = dbItems.filter((v) => !existingNames.has(v.name));
-            return [...prev, ...newOnes];
+            const combined = [...prev, ...newOnes];
+            setLibraryCards(syncLibraryCardsFromLibrary(combined));
+            return combined;
           });
         }
       } catch (err) {
@@ -886,18 +877,7 @@ export default function Home() {
       };
       const updatedLib = saveVideoToLibrary(libItem);
       setVideoLibrary(updatedLib);
-      setLibraryCards((prev) => [
-        {
-          id: `lib_${Date.now()}`,
-          title: lessonTitle,
-          fileName: newVideo.name,
-          durationStr: formatTime(totalSecs),
-          durationSeconds: totalSecs,
-          gradientBg: "from-blue-200 via-indigo-100 to-purple-200",
-          segmentCount: newVideo.segmentsData ? newVideo.segmentsData.segments.length : 1,
-        },
-        ...prev,
-      ]);
+      setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
       setUndoStack([]);
       setRedoStack([]);
       setCurrentTime(0);
@@ -978,18 +958,7 @@ export default function Home() {
     };
     const updatedLib = saveVideoToLibrary(libItem);
     setVideoLibrary(updatedLib);
-    setLibraryCards((prev) => [
-      {
-        id: `lib_${Date.now()}`,
-        title: lessonTitle,
-        fileName: newVideo.name,
-        durationStr: formatTime(totalSecs),
-        durationSeconds: totalSecs,
-        gradientBg: "from-blue-200 via-indigo-100 to-purple-200",
-        segmentCount: 1,
-      },
-      ...prev,
-    ]);
+    setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
     setUndoStack([]);
     setRedoStack([]);
 
@@ -1373,7 +1342,149 @@ export default function Home() {
     setIsDetailModalOpen(true);
   }, []);
 
-  // Chọn video từ cột Thư viện video
+  // Nối tiếp video từ thư viện ra đằng sau video đang phát trên Timeline
+  const handleAppendVideoToTimeline = useCallback(
+    (videoToAppend: LibraryVideoCard | VideoLibraryItem) => {
+      const currentDuration =
+        data.segments.reduce((max, s) => Math.max(max, s.end), 0) || totalDuration || 1;
+      const appendDuration = Math.max(
+        1,
+        (videoToAppend as LibraryVideoCard).durationSeconds ||
+          (videoToAppend as VideoLibraryItem).duration ||
+          60
+      );
+      const offset = Number(currentDuration.toFixed(1));
+
+      const rawSegments =
+        (videoToAppend as VideoLibraryItem).segments &&
+        (videoToAppend as VideoLibraryItem).segments.length > 0
+          ? (videoToAppend as VideoLibraryItem).segments
+          : (videoToAppend as LibraryVideoCard).segments &&
+            (videoToAppend as LibraryVideoCard).segments!.length > 0
+          ? (videoToAppend as LibraryVideoCard).segments!
+          : [];
+
+      let newAppendedSegments: Segment[] = [];
+      const vName = ('fileName' in videoToAppend ? videoToAppend.fileName : videoToAppend.name) || "video";
+      const vTitle = videoToAppend.title || vName;
+
+      if (rawSegments.length > 0) {
+        newAppendedSegments = rawSegments.map((seg, idx) => {
+          const segStart = Number((offset + seg.start).toFixed(1));
+          const segEnd = Number((offset + seg.end).toFixed(1));
+          const topicNo = data.segments.length + idx + 1;
+          const sectionFolder = `${seg.section_no.toString().padStart(2, "0")}_${seg.section.replace(/\s+/g, "")}`;
+
+          return {
+            ...seg,
+            id: `seg_appended_${Date.now()}_${idx}`,
+            topic_no: topicNo,
+            start: segStart,
+            end: segEnd,
+            parts: recalculateParts(segStart, segEnd, sectionFolder, topicNo, seg.slug),
+          };
+        });
+      } else {
+        const segStart = offset;
+        const segEnd = Number((offset + appendDuration).toFixed(1));
+        const topicNo = data.segments.length + 1;
+        const cleanSlug = slugify(vTitle);
+
+        newAppendedSegments = [
+          {
+            id: `seg_appended_${Date.now()}_0`,
+            section_no: 1,
+            section: "01_VideoNoiTiep",
+            topic_no: topicNo,
+            topic: vTitle,
+            slug: cleanSlug,
+            start_id: `s${topicNo}01`,
+            end_id: `s${topicNo}99`,
+            start: segStart,
+            end: segEnd,
+            parts: [
+              {
+                part: 1,
+                start: segStart,
+                end: segEnd,
+                file: `01_VideoNoiTiep/${String(topicNo).padStart(2, "0")}_${cleanSlug}.mp4`,
+              },
+            ],
+          },
+        ];
+      }
+
+      setUndoStack((prev) => [...prev.slice(-30), data.segments]);
+      setRedoStack([]);
+
+      const combinedSegments = [...data.segments, ...newAppendedSegments];
+      const combinedLesson = `${data.lesson} + ${vTitle}`;
+      const combinedVideo = `${data.video} & ${vName}`;
+
+      setData((prev) => ({
+        ...prev,
+        video: combinedVideo,
+        lesson: combinedLesson,
+        segments: combinedSegments,
+      }));
+
+      const appendTranscript =
+        (videoToAppend as VideoLibraryItem).transcript ||
+        (videoToAppend as LibraryVideoCard).transcript;
+
+      if (appendTranscript?.sentences && appendTranscript.sentences.length > 0) {
+        const existingCount = transcript?.sentences?.length || 0;
+        const shifted = appendTranscript.sentences.map((sent, idx) => ({
+          ...sent,
+          id: `S${String(existingCount + idx + 1).padStart(4, "0")}`,
+          start: Number((offset + sent.start).toFixed(1)),
+          end: Number((offset + sent.end).toFixed(1)),
+        }));
+
+        setTranscript((prev) => ({
+          video: combinedVideo,
+          duration: Number((offset + appendDuration).toFixed(1)),
+          sentences: [...(prev?.sentences || []), ...shifted],
+        }));
+      } else {
+        const existingCount = transcript?.sentences?.length || 0;
+        const addedSentences = [
+          {
+            id: `S${String(existingCount + 1).padStart(4, "0")}`,
+            start: offset,
+            end: Number((offset + appendDuration * 0.5).toFixed(1)),
+            text: `Nội dung nối tiếp từ video "${vTitle}": Khởi đầu chủ đề nối tiếp.`,
+          },
+          {
+            id: `S${String(existingCount + 2).padStart(4, "0")}`,
+            start: Number((offset + appendDuration * 0.5).toFixed(1)),
+            end: Number((offset + appendDuration).toFixed(1)),
+            text: `Nội dung nối tiếp từ video "${vTitle}": Thực hành và tổng kết bài học.`,
+          },
+        ];
+
+        setTranscript((prev) => ({
+          video: combinedVideo,
+          duration: Number((offset + appendDuration).toFixed(1)),
+          sentences: [...(prev?.sentences || []), ...addedSentences],
+        }));
+      }
+
+      if (newAppendedSegments.length > 0) {
+        setActiveSegmentId(newAppendedSegments[0].id);
+      }
+      handleSeek(offset);
+
+      const newTotal = Number((offset + appendDuration).toFixed(1));
+      showToast(
+        "success",
+        `✓ Đã nối tiếp video "${vTitle}" (${formatTime(appendDuration)}) ra sau video đang phát! Tổng thời lượng timeline: ${formatTime(newTotal)}`
+      );
+    },
+    [data, totalDuration, transcript, handleSeek, showToast]
+  );
+
+  // Mở riêng một video từ cột Thư viện video
   const handleSelectLibraryCard = useCallback(
     (card: LibraryVideoCard) => {
       if (card.fileName === data.video) {
@@ -1385,18 +1496,63 @@ export default function Home() {
         setIsDetailModalOpen(true);
       } else {
         // Chuyển sang dự án video mới
-        setData((prev) => ({
-          ...prev,
+        const rawSegments = card.segments && card.segments.length > 0 ? card.segments : [];
+        const dur = card.durationSeconds > 0 ? card.durationSeconds : 120;
+
+        let targetSegments: Segment[] = [];
+        if (rawSegments.length > 0) {
+          targetSegments = rawSegments;
+        } else {
+          targetSegments = [
+            {
+              id: `seg_${Date.now()}_raw`,
+              section_no: 1,
+              section: "01_VideoGoc",
+              topic_no: 1,
+              topic: card.title,
+              slug: slugify(card.title),
+              start_id: "s001",
+              end_id: "s001",
+              start: 0,
+              end: dur,
+              parts: [
+                {
+                  part: 1,
+                  start: 0,
+                  end: dur,
+                  file: `01_VideoGoc/01_${slugify(card.title)}.mp4`,
+                },
+              ],
+            },
+          ];
+        }
+
+        setUndoStack((prev) => [...prev.slice(-30), data.segments]);
+        setRedoStack([]);
+
+        setData({
           video: card.fileName,
           lesson: card.title,
-        }));
-        // Mở modal hiển thị nội dung phân đoạn tương ứng
-        if (data.segments.length > 0) {
-          setSelectedDetailSegment(data.segments[0]);
-          setSelectedDetailIndex(1);
-          setIsDetailModalOpen(true);
+          mode: card.segments && card.segments.length > 1 ? "analyzed" : "raw",
+          reviewed: false,
+          segments: targetSegments,
+        });
+
+        if (card.transcript) {
+          setTranscript(card.transcript);
+        } else {
+          setTranscript(undefined);
         }
-        showToast("info", `Đang mở: ${card.title}`);
+
+        if (card.url) {
+          setExternalVideoUrl(card.url);
+        }
+
+        setActiveSegmentId(targetSegments[0].id);
+        setCurrentTime(0);
+        setIsPlaying(false);
+
+        showToast("info", `Đang mở: ${card.title} (${card.durationStr})`);
       }
     },
     [data.video, data.segments, activeSegmentId, showToast]
@@ -1497,12 +1653,12 @@ export default function Home() {
               currentSegments={data.segments}
               activeSegmentId={activeSegmentId}
               onSelectVideo={handleSelectLibraryCard}
+              onAppendVideo={handleAppendVideoToTimeline}
               onSelectSegment={(seg, idx) => {
                 handleOpenSegmentDetail(seg, idx);
                 setActiveSegmentId(seg.id);
                 handleSeek(seg.start);
               }}
-              onOpenAddVideo={() => setIsAddVideoOpen(true)}
             />
 
             {/* CENTER: Big Video Viewport */}
@@ -1673,7 +1829,7 @@ export default function Home() {
         videos={videoLibrary}
         onClose={() => setIsLibraryOpen(false)}
         onSelectVideo={handleSelectLibraryVideo}
-        onOpenAddVideo={() => setIsAddVideoOpen(true)}
+        onAppendVideo={handleAppendVideoToTimeline}
       />
 
       {/* Modal Tiến Độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal) */}

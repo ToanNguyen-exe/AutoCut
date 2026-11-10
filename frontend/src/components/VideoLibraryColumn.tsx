@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Sparkles, Film } from "lucide-react";
-import { Segment } from "@/types";
+import { Sparkles, Film, ListPlus, Play } from "lucide-react";
+import { Segment, TranscriptData } from "@/types";
 import { formatTime } from "@/lib/utils";
 
 export interface LibraryVideoCard {
@@ -13,8 +13,11 @@ export interface LibraryVideoCard {
   durationSeconds: number;
   gradientBg: string; // Tailwind gradient classes
   segmentCount: number;
+  url?: string;
   segmentIndex?: number;
   segmentData?: Segment;
+  segments?: Segment[];
+  transcript?: TranscriptData;
 }
 
 interface VideoLibraryColumnProps {
@@ -23,11 +26,12 @@ interface VideoLibraryColumnProps {
   currentSegments?: Segment[];
   activeSegmentId?: string;
   onSelectVideo: (video: LibraryVideoCard) => void;
+  onAppendVideo?: (video: LibraryVideoCard) => void;
   onSelectSegment?: (segment: Segment, index: number) => void;
-  onOpenAddVideo: () => void;
+  onOpenAddVideo?: () => void;
 }
 
-const PASTEL_GRADIENTS = [
+export const PASTEL_GRADIENTS = [
   "from-emerald-200 via-teal-100 to-lime-200",
   "from-amber-200 via-orange-100 to-yellow-200",
   "from-rose-200 via-pink-100 to-purple-200",
@@ -42,12 +46,26 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
   currentSegments = [],
   activeSegmentId,
   onSelectVideo,
+  onAppendVideo,
   onSelectSegment,
-  onOpenAddVideo,
 }) => {
   // Tab chuyển đổi: "Phân đoạn AI" (nếu có các đoạn đã phân tích) hoặc "Thư viện video"
   const hasSegments = currentSegments && currentSegments.length > 0;
   const [viewMode, setViewMode] = useState<"segments" | "library">(hasSegments ? "segments" : "library");
+
+  const handleBottomAppendClick = () => {
+    if (viewMode === "segments") {
+      setViewMode("library");
+    } else if (videos.length > 0 && onAppendVideo) {
+      // Tìm video khác video đang phát để nối tiếp
+      const candidate = videos.find(
+        (v) => v.fileName.toLowerCase() !== currentVideoName.toLowerCase()
+      ) || videos[0];
+      if (candidate) {
+        onAppendVideo(candidate);
+      }
+    }
+  };
 
   return (
     <aside className="w-64 lg:w-72 bg-white border-r border-slate-200/90 flex flex-col shrink-0 select-none z-10 text-slate-800 shadow-[1px_0_3px_rgba(0,0,0,0.02)]">
@@ -150,45 +168,84 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
             return (
               <div
                 key={item.id}
-                onClick={() => onSelectVideo(item)}
-                className={`p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2.5 ${
+                className={`p-3 rounded-2xl transition-all duration-150 flex flex-col gap-2.5 bg-white border ${
                   isActive
-                    ? "bg-white border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
-                    : "bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
+                    ? "border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
+                    : "border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
                 }`}
               >
                 {/* Pastel Gradient Thumbnail */}
                 <div
-                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5`}
+                  onClick={() => onSelectVideo(item)}
+                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${item.gradientBg} flex items-center justify-center border border-black/5 cursor-pointer group`}
+                  title="Nhấp để mở riêng bài này"
                 >
                   {/* Duration chip on top-right */}
                   <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
                     {item.durationStr}
+                  </div>
+
+                  {/* Play icon overlay on hover */}
+                  <div className="w-9 h-9 rounded-full bg-white/90 text-indigo-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
                   </div>
                 </div>
 
                 {/* Title below thumbnail */}
                 <div className="px-0.5">
                   <h4
-                    className={`text-sm font-bold leading-snug line-clamp-2 ${
+                    onClick={() => onSelectVideo(item)}
+                    className={`text-sm font-bold leading-snug line-clamp-2 cursor-pointer hover:text-indigo-600 transition-colors ${
                       isActive ? "text-indigo-950" : "text-slate-800"
                     }`}
+                    title={item.title}
                   >
                     {item.title}
                   </h4>
+                </div>
+
+                {/* Nút hành động: Nối tiếp ra đằng sau video đang phát */}
+                <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onAppendVideo) {
+                        onAppendVideo(item);
+                      }
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100/90 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border border-indigo-200/70 shadow-2xs"
+                    title={`Nối tiếp "${item.title}" ra đằng sau video đang phát trên Timeline`}
+                  >
+                    <ListPlus className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>+ Nối tiếp ra sau</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectVideo(item);
+                    }}
+                    className="py-1.5 px-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition cursor-pointer border border-slate-200"
+                    title="Mở riêng video này trong Studio"
+                  >
+                    Mở riêng
+                  </button>
                 </div>
               </div>
             );
           })
         )}
 
-        {/* Nút "+ Thêm video" nét đứt ở đáy */}
+        {/* Nút "+ Nối tiếp video từ thư viện" ở đáy:
+            Tuân thủ yêu cầu: Nút thêm từ bên ngoài chỉ để ở trên Header,
+            còn nút trong thư viện này dùng để nối tiếp video ra đằng sau video đang phát. */}
         <button
-          onClick={onOpenAddVideo}
-          className="w-full py-3.5 px-3 rounded-2xl border border-dashed border-slate-300 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 text-slate-700 hover:text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 transition duration-150 mt-1 cursor-pointer shadow-2xs"
+          onClick={handleBottomAppendClick}
+          className="w-full py-3 px-3 rounded-2xl border border-dashed border-indigo-300 hover:border-indigo-500 bg-white hover:bg-indigo-50/60 text-indigo-700 text-xs font-bold flex items-center justify-center gap-2 transition duration-150 mt-1 cursor-pointer shadow-2xs"
+          title="Chọn video trong thư viện để nối tiếp vào sau video đang phát"
         >
-          <Plus className="w-4 h-4 text-slate-500 group-hover:text-indigo-600" />
-          <span>+ Thêm video</span>
+          <ListPlus className="w-4 h-4 text-indigo-600" />
+          <span>+ Nối tiếp video từ thư viện</span>
         </button>
       </div>
     </aside>

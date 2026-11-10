@@ -1,29 +1,245 @@
 {
-  "video" : "Desktop 2026.11.06 - 14.47.24.02.mp4",
-  "duration" : 27.76,
+  "video" : "BaiGiang_TriTueNhanTao_Full.mp4",
+  "duration" : 183.67,
   "sentences" : [ {
     "id" : "S0001",
-    "start" : 0.0,
-    "end" : 5.64,
-    "text" : "Thường là Khoai sẽ không dùng cái đầu ngón tay để bấm mà sẽ dùng cái nguyên cái lòng bàn tay.",
+    "start" : 0.7,
+    "end" : 5.68,
+    "text" : "Sư phụ, lần này, em là đệ tử thật sự là người mất mặt rồi.",
     "words" : null
   }, {
     "id" : "S0002",
-    "start" : 5.64,
-    "end" : 16.72,
-    "text" : "Ấn nhẹ thôi là mình sẽ cảm giác nó bị cứng hay không Bồn bòn Thái cũng đang vô mua, trong siêu thị người ta bán cỡ 69 bạc 1 ký.",
+    "start" : 7.34,
+    "end" : 8.25,
+    "text" : "Mất mặt sao?",
     "words" : null
   }, {
     "id" : "S0003",
-    "start" : 16.72,
-    "end" : 22.68,
-    "text" : "Khoai bóc thêm mấy chùm để tối về nhà mấy anh em ăn Đây nó có dân mở nữa kìa.",
+    "start" : 8.25,
+    "end" : 9.84,
+    "text" : "Có gì mà mất mặt chứ?",
     "words" : null
   }, {
     "id" : "S0004",
-    "start" : 22.68,
-    "end" : 27.76,
-    "text" : "Tình hình là trời mưa lớn quá nên là kế hoạch mà đi chợ đêm phá sản rồi.",
+    "start" : 10.94,
+    "end" : 16.7,
+    "text" : "Năm xưa khi con đến bái sư, đến cái quần con không có mặc, ta đã bao giờ chê con mất mặt chưa?",
+    "words" : null
+  }, {
+    "id" : "S0005",
+    "start" : 18.86,
+    "end" : 21.52,
+    "text" : "Năm xưa khi con xuống núi, ta đã nói những gì?",
+    "words" : null
+  }, {
+    "id" : "S0006",
+    "start" : 22.98,
+    "end" : 26.86,
+    "text" : "Mặc cho con cây họa hành hung thế nào, cũng không được nhận là đồ đệ của ta.",
+    "words" : null
+  }, {
+    "id" : "S0007",
+    "start" : 26.86,
+    "end" : 29.82,
+    "text" : "Con tưởng câu nói đó là nói đùa sao?",
+    "words" : null
+  }, {
+    "id" : "S0008",
+    "start" : 29.82,
+    "end" : 33.62,
+    "text" : "Mỗi lần con gọi sư phụ giữa ranh giới sinh tử.",
+    "words" : null
+  }, {
+    "id" : "S0009",
+    "start" : 33.62,
+    "end" : 35.84,
+    "text" : "Ta ở bên này đều nghe thấy cả.",
+    "words" : null
+  }, {
+    "id" : "S0010",
+    "start" : 35.84,
+    "end" : 38.74,
+    "text" : "Nghe thấy mà lại không thể nhận.",
+    "words" : null
+  }, {
+    "id" : "S0011",
+    "start" : 38.74,
+    "end" : 40.76,
+    "text" : "Con thử nói xem.",
+    "words" : null
+  }, {
+    "id" : "S0012",
+    "start" : 40.76,
+    "end" : 43.06,
+    "text" : "Bao năm nay tai ta đã từng được yên tĩnh.",
+    "words" : null
+  }, {
+    "id" : "S0013",
+    "start" : 43.06,
+    "end" : 46.44,
+    "text" : "Hay là chưa từng yên tĩnh đây?",
+    "words" : null
+  }, {
+    "id" : "S0014",
+    "start" : 46.44,
+    "end" : 49.42,
+    "text" : "Mộ Không.",
+    "words" : null
+  }, {
+    "id" : "S0015",
+    "start" : 49.42,
+    "end" : 50.8,
+    "text" : "Con khóc đấy à?",
+    "words" : null
+  }, {
+    "id" : "S0016",
+    "start" : 50.8,
+    "end" : 52.78,
+    "text" : "Đệ tử không khóc.",
+    "words" : null
+  }, {
+    "id" : "S0017",
+    "start" : 52.78,
+    "end" : 53.72,
+    "text" : "Là do.",
+    "words" : null
+  }, {
+    "id" : "S0018",
+    "start" : 53.72,
+    "end" : 55.22,
+    "text" : "Do khói lửa hôm thôi.",
+    "words" : null
+  }, {
+    "id" : "S0019",
+    "start" : 55.22,
+    "end" : 56.06,
+    "text" : "Ha.",
+    "words" : null
+  }, {
+    "id" : "S0020",
+    "start" : 56.06,
+    "end" : 59.4,
+    "text" : "Con khỉ bướng bỉnh này, con bị đè dưới núi Ngũ Hành 500 năm.",
+    "words" : null
+  }, {
+    "id" : "S0021",
+    "start" : 59.4,
+    "end" : 61.52,
+    "text" : "Con phò tá Đường Tăng đi Tây Trúc.",
+    "words" : null
+  }, {
+    "id" : "S0022",
+    "start" : 61.52,
+    "end" : 64.98,
+    "text" : "Những ức uất phải chịu dọc đường, ta đều nhìn thấy cả.",
+    "words" : null
+  }, {
+    "id" : "S0023",
+    "start" : 64.98,
+    "end" : 72.4,
+    "text" : "Sư phụ, hóa ra người đều biết.",
+    "words" : null
+  }, {
+    "id" : "S0024",
+    "start" : 72.4,
+    "end" : 76.66,
+    "text" : "Vòng kim cô trên đầu con là pháp bảo của Quan Âm.",
+    "words" : null
+  }, {
+    "id" : "S0025",
+    "start" : 76.66,
+    "end" : 80.44,
+    "text" : "Hóa được đầu con, nhưng không hóa được tâm con.",
+    "words" : null
+  }, {
+    "id" : "S0026",
+    "start" : 80.44,
+    "end" : 83.96,
+    "text" : "Con đã ngộ, nhưng vẫn còn mang kim cô.",
+    "words" : null
+  }, {
+    "id" : "S0027",
+    "start" : 83.96,
+    "end" : 86.68,
+    "text" : "Nay biến số đã sinh.",
+    "words" : null
+  }, {
+    "id" : "S0028",
+    "start" : 86.68,
+    "end" : 98.39,
+    "text" : "Mà còn chứa lọ tinh chế thần dược giải quyết.",
+    "words" : null
+  }, {
+    "id" : "S0029",
+    "start" : 98.39,
+    "end" : 100.05,
+    "text" : "Tháo ra rồi thì có ích gì chứ?",
+    "words" : null
+  }, {
+    "id" : "S0030",
+    "start" : 100.05,
+    "end" : 100.91,
+    "text" : "Ha.",
+    "words" : null
+  }, {
+    "id" : "S0031",
+    "start" : 100.91,
+    "end" : 103.85,
+    "text" : "Cái danh Tề Thiên Đại Thánh năm xưa của con.",
+    "words" : null
+  }, {
+    "id" : "S0032",
+    "start" : 103.85,
+    "end" : 105.81,
+    "text" : "Đã truyền đến tận tay ta rồi đấy.",
+    "words" : null
+  }, {
+    "id" : "S0033",
+    "start" : 110.01,
+    "end" : 111.05,
+    "text" : "Chuyện gì thế này?",
+    "words" : null
+  }, {
+    "id" : "S0034",
+    "start" : 111.05,
+    "end" : 117.49,
+    "text" : "À, không xong rồi.",
+    "words" : null
+  }, {
+    "id" : "S0035",
+    "start" : 141.05,
+    "end" : 152.21,
+    "text" : "Đệ!",
+    "words" : null
+  }, {
+    "id" : "S0036",
+    "start" : 152.21,
+    "end" : 158.21,
+    "text" : "Đại sư huynh.",
+    "words" : null
+  }, {
+    "id" : "S0037",
+    "start" : 158.21,
+    "end" : 160.37,
+    "text" : "Phán cho tên Bật Mã Ôn nhà ngươi.",
+    "words" : null
+  }, {
+    "id" : "S0038",
+    "start" : 160.37,
+    "end" : 162.17,
+    "text" : "Cuối cùng cũng về rồi à?",
+    "words" : null
+  }, {
+    "id" : "S0039",
+    "start" : 171.05,
+    "end" : 174.51,
+    "text" : "Đa tạ sư phụ chỉ dạy.",
+    "words" : null
+  }, {
+    "id" : "S0040",
+    "start" : 174.51,
+    "end" : 176.59,
+    "text" : "Đệ tử ngộ rồi.",
     "words" : null
   } ]
 }
