@@ -18,7 +18,7 @@ import {
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
-import { VideoLibraryColumn, LibraryVideoCard, PASTEL_GRADIENTS } from "@/components/VideoLibraryColumn";
+import { VideoLibraryColumn, LibraryVideoCard } from "@/components/VideoLibraryColumn";
 import { VideoCanvasViewport } from "@/components/VideoCanvasViewport";
 import { AiAssistantChatPanel } from "@/components/AiAssistantChatPanel";
 import { StudioTimeline } from "@/components/StudioTimeline";
@@ -421,23 +421,7 @@ export default function Home() {
 
       // Nạp danh sách thư viện video
       if (!isCancelled) {
-        const localVids = getLibraryVideos();
-        setVideoLibrary(localVids);
-        setLibraryCards((prev) => {
-          const existingNames = new Set(prev.map((c) => c.fileName.toLowerCase()));
-          const newCards: LibraryVideoCard[] = localVids
-            .filter((lv) => !existingNames.has(lv.name.toLowerCase()))
-            .map((lv, idx) => ({
-              id: lv.id,
-              title: lv.title || lv.name.replace(/\.[^/.]+$/, ""),
-              fileName: lv.name,
-              durationStr: formatTime(lv.duration || 120),
-              durationSeconds: lv.duration || 120,
-              gradientBg: PASTEL_GRADIENTS[(prev.length + idx) % PASTEL_GRADIENTS.length],
-              segmentCount: lv.segments?.length || 1,
-            }));
-          return [...prev, ...newCards];
-        });
+        setVideoLibrary(getLibraryVideos());
         setIsSessionLoaded(true);
       }
 
@@ -476,22 +460,6 @@ export default function Home() {
             const newOnes = dbItems.filter((v) => !existingNames.has(v.name));
             return [...prev, ...newOnes];
           });
-
-          setLibraryCards((prev) => {
-            const existingNames = new Set(prev.map((c) => c.fileName.toLowerCase()));
-            const newCards: LibraryVideoCard[] = dbItems
-              .filter((db) => !existingNames.has(db.name.toLowerCase()))
-              .map((db, idx) => ({
-                id: db.id,
-                title: db.title,
-                fileName: db.name,
-                durationStr: formatTime(db.duration || 180),
-                durationSeconds: db.duration || 180,
-                gradientBg: PASTEL_GRADIENTS[(prev.length + idx) % PASTEL_GRADIENTS.length],
-                segmentCount: 1,
-              }));
-            return [...prev, ...newCards];
-          });
         }
       } catch (err) {
         console.warn("Lỗi kiểm tra backend background:", err);
@@ -512,40 +480,6 @@ export default function Home() {
       setBackendOnline(isOnline);
       const backendVidsRes = await fetchBackendVideos();
       if (backendVidsRes.data && backendVidsRes.data.length > 0) {
-        const dbItems: VideoLibraryItem[] = backendVidsRes.data.map((item, idx) => ({
-          id: `backend_vid_${item.id || idx}`,
-          name: item.fileName,
-          lesson: item.fileName.replace(/\.[^/.]+$/, ""),
-          title: item.fileName.replace(/\.[^/.]+$/, ""),
-          url: item.cloudUrl || `${API_BASE}/stream/${item.sha256Hash}`,
-          duration: 180,
-          status: "added",
-          statusLabel: item.status || "Đã lưu DB",
-          category: "Cloud Backend",
-          segmentsCount: 1,
-          updatedAt: item.createdAt ? new Date(item.createdAt).toLocaleTimeString("vi-VN") : "Hôm nay",
-          segments: [],
-        }));
-        setVideoLibrary((prev) => {
-          const existingNames = new Set(prev.map((v) => v.name));
-          const newOnes = dbItems.filter((v) => !existingNames.has(v.name));
-          return [...prev, ...newOnes];
-        });
-        setLibraryCards((prev) => {
-          const existingNames = new Set(prev.map((c) => c.fileName.toLowerCase()));
-          const newCards: LibraryVideoCard[] = dbItems
-            .filter((db) => !existingNames.has(db.name.toLowerCase()))
-            .map((db, idx) => ({
-              id: db.id,
-              title: db.title,
-              fileName: db.name,
-              durationStr: formatTime(db.duration || 180),
-              durationSeconds: db.duration || 180,
-              gradientBg: PASTEL_GRADIENTS[(prev.length + idx) % PASTEL_GRADIENTS.length],
-              segmentCount: 1,
-            }));
-          return [...prev, ...newCards];
-        });
         showToast("success", `Đã làm mới! Backend online với ${backendVidsRes.data.length} video.`);
       } else if (isOnline) {
         showToast("success", "Đã kết nối thành công với máy chủ xử lý!");
@@ -647,7 +581,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  const handleSelectLibraryVideo = useCallback((video: VideoLibraryItem) => {
+  const handleSelectLibraryVideo = (video: VideoLibraryItem) => {
     setExternalVideoUrl(video.url);
     setUndoStack([]);
     setRedoStack([]);
@@ -655,28 +589,12 @@ export default function Home() {
     const isLibDemo = video.lesson === "Bai05_VongLap" || video.name === "Bai05_VongLap.mp4";
     const mode = isLibDemo ? "demo" : video.status === "added" ? "raw" : "analyzed";
 
-    const effectiveSegments = video.segments && video.segments.length > 0 ? video.segments : [
-      {
-        id: `seg_${Date.now()}_raw`,
-        section_no: 1,
-        section: "01_VideoGoc",
-        topic_no: 1,
-        topic: video.title || video.name,
-        slug: slugify(video.title || video.name),
-        start_id: "s001",
-        end_id: "s001",
-        start: 0,
-        end: video.duration || 120,
-        parts: recalculateParts(0, video.duration || 120, "01_VideoGoc", 1, slugify(video.title || video.name)),
-      }
-    ];
-
     setData({
       video: video.name,
       lesson: video.lesson,
       mode: mode,
       reviewed: video.status === "edited",
-      segments: effectiveSegments,
+      segments: video.segments,
     });
 
     if (video.transcript) {
@@ -704,15 +622,15 @@ export default function Home() {
       }
     }
 
-    if (effectiveSegments.length > 0) {
-      setActiveSegmentId(effectiveSegments[0].id);
+    if (video.segments.length > 0) {
+      setActiveSegmentId(video.segments[0].id);
     }
     setCurrentTime(0);
     setIsPlaying(true);
     setIsLibraryOpen(false);
 
     showToast("success", `Đang phát video: "${video.title}"`);
-  }, [showToast]);
+  };
 
   const handleExportJson = () => {
     const dataStr =
@@ -1466,56 +1384,22 @@ export default function Home() {
         setSelectedDetailIndex(idx > 0 ? idx : 1);
         setIsDetailModalOpen(true);
       } else {
-        // Chuyển sang dự án video mới: tra cứu trong videoLibrary
-        const libMatch = videoLibrary.find(
-          (v) =>
-            v.name.toLowerCase() === card.fileName.toLowerCase() ||
-            v.title.toLowerCase() === card.title.toLowerCase() ||
-            v.lesson.toLowerCase() === card.title.toLowerCase()
-        );
-
-        if (libMatch) {
-          handleSelectLibraryVideo(libMatch);
-        } else {
-          const dur = card.durationSeconds || 120;
-          const defaultSingleSeg: Segment = {
-            id: `seg_${Date.now()}_raw`,
-            section_no: 1,
-            section: "01_VideoGoc",
-            topic_no: 1,
-            topic: card.title,
-            slug: slugify(card.title),
-            start_id: "s001",
-            end_id: "s001",
-            start: 0,
-            end: dur,
-            parts: recalculateParts(0, dur, "01_VideoGoc", 1, slugify(card.title)),
-          };
-
-          const newLibItem: VideoLibraryItem = {
-            id: card.id || `vid_${Date.now()}`,
-            name: card.fileName,
-            lesson: card.title,
-            title: card.title,
-            url: card.fileName === "Bai05_VongLap.mp4"
-              ? "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4"
-              : `${API_BASE}/stream/${encodeURIComponent(card.fileName)}`,
-            duration: dur,
-            status: "added",
-            statusLabel: "Chưa phân tích",
-            category: "Thư viện",
-            segmentsCount: 1,
-            updatedAt: new Date().toLocaleTimeString("vi-VN"),
-            segments: [defaultSingleSeg],
-          };
-
-          saveVideoToLibrary(newLibItem);
-          setVideoLibrary(getLibraryVideos());
-          handleSelectLibraryVideo(newLibItem);
+        // Chuyển sang dự án video mới
+        setData((prev) => ({
+          ...prev,
+          video: card.fileName,
+          lesson: card.title,
+        }));
+        // Mở modal hiển thị nội dung phân đoạn tương ứng
+        if (data.segments.length > 0) {
+          setSelectedDetailSegment(data.segments[0]);
+          setSelectedDetailIndex(1);
+          setIsDetailModalOpen(true);
         }
+        showToast("info", `Đang mở: ${card.title}`);
       }
     },
-    [data.video, data.segments, activeSegmentId, videoLibrary, handleSelectLibraryVideo]
+    [data.video, data.segments, activeSegmentId, showToast]
   );
 
   // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI
@@ -1739,7 +1623,6 @@ export default function Home() {
         onVolumeChange={setVolume}
         onToggleMute={handleToggleMute}
         onOpenSegmentDetail={handleOpenSegmentDetail}
-        onShowToast={showToast}
       />
 
       {/* Segment Detail Modal: Hiển thị chi tiết nội dung phân đoạn khi click video / segment */}
