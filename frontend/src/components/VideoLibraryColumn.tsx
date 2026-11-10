@@ -27,7 +27,7 @@ interface VideoLibraryColumnProps {
   onOpenAddVideo: () => void;
 }
 
-const PASTEL_GRADIENTS = [
+export const PASTEL_GRADIENTS = [
   "from-emerald-200 via-teal-100 to-lime-200",
   "from-amber-200 via-orange-100 to-yellow-200",
   "from-rose-200 via-pink-100 to-purple-200",

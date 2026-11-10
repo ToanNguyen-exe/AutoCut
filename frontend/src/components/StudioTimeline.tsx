@@ -39,6 +39,7 @@ interface StudioTimelineProps {
   onVolumeChange?: (vol: number) => void;
   onToggleMute?: () => void;
   onOpenSegmentDetail?: (segment: Segment, index: number) => void;
+  onShowToast?: (type: "success" | "error" | "info", msg: string) => void;
 }
 
 export const StudioTimeline: React.FC<StudioTimelineProps> = ({
@@ -56,6 +57,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   onSelectSegment,
   onUpdateSegments,
   onOpenSegmentDetail,
+  onShowToast,
 }) => {
   const [internalPlaying, setInternalPlaying] = useState(false);
   const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
@@ -218,10 +220,16 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   const handleSplitAtPlayhead = () => {
     const splitTime = Number(currentTime.toFixed(1));
     const targetIdx = segments.findIndex(
-      (s) => splitTime > s.start + 1.0 && splitTime < s.end - 1.0
+      (s) => splitTime > s.start + 0.2 && splitTime < s.end - 0.2
     );
 
     if (targetIdx === -1) {
+      if (onShowToast) {
+        onShowToast(
+          "info",
+          "Vui lòng kéo con trỏ đỏ (playhead) vào giữa phân đoạn (cách mép ít nhất 0.2 giây) để thực hiện cắt tách đoạn!"
+        );
+      }
       return;
     }
 
