@@ -23,6 +23,7 @@ import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
 import com.autocut.service.CutPointService;
 import com.autocut.service.BatchVideoCutService;
+import com.autocut.service.SegmentPersistenceService;
 import com.autocut.dto.Models.CutPointsDTO;
 import com.autocut.dto.Models.CutPoint;
 import com.autocut.dto.Models.CutRequestDTO;
@@ -91,30 +92,44 @@ public class VideoController {
     private final CutPointService cutPointService;
     private final BatchVideoCutService batchVideoCutService;
     private final com.autocut.video.VideoConcat videoConcat;
+    private final SegmentPersistenceService segmentPersistenceService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()));
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null);
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, com.autocut.video.VideoConcat videoConcat) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null);
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService, com.autocut.video.VideoConcat videoConcat) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null);
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService, com.autocut.video.VideoConcat videoConcat) {
+    public VideoController(
+            CacheService cacheService,
+            ConfigService configService,
+            CloudflareR2Service r2Service,
+            VideoRepository videoRepository,
+            VideoCutter videoCutter,
+            CutPointService cutPointService,
+            BatchVideoCutService batchVideoCutService,
+            com.autocut.video.VideoConcat videoConcat,
+            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
@@ -123,6 +138,7 @@ public class VideoController {
         this.cutPointService = cutPointService != null ? cutPointService : new CutPointService(configService, objectMapper);
         this.batchVideoCutService = batchVideoCutService != null ? batchVideoCutService : new BatchVideoCutService(this.videoCutter, r2Service, configService, objectMapper);
         this.videoConcat = videoConcat != null ? videoConcat : new com.autocut.video.VideoConcat(new VideoProps());
+        this.segmentPersistenceService = segmentPersistenceService;
     }
 
 
@@ -1170,28 +1186,120 @@ public class VideoController {
                 log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
             }
 
+            // 4. Đồng bộ lưu vào Database Neon Postgres (Thẻ 3.4) nếu tìm thấy VideoEntity
+            int dbTopicsCount = 0;
+            if (segmentPersistenceService != null && segmentsData != null) {
+                try {
+                    String videoTarget = String.valueOf(payload.getOrDefault("video", ""));
+                    Optional<VideoEntity> matchedVideo = segmentPersistenceService.findVideo(videoTarget);
+                    if (matchedVideo.isEmpty()) {
+                        matchedVideo = segmentPersistenceService.findVideo(safeLesson);
+                    }
+                    if (matchedVideo.isPresent()) {
+                        List<Segment> segs = objectMapper.convertValue(
+                            segmentsData,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Segment.class)
+                        );
+                        dbTopicsCount = segmentPersistenceService.saveSegmentsToDatabase(matchedVideo.get().getId(), segs);
+                        log.info("Đã đồng bộ {} chủ đề vào Database Neon Postgres cho video id={}", dbTopicsCount, matchedVideo.get().getId());
+                    }
+                } catch (Exception dbEx) {
+                    log.warn("Không thể đồng bộ segments vào Database Neon: {}", dbEx.getMessage());
+                }
+            }
+
             log.info("Đã lưu dự án của user '{}' tại: {}", safeUser, userDir.toAbsolutePath());
 
-            return ResponseEntity.ok(Map.of(
-                "status", "SAVED",
-                "user", safeUser,
-                "lesson", safeLesson,
-                "directory", userDir.toAbsolutePath().toString(),
-                "localDirectory", userDir.toAbsolutePath().toString(),
-                "r2Url", r2Url != null ? r2Url : "",
-                "cloudUrl", r2Url != null ? r2Url : "",
-                "files", List.of(
-                    "output/users/" + safeUser + "/" + safeLesson + "/project.json",
-                    "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
-                ),
-                "savedAt", nowMs,
-                "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
+            Map<String, Object> respMap = new LinkedHashMap<>();
+            respMap.put("status", "SAVED");
+            respMap.put("user", safeUser);
+            respMap.put("lesson", safeLesson);
+            respMap.put("directory", userDir.toAbsolutePath().toString());
+            respMap.put("localDirectory", userDir.toAbsolutePath().toString());
+            respMap.put("r2Url", r2Url != null ? r2Url : "");
+            respMap.put("cloudUrl", r2Url != null ? r2Url : "");
+            respMap.put("dbTopicsSaved", dbTopicsCount);
+            respMap.put("files", List.of(
+                "output/users/" + safeUser + "/" + safeLesson + "/project.json",
+                "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
             ));
+            respMap.put("savedAt", nowMs);
+            respMap.put("message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson);
+
+            return ResponseEntity.ok(respMap);
         } catch (Exception e) {
             log.error("Lỗi khi lưu dự án cho user '{}': {}", safeUser, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Không thể lưu dự án: " + e.getMessage()));
         }
+    }
+
+    /**
+     * API Lấy cấu trúc phân đoạn từ Database Neon Postgres theo Video ID (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/segments")
+    public ResponseEntity<?> getSegmentsFromDatabase(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        SegmentsDTO segments = segmentPersistenceService.getSegmentsFromDatabase(id);
+        if (segments == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(segments);
+    }
+
+    /**
+     * API Lưu trực tiếp cấu trúc phân đoạn vào Database Neon Postgres theo Video ID (Thẻ 3.4).
+     */
+    @PostMapping("/{id}/segments")
+    public ResponseEntity<?> saveSegmentsToDatabase(@PathVariable("id") Long id, @RequestBody List<Segment> segments) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        int count = segmentPersistenceService.saveSegmentsToDatabase(id, segments);
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "videoId", id,
+            "totalTopics", count,
+            "message", "Đã lưu " + count + " chủ đề vào Database Neon Postgres thành công!"
+        ));
+    }
+
+    /**
+     * API Lấy toàn bộ dữ liệu dự án (segments + transcript) từ Database Neon Postgres (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/db-project")
+    public ResponseEntity<?> getDbProject(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        SegmentsDTO segments = segmentPersistenceService.getSegmentsFromDatabase(id);
+        TranscriptDTO transcript = segmentPersistenceService.getTranscriptFromDatabase(id);
+        if (segments == null && transcript == null) {
+            return ResponseEntity.notFound().build();
+        }
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("status", "SUCCESS");
+        resp.put("videoId", id);
+        resp.put("segments", segments);
+        resp.put("transcript", transcript);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * API Lấy dữ liệu transcript từ bảng transcripts của Database Neon Postgres (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/transcripts")
+    public ResponseEntity<?> getTranscriptFromDatabase(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        TranscriptDTO transcript = segmentPersistenceService.getTranscriptFromDatabase(id);
+        if (transcript == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(transcript);
     }
 
     /**
