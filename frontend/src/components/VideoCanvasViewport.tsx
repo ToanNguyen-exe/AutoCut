@@ -101,8 +101,27 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     }
   }, [activeVideoUrl]);
 
-  const handleVideoError = () => {
+  const handleVideoError = async () => {
     const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+
+    // 1. Kiểm tra trong IndexedDB xem có blob của file đã lưu không
+    try {
+      const { getVideoBlob } = await import("@/lib/videoStorage");
+      const blob = await getVideoBlob(fileName);
+      if (blob) {
+        const freshBlobUrl = URL.createObjectURL(blob);
+        if (videoSrc !== freshBlobUrl) {
+          console.info("Khôi phục video từ IndexedDB thành công cho:", fileName);
+          setVideoSrc(freshBlobUrl);
+          setVideoLoadError(null);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Thử fallback API stream
     const apiStreamUrl = `/api/stream?file=${encodeURIComponent(fileName)}`;
 
     if (videoSrc !== apiStreamUrl) {

@@ -364,15 +364,20 @@ export default function Home() {
       let restoredUrl: string | null = null;
       let restoredTotalDur = 535.0;
 
+      let restoredJoinedVideos: JoinedVideoClip[] | null = null;
+
       if (typeof window !== "undefined") {
         try {
           const savedSessionRaw = localStorage.getItem("autocut_active_session");
           if (savedSessionRaw) {
             const saved = JSON.parse(savedSessionRaw);
             if (saved?.data?.video && saved.data.segments && saved.data.segments.length > 0) {
-              const totalDur = saved.data.segments.reduce((max: number, s: Segment) => Math.max(max, s.end), 0) || 356.3;
-              const cleanSegments = normalizeContiguousSegments(saved.data.segments, totalDur);
-              setData({ ...saved.data, segments: cleanSegments });
+              const totalDur = saved.data.segments.reduce((max: number, s: Segment) => Math.max(max, s.end), 0) || 535.0;
+              // Giữ nguyên các phân đoạn của người dùng, không chạy normalize làm biến dạng các khoảng cắt và nối tiếp
+              const validSegments = saved.data.segments.filter(
+                (s: Segment) => s && typeof s.start === "number" && typeof s.end === "number"
+              );
+              setData({ ...saved.data, segments: validSegments.length > 0 ? validSegments : saved.data.segments });
               restoredVideoName = saved.data.video;
               restoredTotalDur = totalDur;
               if (saved.transcript) {
@@ -389,6 +394,9 @@ export default function Home() {
               }
               if (typeof saved.currentTime === "number") {
                 setCurrentTime(saved.currentTime);
+              }
+              if (Array.isArray(saved.joinedVideos) && saved.joinedVideos.length > 0) {
+                restoredJoinedVideos = saved.joinedVideos;
               }
               restoredUrl = saved.externalVideoUrl || null;
               restored = true;
@@ -418,17 +426,44 @@ export default function Home() {
 
         if (!isCancelled) {
           setExternalVideoUrl(finalUrl);
-          setJoinedVideos([
-            {
-              id: "clip_01",
-              title: restoredVideoName.replace(/\.[^/.]+$/, ""),
-              fileName: restoredVideoName,
-              url: finalUrl || "/videos/Bai08_Ep_kieu_du_lieu.mp4",
-              duration: restoredTotalDur,
-              startOffset: 0.0,
-              endOffset: restoredTotalDur,
-            },
-          ]);
+
+          // Khôi phục danh sách joinedVideos đầy đủ (kể cả video đã thêm và nối tiếp)
+          if (restoredJoinedVideos && restoredJoinedVideos.length > 0) {
+            const rehydratedClips: JoinedVideoClip[] = await Promise.all(
+              restoredJoinedVideos.map(async (clip, idx) => {
+                let clipUrl = clip.url;
+                if (!clipUrl || clipUrl.startsWith("blob:") || clipUrl.includes("commondatastorage.googleapis.com")) {
+                  const blob = await getVideoBlob(clip.fileName);
+                  if (blob) {
+                    clipUrl = URL.createObjectURL(blob);
+                  } else if (idx === 0 && finalUrl) {
+                    clipUrl = finalUrl;
+                  } else {
+                    clipUrl = resolvePlayableVideoUrl(undefined, clip.fileName);
+                  }
+                } else {
+                  clipUrl = resolvePlayableVideoUrl(clipUrl, clip.fileName);
+                }
+                return {
+                  ...clip,
+                  url: clipUrl,
+                };
+              })
+            );
+            setJoinedVideos(rehydratedClips);
+          } else {
+            setJoinedVideos([
+              {
+                id: "clip_01",
+                title: restoredVideoName.replace(/\.[^/.]+$/, ""),
+                fileName: restoredVideoName,
+                url: finalUrl || "/videos/Bai08_Ep_kieu_du_lieu.mp4",
+                duration: restoredTotalDur,
+                startOffset: 0.0,
+                endOffset: restoredTotalDur,
+              },
+            ]);
+          }
         }
       } else {
         // Nạp dữ liệu chuẩn Bài 08 nếu chưa có phiên làm việc trước đó
@@ -439,11 +474,23 @@ export default function Home() {
         setJoinedVideos(INITIAL_JOINED_VIDEOS);
       }
 
-      // Nạp danh sách thư viện video
+      // Nạp danh sách thư viện video và làm mới các blob URL nếu cần
       if (!isCancelled) {
         const loadedLib = getLibraryVideos();
-        setVideoLibrary(loadedLib);
-        setLibraryCards(syncLibraryCardsFromLibrary(loadedLib));
+        const refreshedLib = await Promise.all(
+          loadedLib.map(async (item) => {
+            if (item.url && item.url.startsWith("blob:")) {
+              const b = await getVideoBlob(item.name);
+              if (b) {
+                return { ...item, url: URL.createObjectURL(b) };
+              }
+              return { ...item, url: resolvePlayableVideoUrl(undefined, item.name) };
+            }
+            return item;
+          })
+        );
+        setVideoLibrary(refreshedLib);
+        setLibraryCards(syncLibraryCardsFromLibrary(refreshedLib));
         setIsSessionLoaded(true);
       }
 
@@ -529,6 +576,7 @@ export default function Home() {
         currentVideoHash,
         activeSegmentId,
         currentTime,
+        joinedVideos,
       };
       localStorage.setItem("autocut_active_session", JSON.stringify(sessionData));
     } catch (e) {
@@ -542,6 +590,7 @@ export default function Home() {
     currentVideoHash,
     activeSegmentId,
     currentTime,
+    joinedVideos,
   ]);
 
   // Segment modifications with Undo history
@@ -1598,6 +1647,25 @@ export default function Home() {
       }
       handleSeek(offset);
       setIsPlaying(true);
+
+      // Đảm bảo video nối tiếp được lưu bền vững vào thư viện video (F5 không mất)
+      const libItem: VideoLibraryItem = {
+        id: `vid_${Date.now()}`,
+        name: vName,
+        lesson: vTitle,
+        title: vTitle,
+        url: appendUrl,
+        duration: appendDuration,
+        status: "added",
+        statusLabel: "Nối tiếp",
+        category: "Video nối tiếp",
+        segmentsCount: newAppendedSegments.length || 1,
+        updatedAt: new Date().toLocaleTimeString("vi-VN"),
+        segments: newAppendedSegments,
+      };
+      const updatedLib = saveVideoToLibrary(libItem);
+      setVideoLibrary(updatedLib);
+      setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
 
       const newTotal = Number((offset + appendDuration).toFixed(1));
       showToast(

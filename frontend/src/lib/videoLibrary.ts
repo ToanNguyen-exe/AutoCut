@@ -18,7 +18,7 @@ export function resolvePlayableVideoUrl(url: string | undefined, name: string): 
   if (n.includes("bai09") || n.includes("chuoi")) {
     return "/videos/Bai09_Chuoi_ky_tu.mp4";
   }
-  if (url && !url.includes("commondatastorage.googleapis.com")) {
+  if (url && !url.startsWith("blob:") && !url.includes("commondatastorage.googleapis.com")) {
     return url;
   }
   return `/api/stream?file=${encodeURIComponent(name)}`;

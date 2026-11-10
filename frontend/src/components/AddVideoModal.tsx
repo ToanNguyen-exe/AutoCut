@@ -16,6 +16,7 @@ import {
 import { formatTime } from "@/lib/utils";
 import { uploadVideoFile, fetchBackendVideos, BackendVideoItem, API_BASE } from "@/lib/api";
 import { getLibraryVideos } from "@/lib/videoLibrary";
+import { saveVideoBlob } from "@/lib/videoStorage";
 import { TranscriptData, SegmentsData, VideoLibraryItem } from "@/types";
 
 export interface NewVideoData {
@@ -194,6 +195,9 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       setError(null);
       setDetectedDuration(null);
 
+      // Lưu file vào IndexedDB ngay để bảo toàn qua F5
+      saveVideoBlob(file.name, file);
+
       const objectUrl = URL.createObjectURL(file);
       probeDuration(objectUrl);
     }
@@ -201,6 +205,11 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
   const submitWithMode = async (isAppend: boolean) => {
     setError(null);
+
+    // Đảm bảo tệp đã chọn được lưu bền vững vào IndexedDB trước khi giao diện chuyển sang Studio
+    if (selectedFile) {
+      await saveVideoBlob(selectedFile.name, selectedFile);
+    }
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)
     let finalDurationSeconds = 60;
