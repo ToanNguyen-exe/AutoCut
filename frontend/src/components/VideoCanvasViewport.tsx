@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Segment } from "@/types";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { Segment, JoinedVideoClip } from "@/types";
+import { formatTime } from "@/lib/utils";
 import {
   Maximize2,
   Play,
   Volume2,
   Sparkles,
+  Film,
+  Link2,
 } from "lucide-react";
 
 interface VideoCanvasViewportProps {
@@ -15,6 +18,7 @@ interface VideoCanvasViewportProps {
   totalDuration: number;
   videoTitle: string;
   externalVideoUrl?: string | null;
+  joinedVideos?: JoinedVideoClip[];
   isPlaying?: boolean;
   volume?: number;
   isMuted?: boolean;
@@ -36,6 +40,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   currentTime,
   totalDuration,
   externalVideoUrl,
+  joinedVideos = [],
   isPlaying = false,
   volume = 100,
   isMuted = false,
@@ -48,17 +53,40 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   onToggleMute,
 }) => {
   const [aspect, setAspect] = useState<"landscape" | "portrait">("landscape");
-  const [videoSrc, setVideoSrc] = useState<string | null>(externalVideoUrl || null);
+
+  // Xác định clip đang hoạt động dựa trên currentTime và danh sách joinedVideos
+  const { activeClip, activeClipIndex } = useMemo(() => {
+    if (!joinedVideos || joinedVideos.length === 0) {
+      return { activeClip: null, activeClipIndex: 0 };
+    }
+    const idx = joinedVideos.findIndex(
+      (v) => currentTime >= v.startOffset && currentTime < v.endOffset
+    );
+    if (idx >= 0) {
+      return { activeClip: joinedVideos[idx], activeClipIndex: idx };
+    }
+    return {
+      activeClip: joinedVideos[joinedVideos.length - 1],
+      activeClipIndex: joinedVideos.length - 1,
+    };
+  }, [joinedVideos, currentTime]);
+
+  const activeVideoUrl = activeClip?.url || externalVideoUrl || null;
+  const localTargetTime = activeClip
+    ? Math.max(0, Math.min(activeClip.duration, currentTime - activeClip.startOffset))
+    : currentTime;
+
+  const [videoSrc, setVideoSrc] = useState<string | null>(activeVideoUrl);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [needsUserUnmute, setNeedsUserUnmute] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (externalVideoUrl) {
-      setVideoSrc(externalVideoUrl);
+    if (activeVideoUrl) {
+      setVideoSrc(activeVideoUrl);
       setVideoLoadError(null);
     }
-  }, [externalVideoUrl]);
+  }, [activeVideoUrl]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -78,13 +106,13 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const realDuration = videoRef.current.duration;
-      if (realDuration && isFinite(realDuration) && realDuration > 0) {
+      if (realDuration && isFinite(realDuration) && realDuration > 0 && (!joinedVideos || joinedVideos.length <= 1)) {
         if (onDurationChange) {
           onDurationChange(realDuration);
         }
       }
 
-      videoRef.current.currentTime = currentTime;
+      videoRef.current.currentTime = localTargetTime;
       videoRef.current.volume = isMuted ? 0 : volume / 100;
       videoRef.current.muted = isMuted;
 
@@ -132,19 +160,38 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
   useEffect(() => {
     if (videoRef.current) {
-      const diff = Math.abs(videoRef.current.currentTime - currentTime);
+      const diff = Math.abs(videoRef.current.currentTime - localTargetTime);
       if (diff > 0.3) {
-        videoRef.current.currentTime = currentTime;
+        videoRef.current.currentTime = localTargetTime;
       }
     }
-  }, [currentTime]);
+  }, [localTargetTime]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current && isPlaying && onSeek) {
       const current = videoRef.current.currentTime;
-      if (Math.abs(current - currentTime) >= 0.5) {
-        onSeek(Number(current.toFixed(1)));
+      const timelineTime = activeClip
+        ? Number((activeClip.startOffset + current).toFixed(1))
+        : Number(current.toFixed(1));
+      if (Math.abs(timelineTime - currentTime) >= 0.5) {
+        onSeek(timelineTime);
       }
+    }
+  };
+
+  const handleEnded = () => {
+    if (joinedVideos && joinedVideos.length > 1 && activeClip) {
+      const currentIdx = joinedVideos.findIndex((v) => v.id === activeClip.id);
+      if (currentIdx >= 0 && currentIdx < joinedVideos.length - 1) {
+        const nextClip = joinedVideos[currentIdx + 1];
+        if (onSeek) {
+          onSeek(nextClip.startOffset);
+        }
+        return;
+      }
+    }
+    if (onTogglePlay && isPlaying) {
+      onTogglePlay();
     }
   };
 
@@ -209,11 +256,33 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     <div className="flex-1 flex flex-col bg-white overflow-hidden select-none min-h-0 min-w-0 text-slate-800">
       {/* Top Header: Trình phát & 16:9 Landscape */}
       <div className="h-12 border-b border-slate-200/90 px-5 flex items-center justify-between shrink-0 bg-white z-20 select-none">
-        {/* Left: Tiêu đề Trình phát */}
+        {/* Left: Tiêu đề Trình phát + Badge video đang phát khi nối tiếp */}
         <div className="flex items-center gap-2">
           <span className="font-bold text-base text-slate-900 tracking-tight">
             Trình phát
           </span>
+          {activeClip && joinedVideos && joinedVideos.length > 1 && (
+            <span
+              className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-2xs border ${
+                activeClipIndex > 0
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                  : "bg-indigo-50 border-indigo-200 text-indigo-800"
+              }`}
+              title={`Đang phát: ${activeClip.title} (${formatTime(activeClip.duration)})`}
+            >
+              {activeClipIndex > 0 ? (
+                <Link2 className="w-3 h-3 text-emerald-600" />
+              ) : (
+                <Film className="w-3 h-3 text-indigo-600" />
+              )}
+              <span>
+                {activeClipIndex > 0
+                  ? `[Video ${activeClipIndex + 1}/${joinedVideos.length} • Nối tiếp] `
+                  : `[Video 1/${joinedVideos.length}] `}
+                {activeClip.title}
+              </span>
+            </span>
+          )}
         </div>
 
         {/* Right: Tỉ lệ 16:9 Landscape & Nút thao tác */}
@@ -270,6 +339,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                 src={videoSrc}
                 onLoadedMetadata={handleLoadedMetadata}
                 onTimeUpdate={handleTimeUpdate}
+                onEnded={handleEnded}
                 onClick={onTogglePlay}
                 onError={() => {
                   setVideoLoadError(

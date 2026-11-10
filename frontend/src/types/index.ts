@@ -37,6 +37,20 @@ export interface Segment {
   start: number;
   end: number;
   parts: VideoPart[];
+  videoTitle?: string;
+  videoIndex?: number;
+  isAppended?: boolean;
+}
+
+export interface JoinedVideoClip {
+  id: string;
+  title: string;
+  fileName: string;
+  url: string;
+  duration: number;
+  startOffset: number;
+  endOffset: number;
+  gradientBg?: string;
 }
 
 export interface SegmentsData {

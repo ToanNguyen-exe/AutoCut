@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Clock,
   Loader2,
+  ListPlus,
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { uploadVideoFile, fetchBackendVideos, BackendVideoItem, API_BASE } from "@/lib/api";
@@ -50,12 +51,14 @@ interface AddVideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddVideo: (video: NewVideoData) => void;
+  onAppendVideo?: (video: NewVideoData) => void;
 }
 
 export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   isOpen,
   onClose,
   onAddVideo,
+  onAppendVideo,
 }) => {
   const [tab, setTab] = useState<"url" | "file">("url");
   const [urlInput, setUrlInput] = useState("");
@@ -196,8 +199,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitWithMode = async (isAppend: boolean) => {
     setError(null);
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)
@@ -208,6 +210,15 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       const parsed = parseDuration(durationValue, durationUnit);
       if (parsed > 0) finalDurationSeconds = parsed;
     }
+
+    const deliverVideo = (videoData: NewVideoData) => {
+      if (isAppend && onAppendVideo) {
+        onAppendVideo(videoData);
+      } else {
+        onAddVideo(videoData);
+      }
+      onClose();
+    };
 
     if (tab === "url") {
       if (!urlInput.trim()) {
@@ -221,7 +232,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         return;
       }
 
-      onAddVideo({
+      deliverVideo({
         url: urlInput.trim(),
         name: titleInput.trim() || "Video bài giảng mới",
         duration: finalDurationSeconds,
@@ -229,7 +240,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         topicTitle: titleInput.trim() || "Chủ đề bài giảng mới",
         sectionName: "01_NoiDungChinh",
       });
-      onClose();
     } else {
       if (!selectedFile) {
         setError("Vui lòng chọn 1 tệp video từ máy tính!");
@@ -245,7 +255,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
             ? uploadRes.data.transcript.duration
             : finalDurationSeconds;
-          onAddVideo({
+          deliverVideo({
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
             duration: Number(cloudDur.toFixed(1)),
@@ -257,7 +267,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             segmentsData: uploadRes.data.segmentsData,
             transcriptFile: uploadRes.data.transcript_file,
           });
-          onClose();
           return;
         }
       } catch (uploadErr) {
@@ -268,7 +277,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
       // Fallback nếu backend offline hoặc gặp lỗi
       const fileUrl = URL.createObjectURL(selectedFile);
-      onAddVideo({
+      deliverVideo({
         url: fileUrl,
         name: selectedFile.name,
         duration: finalDurationSeconds,
@@ -276,8 +285,12 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
         sectionName: "01_NoiDungChinh",
       });
-      onClose();
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitWithMode(false);
   };
 
   return (
@@ -622,29 +635,42 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           )}
 
           {/* Submit Actions */}
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-200">
+          <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isUploading}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition disabled:opacity-50"
             >
               Hủy bỏ
             </button>
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang tải lên backend...</span>
-                </>
-              ) : (
-                "Thêm video & Dựng dự án mới"
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => submitWithMode(true)}
+                disabled={isUploading}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                title="Nối tiếp video này ra đằng sau video đang phát trên Timeline"
+              >
+                <ListPlus className="w-4 h-4" />
+                <span>+ Nối tiếp vào sau</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => submitWithMode(false)}
+                disabled={isUploading}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang tải lên...</span>
+                  </>
+                ) : (
+                  "Mở dự án mới"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

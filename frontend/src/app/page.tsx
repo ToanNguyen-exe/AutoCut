@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { SegmentsData, Segment, Sentence, TranscriptData, User } from "@/types";
+import { SegmentsData, Segment, Sentence, TranscriptData, User, JoinedVideoClip } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
 import {
   fetchConfig,
@@ -155,6 +155,18 @@ const syncLibraryCardsFromLibrary = (items: VideoLibraryItem[]): LibraryVideoCar
 
 const DEFAULT_LIBRARY_CARDS: LibraryVideoCard[] = syncLibraryCardsFromLibrary(getLibraryVideos());
 
+const INITIAL_JOINED_VIDEOS: JoinedVideoClip[] = [
+  {
+    id: "clip_01",
+    title: "Bài 08 - Ép kiểu dữ liệu",
+    fileName: "Bai08_Ep_kieu_du_lieu.mp4",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    duration: 535.0,
+    startOffset: 0.0,
+    endOffset: 535.0,
+  },
+];
+
 // Lời bài hát & câu thoại thực tế từ video (Download.mp4 / Nonstop CT TikTok)
 const REAL_DOWNLOAD_LYRICS: Sentence[] = [
   { id: "S0001", start: 0.0, end: 60.0, text: "Giai điệu mở màn & Dạo nhạc (Intro Beat)" },
@@ -290,6 +302,7 @@ export default function Home() {
 
   // Video Library cards on left column
   const [libraryCards, setLibraryCards] = useState<LibraryVideoCard[]>(DEFAULT_LIBRARY_CARDS);
+  const [joinedVideos, setJoinedVideos] = useState<JoinedVideoClip[]>(INITIAL_JOINED_VIDEOS);
 
   // Segment Detail Modal states (Mở khi ấn vào video hoặc phân đoạn)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
@@ -860,6 +873,18 @@ export default function Home() {
       }
       setActiveSegmentId(newVideo.segmentsData.segments[0].id);
 
+      setJoinedVideos([
+        {
+          id: `clip_${Date.now()}`,
+          title: lessonTitle,
+          fileName: newVideo.name,
+          url: newVideo.url,
+          duration: totalSecs,
+          startOffset: 0,
+          endOffset: totalSecs,
+        },
+      ]);
+
       const libItem: VideoLibraryItem = {
         id: `vid_${Date.now()}`,
         name: newVideo.name,
@@ -921,6 +946,18 @@ export default function Home() {
       reviewed: false,
       segments: [singleSegment],
     });
+
+    setJoinedVideos([
+      {
+        id: `clip_${Date.now()}`,
+        title: lessonTitle,
+        fileName: newVideo.name,
+        url: newVideo.url,
+        duration: totalSecs,
+        startOffset: 0,
+        endOffset: totalSecs,
+      },
+    ]);
 
     // Nạp transcript nếu AI đã bóc băng khi upload hoặc nhận diện video âm nhạc/download
     if (newVideo.transcript) {
@@ -1342,31 +1379,35 @@ export default function Home() {
     setIsDetailModalOpen(true);
   }, []);
 
-  // Nối tiếp video từ thư viện ra đằng sau video đang phát trên Timeline
+  // Nối tiếp video từ thư viện hoặc tải lên ra đằng sau video đang phát trên Timeline
   const handleAppendVideoToTimeline = useCallback(
-    (videoToAppend: LibraryVideoCard | VideoLibraryItem) => {
+    (videoToAppend: LibraryVideoCard | VideoLibraryItem | NewVideoData) => {
       const currentDuration =
         data.segments.reduce((max, s) => Math.max(max, s.end), 0) || totalDuration || 1;
       const appendDuration = Math.max(
         1,
-        (videoToAppend as LibraryVideoCard).durationSeconds ||
-          (videoToAppend as VideoLibraryItem).duration ||
+        ("duration" in videoToAppend ? videoToAppend.duration : undefined) ||
+          ("durationSeconds" in videoToAppend ? videoToAppend.durationSeconds : undefined) ||
           60
       );
       const offset = Number(currentDuration.toFixed(1));
 
       const rawSegments =
-        (videoToAppend as VideoLibraryItem).segments &&
-        (videoToAppend as VideoLibraryItem).segments.length > 0
-          ? (videoToAppend as VideoLibraryItem).segments
-          : (videoToAppend as LibraryVideoCard).segments &&
-            (videoToAppend as LibraryVideoCard).segments!.length > 0
-          ? (videoToAppend as LibraryVideoCard).segments!
+        ("segments" in videoToAppend && videoToAppend.segments && videoToAppend.segments.length > 0)
+          ? videoToAppend.segments
+          : ("segmentsData" in videoToAppend && videoToAppend.segmentsData?.segments && videoToAppend.segmentsData.segments.length > 0)
+          ? videoToAppend.segmentsData.segments
           : [];
 
       let newAppendedSegments: Segment[] = [];
-      const vName = ('fileName' in videoToAppend ? videoToAppend.fileName : videoToAppend.name) || "video";
-      const vTitle = videoToAppend.title || vName;
+      const vName = ("fileName" in videoToAppend ? videoToAppend.fileName : videoToAppend.name) || "video";
+      const vTitle =
+        ("title" in videoToAppend ? videoToAppend.title : undefined) ||
+        ("topicTitle" in videoToAppend ? videoToAppend.topicTitle : undefined) ||
+        vName;
+      const appendUrl = ("url" in videoToAppend ? videoToAppend.url : undefined) || "";
+      const currentVideoCount = joinedVideos.length || 1;
+      const newVideoIndex = currentVideoCount + 1;
 
       if (rawSegments.length > 0) {
         newAppendedSegments = rawSegments.map((seg, idx) => {
@@ -1382,6 +1423,9 @@ export default function Home() {
             start: segStart,
             end: segEnd,
             parts: recalculateParts(segStart, segEnd, sectionFolder, topicNo, seg.slug),
+            videoTitle: vTitle,
+            videoIndex: newVideoIndex,
+            isAppended: true,
           };
         });
       } else {
@@ -1410,6 +1454,9 @@ export default function Home() {
                 file: `01_VideoNoiTiep/${String(topicNo).padStart(2, "0")}_${cleanSlug}.mp4`,
               },
             ],
+            videoTitle: vTitle,
+            videoIndex: newVideoIndex,
+            isAppended: true,
           },
         ];
       }
@@ -1428,9 +1475,24 @@ export default function Home() {
         segments: combinedSegments,
       }));
 
+      // Cập nhật danh sách joinedVideos để Video Player và Timeline hiển thị nối tiếp mượt mà
+      setJoinedVideos((prev) => [
+        ...prev,
+        {
+          id: `clip_${Date.now()}`,
+          title: vTitle,
+          fileName: vName,
+          url: appendUrl,
+          duration: appendDuration,
+          startOffset: offset,
+          endOffset: Number((offset + appendDuration).toFixed(1)),
+        },
+      ]);
+
       const appendTranscript =
-        (videoToAppend as VideoLibraryItem).transcript ||
-        (videoToAppend as LibraryVideoCard).transcript;
+        ("transcript" in videoToAppend && videoToAppend.transcript)
+          ? videoToAppend.transcript
+          : undefined;
 
       if (appendTranscript?.sentences && appendTranscript.sentences.length > 0) {
         const existingCount = transcript?.sentences?.length || 0;
@@ -1481,7 +1543,7 @@ export default function Home() {
         `✓ Đã nối tiếp video "${vTitle}" (${formatTime(appendDuration)}) ra sau video đang phát! Tổng thời lượng timeline: ${formatTime(newTotal)}`
       );
     },
-    [data, totalDuration, transcript, handleSeek, showToast]
+    [data, totalDuration, transcript, joinedVideos, handleSeek, showToast]
   );
 
   // Mở riêng một video từ cột Thư viện video
@@ -1537,6 +1599,18 @@ export default function Home() {
           reviewed: false,
           segments: targetSegments,
         });
+
+        setJoinedVideos([
+          {
+            id: card.id,
+            title: card.title,
+            fileName: card.fileName,
+            url: card.url || "",
+            duration: dur,
+            startOffset: 0,
+            endOffset: dur,
+          },
+        ]);
 
         if (card.transcript) {
           setTranscript(card.transcript);
@@ -1668,6 +1742,7 @@ export default function Home() {
               totalDuration={totalDuration}
               videoTitle={data.video}
               externalVideoUrl={externalVideoUrl}
+              joinedVideos={joinedVideos}
               isPlaying={isPlaying}
               volume={volume}
               isMuted={isMuted}
@@ -1766,6 +1841,7 @@ export default function Home() {
         activeSegmentId={activeSegmentId}
         isPlaying={isPlaying}
         transcript={transcript}
+        joinedVideos={joinedVideos}
         volume={volume}
         isMuted={isMuted}
         canUndo={undoStack.length > 0}
@@ -1820,6 +1896,7 @@ export default function Home() {
         isOpen={isAddVideoOpen}
         onClose={() => setIsAddVideoOpen(false)}
         onAddVideo={handleAddVideo}
+        onAppendVideo={handleAppendVideoToTimeline}
       />
 
       {/* Video Library Drawer (Kho Video Đã sửa, Chưa sửa, Mới thêm) */}

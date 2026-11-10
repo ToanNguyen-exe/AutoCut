@@ -477,3 +477,52 @@ export async function saveProjectToBackend(
     };
   }
 }
+
+export interface ConcatVideosPayload {
+  clips: string[];
+  output?: string;
+  forceReencode?: boolean;
+}
+
+export interface ConcatVideosResponse {
+  status: string;
+  message: string;
+  outputFile?: string;
+  outputSizeBytes?: number;
+  executionTimeMs?: number;
+  totalClips?: number;
+}
+
+/**
+ * Ghép nối nhiều file clip thành 1 video tổng hợp qua FFmpeg Concat của SV1 (POST /api/video/concat)
+ */
+export async function submitConcatVideos(
+  payload: ConcatVideosPayload
+): Promise<ApiResponse<ConcatVideosResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/concat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) {
+          errorMsg = errJson.error;
+        }
+      } catch {}
+      throw new Error(errorMsg);
+    }
+
+    const data: ConcatVideosResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể kết nối API ghép nối video (Video Concat)",
+      source: "fallback",
+    };
+  }
+}

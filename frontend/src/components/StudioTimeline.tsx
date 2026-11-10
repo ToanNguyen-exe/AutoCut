@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Segment, TranscriptData } from "@/types";
+import { Segment, TranscriptData, JoinedVideoClip } from "@/types";
 import { formatTime, recalculateParts, slugify } from "@/lib/utils";
 import {
   Play,
@@ -17,6 +17,8 @@ import {
   ZoomOut,
   ArrowLeftRight,
   Plus,
+  Link2,
+  Film,
 } from "lucide-react";
 
 interface StudioTimelineProps {
@@ -28,6 +30,7 @@ interface StudioTimelineProps {
   canUndo?: boolean;
   canRedo?: boolean;
   transcript?: TranscriptData;
+  joinedVideos?: JoinedVideoClip[];
   volume?: number;
   isMuted?: boolean;
   onUndo?: () => void;
@@ -49,6 +52,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   isPlaying,
   canUndo = false,
   canRedo = false,
+  joinedVideos = [],
   onUndo,
   onRedo,
   onTogglePlay,
@@ -476,6 +480,13 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           {/* Ruler space */}
           <div className="h-8" />
 
+          {/* Video Sequence Strip Label */}
+          {joinedVideos && joinedVideos.length > 1 && (
+            <div className="h-6 flex items-center text-[11px] font-bold text-emerald-700">
+              Ghép ({joinedVideos.length} video)
+            </div>
+          )}
+
           {/* Track 1 Label: Nội dung */}
           <div className="h-20 flex items-center text-sm font-bold text-slate-800">
             Nội dung
@@ -511,7 +522,47 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             ))}
           </div>
 
-          {/* Track 1: Nội dung (Segment Clips in Lavender/Indigo Pastel) */}
+          {/* Thanh hiển thị các Video Nối Tiếp (Video Sequence Strip) */}
+          {joinedVideos && joinedVideos.length > 1 && (
+            <div className="h-6 relative w-full border-b border-slate-100 bg-slate-50/70 flex items-center overflow-hidden">
+              {joinedVideos.map((v, vIdx) => {
+                const leftPct = (v.startOffset / Math.max(1, totalDuration)) * 100;
+                const widthPct = Math.min(
+                  100 - leftPct,
+                  ((v.endOffset - v.startOffset) / Math.max(1, totalDuration)) * 100
+                );
+                const isSecond = vIdx > 0;
+
+                return (
+                  <div
+                    key={v.id || `joined_${vIdx}`}
+                    style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                    className={`absolute top-0.5 bottom-0.5 px-1.5 rounded text-[11px] font-bold flex items-center gap-1 border truncate shadow-2xs ${
+                      isSecond
+                        ? "bg-emerald-100 border-emerald-300 text-emerald-800"
+                        : "bg-indigo-100 border-indigo-200 text-indigo-800"
+                    }`}
+                    title={`${isSecond ? "Video nối tiếp" : "Video gốc"}: ${v.title} (${formatTime(v.duration)})`}
+                  >
+                    {isSecond ? (
+                      <Link2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                    ) : (
+                      <Film className="w-3 h-3 text-indigo-600 shrink-0" />
+                    )}
+                    <span className="truncate">
+                      {isSecond ? `[Nối tiếp] ` : `[Gốc] `}
+                      {v.title}
+                    </span>
+                    <span className="font-mono text-[10px] ml-auto shrink-0 opacity-80">
+                      {formatTime(v.duration)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Track 1: Nội dung (Segment Clips in Lavender/Indigo Pastel or Emerald for Appended) */}
           <div className="h-20 relative w-full flex items-center">
             {segments.map((seg, idx) => {
               const leftPct = (seg.start / Math.max(1, totalDuration)) * 100;
@@ -520,6 +571,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                 ((seg.end - seg.start) / Math.max(1, totalDuration)) * 100
               );
               const isSelected = activeSegmentId === seg.id;
+              const isAppendedSeg = seg.isAppended || (seg.videoIndex && seg.videoIndex > 1);
 
               return (
                 <div
@@ -540,26 +592,51 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                         onOpenSegmentDetail(seg, idx + 1);
                       }
                     }}
-                    title={`#${idx + 1} ${seg.topic} (${formatTime(seg.end - seg.start)}) - Nhấp để xem chi tiết`}
+                    title={`#${idx + 1} ${seg.topic} (${formatTime(seg.end - seg.start)}) ${
+                      isAppendedSeg ? "[Nối tiếp]" : ""
+                    } - Nhấp để xem chi tiết`}
                     className={`w-full h-full rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs overflow-hidden select-none ${
                       isSelected
-                        ? "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
+                        ? isAppendedSeg
+                          ? "bg-[#d1fae5] border-emerald-600 ring-2 ring-emerald-300 z-10 shadow-xs"
+                          : "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
+                        : isAppendedSeg
+                        ? "bg-[#ecfdf5] border-emerald-300 hover:border-emerald-500 z-0"
                         : "bg-[#eef2ff] border-indigo-200 hover:border-indigo-400 z-0"
                     }`}
                   >
                     {/* Top Row: Title + Duration */}
                     <div className="flex items-center justify-between gap-1.5 min-w-0">
-                      <span className="text-sm font-bold text-slate-900 truncate min-w-0">
+                      <span
+                        className={`text-sm font-bold truncate min-w-0 ${
+                          isAppendedSeg ? "text-emerald-950" : "text-slate-900"
+                        }`}
+                      >
                         #{idx + 1} {seg.topic}
                       </span>
-                      <span className="text-xs font-mono font-bold text-indigo-700 ml-1 shrink-0 bg-white/80 px-1.5 py-0.5 rounded shadow-2xs">
+                      <span
+                        className={`text-xs font-mono font-bold ml-1 shrink-0 px-1.5 py-0.5 rounded shadow-2xs ${
+                          isAppendedSeg
+                            ? "text-emerald-800 bg-white/90 border border-emerald-200"
+                            : "text-indigo-700 bg-white/80"
+                        }`}
+                      >
                         {formatTime(seg.end - seg.start)}
                       </span>
                     </div>
 
-                    {/* Bottom Row: Decorative Accent bar + optional slug */}
+                    {/* Bottom Row: Decorative Accent bar + optional slug / badge */}
                     <div className="flex items-center gap-2 mt-auto">
-                      <div className="w-14 sm:w-20 h-1.5 bg-indigo-400/80 rounded-full shrink-0" />
+                      <div
+                        className={`w-14 sm:w-20 h-1.5 rounded-full shrink-0 ${
+                          isAppendedSeg ? "bg-emerald-500/80" : "bg-indigo-400/80"
+                        }`}
+                      />
+                      {isAppendedSeg && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-1.5 py-0.5 rounded shrink-0">
+                          Nối tiếp
+                        </span>
+                      )}
                       {seg.slug && seg.slug !== slugify(seg.topic) && (
                         <span className="text-[11px] font-mono text-slate-500 truncate min-w-0 opacity-80">
                           {seg.slug}
@@ -570,6 +647,25 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                 </div>
               );
             })}
+
+            {/* Đường phân cách Seam Marker giữa các video nối tiếp */}
+            {joinedVideos &&
+              joinedVideos.slice(1).map((jv) => {
+                const seamPct = (jv.startOffset / Math.max(1, totalDuration)) * 100;
+                return (
+                  <div
+                    key={`seam_${jv.id}`}
+                    style={{ left: `${seamPct}%` }}
+                    className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
+                  >
+                    <div className="h-full border-r-2 border-dashed border-emerald-500 shadow-xs" />
+                    <div className="-top-3.5 absolute bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 whitespace-nowrap">
+                      <Link2 className="w-2.5 h-2.5" />
+                      <span>➔ Nối tiếp: {jv.title}</span>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
 
           {/* Track 2: Âm thanh (Emerald green waveform inside mint pill container) */}

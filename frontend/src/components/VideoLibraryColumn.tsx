@@ -111,51 +111,79 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
       {/* Video Cards List */}
       <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-slate-50/40 min-h-0">
         {viewMode === "segments" && hasSegments ? (
-          // Hiển thị danh sách các phân đoạn video mà AI đã phân tích
+          // Hiển thị danh sách các phân đoạn video mà AI đã phân tích (bao gồm cả phân đoạn nối tiếp)
           currentSegments.map((seg, idx) => {
             const isCurrent = seg.id === activeSegmentId;
             const durationSec = Math.max(0, seg.end - seg.start);
-            const gradientBg = PASTEL_GRADIENTS[idx % PASTEL_GRADIENTS.length];
+            const isAppended = Boolean(seg.isAppended || (seg.videoIndex && seg.videoIndex > 1));
+            const prev = idx > 0 ? currentSegments[idx - 1] : undefined;
+            const prevAppended = Boolean(prev?.isAppended || (prev?.videoIndex && prev.videoIndex > 1));
+            const isFirstAppended = isAppended && !prevAppended;
+            const gradientBg = isAppended
+              ? "from-emerald-200 via-teal-100 to-lime-200"
+              : PASTEL_GRADIENTS[idx % PASTEL_GRADIENTS.length];
 
             return (
-              <div
-                key={seg.id || `seg-${idx}`}
-                onClick={() => onSelectSegment?.(seg, idx + 1)}
-                className={`p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2.5 ${
-                  isCurrent
-                    ? "bg-white border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
-                    : "bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
-                }`}
-              >
-                {/* Pastel Gradient Thumbnail matching reference image */}
+              <React.Fragment key={seg.id || `seg-${idx}`}>
+                {/* Ranh giới chuyển đổi sang danh sách video nối tiếp */}
+                {isFirstAppended && (
+                  <div className="py-2 px-3 my-2 rounded-xl bg-emerald-50 border border-dashed border-emerald-300 flex items-center justify-between text-emerald-800 text-xs font-bold shadow-2xs">
+                    <div className="flex items-center gap-1.5">
+                      <ListPlus className="w-4 h-4 text-emerald-600" />
+                      <span>Video Nối Tiếp Vào Sau</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-200/90 text-emerald-900 px-2 py-0.5 rounded-full font-bold">
+                      Nối tiếp
+                    </span>
+                  </div>
+                )}
+
                 <div
-                  className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
+                  onClick={() => onSelectSegment?.(seg, idx + 1)}
+                  className={`p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col gap-2.5 ${
+                    isCurrent
+                      ? isAppended
+                        ? "bg-white border-2 border-emerald-500 shadow-sm ring-2 ring-emerald-100"
+                        : "bg-white border-2 border-indigo-500 shadow-sm ring-2 ring-indigo-100"
+                      : isAppended
+                      ? "bg-white border border-emerald-200 hover:border-emerald-300 shadow-2xs hover:shadow-xs"
+                      : "bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
+                  }`}
                 >
-                  {/* Badge số phân đoạn ở góc trái */}
-                  <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-xs text-white text-xs font-bold px-2 py-0.5 rounded-lg shadow-2xs">
-                    #{idx + 1}
-                  </div>
-
-                  {/* Duration chip on top-right */}
-                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
-                    {formatTime(durationSec)}
-                  </div>
-                </div>
-
-                {/* Title below thumbnail */}
-                <div className="px-0.5">
-                  <div className="text-xs font-bold text-indigo-600 mb-0.5">
-                    Mục #{seg.topic_no || idx + 1}
-                  </div>
-                  <h4
-                    className={`text-sm font-bold leading-snug line-clamp-2 ${
-                      isCurrent ? "text-indigo-950" : "text-slate-800"
-                    }`}
+                  {/* Pastel Gradient Thumbnail matching reference image */}
+                  <div
+                    className={`w-full h-24 rounded-xl relative overflow-hidden bg-gradient-to-tr ${gradientBg} flex items-center justify-center border border-black/5`}
                   >
-                    {seg.topic}
-                  </h4>
+                    {/* Badge số phân đoạn ở góc trái */}
+                    <div className={`absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded-lg shadow-2xs ${
+                      isAppended ? "bg-emerald-800/80" : "bg-black/50"
+                    }`}>
+                      #{idx + 1} {isAppended ? "• Nối tiếp" : ""}
+                    </div>
+
+                    {/* Duration chip on top-right */}
+                    <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-xs text-slate-800 font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-2xs border border-white/60">
+                      {formatTime(durationSec)}
+                    </div>
+                  </div>
+
+                  {/* Title below thumbnail */}
+                  <div className="px-0.5">
+                    <div className={`text-xs font-bold mb-0.5 ${isAppended ? "text-emerald-700" : "text-indigo-600"}`}>
+                      {isAppended ? "[Nối tiếp] " : ""}Mục #{seg.topic_no || idx + 1}
+                    </div>
+                    <h4
+                      className={`text-sm font-bold leading-snug line-clamp-2 ${
+                        isCurrent
+                          ? isAppended ? "text-emerald-950" : "text-indigo-950"
+                          : "text-slate-800"
+                      }`}
+                    >
+                      {seg.topic}
+                    </h4>
+                  </div>
                 </div>
-              </div>
+              </React.Fragment>
             );
           })
         ) : (
@@ -163,7 +191,8 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
           videos.map((item) => {
             const isActive =
               item.fileName.toLowerCase() === currentVideoName.toLowerCase() ||
-              item.title.toLowerCase() === currentVideoName.toLowerCase();
+              item.title.toLowerCase() === currentVideoName.toLowerCase() ||
+              currentVideoName.toLowerCase().includes(item.title.toLowerCase());
 
             return (
               <div
