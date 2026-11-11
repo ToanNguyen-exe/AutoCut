@@ -420,22 +420,22 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         </div>
       </div>
 
-      {/* Main Centered Viewport Screen (Thu nhỏ lại để nhường diện tích cho Chatbox AI) */}
+      {/* Main Centered Viewport Screen */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-3 lg:p-4 relative overflow-hidden bg-transparent transition-colors duration-200"
+        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-2 sm:p-2.5 relative overflow-hidden bg-transparent transition-colors duration-200"
       >
-        {/* Video Canvas Container (Thu nhỏ gọn gàng để nhường không gian cho bảng Trợ lý AI) */}
+        {/* Video Canvas Container (Khung ngoài ôm sát video với viền mỏng 5px, video phóng to tối đa) */}
         <div
           ref={containerRef}
-          className={`relative rounded-2xl overflow-hidden shadow-lg border border-slate-200/90 dark:border-white/15 flex flex-col items-center justify-center transition-all duration-200 group ${
+          className={`relative rounded-2xl overflow-hidden shadow-2xl border border-slate-300/80 dark:border-white/20 p-[5px] bg-white/25 dark:bg-black/40 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-200 group ${
             aspect === "landscape" ? "aspect-video" : "aspect-[9/16]"
           }`}
           style={{
-            maxHeight: "58%",
-            maxWidth: "76%",
+            maxHeight: "calc(100% - 36px)",
+            maxWidth: "calc(100% - 16px)",
             height: "100%",
             width: "auto",
           }}
@@ -454,116 +454,119 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
             </div>
           )}
 
-          {/* Real Video Element OR Crisp Modern Slide Canvas matching reference image */}
-          {videoSrc ? (
-            <div className="w-full h-full flex items-center justify-center bg-black relative">
-              <video
-                ref={videoRef}
-                src={videoSrc}
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleEnded}
-                onClick={onTogglePlay}
-                onError={handleVideoError}
-                className="w-full h-full object-contain cursor-pointer"
-                playsInline
-              />
-
-              {/* Play overlay when paused */}
-              {!isPlaying && !videoLoadError && (
-                <div
+          {/* Inner Video Wrapper: Bo góc tròn bên trong khung viền 5px */}
+          <div className="w-full h-full rounded-xl overflow-hidden relative flex items-center justify-center bg-black">
+            {/* Real Video Element OR Crisp Modern Slide Canvas matching reference image */}
+            {videoSrc ? (
+              <div className="w-full h-full flex items-center justify-center bg-black relative">
+                <video
+                  ref={videoRef}
+                  src={videoSrc}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
                   onClick={onTogglePlay}
-                  className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition cursor-pointer group"
-                >
-                  <div className="w-14 h-14 rounded-full bg-indigo-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                    <Play className="w-7 h-7 fill-current ml-1" />
-                  </div>
-                </div>
-              )}
+                  onError={handleVideoError}
+                  className="w-full h-full object-contain cursor-pointer"
+                  playsInline
+                />
 
-              {/* Webpage / Load Error Fallback Overlay */}
-              {videoLoadError && (
-                <div className="absolute inset-x-4 bottom-4 z-20 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-xs font-bold text-white">Chế độ Studio Dự Án Phân Đoạn</p>
-                      <p className="text-[11px] text-slate-300 line-clamp-1">{videoLoadError}</p>
+                {/* Play overlay when paused */}
+                {!isPlaying && !videoLoadError && (
+                  <div
+                    onClick={onTogglePlay}
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition cursor-pointer group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-indigo-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play className="w-7 h-7 fill-current ml-1" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
-                        setVideoSrc(`/api/stream?file=${encodeURIComponent(fileName)}&t=${Date.now()}`);
-                        setVideoLoadError(null);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Thử lại</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (onOpenAddVideo) onOpenAddVideo();
-                        else fileInputRef.current?.click();
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
-                    >
-                      <UploadCloud className="w-3.5 h-3.5" />
-                      <span>Tải MP4</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Browser Autoplay Sound Banner */}
-              {needsUserUnmute && (
-                <button
-                  onClick={handleUserUnmute}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xl flex items-center gap-2 animate-bounce border border-indigo-400 cursor-pointer"
-                >
-                  <Volume2 className="w-4 h-4" />
-                  <span>Trình duyệt đang chặn âm thanh - Nhấn vào đây để BẬT TIẾNG 🔊</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            /* Crisp Modern Lecture Slide Matching Reference Image */
-            <div className="w-full h-full bg-[#f4f7fb] flex flex-col justify-between p-6 sm:p-10 relative select-none">
-              {/* Top-Right Domain Watermark */}
-              <div className="w-full flex justify-end">
-                <span className="text-xs sm:text-sm font-mono text-slate-400 font-semibold tracking-wide">
-                  titv.vn
-                </span>
+                {/* Webpage / Load Error Fallback Overlay */}
+                {videoLoadError && (
+                  <div className="absolute inset-x-4 bottom-4 z-20 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-white">Chế độ Studio Dự Án Phân Đoạn</p>
+                        <p className="text-[11px] text-slate-300 line-clamp-1">{videoLoadError}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+                          setVideoSrc(`/api/stream?file=${encodeURIComponent(fileName)}&t=${Date.now()}`);
+                          setVideoLoadError(null);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Thử lại</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (onOpenAddVideo) onOpenAddVideo();
+                          else fileInputRef.current?.click();
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Tải MP4</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Browser Autoplay Sound Banner */}
+                {needsUserUnmute && (
+                  <button
+                    onClick={handleUserUnmute}
+                    className="absolute top-12 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xl flex items-center gap-2 animate-bounce border border-indigo-400 cursor-pointer"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    <span>Trình duyệt đang chặn âm thanh - Nhấn vào đây để BẬT TIẾNG 🔊</span>
+                  </button>
+                )}
               </div>
-
-              {/* Center Lecture Slide Content */}
-              <div className="my-auto space-y-2 text-left pl-2 sm:pl-6">
-                <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
-                  BÀI 08
-                </div>
-                <div className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                  <div>ÉP KIỂU DỮ LIỆU</div>
-                  <div>TRONG LẬP TRÌNH PYTHON</div>
-                </div>
-                <div className="pt-2">
-                  <span className="inline-block px-3 py-1.5 rounded-lg bg-[#a3e635] text-slate-900 text-xs sm:text-sm font-bold tracking-tight shadow-2xs">
-                    TỰ HỌC LẬP TRÌNH PYTHON
+            ) : (
+              /* Crisp Modern Lecture Slide Matching Reference Image */
+              <div className="w-full h-full bg-[#f4f7fb] flex flex-col justify-between p-6 sm:p-10 relative select-none">
+                {/* Top-Right Domain Watermark */}
+                <div className="w-full flex justify-end">
+                  <span className="text-xs sm:text-sm font-mono text-slate-400 font-semibold tracking-wide">
+                    titv.vn
                   </span>
                 </div>
-              </div>
 
-              {/* Bottom Placeholder spacer */}
-              <div className="w-full h-4" />
-            </div>
-          )}
+                {/* Center Lecture Slide Content */}
+                <div className="my-auto space-y-2 text-left pl-2 sm:pl-6">
+                  <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
+                    BÀI 08
+                  </div>
+                  <div className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                    <div>ÉP KIỂU DỮ LIỆU</div>
+                    <div>TRONG LẬP TRÌNH PYTHON</div>
+                  </div>
+                  <div className="pt-2">
+                    <span className="inline-block px-3 py-1.5 rounded-lg bg-[#a3e635] text-slate-900 text-xs sm:text-sm font-bold tracking-tight shadow-2xs">
+                      TỰ HỌC LẬP TRÌNH PYTHON
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Placeholder spacer */}
+                <div className="w-full h-4" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Time Counter & Fullscreen Icon matching reference image */}
-        <div className="w-full max-w-[76%] flex items-center justify-between pt-2.5 px-2">
+        <div className="w-full max-w-[96%] flex items-center justify-between pt-1.5 px-2">
           {/* Digital Timecode (00:00:02:45 / 00:08:55:00) */}
           <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">
             {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
