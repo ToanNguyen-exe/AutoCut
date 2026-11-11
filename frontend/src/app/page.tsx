@@ -356,14 +356,15 @@ export default function Home() {
     }
   }, []);
 
-  const handleThemeColorChange = useCallback((color: string) => {
-    setThemeBgColor(color);
-  }, []);
-
   const showToast = useCallback((type: "success" | "error" | "info", message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   }, []);
+
+  const handleThemeColorChange = useCallback((color: string) => {
+    setThemeBgColor(color);
+    showToast("success", `✓ Đã cập nhật màu nền giao diện mới: ${color.toUpperCase()}`);
+  }, [showToast]);
 
   // Check login authentication
   useEffect(() => {

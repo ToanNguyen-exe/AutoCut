@@ -376,12 +376,12 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden select-none min-h-0 min-w-0 text-slate-800">
+    <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 overflow-hidden select-none min-h-0 min-w-0 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* Top Header: Trình phát & 16:9 Landscape */}
-      <div className="h-12 border-b border-slate-200/90 px-5 flex items-center justify-between shrink-0 bg-white z-20 select-none">
+      <div className="h-12 border-b border-slate-200/90 dark:border-slate-800 px-5 flex items-center justify-between shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-20 select-none">
         {/* Left: Tiêu đề Trình phát + Badge video đang phát khi nối tiếp */}
         <div className="flex items-center gap-2">
-          <span className="font-bold text-base text-slate-900 tracking-tight">
+          <span className="font-bold text-base text-slate-900 dark:text-white tracking-tight">
             Trình phát
           </span>
           {activeClip && joinedVideos && joinedVideos.length > 1 && (
@@ -412,7 +412,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAspect(aspect === "landscape" ? "portrait" : "landscape")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs"
             title="Đổi tỉ lệ khung hình (16:9 Landscape / 9:16 Portrait)"
           >
             <span>{aspect === "landscape" ? "16:9 Landscape" : "9:16 Portrait"}</span>
@@ -425,7 +425,8 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-3 lg:p-4 relative overflow-hidden bg-white"
+        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-3 lg:p-4 relative overflow-hidden transition-colors duration-200"
+        style={{ backgroundColor: "var(--background)" }}
       >
         {/* Video Canvas Container (Compact size) */}
         <div
@@ -565,14 +566,14 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         {/* Bottom Time Counter & Fullscreen Icon matching reference image */}
         <div className="w-full max-w-[85%] flex items-center justify-between pt-2.5 px-2">
           {/* Digital Timecode (00:00:02:45 / 00:08:55:00) */}
-          <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 tracking-wider">
+          <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">
             {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
           </div>
 
           {/* Fullscreen icon */}
           <button
             onClick={toggleFullscreen}
-            className="p-1 text-slate-400 hover:text-slate-800 transition"
+            className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
             title="Toàn màn hình"
           >
             <Maximize2 className="w-4 h-4" />
