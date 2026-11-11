@@ -7,80 +7,100 @@
     {
       "id": "seg_ai_01",
       "section_no": 1,
-      "section": "01_GioiThieu",
+      "section": "01_gioi-thieu",
       "topic_no": 1,
-      "topic": "Sư phụ, lần này, em là đệ tử thật sự là người mất mặt rồi",
-      "slug": "su-phu-lan-nay-em-la-de-tu-that-su-la-nguoi-mat",
+      "topic": "Đối thoại ban đầu và ký ức bái sư",
+      "slug": "doi-thoai-ban-dau-va-ky-uc-bai-su",
       "start_id": "S0001",
-      "end_id": "S0010",
+      "end_id": "S0013",
       "start": 0.0,
-      "end": 38.74,
+      "end": 46.44,
       "parts": [
         {
           "part": 1,
           "start": 0.0,
-          "end": 38.74,
-          "file": "01_su-phu-lan-nay-em-la-de-tu-that-su-la-nguoi-mat.mp4"
+          "end": 46.44,
+          "file": "01_doi-thoai-ban-dau-va-ky-uc-bai-su.mp4"
         }
       ]
     },
     {
       "id": "seg_ai_02",
-      "section_no": 2,
-      "section": "02_KhaiNiemCoBan",
+      "section_no": 1,
+      "section": "01_gioi-thieu",
       "topic_no": 2,
-      "topic": "Con thử nói xem",
-      "slug": "con-thu-noi-xem",
-      "start_id": "S0011",
-      "end_id": "S0020",
-      "start": 38.74,
-      "end": 59.4,
+      "topic": "Ôn lại nỗi uất khuất và hành trình thỉnh kinh",
+      "slug": "on-lai-noi-uat-khuat-va-hanh-trinh-thinh-kinh",
+      "start_id": "S0014",
+      "end_id": "S0022",
+      "start": 46.44,
+      "end": 64.98,
       "parts": [
         {
           "part": 1,
-          "start": 38.74,
-          "end": 59.4,
-          "file": "02_con-thu-noi-xem.mp4"
+          "start": 46.44,
+          "end": 64.98,
+          "file": "02_on-lai-noi-uat-khuat-va-hanh-trinh-thinh-kinh.mp4"
         }
       ]
     },
     {
       "id": "seg_ai_03",
-      "section_no": 3,
-      "section": "03_NoiDungTrongTam",
-      "topic_no": 3,
-      "topic": "Con phò tá Đường Tăng đi Tây Trúc",
-      "slug": "con-pho-ta-duong-tang-di-tay-truc",
-      "start_id": "S0021",
-      "end_id": "S0030",
-      "start": 59.4,
-      "end": 100.91,
+      "section_no": 2,
+      "section": "02_ly-thuyet",
+      "topic_no": 1,
+      "topic": "Bản chất vòng Kim cô và ý nghĩa sự giác ngộ",
+      "slug": "ban-chat-vong-kim-co-va-y-nghia-su-giac-ngo",
+      "start_id": "S0023",
+      "end_id": "S0032",
+      "start": 64.98,
+      "end": 105.81,
       "parts": [
         {
           "part": 1,
-          "start": 59.4,
-          "end": 100.91,
-          "file": "03_con-pho-ta-duong-tang-di-tay-truc.mp4"
+          "start": 64.98,
+          "end": 105.81,
+          "file": "01_ban-chat-vong-kim-co-va-y-nghia-su-giac-ngo.mp4"
         }
       ]
     },
     {
       "id": "seg_ai_04",
-      "section_no": 4,
-      "section": "04_PhanTichChiTiet",
-      "topic_no": 4,
-      "topic": "Cái danh Tề Thiên Đại Thánh năm xưa của con",
-      "slug": "cai-danh-te-thien-dai-thanh-nam-xua-cua-con",
-      "start_id": "S0031",
+      "section_no": 3,
+      "section": "03_tong-ket",
+      "topic_no": 1,
+      "topic": "Tình huống bất ngờ và lời chào đồng môn",
+      "slug": "tinh-huong-bat-ngo-va-loi-chao-dong-mon",
+      "start_id": "S0033",
+      "end_id": "S0038",
+      "start": 110.01,
+      "end": 162.17,
+      "parts": [
+        {
+          "part": 1,
+          "start": 110.01,
+          "end": 162.17,
+          "file": "01_tinh-huong-bat-ngo-va-loi-chao-dong-mon.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_05",
+      "section_no": 3,
+      "section": "03_tong-ket",
+      "topic_no": 2,
+      "topic": "Tổng kết bài học và lời tạ ơn sư phụ",
+      "slug": "tong-ket-bai-hoc-va-loi-ta-on-su-phu",
+      "start_id": "S0039",
       "end_id": "S0040",
-      "start": 100.91,
+      "start": 171.05,
       "end": 183.67,
       "parts": [
         {
           "part": 1,
-          "start": 100.91,
+          "start": 171.05,
           "end": 183.67,
-          "file": "04_cai-danh-te-thien-dai-thanh-nam-xua-cua-con.mp4"
+          "file": "02_tong-ket-bai-hoc-va-loi-ta-on-su-phu.mp4"
         }
       ]
     }

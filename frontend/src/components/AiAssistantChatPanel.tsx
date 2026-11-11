@@ -6,6 +6,8 @@ import {
   Send,
   Sparkles,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Bot,
   Zap,
@@ -64,6 +66,91 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Resizable Chat Panel width (kéo sang trái / sang phải tương tự như thanh Timeline)
+  const DEFAULT_WIDTH = 520;
+  const MIN_WIDTH = 320;
+  const MAX_WIDTH = 950;
+
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("autocut_ai_panel_width");
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+          return parsed;
+        }
+      }
+    }
+    return DEFAULT_WIDTH;
+  });
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("autocut_ai_panel_collapsed") === "true";
+    }
+    return false;
+  });
+
+  const isResizingRef = useRef(false);
+
+  const handleStartResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    const startX = e.clientX;
+    const startW = panelWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    let currentW = startW;
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      // Kéo sang trái (ev.clientX < startX) -> khung AI to ra
+      // Kéo sang phải (ev.clientX > startX) -> khung AI nhỏ lại, video to ra
+      const delta = startX - ev.clientX;
+      const maxAllowed = typeof window !== "undefined"
+        ? Math.min(MAX_WIDTH, window.innerWidth - 420)
+        : MAX_WIDTH;
+      const nextW = Math.max(MIN_WIDTH, Math.min(maxAllowed, startW + delta));
+      currentW = nextW;
+      setPanelWidth(nextW);
+      if (isCollapsed) setIsCollapsed(false);
+    };
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      try {
+        localStorage.setItem("autocut_ai_panel_width", currentW.toString());
+      } catch {}
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleResetWidth = () => {
+    setPanelWidth(DEFAULT_WIDTH);
+    setIsCollapsed(false);
+    try {
+      localStorage.setItem("autocut_ai_panel_width", DEFAULT_WIDTH.toString());
+      localStorage.setItem("autocut_ai_panel_collapsed", "false");
+    } catch {}
+  };
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("autocut_ai_panel_collapsed", next ? "true" : "false");
+      } catch {}
+      return next;
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -212,60 +299,117 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
 
   const currentModelObj = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
 
+  if (isCollapsed) {
+    return (
+      <aside className="w-14 bg-white/70 dark:bg-black/50 backdrop-blur-md border-l border-slate-200/80 dark:border-white/10 flex flex-col items-center py-3 shrink-0 select-none z-10 text-slate-800 dark:text-slate-100 shadow-[-1px_0_3px_rgba(0,0,0,0.02)] transition-all duration-200 relative">
+        <button
+          onClick={handleToggleCollapse}
+          className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-md transition hover:scale-105 active:scale-95 cursor-pointer mb-3"
+          title="Mở rộng Trợ lý AI (Kéo ra)"
+        >
+          <Bot className="w-5 h-5" />
+        </button>
+        <button
+          onClick={handleToggleCollapse}
+          className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 p-1.5 rounded-lg transition hover:bg-white/50 dark:hover:bg-white/10 mb-2 cursor-pointer"
+          title="Mở rộng khung chat"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="flex-1 flex items-center justify-center">
+          <span className="[writing-mode:vertical-lr] rotate-180 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            Trợ lý AI
+          </span>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="w-[460px] md:w-[510px] lg:w-[570px] xl:w-[630px] bg-white/70 dark:bg-black/50 backdrop-blur-md border-l border-slate-200/80 dark:border-white/10 flex flex-col shrink-0 select-none z-10 text-slate-800 dark:text-slate-100 shadow-[-1px_0_3px_rgba(0,0,0,0.02)] transition-colors duration-200">
+    <aside
+      style={{ width: `${panelWidth}px` }}
+      className="relative bg-white/70 dark:bg-black/50 backdrop-blur-md border-l border-slate-200/80 dark:border-white/10 flex flex-col shrink-0 select-none z-10 text-slate-800 dark:text-slate-100 shadow-[-1px_0_3px_rgba(0,0,0,0.02)] transition-colors duration-200"
+    >
+      {/* Thanh kéo điều chỉnh độ rộng ngăn cách giữa Video và Chatbox AI (kéo sang trái/phải tương tự Timeline) */}
+      <div
+        onMouseDown={handleStartResize}
+        onDoubleClick={handleResetWidth}
+        className="w-4 -left-2 absolute top-0 bottom-0 z-40 cursor-col-resize group flex items-center justify-center hover:bg-indigo-500/15 active:bg-indigo-600/30 transition select-none"
+        title="Kéo sang trái / phải để mở rộng hoặc thu nhỏ Chatbox AI & Video (Nhấp đúp để về mặc định 520px)"
+      >
+        <div className="w-1.5 h-16 rounded-full bg-slate-300 dark:bg-white/20 group-hover:bg-indigo-600 group-hover:h-24 group-active:bg-indigo-600 transition-all shadow-xs flex flex-col items-center justify-center gap-1.5">
+          <div className="w-0.5 h-0.5 rounded-full bg-white opacity-80" />
+          <div className="w-0.5 h-0.5 rounded-full bg-white opacity-80" />
+          <div className="w-0.5 h-0.5 rounded-full bg-white opacity-80" />
+        </div>
+      </div>
+
       {/* Header: Trợ lý AI & Model Selector Dropdown */}
       <div className="h-12 border-b border-slate-200/80 dark:border-white/10 px-4 flex items-center justify-between bg-white/60 dark:bg-black/40 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
             <Bot className="w-4 h-4" />
           </div>
           <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
             Trợ lý AI
           </span>
+          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 hidden sm:inline px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 rounded-md">
+            {panelWidth}px
+          </span>
         </div>
 
-        {/* Góc trên: Model Selector Dropdown cho người dùng chọn AI */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 border border-slate-200/80 dark:border-white/10 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 transition cursor-pointer shadow-2xs"
-            title="Chọn mô hình AI (ChatGPT, Gemini, Claude, Groq)"
-          >
-            <span className={`w-2.5 h-2.5 rounded-full ${currentModelObj.iconBg}`} />
-            <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">{currentModelObj.name}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
-          </button>
+        <div className="flex items-center gap-2">
+          {/* Góc trên: Model Selector Dropdown cho người dùng chọn AI */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 border border-slate-200/80 dark:border-white/10 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 transition cursor-pointer shadow-2xs"
+              title="Chọn mô hình AI (ChatGPT, Gemini, Claude, Groq)"
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${currentModelObj.iconBg}`} />
+              <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">{currentModelObj.name}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+            </button>
 
-          {isModelDropdownOpen && (
-            <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-slate-100">
-              <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Chọn mô hình AI
+            {isModelDropdownOpen && (
+              <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-slate-100">
+                <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Chọn mô hình AI
+                </div>
+                {AI_MODELS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedModel(item.id);
+                      setIsModelDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition cursor-pointer ${
+                      selectedModel === item.id
+                        ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold"
+                        : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${item.iconBg}`} />
+                      <span className="text-xs sm:text-sm">{item.name}</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 font-semibold">
+                      {item.badge}
+                    </span>
+                  </button>
+                ))}
               </div>
-              {AI_MODELS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedModel(item.id);
-                    setIsModelDropdownOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition cursor-pointer ${
-                    selectedModel === item.id
-                      ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold"
-                      : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${item.iconBg}`} />
-                    <span className="text-xs sm:text-sm">{item.name}</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 font-semibold">
-                    {item.badge}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Nút thu nhỏ / đóng tạm thời để video mở rộng tối đa */}
+          <button
+            onClick={handleToggleCollapse}
+            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+            title="Thu nhỏ Trợ lý AI để mở rộng tối đa khung Video"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
