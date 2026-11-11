@@ -375,7 +375,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   return (
     <div
       style={{ height: `${timelineHeight}px` }}
-      className="bg-white border-t border-slate-200/90 shrink-0 select-none flex flex-col z-20 text-slate-800 shadow-[0_-1px_3px_rgba(0,0,0,0.02)] relative transition-none"
+      className="bg-white/75 dark:bg-black/60 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 shrink-0 select-none flex flex-col z-20 text-slate-800 dark:text-slate-100 shadow-[0_-1px_3px_rgba(0,0,0,0.02)] relative transition-colors duration-200"
     >
       {/* Thanh kéo điều chỉnh độ cao Timeline (Kéo lên kéo xuống) */}
       <div
@@ -383,7 +383,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
         className="w-full h-3.5 -top-1.5 absolute left-0 right-0 z-50 cursor-ns-resize group flex items-center justify-center hover:bg-indigo-500/15 active:bg-indigo-600 transition select-none"
         title="Kéo lên / kéo xuống để điều chỉnh độ cao của Timeline"
       >
-        <div className="w-16 h-1 rounded-full bg-slate-300 group-hover:bg-indigo-600 transition shadow-xs flex items-center justify-center gap-1">
+        <div className="w-16 h-1 rounded-full bg-slate-300 dark:bg-white/20 group-hover:bg-indigo-600 transition shadow-xs flex items-center justify-center gap-1">
           <div className="w-1 h-1 rounded-full bg-white opacity-60" />
           <div className="w-1 h-1 rounded-full bg-white opacity-60" />
           <div className="w-1 h-1 rounded-full bg-white opacity-60" />
@@ -391,12 +391,12 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
       </div>
 
       {/* 1. Timeline Toolbar */}
-      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white shrink-0">
+      <div className="h-12 border-b border-slate-200/80 dark:border-white/10 px-4 flex items-center justify-between bg-white/60 dark:bg-black/40 backdrop-blur-sm shrink-0">
         {/* Left Toolbar Controls */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Mouse pointer */}
           <button
-            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-white/10 transition"
             title="Con trỏ chọn"
           >
             <MousePointer className="w-4 h-4" />
@@ -408,8 +408,8 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             disabled={!canUndo}
             className={`p-1.5 rounded-lg transition ${
               canUndo
-                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                : "text-slate-300 cursor-not-allowed"
+                ? "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-white/10"
+                : "text-slate-300 dark:text-slate-600 cursor-not-allowed"
             }`}
             title="Hoàn tác (Ctrl+Z)"
           >
@@ -422,8 +422,8 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             disabled={!canRedo}
             className={`p-1.5 rounded-lg transition ${
               canRedo
-                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                : "text-slate-300 cursor-not-allowed"
+                ? "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-white/10"
+                : "text-slate-300 dark:text-slate-600 cursor-not-allowed"
             }`}
             title="Làm lại (Ctrl+Y)"
           >
@@ -433,17 +433,17 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           {/* Split / Cắt */}
           <button
             onClick={handleSplitAtPlayhead}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 border border-slate-200/80 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-white/80 dark:hover:bg-white/10 border border-slate-200/80 dark:border-white/10 transition cursor-pointer"
             title="Tách phân đoạn tại con trỏ đỏ"
           >
-            <Scissors className="w-4 h-4 text-indigo-600" />
+            <Scissors className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span>Cắt</span>
           </button>
 
           {/* Delete active segment */}
           <button
             onClick={handleDeleteActive}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
             title="Xóa phân đoạn đang chọn"
           >
             <Trash2 className="w-4 h-4" />
@@ -523,7 +523,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
           {/* Nút "+ Công cụ" */}
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold shadow-2xs transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 text-sm font-semibold shadow-2xs transition"
             title="Thêm công cụ biên tập"
           >
             <Plus className="w-4 h-4" />
@@ -533,26 +533,26 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
       </div>
 
       {/* 2. Multi-Track Timeline Canvas with Red Playhead */}
-      <div className="flex bg-white overflow-x-auto overflow-y-auto relative flex-1 min-h-0">
+      <div className="flex bg-white/40 dark:bg-black/30 overflow-x-auto overflow-y-auto relative flex-1 min-h-0">
         {/* Left Track Names: "Nội dung" and "Âm thanh" */}
-        <div className="w-28 bg-white shrink-0 flex flex-col select-none z-20 pl-4 pr-2 border-r border-slate-100 sticky left-0">
+        <div className="w-28 bg-white/60 dark:bg-black/40 backdrop-blur-xs shrink-0 flex flex-col select-none z-20 pl-4 pr-2 border-r border-slate-200/80 dark:border-white/10 sticky left-0 text-slate-800 dark:text-slate-100">
           {/* Ruler space */}
           <div className="h-8" />
 
           {/* Video Sequence Strip Label */}
           {joinedVideos && joinedVideos.length > 1 && (
-            <div className="h-6 flex items-center text-[11px] font-bold text-emerald-700">
+            <div className="h-6 flex items-center text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
               Ghép ({joinedVideos.length} video)
             </div>
           )}
 
           {/* Track 1 Label: Nội dung */}
-          <div className="h-20 flex items-center text-sm font-bold text-slate-800">
+          <div className="h-20 flex items-center text-sm font-bold text-slate-800 dark:text-slate-100">
             Nội dung
           </div>
 
           {/* Track 2 Label: Âm thanh */}
-          <div className="h-16 flex items-center text-sm font-bold text-slate-800">
+          <div className="h-16 flex items-center text-sm font-bold text-slate-800 dark:text-slate-100">
             Âm thanh
           </div>
         </div>
@@ -569,7 +569,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           }`}
         >
           {/* Top Ruler Bar */}
-          <div className="h-8 relative text-xs font-mono font-medium text-slate-500 flex items-center overflow-hidden border-b border-slate-100">
+          <div className="h-8 relative text-xs font-mono font-medium text-slate-500 dark:text-slate-400 flex items-center overflow-hidden border-b border-slate-200/80 dark:border-white/10">
             {rulerTicks.map((tick, i) => (
               <div
                 key={i}
@@ -686,18 +686,18 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                     className={`w-full h-full rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs overflow-hidden select-none ${
                       isSelected
                         ? isAppendedSeg
-                          ? "bg-[#d1fae5] border-emerald-600 ring-2 ring-emerald-300 z-10 shadow-xs"
-                          : "bg-[#e0e7ff] border-indigo-500 ring-2 ring-indigo-200 z-10 shadow-xs"
+                          ? "bg-[#d1fae5] dark:bg-emerald-950/80 border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700/60 z-10 shadow-xs"
+                          : "bg-[#e0e7ff] dark:bg-indigo-950/80 border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-200 dark:ring-indigo-700/60 z-10 shadow-xs"
                         : isAppendedSeg
-                        ? "bg-[#ecfdf5] border-emerald-300 hover:border-emerald-500 z-0"
-                        : "bg-[#eef2ff] border-indigo-200 hover:border-indigo-400 z-0"
+                        ? "bg-[#ecfdf5] dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 hover:border-emerald-500 dark:hover:border-emerald-600 z-0"
+                        : "bg-[#eef2ff] dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/80 hover:border-indigo-400 dark:hover:border-indigo-600 z-0"
                     }`}
                   >
                     {/* Top Row: Title + Duration */}
                     <div className="flex items-center justify-between gap-1.5 min-w-0">
                       <span
                         className={`text-sm font-bold truncate min-w-0 ${
-                          isAppendedSeg ? "text-emerald-950" : "text-slate-900"
+                          isAppendedSeg ? "text-emerald-950 dark:text-emerald-200" : "text-slate-900 dark:text-slate-100"
                         }`}
                       >
                         #{idx + 1} {seg.topic}
@@ -705,8 +705,8 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                       <span
                         className={`text-xs font-mono font-bold ml-1 shrink-0 px-1.5 py-0.5 rounded shadow-2xs ${
                           isAppendedSeg
-                            ? "text-emerald-800 bg-white/90 border border-emerald-200"
-                            : "text-indigo-700 bg-white/80"
+                            ? "text-emerald-800 dark:text-emerald-300 bg-white/90 dark:bg-slate-900/90 border border-emerald-200 dark:border-emerald-800"
+                            : "text-indigo-700 dark:text-indigo-300 bg-white/80 dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900"
                         }`}
                       >
                         {formatTime(seg.end - seg.start)}
@@ -721,12 +721,12 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                         }`}
                       />
                       {isAppendedSeg && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 bg-emerald-200/80 dark:bg-emerald-900/80 px-1.5 py-0.5 rounded shrink-0">
                           Nối tiếp
                         </span>
                       )}
                       {seg.slug && seg.slug !== slugify(seg.topic) && (
-                        <span className="text-[11px] font-mono text-slate-500 truncate min-w-0 opacity-80">
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate min-w-0 opacity-80">
                           {seg.slug}
                         </span>
                       )}
@@ -758,7 +758,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
           {/* Track 2: Âm thanh (Emerald green waveform inside mint pill container) */}
           <div className="h-16 relative w-full flex items-center py-1">
-            <div className="w-full h-full bg-[#ecfdf5] rounded-2xl border border-emerald-200/90 flex items-center justify-between px-3 gap-0.5 overflow-hidden">
+            <div className="w-full h-full bg-[#ecfdf5] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/90 dark:border-emerald-800/60 flex items-center justify-between px-3 gap-0.5 overflow-hidden">
               {waveformBars.map((height, i) => {
                 const barTime = (i / Math.max(1, waveformBars.length)) * totalDuration;
                 const isInDeletedGap = deletedGaps.some(

@@ -1857,7 +1857,7 @@ export default function Home() {
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col font-sans select-none selection:bg-indigo-600 selection:text-white transition-colors duration-200 text-slate-800"
+      className="h-screen w-screen overflow-hidden flex flex-col font-sans select-none selection:bg-indigo-600 selection:text-white transition-colors duration-200 text-slate-800 dark:text-slate-100"
       style={{ backgroundColor: themeBgColor }}
     >
       {/* Top Header matching reference image */}
@@ -1881,7 +1881,7 @@ export default function Home() {
       />
 
       {/* Main Body Workspace */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative bg-transparent">
         {/* Left Icon Sidebar (giữ ngoài cùng bên trái) */}
         <StudioSidebar
           activeTab={activeTab}
@@ -1893,7 +1893,7 @@ export default function Home() {
         {/* Content View Switcher */}
         {activeTab === "studio" ? (
           /* Studio View: LEFT: Video Library Column, CENTER: Large Video Canvas, RIGHT: AI Assistant Chat Panel */
-          <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className="flex-1 flex overflow-hidden min-h-0 bg-transparent">
             {/* LEFT: Video Library Column */}
             <VideoLibraryColumn
               currentVideoName={data.video}

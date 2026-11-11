@@ -87,25 +87,25 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
   return (
     <>
-      <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40 text-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)] relative">
+      <header className="h-14 bg-white/75 dark:bg-black/60 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between px-4 lg:px-6 select-none shrink-0 z-40 text-slate-800 dark:text-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03)] relative transition-colors duration-200">
         {/* Left: LOGO & Badge matching reference image */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Scissors className="w-4 h-4" />
             </div>
-            <span className="font-black tracking-wider text-sm text-slate-900 uppercase font-sans">
+            <span className="font-black tracking-wider text-sm text-slate-900 dark:text-white uppercase font-sans">
               AUTOCUT
             </span>
 
             {/* Trạng thái dữ liệu */}
             {data.mode === "raw" ? (
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center gap-1.5 ml-2">
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-700/60 flex items-center gap-1.5 ml-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                 Chưa phân tích AI
               </span>
             ) : (
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 ml-2">
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-700/60 flex items-center gap-1.5 ml-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 Đã phân tích bởi AI
               </span>
@@ -114,7 +114,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
 
         {/* Center: Video Title */}
-        <div className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2 text-xs font-mono text-slate-600 font-medium">
+        <div className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2 text-xs font-mono text-slate-600 dark:text-slate-300 font-medium">
           {data.video || "Bai08_Ep_kieu_du_lieu.mp4"}
         </div>
 
@@ -214,10 +214,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
           {/* User Account Dropdown with Avatar */}
           {user && (
-            <div className="relative pl-2 border-l border-slate-200" ref={dropdownRef}>
+            <div className="relative pl-2 border-l border-slate-200/80 dark:border-white/10" ref={dropdownRef}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100 transition border border-transparent hover:border-slate-200"
+                className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100/80 dark:hover:bg-white/10 transition border border-transparent hover:border-slate-200/80 dark:hover:border-white/10"
               >
                 {/* Avatar Circle */}
                 <div
@@ -229,7 +229,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 </div>
 
                 {/* Account Name */}
-                <span className="text-xs font-semibold text-slate-800 hidden sm:inline max-w-[120px] truncate">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 hidden sm:inline max-w-[120px] truncate">
                   {user.name}
                 </span>
 
@@ -238,9 +238,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
               {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in duration-150">
+                <div className="absolute right-0 mt-2 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-white/10 rounded-2xl shadow-xl p-2 z-50 text-xs animate-in fade-in duration-150 text-slate-800 dark:text-slate-100">
                   {/* User Profile Header in dropdown */}
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-1.5 flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-white/10 mb-1.5 flex items-center gap-2.5">
                     <div
                       className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${
                         user.avatarColor || "from-indigo-600 to-blue-600"
@@ -249,9 +249,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                       {initial}
                     </div>
                     <div className="overflow-hidden">
-                      <div className="font-bold text-slate-900 truncate text-xs">{user.name}</div>
-                      <div className="text-[10px] text-indigo-700 font-semibold truncate">{user.role}</div>
-                      <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
+                      <div className="font-bold text-slate-900 dark:text-white truncate text-xs">{user.name}</div>
+                      <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate">{user.role}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</div>
                     </div>
                   </div>
 
@@ -259,7 +259,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   <div className="space-y-0.5">
                     <button
                       onClick={() => openAccountModal("profile")}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition font-medium"
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-400 hover:bg-slate-100/80 dark:hover:bg-white/10 transition font-medium"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-slate-400" />
                       <span>Thông tin tài khoản</span>
@@ -267,17 +267,17 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
                     <button
                       onClick={() => openAccountModal("password")}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition font-medium"
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-400 hover:bg-slate-100/80 dark:hover:bg-white/10 transition font-medium"
                     >
                       <KeyRound className="w-3.5 h-3.5 text-slate-400" />
                       <span>Đổi mật khẩu</span>
                     </button>
 
-                    <div className="my-1 border-t border-slate-100" />
+                    <div className="my-1 border-t border-slate-100 dark:border-white/10" />
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition font-medium"
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition font-medium"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Đăng xuất</span>
