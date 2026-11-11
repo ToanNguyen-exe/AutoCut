@@ -19,7 +19,7 @@ from google.genai import types
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import extract_terms_from_outline
 from .config_loader import default_ai_config
-from .post_processor import post_process_sentence, merge_fragmented_segments
+from .post_processor import post_process_sentence, merge_fragmented_segments, sanitize_transcript_stem
 from .whisper_service import compute_file_sha256
 
 logger = logging.getLogger("AutoCut.AI.GeminiSTT")
@@ -265,10 +265,13 @@ LƯU Ý QUAN TRỌNG:
             # Lưu vào file đầu ra chỉ định nếu có
             if output_file:
                 out_p = Path(output_file)
+                if out_p.parent.name == "transcripts":
+                    clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+                    out_p = out_p.parent / f"{clean_stem}_transcript.json"
                 out_p.parent.mkdir(parents=True, exist_ok=True)
                 with open(out_p, "w", encoding="utf-8") as f:
                     f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
-                logger.info(f"Đã xuất tệp transcript: {output_file}")
+                logger.info(f"Đã xuất tệp transcript: {out_p}")
 
             return transcript_output
 

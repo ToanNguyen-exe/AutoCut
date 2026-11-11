@@ -1,0 +1,88 @@
+{
+  "video": "BaiGiang_Test_Output.mp4",
+  "lesson": "Bài Học 01: Giới Thiệu Khóa Học",
+  "mode": "analyzed",
+  "reviewed": false,
+  "segments": [
+    {
+      "id": "seg_ai_01",
+      "section_no": 1,
+      "section": "01_GioiThieu",
+      "topic_no": 1,
+      "topic": "Sư phụ, lần này, em là đệ tử thật sự là người mất mặt rồi",
+      "slug": "su-phu-lan-nay-em-la-de-tu-that-su-la-nguoi-mat",
+      "start_id": "S0001",
+      "end_id": "S0010",
+      "start": 0.0,
+      "end": 38.74,
+      "parts": [
+        {
+          "part": 1,
+          "start": 0.0,
+          "end": 38.74,
+          "file": "01_su-phu-lan-nay-em-la-de-tu-that-su-la-nguoi-mat.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_02",
+      "section_no": 2,
+      "section": "02_KhaiNiemCoBan",
+      "topic_no": 2,
+      "topic": "Con thử nói xem",
+      "slug": "con-thu-noi-xem",
+      "start_id": "S0011",
+      "end_id": "S0020",
+      "start": 38.74,
+      "end": 59.4,
+      "parts": [
+        {
+          "part": 1,
+          "start": 38.74,
+          "end": 59.4,
+          "file": "02_con-thu-noi-xem.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_03",
+      "section_no": 3,
+      "section": "03_NoiDungTrongTam",
+      "topic_no": 3,
+      "topic": "Con phò tá Đường Tăng đi Tây Trúc",
+      "slug": "con-pho-ta-duong-tang-di-tay-truc",
+      "start_id": "S0021",
+      "end_id": "S0030",
+      "start": 59.4,
+      "end": 100.91,
+      "parts": [
+        {
+          "part": 1,
+          "start": 59.4,
+          "end": 100.91,
+          "file": "03_con-pho-ta-duong-tang-di-tay-truc.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_04",
+      "section_no": 4,
+      "section": "04_PhanTichChiTiet",
+      "topic_no": 4,
+      "topic": "Cái danh Tề Thiên Đại Thánh năm xưa của con",
+      "slug": "cai-danh-te-thien-dai-thanh-nam-xua-cua-con",
+      "start_id": "S0031",
+      "end_id": "S0040",
+      "start": 100.91,
+      "end": 183.67,
+      "parts": [
+        {
+          "part": 1,
+          "start": 100.91,
+          "end": 183.67,
+          "file": "04_cai-danh-te-thien-dai-thanh-nam-xua-cua-con.mp4"
+        }
+      ]
+    }
+  ]
+}

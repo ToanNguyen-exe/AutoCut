@@ -5,7 +5,6 @@ Bóc băng âm thanh siêu tốc (~1-3 giây) trực tiếp từ Groq Cloud mà 
 
 import os
 import re
-import time
 import json
 import logging
 import urllib.request
@@ -16,6 +15,7 @@ from typing import Optional, Dict, Any, List
 
 from .models import TranscriptOutput, Sentence
 from .config_loader import default_ai_config
+from .post_processor import sanitize_transcript_stem
 
 logger = logging.getLogger("AutoCut.AI.Groq")
 
@@ -24,11 +24,34 @@ CACHE_DIR = PROJECT_ROOT / "cache"
 TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
 
 
+def get_video_duration_seconds(video_path: str) -> float:
+    try:
+        cmd = [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(video_path)
+        ]
+        out = subprocess.check_output(cmd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+        return float(out.decode().strip())
+    except Exception:
+        return 0.0
+
+
 def extract_audio_mp3(video_path: str, output_mp3_path: str) -> bool:
     """
-    Trích xuất âm thanh từ video sang định dạng mp3 mono 64kbps bằng ffmpeg
-    để giảm dung lượng tối đa (file 5 phút chỉ khoảng 2.5MB), đảm bảo giới hạn 25MB của Groq.
+    Trích xuất âm thanh từ video sang định dạng mp3 mono bằng ffmpeg.
+    Tự động tính toán bitrate (16k - 64k) để đảm bảo file luôn < 22MB,
+    hoàn toàn an toàn trong giới hạn 25MB của Groq Whisper Cloud API.
     """
+    dur = get_video_duration_seconds(video_path)
+    if dur > 0:
+        # Nhắm tới dung lượng file ~20MB để an toàn tuyệt đối dưới ngưỡng 25MB của Groq
+        calculated_bitrate = int((20 * 1024 * 8) / dur)
+        bitrate = f"{max(16, min(64, calculated_bitrate))}k"
+    else:
+        bitrate = "32k"
+
     cmd = [
         "ffmpeg",
         "-y",
@@ -36,7 +59,7 @@ def extract_audio_mp3(video_path: str, output_mp3_path: str) -> bool:
         "-vn",
         "-ar", "16000",
         "-ac", "1",
-        "-b:a", "64k",
+        "-b:a", bitrate,
         str(output_mp3_path)
     ]
     try:
@@ -127,16 +150,17 @@ def transcribe_with_groq(
     groq_key = (
         api_key
         or os.getenv("WHISPER_API_KEY")
+        or os.getenv("GROQ_API_KEY")
         or getattr(default_ai_config, "whisper_api_key", "")
     )
     if not groq_key or not groq_key.startswith("gsk_"):
-        raise ValueError("Chưa cấu hình WHISPER_API_KEY của Groq (bắt đầu bằng gsk_...) trong .env!")
+        raise ValueError("Chưa cấu hình GROQ_API_KEY hoặc WHISPER_API_KEY của Groq (bắt đầu bằng gsk_...) trong .env!")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 1. Trích xuất âm thanh nhẹ sang file tạm (dùng tên chuẩn thuần ASCII để ffmpeg không lỗi)
-    temp_mp3 = CACHE_DIR / f"groq_audio_{os.getpid()}_{int(time.time())}.mp3"
+    # 1. Trích xuất âm thanh nhẹ sang file tạm
+    temp_mp3 = CACHE_DIR / f"groq_audio_{p.stem}_{os.getpid()}.mp3"
     logger.info(f"[*] Đang chuẩn bị âm thanh nén cho Groq từ: {p.name}...")
     extracted = extract_audio_mp3(str(p), str(temp_mp3))
     target_audio = str(temp_mp3) if extracted else str(p)
@@ -207,27 +231,24 @@ def transcribe_with_groq(
         sentences=sentences
     )
 
-    # 3. Ghi ra các file theo yêu cầu:
-    # 3.1. transcripts/<safe_slug>_transcript.json (chuẩn hóa không dấu, không khoảng trắng)
-    from .cli import sanitize_to_safe_slug
-    safe_slug = sanitize_to_safe_slug(clean_name)
-    dedicated_file = TRANSCRIPTS_DIR / f"{safe_slug}_transcript.json"
+    # 3. Ghi ra 1 file transcript duy nhất cho video:
+    # transcripts/<tên_video>_transcript.json (chuẩn hóa không dấu, không khoảng cách)
+    safe_stem = sanitize_transcript_stem(stem)
+    dedicated_file = TRANSCRIPTS_DIR / f"{safe_stem}_transcript.json"
     json_str = transcript_out.model_dump_json(indent=2, exclude_none=True)
     with open(dedicated_file, "w", encoding="utf-8") as f:
         f.write(json_str)
     logger.info(f"[+] Đã lưu transcript tại: {dedicated_file}")
 
-    # 3.2. transcript.json ở thư mục gốc (để người dùng mở kiểm tra trực tiếp)
-    root_file = PROJECT_ROOT / "transcript.json"
-    with open(root_file, "w", encoding="utf-8") as f:
-        f.write(json_str)
-    logger.info(f"[+] Đã đồng bộ vào: {root_file}")
-
-    # 3.3. File output chỉ định (nếu có)
+    # File output chỉ định (nếu có và trùng path thì đã lưu, nếu khác thì lưu vào đích)
     if output_file:
         out_p = Path(output_file)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_p, "w", encoding="utf-8") as f:
-            f.write(json_str)
+        if out_p.parent.resolve() == TRANSCRIPTS_DIR.resolve():
+            clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
+            out_p = TRANSCRIPTS_DIR / f"{clean_stem}_transcript.json"
+        if out_p.resolve() != dedicated_file.resolve():
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_p, "w", encoding="utf-8") as f:
+                f.write(json_str)
 
     return transcript_out

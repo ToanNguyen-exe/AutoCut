@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User, JoinedVideoClip } from "@/types";
 import { getCurrentUser } from "@/lib/auth";
@@ -317,6 +317,9 @@ export default function Home() {
 
   // AI Analysis States
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
+  const [analysisStep, setAnalysisStep] = useState<string>("");
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Tiến độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal)
@@ -374,6 +377,9 @@ export default function Home() {
     } else {
       setCurrentUser(user);
     }
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
   }, [router]);
 
   // 1. Phục hồi Active Session từ localStorage & IndexedDB ngay khi mount (F5)
@@ -1140,6 +1146,35 @@ export default function Home() {
 
   const handleAnalyzeAI = useCallback(async () => {
     setIsAnalyzing(true);
+    setAnalysisProgress(5);
+    setAnalysisStep("Đang kết nối AI Engine & trích xuất đặc trưng âm thanh...");
+
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    const startTime = Date.now();
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setAnalysisProgress((prev) => {
+        let target = prev;
+        if (elapsed < 3) {
+          target = Math.min(25, 5 + elapsed * 6.5);
+          setAnalysisStep("Đang tách âm thanh & gọi Whisper STT nhận diện lời thoại...");
+        } else if (elapsed < 8) {
+          target = Math.min(55, 25 + (elapsed - 3) * 6);
+          setAnalysisStep("Whisper hoàn tất, Gemini đang sửa chính tả & tách câu đơn...");
+        } else if (elapsed < 14) {
+          target = Math.min(78, 55 + (elapsed - 8) * 3.8);
+          setAnalysisStep("Gemini đang phân tích ngữ nghĩa & chia đoạn theo chủ đề...");
+        } else if (elapsed < 20) {
+          target = Math.min(92, 78 + (elapsed - 14) * 2.3);
+          setAnalysisStep("Đang tối ưu độ dài phân đoạn (< 7 phút) & đồng bộ hóa...");
+        } else {
+          target = Math.min(96, 92 + (elapsed - 20) * 0.4);
+          setAnalysisStep("Đang hoàn tất lưu file phân đoạn và chuẩn bị hiển thị...");
+        }
+        return Number(target.toFixed(1));
+      });
+    }, 200);
+
     setIsProgressModalOpen(true);
     setProgressModalMode("analyze");
     setProgressPercent(15);
@@ -1204,12 +1239,21 @@ export default function Home() {
       data.segments.reduce((max, s) => Math.max(max, s.end), 0)
     );
 
-    const finalizeAnalysisSuccess = (segCount: number, sentCount: number) => {
+    const finalizeAnalysisSuccess = async (segCount: number, sentCount: number) => {
       clearInterval(ticker);
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      setAnalysisProgress(100);
+      setAnalysisStep("✓ Hoàn tất phân tích AI 100%!");
       setProgressPercent(100);
       setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn và bóc băng ${sentCount} câu thoại!`);
       setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+      await new Promise((r) => setTimeout(r, 450));
       setIsAnalyzing(false);
+      setAnalysisProgress(0);
+      setAnalysisStep("");
     };
 
     // Danh sách toàn bộ các video trên Timeline cần phân tích
@@ -1923,6 +1967,7 @@ export default function Home() {
         backendOnline={backendOnline}
         isRendering={isRendering}
         isAnalyzing={isAnalyzing}
+        analysisProgress={analysisProgress}
         isSaving={isSaving}
         isDemo={isDemo}
         themeColor={themeBgColor}
@@ -1979,6 +2024,8 @@ export default function Home() {
               isMuted={isMuted}
               isDemo={isDemo}
               isAnalyzing={isAnalyzing}
+              analysisProgress={analysisProgress}
+              analysisStep={analysisStep}
               mode={data.mode}
               onSeek={handleSeek}
               onTogglePlay={() => setIsPlaying(!isPlaying)}

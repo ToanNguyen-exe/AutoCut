@@ -26,6 +26,7 @@ interface StudioHeaderProps {
   backendOnline?: boolean;
   isRendering: boolean;
   isAnalyzing?: boolean;
+  analysisProgress?: number;
   isSaving?: boolean;
   isDemo?: boolean;
   themeColor?: string;
@@ -44,6 +45,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   data,
   isRendering,
   isAnalyzing = false,
+  analysisProgress = 0,
   isSaving = false,
   themeColor,
   onThemeColorChange,
@@ -128,10 +130,16 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isAnalyzing ? (
-                <>
+                <div className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang phân tích AI...</span>
-                </>
+                  <span>Đang phân tích AI: {Math.round(analysisProgress)}%</span>
+                  <div className="w-12 bg-indigo-200 rounded-full h-1.5 overflow-hidden ml-1">
+                    <div
+                      className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
+                    />
+                  </div>
+                </div>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-200" />

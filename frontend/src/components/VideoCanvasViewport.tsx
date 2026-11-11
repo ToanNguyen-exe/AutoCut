@@ -28,6 +28,8 @@ interface VideoCanvasViewportProps {
   isMuted?: boolean;
   isDemo?: boolean;
   isAnalyzing?: boolean;
+  analysisProgress?: number;
+  analysisStep?: string;
   mode?: string;
   onSeek?: (time: number) => void;
   onTogglePlay?: () => void;
@@ -49,6 +51,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   isPlaying = false,
   volume = 100,
   isMuted = false,
+  isAnalyzing = false,
+  analysisProgress = 0,
+  analysisStep = "",
   onSeek,
   onTogglePlay,
   onDurationChange,
@@ -410,6 +415,12 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
         {/* Right: Tỉ lệ 16:9 Landscape & Nút thao tác */}
         <div className="flex items-center gap-2">
+          {isAnalyzing && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 font-bold animate-pulse flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-indigo-600 animate-spin" />
+              <span>⚡ Đang phân tích AI: {Math.round(analysisProgress)}%</span>
+            </span>
+          )}
           <button
             onClick={() => setAspect(aspect === "landscape" ? "portrait" : "landscape")}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/10 transition cursor-pointer shadow-2xs"
@@ -456,6 +467,30 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
           {/* Inner Video Wrapper: Bo góc tròn bên trong khung viền 5px */}
           <div className="w-full h-full rounded-xl overflow-hidden relative flex items-center justify-center bg-black">
+            {/* AI Analyzing Progress Overlay */}
+            {isAnalyzing && (
+              <div className="absolute inset-0 z-35 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-white text-center animate-in fade-in duration-200">
+                <div className="relative mb-3">
+                  <div className="w-16 h-16 rounded-full border-3 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
+                  </div>
+                </div>
+                <div className="text-3xl font-black font-mono text-white tracking-tight mb-1">
+                  {Math.round(analysisProgress)}%
+                </div>
+                <p className="text-xs font-bold text-indigo-200 mb-3 max-w-xs truncate">
+                  {analysisStep || "Đang phân tích video bằng AI..."}
+                </p>
+                <div className="w-64 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700 shadow-inner">
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Real Video Element OR Crisp Modern Slide Canvas matching reference image */}
             {videoSrc ? (
               <div className="w-full h-full flex items-center justify-center bg-black relative">

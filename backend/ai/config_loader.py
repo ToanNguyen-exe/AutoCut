@@ -77,13 +77,16 @@ class AIConfig:
         )
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
-        # Thư mục cache và output
-        self.cache_dir: str = os.getenv("CACHE_DIR", "./cache")
-        self.output_dir: str = os.getenv("OUTPUT_DIR", "./output")
+        # Thư mục cache, output và segments duy nhất tại thư mục gốc AutoCut
+        project_root = Path(__file__).resolve().parent.parent.parent
+        self.cache_dir: str = os.getenv("CACHE_DIR", str(project_root / "cache"))
+        self.output_dir: str = os.getenv("OUTPUT_DIR", str(project_root / "output"))
+        self.segments_dir: str = os.getenv("SEGMENTS_DIR", str(project_root / "segments"))
 
         # Đảm bảo các thư mục tồn tại
         os.makedirs(self.cache_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.segments_dir, exist_ok=True)
 
 
 # Singleton config instance

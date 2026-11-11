@@ -86,6 +86,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadPercent, setUploadPercent] = useState<number>(0);
   const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
   const [cloudVideos, setCloudVideos] = useState<BackendVideoItem[]>([]);
   const [localVideos, setLocalVideos] = useState<VideoLibraryItem[]>([]);
@@ -256,11 +257,24 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       }
 
       setIsUploading(true);
-      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini) lưu vào thư mục transcripts/...");
+      setUploadPercent(10);
+      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini)...");
+
+      const upStartTime = Date.now();
+      const upTimer = setInterval(() => {
+        const sec = (Date.now() - upStartTime) / 1000;
+        setUploadPercent(() => {
+          if (sec < 3) return Math.min(30, 10 + sec * 7);
+          if (sec < 8) return Math.min(65, 30 + (sec - 3) * 7);
+          return Math.min(94, 65 + (sec - 8) * 3);
+        });
+      }, 250);
 
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
         if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
+          clearInterval(upTimer);
+          setUploadPercent(100);
           const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
             ? uploadRes.data.transcript.duration
             : finalDurationSeconds;
@@ -281,6 +295,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       } catch (uploadErr) {
         console.warn("Upload lên backend gặp sự cố, sử dụng chế độ phát tệp cục bộ:", uploadErr);
       } finally {
+        clearInterval(upTimer);
+        setUploadPercent(100);
         setIsUploading(false);
       }
 
@@ -635,11 +651,22 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             </div>
           )}
 
-          {/* Upload Progress Status */}
+          {/* Upload Progress Status with % Bar */}
           {isUploading && (
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-medium">
-              <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
-              <span>{uploadProgressMsg || "Đang xử lý tệp..."}</span>
+            <div className="space-y-1.5 p-3 rounded-xl bg-indigo-100/90 border border-indigo-300 text-indigo-900 text-xs font-semibold">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-700 shrink-0" />
+                  <span className="truncate max-w-[260px]">{uploadProgressMsg || "Đang xử lý tệp..."}</span>
+                </div>
+                <span className="font-mono font-black text-indigo-800">{Math.round(uploadPercent)}%</span>
+              </div>
+              <div className="w-full bg-indigo-200/80 rounded-full h-2 overflow-hidden border border-indigo-300/50">
+                <div
+                  className="bg-indigo-600 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.min(100, Math.max(5, uploadPercent))}%` }}
+                />
+              </div>
             </div>
           )}
 
