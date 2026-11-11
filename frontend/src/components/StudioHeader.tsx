@@ -113,11 +113,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Video Title */}
-        <div className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2 text-xs font-mono text-slate-600 dark:text-slate-300 font-medium">
-          {data.video || "Bai08_Ep_kieu_du_lieu.mp4"}
-        </div>
-
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Nút Phân Tích AI / Chạy Lại AI */}

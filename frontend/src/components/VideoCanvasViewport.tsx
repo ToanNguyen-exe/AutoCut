@@ -427,15 +427,15 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         onDrop={handleDrop}
         className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-3 lg:p-4 relative overflow-hidden bg-transparent transition-colors duration-200"
       >
-        {/* Video Canvas Container (Compact size) */}
+        {/* Video Canvas Container (Thu nhỏ gọn gàng để nhường không gian cho bảng Trợ lý AI) */}
         <div
           ref={containerRef}
           className={`relative rounded-2xl overflow-hidden shadow-lg border border-slate-200/90 dark:border-white/15 flex flex-col items-center justify-center transition-all duration-200 group ${
             aspect === "landscape" ? "aspect-video" : "aspect-[9/16]"
           }`}
           style={{
-            maxHeight: "75%",
-            maxWidth: "92%",
+            maxHeight: "58%",
+            maxWidth: "76%",
             height: "100%",
             width: "auto",
           }}
@@ -563,7 +563,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         </div>
 
         {/* Bottom Time Counter & Fullscreen Icon matching reference image */}
-        <div className="w-full max-w-[85%] flex items-center justify-between pt-2.5 px-2">
+        <div className="w-full max-w-[76%] flex items-center justify-between pt-2.5 px-2">
           {/* Digital Timecode (00:00:02:45 / 00:08:55:00) */}
           <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">
             {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
