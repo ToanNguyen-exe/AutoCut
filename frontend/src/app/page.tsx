@@ -701,56 +701,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  const handleSelectLibraryVideo = (video: VideoLibraryItem) => {
-    setExternalVideoUrl(video.url);
-    setUndoStack([]);
-    setRedoStack([]);
-
-    const isLibDemo = video.lesson === "Bai05_VongLap" || video.name === "Bai05_VongLap.mp4";
-    const mode = isLibDemo ? "demo" : video.status === "added" ? "raw" : "analyzed";
-
-    setData({
-      video: video.name,
-      lesson: video.lesson,
-      mode: mode,
-      reviewed: video.status === "edited",
-      segments: video.segments,
-    });
-
-    if (video.transcript) {
-      setTranscript(video.transcript);
-    } else if (mode === "raw") {
-      setTranscript(undefined);
-    } else {
-      const isMusicOrDownload = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-        `${video.name} ${video.lesson} ${video.title}`
-      );
-      if (isMusicOrDownload) {
-        setTranscript({
-          video: video.name,
-          duration: video.duration > 0 ? video.duration : 356.3,
-          sentences: REAL_DOWNLOAD_LYRICS,
-        });
-      } else {
-        setTranscript({
-          video: video.name,
-          duration: video.duration,
-          sentences: [
-            { id: "S0001", start: 0, end: Math.min(30, video.duration * 0.1), text: `Bắt đầu phát video: "${video.title}".` },
-          ],
-        });
-      }
-    }
-
-    if (video.segments.length > 0) {
-      setActiveSegmentId(video.segments[0].id);
-    }
-    setCurrentTime(0);
-    setIsPlaying(true);
-    setIsLibraryOpen(false);
-
-    showToast("success", `Đang phát video: "${video.title}"`);
-  };
+  // (Logic chọn video trong Thư viện Drawer được chuyển xuống hợp nhất cùng handleSelectLibraryCard)
 
   const handleExportJson = () => {
     const dataStr =
@@ -1806,12 +1757,26 @@ export default function Home() {
       const validUrl = resolvePlayableVideoUrl(card.url, card.fileName);
       setExternalVideoUrl(validUrl);
 
+      const cleanStem = (s: string) =>
+        (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
+
+      const isMatchingVideo = (name1?: string, name2?: string) => {
+        if (!name1 || !name2) return false;
+        const n1 = name1.toLowerCase().trim();
+        const n2 = name2.toLowerCase().trim();
+        if (n1 === n2) return true;
+        const s1 = cleanStem(n1);
+        const s2 = cleanStem(n2);
+        return s1 === s2;
+      };
+
       // 1. Kiểm tra xem video này đã có trong danh sách nối tiếp (joinedVideos) chưa
       const existingClipIndex = joinedVideos.findIndex(
         (v) =>
-          v.fileName.toLowerCase() === card.fileName.toLowerCase() ||
-          v.title.toLowerCase() === card.title.toLowerCase() ||
-          (card.fileName && v.fileName.toLowerCase().includes(card.fileName.toLowerCase()))
+          isMatchingVideo(v.fileName, card.fileName) ||
+          isMatchingVideo(v.title, card.title) ||
+          isMatchingVideo(v.fileName, card.title) ||
+          isMatchingVideo(v.title, card.fileName)
       );
 
       if (existingClipIndex >= 0) {
@@ -1921,6 +1886,27 @@ export default function Home() {
       }
     },
     [data.video, data.segments, joinedVideos, handleSeek, showToast]
+  );
+
+  // Xử lý khi người dùng chọn một video trong Thư viện Video Drawer
+  const handleSelectLibraryVideo = useCallback(
+    (video: VideoLibraryItem) => {
+      const card: LibraryVideoCard = {
+        id: video.id,
+        title: video.title || video.lesson || video.name,
+        fileName: video.name,
+        durationStr: formatTime(video.duration),
+        durationSeconds: video.duration,
+        gradientBg: PASTEL_GRADIENTS[0],
+        segmentCount: video.segmentsCount || video.segments?.length || 1,
+        url: video.url,
+        segments: video.segments,
+        transcript: video.transcript,
+      };
+      handleSelectLibraryCard(card);
+      setIsLibraryOpen(false);
+    },
+    [handleSelectLibraryCard]
   );
 
   // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI

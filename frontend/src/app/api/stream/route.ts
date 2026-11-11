@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
 
     try {
       const files = fs.readdirSync(dir);
+      const norm = (s: string) =>
+        s.toLowerCase().replace(/[\s_\(\)\-\.]/g, "").replace(/mp4$/g, "");
 
       // 1. Khớp theo hash
       if (hashParam) {
@@ -39,13 +41,25 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // 2. Khớp chính xác tên file
+      // 2. Khớp theo tên file
       if (fileParam) {
         const cleanFile = fileParam.trim().toLowerCase();
+
+        // 2a. Khớp chính xác tên file
         const foundExact = files.find((f) => f.toLowerCase() === cleanFile);
         if (foundExact) {
           resolvedPath = path.join(dir, foundExact);
           break;
+        }
+
+        // 2b. Khớp normalized đối với file upload có tiền tố hash: <sha256>_<tên file>
+        const targetNorm = norm(cleanFile);
+        if (targetNorm) {
+          const foundNorm = files.find((f) => norm(f).endsWith(targetNorm));
+          if (foundNorm) {
+            resolvedPath = path.join(dir, foundNorm);
+            break;
+          }
         }
 
         // 3. Khớp tương đối theo tên bài học
