@@ -1156,13 +1156,13 @@ export default function Home() {
       {
         id: "step-whisper",
         title: "2. Nhận dạng giọng nói (Whisper Speech-to-Text)",
-        description: "Trích xuất audio và nhận diện từng câu thoại chính xác theo dấu thời gian.",
+        description: "Trích xuất audio và nhận diện từng câu thoại chính xác theo dấu thời gian cho toàn bộ video.",
         status: "pending",
       },
       {
         id: "step-segment",
         title: "3. Phân đoạn chủ đề AI & kẹp mốc thời gian",
-        description: "Phân tích ngữ nghĩa để chia bài học thành các phân đoạn logic.",
+        description: "Phân tích ngữ nghĩa để chia bài học thành các phân đoạn logic trên Timeline.",
         status: "pending",
       },
       {
@@ -1179,7 +1179,7 @@ export default function Home() {
       tickerP = Math.min(85, tickerP + Math.floor(Math.random() * 8) + 4);
       setProgressPercent(tickerP);
       if (tickerP >= 30 && tickerP < 60) {
-        setProgressActionText("Đang bóc băng lời thoại bằng mô hình Whisper...");
+        setProgressActionText("Đang bóc băng lời thoại bằng mô hình Whisper cho từng video...");
         setProgressSteps((prev) =>
           prev.map((s) => {
             if (s.id === "step-probe") return { ...s, status: "completed" };
@@ -1188,7 +1188,7 @@ export default function Home() {
           })
         );
       } else if (tickerP >= 60) {
-        setProgressActionText("Đang phân chia chủ đề AI và tính toán mốc thời gian...");
+        setProgressActionText("Đang phân chia chủ đề AI và đồng bộ mốc thời gian nối tiếp...");
         setProgressSteps((prev) =>
           prev.map((s) => {
             if (s.id === "step-probe" || s.id === "step-whisper") return { ...s, status: "completed" };
@@ -1204,261 +1204,262 @@ export default function Home() {
       data.segments.reduce((max, s) => Math.max(max, s.end), 0)
     );
 
-    const finalizeAnalysisSuccess = (segCount: number) => {
+    const finalizeAnalysisSuccess = (segCount: number, sentCount: number) => {
       clearInterval(ticker);
       setProgressPercent(100);
-      setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn video!`);
+      setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn và bóc băng ${sentCount} câu thoại!`);
       setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
       setIsAnalyzing(false);
     };
 
-    // 1. Thử gọi API Backend Spring Boot (/api/video/analyze)
-    try {
-      const res = await analyzeVideoBackend({
-        videoName: data.video,
-        lesson: data.lesson,
-        hash: currentVideoHash || undefined,
-        duration: totalSecs,
-      });
+    // Danh sách toàn bộ các video trên Timeline cần phân tích
+    const clipsToAnalyze: JoinedVideoClip[] =
+      joinedVideos && joinedVideos.length > 0
+        ? joinedVideos
+        : [
+            {
+              id: `clip_${Date.now()}`,
+              title: data.lesson,
+              fileName: data.video,
+              url: externalVideoUrl || "",
+              duration: totalSecs,
+              startOffset: 0,
+              endOffset: totalSecs,
+            },
+          ];
 
-      if (res.source === "api" && res.data?.segmentsData) {
-        await new Promise((r) => setTimeout(r, 600));
+    const libVideos = getLibraryVideos();
+    const analyzedClipsData: Array<{
+      clip: JoinedVideoClip;
+      segments: Segment[];
+      sentences: Sentence[];
+    }> = [];
 
-        const segData = res.data.segmentsData;
-        const normalizedSegs = normalizeContiguousSegments(segData.segments, totalSecs);
-        setData({ ...segData, segments: normalizedSegs });
-        if (res.data.transcript) {
-          setTranscript(normalizeTranscript(res.data.transcript, totalSecs));
-        }
-        if (normalizedSegs.length > 0) {
-          setActiveSegmentId(normalizedSegs[0].id);
-        }
+    for (let i = 0; i < clipsToAnalyze.length; i++) {
+      const clip = clipsToAnalyze[i];
+      const clipDur = Math.max(1, clip.duration || 60);
+      let clipSentences: Sentence[] = [];
+      let clipSegments: Segment[] = [];
 
-        updateVideoSegmentsInLibrary(data.video, normalizedSegs);
-        setVideoLibrary(getLibraryVideos());
-        setUndoStack([]);
-        setRedoStack([]);
-        finalizeAnalysisSuccess(normalizedSegs.length);
-        showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công!");
-        return;
+      // 1. Kiểm tra cache trong thư viện video (videoLibrary)
+      const matchedLib = libVideos.find(
+        (v) =>
+          (v.name && v.name.toLowerCase() === clip.fileName.toLowerCase()) ||
+          (v.lesson && v.lesson.toLowerCase() === clip.title.toLowerCase()) ||
+          (v.title && v.title.toLowerCase() === clip.title.toLowerCase())
+      );
+
+      if (matchedLib?.transcript?.sentences && matchedLib.transcript.sentences.length > 0) {
+        clipSentences = matchedLib.transcript.sentences;
+        clipSegments = matchedLib.segments && matchedLib.segments.length > 0 ? matchedLib.segments : [];
       }
-    } catch (err) {
-      console.warn("Backend AI không phản hồi, thử phân tích qua Groq Whisper API:", err);
-    }
 
-    // 2. Chế độ phân tích bằng Groq Whisper Cloud API
-    try {
-      const groqFormData = new FormData();
-      groqFormData.append("videoName", data.video);
-      groqFormData.append("lesson", data.lesson);
+      // 2. Gọi Groq Whisper / file transcript API (/api/groq)
+      if (clipSentences.length === 0) {
+        try {
+          const groqFormData = new FormData();
+          groqFormData.append("videoName", clip.fileName);
+          groqFormData.append("lesson", clip.title);
 
-      const groqResp = await fetch("/api/groq", {
-        method: "POST",
-        body: groqFormData,
-      });
+          const groqResp = await fetch("/api/groq", {
+            method: "POST",
+            body: groqFormData,
+          });
 
-      if (groqResp.ok) {
-        const groqJson = await groqResp.json();
-        if (groqJson.transcript && groqJson.segmentsData) {
-          const normalizedSegs = normalizeContiguousSegments(groqJson.segmentsData.segments, totalSecs);
-          setData({ ...groqJson.segmentsData, segments: normalizedSegs });
-          setTranscript(normalizeTranscript(groqJson.transcript, totalSecs));
-          if (normalizedSegs.length > 0) {
-            setActiveSegmentId(normalizedSegs[0].id);
+          if (groqResp.ok) {
+            const groqJson = await groqResp.json();
+            if (groqJson.transcript?.sentences && groqJson.transcript.sentences.length > 0) {
+              clipSentences = groqJson.transcript.sentences;
+              clipSegments = groqJson.segmentsData?.segments || [];
+            }
           }
-          updateVideoSegmentsInLibrary(data.video, normalizedSegs);
-          setVideoLibrary(getLibraryVideos());
-          setUndoStack([]);
-          setRedoStack([]);
-          finalizeAnalysisSuccess(normalizedSegs.length);
-          showToast(
-            "success",
-            `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline.`
-          );
-          return;
+        } catch (groqErr) {
+          console.warn(`Groq API warning cho video "${clip.fileName}":`, groqErr);
         }
       }
-    } catch (groqErr) {
-      console.warn("Groq API route warning:", groqErr);
+
+      // 3. Gọi Backend AI Spring Boot (/api/video/analyze)
+      if (clipSentences.length === 0) {
+        try {
+          const res = await analyzeVideoBackend({
+            videoName: clip.fileName,
+            lesson: clip.title,
+            duration: clipDur,
+          });
+          if (res.source === "api" && res.data?.transcript?.sentences) {
+            clipSentences = res.data.transcript.sentences;
+            clipSegments = res.data.segmentsData?.segments || [];
+          }
+        } catch (backendErr) {
+          console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
+        }
+      }
+
+      // 4. Fallback nội dung nếu offline
+      if (clipSentences.length === 0) {
+        const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
+          `${clip.fileName} ${clip.title}`
+        );
+        if (isMusic && clip.fileName.toLowerCase().includes("download")) {
+          clipSentences = REAL_DOWNLOAD_LYRICS;
+        } else if (isMusic) {
+          clipSentences = [
+            { id: "S0001", start: 0, end: Number((clipDur * 0.2).toFixed(1)), text: `Dạo nhạc mở màn: ${clip.title}` },
+            { id: "S0002", start: Number((clipDur * 0.2).toFixed(1)), end: Number((clipDur * 0.5).toFixed(1)), text: `Lời ca khúc & Giai điệu chính (${clip.title})` },
+            { id: "S0003", start: Number((clipDur * 0.5).toFixed(1)), end: Number((clipDur * 0.8).toFixed(1)), text: "Điệp khúc cao trào và biến tấu âm thanh" },
+            { id: "S0004", start: Number((clipDur * 0.8).toFixed(1)), end: clipDur, text: "Giai điệu kết thúc Outro Fade" },
+          ];
+        } else {
+          const c1 = Number((clipDur * 0.25).toFixed(1));
+          const c2 = Number((clipDur * 0.5).toFixed(1));
+          const c3 = Number((clipDur * 0.75).toFixed(1));
+          clipSentences = [
+            { id: "S0001", start: 0, end: c1, text: `Khởi đầu chủ đề: "${clip.title}".` },
+            { id: "S0002", start: c1, end: c2, text: "Làm rõ các luận điểm chính và cú pháp cần ghi nhớ." },
+            { id: "S0003", start: c2, end: c3, text: "Thực hành áp dụng kiến thức vào ví dụ thực tế." },
+            { id: "S0004", start: c3, end: clipDur, text: "Tổng kết kinh nghiệm thực tiễn và bài tập rèn luyện." },
+          ];
+        }
+      }
+
+      // Tự động sinh phân đoạn cho clip nếu chưa có
+      if (clipSegments.length === 0) {
+        const numSecs = Math.min(4, Math.max(2, Math.ceil(clipDur / 60)));
+        const step = Number((clipDur / numSecs).toFixed(1));
+        let cStart = 0;
+        for (let s = 1; s <= numSecs; s++) {
+          const cEnd = s === numSecs ? clipDur : Number((cStart + step).toFixed(1));
+          const secTopic = s === 1 ? `Khởi đầu: ${clip.title}` : s === numSecs ? `Tổng kết: ${clip.title}` : `Phần ${s}: ${clip.title}`;
+          const cleanSlug = slugify(secTopic);
+          clipSegments.push({
+            id: `seg_${Date.now()}_${i}_${s}`,
+            section_no: s,
+            section: `0${s}_Doan_${s}`,
+            topic_no: s,
+            topic: secTopic,
+            slug: cleanSlug,
+            start_id: `S${String(s).padStart(4, "0")}`,
+            end_id: `S${String(s).padStart(4, "0")}`,
+            start: cStart,
+            end: cEnd,
+            parts: recalculateParts(cStart, cEnd, `0${s}_Doan_${s}`, s, cleanSlug),
+          });
+          cStart = cEnd;
+        }
+      }
+
+      analyzedClipsData.push({
+        clip,
+        segments: clipSegments,
+        sentences: clipSentences,
+      });
     }
 
-    // 3. Chế độ fallback nếu các kết nối API đều không phản hồi
-    await new Promise((res) => setTimeout(res, 800));
+    // 5. Offset toàn bộ câu thoại và phân đoạn theo mốc thời gian nối tiếp trên Timeline
+    const allSegments: Segment[] = [];
+    const allSentences: Sentence[] = [];
+    let cumulativeTopicNo = 1;
+    let cumulativeSentNo = 1;
 
-    const isMusicOrAudio = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-      `${data.video} ${data.lesson} ${externalVideoUrl || ""}`
-    );
+    for (let idx = 0; idx < analyzedClipsData.length; idx++) {
+      const { clip, segments, sentences } = analyzedClipsData[idx];
+      const offset = clip.startOffset;
+      const isAppended = idx > 0;
+      const videoIndex = idx + 1;
 
-    const cut1 = Number((totalSecs * 0.16).toFixed(1));
-    const cut2 = Number((totalSecs * 0.48).toFixed(1));
-    const cut3 = Number((totalSecs * 0.82).toFixed(1));
-    const cut4 = Number(totalSecs.toFixed(1));
+      // Offset câu thoại
+      for (const sent of sentences) {
+        const sentStart = Number((offset + (sent.start >= 0 ? sent.start : 0)).toFixed(1));
+        const sentEnd = Number((offset + Math.max(sent.start + 0.5, sent.end)).toFixed(1));
+        allSentences.push({
+          id: `S${String(cumulativeSentNo++).padStart(4, "0")}`,
+          start: sentStart,
+          end: sentEnd,
+          text: sent.text,
+        });
+      }
 
-    let analyzedSegments: Segment[];
-    let analyzedTranscript: TranscriptData;
+      // Offset phân đoạn
+      for (let sIdx = 0; sIdx < segments.length; sIdx++) {
+        const seg = segments[sIdx];
+        const segStart = Number((offset + (seg.start >= 0 ? seg.start : 0)).toFixed(1));
+        const segEnd = Number((offset + (seg.end > seg.start ? seg.end : clip.duration)).toFixed(1));
+        const topicNo = cumulativeTopicNo++;
+        const secFolder = `0${videoIndex}_${slugify(clip.title)}`;
+        const cleanSlug = seg.slug || slugify(seg.topic || `muc-${topicNo}`);
 
-    if (isMusicOrAudio) {
-      analyzedSegments = [
-        {
-          id: `seg_${Date.now()}_01`,
-          section_no: 1,
-          section: "01_IntroBeat",
-          topic_no: 1,
-          topic: "Dạo đầu & Giai điệu mở màn (Intro Beat)",
-          slug: "intro-beat",
-          start_id: "S0001",
-          end_id: "S0001",
-          start: 0,
-          end: 60.0,
-          parts: recalculateParts(0, 60.0, "01_IntroBeat", 1, "intro-beat"),
-        },
-        {
-          id: `seg_${Date.now()}_02`,
-          section_no: 2,
-          section: "02_LoiCaTu_1",
-          topic_no: 2,
-          topic: `Lời ca từ 1 & Điệp khúc đầu (${data.lesson})`,
-          slug: "loi-ca-tu-1",
-          start_id: "S0001",
-          end_id: "S0006",
-          start: 60.0,
-          end: 96.0,
-          parts: recalculateParts(60.0, 96.0, "02_LoiCaTu_1", 2, "loi-ca-tu-1"),
-        },
-        {
-          id: `seg_${Date.now()}_03`,
-          section_no: 3,
-          section: "03_DropBassRemix",
-          topic_no: 3,
-          topic: "Cao trào Drop Bass Remix (Nonstop Beat)",
-          slug: "drop-bass-remix",
-          start_id: "S0006",
-          end_id: "S0007",
-          start: 96.0,
-          end: 233.0,
-          parts: recalculateParts(96.0, 233.0, "03_DropBassRemix", 3, "drop-bass-remix"),
-        },
-        {
-          id: `seg_${Date.now()}_04`,
-          section_no: 4,
-          section: "04_LoiCaTu_2",
-          topic_no: 4,
-          topic: "Lời ca từ 2 & Điệp khúc cao trào",
-          slug: "loi-ca-tu-2",
-          start_id: "S0007",
-          end_id: "S0011",
-          start: 233.0,
-          end: 266.0,
-          parts: recalculateParts(233.0, 266.0, "04_LoiCaTu_2", 4, "loi-ca-tu-2"),
-        },
-        {
-          id: `seg_${Date.now()}_05`,
-          section_no: 5,
-          section: "05_OutroFade",
-          topic_no: 5,
-          topic: "Đoạn kết & Giai điệu Outro Fade Out",
-          slug: "outro-fade",
-          start_id: "S0011",
-          end_id: "S0011",
-          start: 266.0,
-          end: totalSecs,
-          parts: recalculateParts(266.0, totalSecs, "05_OutroFade", 5, "outro-fade"),
-        },
-      ];
+        allSegments.push({
+          ...seg,
+          id: `seg_ai_${Date.now()}_${idx}_${sIdx}`,
+          topic_no: topicNo,
+          section_no: seg.section_no || (sIdx + 1),
+          section: seg.section || secFolder,
+          topic: seg.topic,
+          slug: cleanSlug,
+          start: segStart,
+          end: segEnd,
+          parts: recalculateParts(segStart, segEnd, secFolder, topicNo, cleanSlug),
+          videoTitle: clip.title,
+          videoIndex: videoIndex,
+          isAppended: isAppended,
+        });
+      }
 
-      analyzedTranscript = {
-        video: data.video,
-        duration: totalSecs,
-        sentences: REAL_DOWNLOAD_LYRICS,
+      // Lưu phân đoạn và transcript riêng lẻ của từng video vào videoLibrary
+      updateVideoSegmentsInLibrary(clip.fileName, segments);
+      const libItem: VideoLibraryItem = {
+        id: `vid_lib_${clip.id}`,
+        name: clip.fileName,
+        lesson: clip.title,
+        title: clip.title,
+        url: clip.url,
+        duration: clip.duration,
+        status: "edited",
+        statusLabel: "Đã phân tích AI",
+        category: idx === 0 ? "Video chính" : "Video nối tiếp",
+        segmentsCount: segments.length,
+        updatedAt: new Date().toLocaleTimeString("vi-VN"),
+        segments: segments,
+        transcript: {
+          video: clip.fileName,
+          duration: clip.duration,
+          sentences: sentences,
+        },
       };
-    } else {
-      analyzedSegments = [
-        {
-          id: `seg_${Date.now()}_01`,
-          section_no: 1,
-          section: "01_TongQuan",
-          topic_no: 1,
-          topic: `Tổng quan & Đặt vấn đề: ${data.lesson}`,
-          slug: "tong-quan",
-          start_id: "S0001",
-          end_id: "S0002",
-          start: 0,
-          end: cut1,
-          parts: recalculateParts(0, cut1, "01_TongQuan", 1, "tong-quan"),
-        },
-        {
-          id: `seg_${Date.now()}_02`,
-          section_no: 2,
-          section: "02_NoiDungChinh",
-          topic_no: 2,
-          topic: "Nội dung cốt lõi & Cơ chế hoạt động",
-          slug: "noi-dung-chinh",
-          start_id: "S0003",
-          end_id: "S0004",
-          start: cut1,
-          end: cut2,
-          parts: recalculateParts(cut1, cut2, "02_NoiDungChinh", 2, "noi-dung-chinh"),
-        },
-        {
-          id: `seg_${Date.now()}_03`,
-          section_no: 3,
-          section: "03_ThucHanh",
-          topic_no: 3,
-          topic: "Thực hành ví dụ & Phân tích chuyên sâu",
-          slug: "thuc-hanh-vi-du",
-          start_id: "S0005",
-          end_id: "S0006",
-          start: cut2,
-          end: cut3,
-          parts: recalculateParts(cut2, cut3, "03_ThucHanh", 3, "thuc-hanh-vi-du"),
-        },
-        {
-          id: `seg_${Date.now()}_04`,
-          section_no: 4,
-          section: "04_TongKet",
-          topic_no: 4,
-          topic: "Tổng kết & Đánh giá kết quả",
-          slug: "tong-ket",
-          start_id: "S0007",
-          end_id: "S0008",
-          start: cut3,
-          end: cut4,
-          parts: recalculateParts(cut3, cut4, "04_TongKet", 4, "tong-ket"),
-        },
-      ];
-
-      analyzedTranscript = {
-        video: data.video,
-        duration: cut4,
-        sentences: [
-          { id: "S0001", start: 0, end: Number((cut1 * 0.5).toFixed(1)), text: `Chào các bạn, hôm nay chúng ta cùng tìm hiểu về chuyên đề: "${data.lesson}".` },
-          { id: "S0002", start: Number((cut1 * 0.5).toFixed(1)), end: cut1, text: "Điểm qua bối cảnh ứng dụng và mục tiêu tổng quát của bài học." },
-          { id: "S0003", start: cut1, end: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), text: "Khám phá các nguyên lý trọng tâm và cấu trúc cốt lõi." },
-          { id: "S0004", start: Number((cut1 + (cut2 - cut1) * 0.5).toFixed(1)), end: cut2, text: "Làm rõ các luận điểm chính và cú pháp cần ghi nhớ." },
-          { id: "S0005", start: cut2, end: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), text: "Áp dụng kiến thức vừa học vào ví dụ thực tế và chạy kiểm thử." },
-          { id: "S0006", start: Number((cut2 + (cut3 - cut2) * 0.5).toFixed(1)), end: cut3, text: "Đánh giá kết quả đầu ra và so sánh các trường hợp tối ưu." },
-          { id: "S0007", start: cut3, end: Number((cut3 + (cut4 - cut3) * 0.5).toFixed(1)), text: "Tóm lược các kinh nghiệm then chốt và lỗi phổ biến cần tránh." },
-          { id: "S0008", start: Number((cut3 + (cut4 - cut3) * 0.5).toFixed(1)), end: cut4, text: "Tổng kết toàn bộ nội dung và định hướng bài tập tiếp theo." },
-        ],
-      };
+      saveVideoToLibrary(libItem);
     }
+
+    const calculatedTotal = clipsToAnalyze.reduce((sum, c) => Math.max(sum, c.endOffset), 0) || totalSecs;
+    const normalizedSegs = normalizeContiguousSegments(allSegments, calculatedTotal);
 
     setData((prev) => ({
       ...prev,
       mode: "analyzed",
       reviewed: false,
-      segments: analyzedSegments,
+      segments: normalizedSegs,
     }));
-    setTranscript(analyzedTranscript);
-    setActiveSegmentId(analyzedSegments[0].id);
 
-    // Cập nhật vào thư viện video
-    updateVideoSegmentsInLibrary(data.video, analyzedSegments);
+    setTranscript({
+      video: data.video,
+      duration: calculatedTotal,
+      sentences: allSentences,
+    });
+
+    if (normalizedSegs.length > 0) {
+      setActiveSegmentId(normalizedSegs[0].id);
+    }
+
     setVideoLibrary(getLibraryVideos());
+    setLibraryCards(syncLibraryCardsFromLibrary(getLibraryVideos()));
+    setUndoStack([]);
+    setRedoStack([]);
+    finalizeAnalysisSuccess(normalizedSegs.length, allSentences.length);
 
-    finalizeAnalysisSuccess(analyzedSegments.length);
-    showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
-  }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
+    showToast(
+      "success",
+      `✓ AI đã hoàn tất phân tích lời thoại và phân đoạn cho toàn bộ ${clipsToAnalyze.length} video (${normalizedSegs.length} phân đoạn, ${allSentences.length} câu thoại)!`
+    );
+  }, [joinedVideos, data, externalVideoUrl, showToast]);
 
   const totalDuration = Math.max(
     1,
@@ -1622,10 +1623,36 @@ export default function Home() {
         },
       ]);
 
-      const appendTranscript =
+      let appendTranscript =
         ("transcript" in videoToAppend && videoToAppend.transcript)
           ? videoToAppend.transcript
           : undefined;
+
+      if (!appendTranscript?.sentences || appendTranscript.sentences.length === 0) {
+        const lib = getLibraryVideos();
+        const matchLib = lib.find(
+          (v) =>
+            (v.name && v.name.toLowerCase() === vName.toLowerCase()) ||
+            (v.lesson && v.lesson.toLowerCase() === vTitle.toLowerCase()) ||
+            (v.title && v.title.toLowerCase() === vTitle.toLowerCase())
+        );
+        if (matchLib?.transcript?.sentences && matchLib.transcript.sentences.length > 0) {
+          appendTranscript = matchLib.transcript;
+        }
+      }
+
+      if (!appendTranscript?.sentences || appendTranscript.sentences.length === 0) {
+        const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
+          `${vName} ${vTitle}`
+        );
+        if (isMusic && vName.toLowerCase().includes("download")) {
+          appendTranscript = {
+            video: vName,
+            duration: appendDuration,
+            sentences: REAL_DOWNLOAD_LYRICS,
+          };
+        }
+      }
 
       if (appendTranscript?.sentences && appendTranscript.sentences.length > 0) {
         const existingCount = transcript?.sentences?.length || 0;
@@ -1663,6 +1690,35 @@ export default function Home() {
           duration: Number((offset + appendDuration).toFixed(1)),
           sentences: [...(prev?.sentences || []), ...addedSentences],
         }));
+
+        // Tự động kích hoạt bóc băng lời thoại AI bất đồng bộ cho video mới nối tiếp
+        (async () => {
+          try {
+            const resp = await fetch(`/api/groq?videoName=${encodeURIComponent(vName)}&lesson=${encodeURIComponent(vTitle)}`);
+            if (resp.ok) {
+              const json = await resp.json();
+              if (json.transcript?.sentences && json.transcript.sentences.length > 0) {
+                const fetchedSentences: Sentence[] = json.transcript.sentences;
+                setTranscript((prev) => {
+                  const baseSentences = (prev?.sentences || []).filter(
+                    (s) => s.start < offset || s.start >= offset + appendDuration
+                  );
+                  const shifted = fetchedSentences.map((sent, idx) => ({
+                    ...sent,
+                    id: `S${String(baseSentences.length + idx + 1).padStart(4, "0")}`,
+                    start: Number((offset + sent.start).toFixed(1)),
+                    end: Number((offset + sent.end).toFixed(1)),
+                  }));
+                  return {
+                    video: combinedVideo,
+                    duration: Number((offset + appendDuration).toFixed(1)),
+                    sentences: [...baseSentences, ...shifted],
+                  };
+                });
+              }
+            }
+          } catch {}
+        })();
       }
 
       if (newAppendedSegments.length > 0) {
