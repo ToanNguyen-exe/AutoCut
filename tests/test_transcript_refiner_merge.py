@@ -66,3 +66,49 @@ def test_refine_transcript_merges_fragmented_sentences():
     # Không có trường words trong JSON xuất ra
     json_str = result.model_dump_json()
     assert '"words"' not in json_str
+
+
+def test_refine_transcript_preserves_independent_sentences_and_verbatim_words():
+    """Kiểm tra: Giữ nguyên vẹn từng câu đơn độc lập và bảo toàn từ ngữ gốc (không gọt câu quá tay)."""
+    sentences = [
+        Sentence(id="S0001", start=0.0, end=3.0, text="Xếp hạng tất cả các món phở."),
+        Sentence(id="S0002", start=3.0, end=6.0, text="Thế nhưng mà cái trải nghiệm một buổi sáng đi ăn phở."),
+        Sentence(id="S0003", start=6.0, end=9.0, text="Vẫn là một trải nghiệm khó món nào thay thế được.")
+    ]
+
+    transcript = TranscriptOutput(
+        video="food_review.mp4",
+        duration=9.0,
+        sentences=sentences
+    )
+
+    class MockLLMResponseGranular:
+        text = json.dumps({
+            "sentences": [
+                {
+                    "start_id": "S0001",
+                    "end_id": "S0001",
+                    "text": "Xếp hạng tất cả các món phở."
+                },
+                {
+                    "start_id": "S0002",
+                    "end_id": "S0003",
+                    "text": "Thế nhưng mà cái trải nghiệm một buổi sáng đi ăn phở vẫn là một trải nghiệm khó món nào thay thế được."
+                }
+            ]
+        })
+
+    dummy_refiner = object.__new__(TranscriptRefiner)
+    dummy_refiner.models_to_try = []
+    dummy_refiner._generate_with_fallback = lambda *a, **kw: MockLLMResponseGranular()
+
+    result = TranscriptRefiner.refine_transcript(dummy_refiner, transcript)
+
+    # Câu độc lập S0001 được giữ riêng
+    assert result.sentences[0].id == "S0001"
+    assert result.sentences[0].text == "Xếp hạng tất cả các món phở."
+
+    # Câu S0002 và S0003 bị vỡ vế câu được gộp lại, bảo toàn các từ đệm 'Thế nhưng mà'
+    assert result.sentences[1].id == "S0002"
+    assert "Thế nhưng mà" in result.sentences[1].text
+    assert result.sentences[1].end == 9.0

@@ -177,10 +177,10 @@ def split_segment_into_timed_sentences(start: float, end: float, text: str) -> L
 
 def merge_fragmented_segments(
     segments: list,
-    max_merged_duration: float = 12.0,
-    max_merged_words: int = 32
+    max_merged_duration: float = 7.0,
+    max_merged_words: int = 20
 ) -> list[dict]:
-    """Hậu xử lý gộp các segment bị ngắt vụn quá ngắn và tự động tách các đoạn dài thành câu đơn độc lập."""
+    """Hậu xử lý gộp các segment bị ngắt vụn quá ngắn, ưu tiên bảo toàn tính độc lập của từng câu đơn chi tiết."""
     merged: list[dict] = []
     current: dict | None = None
 
@@ -205,11 +205,12 @@ def merge_fragmented_segments(
             combined_words = len(current["text"].split()) + len(cleaned_text.split())
             gap = float(s_start) - float(current["end"])
 
+            # Chỉ gộp nếu câu trước thực sự chưa có dấu câu kết thúc, khoảng nghỉ rất ngắn (<= 0.8s) và độ dài ngắn
             should_merge = (
                 not is_ending_with_punctuation(current["text"])
                 and combined_duration <= max_merged_duration
                 and combined_words <= max_merged_words
-                and gap <= 1.5
+                and gap <= 0.8
             )
 
             if should_merge:

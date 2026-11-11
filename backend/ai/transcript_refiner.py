@@ -98,8 +98,8 @@ class TranscriptRefiner:
         raise last_err
 
     @staticmethod
-    def _build_char_batches(sentences: List[Sentence], max_chars: int = 6000, max_items: int = 25) -> List[List[Sentence]]:
-        """Gom các câu thành từng lô dựa theo tổng số ký tự để tối ưu số lượt gọi API Gemini."""
+    def _build_char_batches(sentences: List[Sentence], max_chars: int = 4000, max_items: int = 15) -> List[List[Sentence]]:
+        """Gom các câu thành từng lô dựa theo tổng số ký tự để tối ưu số lượt gọi API Gemini, giữ kích thước vừa phải để tinh chỉnh chi tiết từng câu."""
         batches: List[List[Sentence]] = []
         current_batch: List[Sentence] = []
         current_chars = 0
@@ -210,22 +210,23 @@ class TranscriptRefiner:
             sys.stdout.flush()
 
             prompt = f"""
-Bạn là chuyên gia biên tập ngữ liệu bài giảng công nghệ thông tin tiếng Việt.
-Dưới đây là danh sách các mẩu câu bóc băng thô từ giọng nói của giảng viên. Do nhịp thở và ngắt nghỉ tự nhiên, câu nói thường bị bẻ vụn hoặc đứt quãng (ví dụ: một câu trọn vẹn bị ngắt thành 'Anh em có thể viết app từ desktop...' và 'Cho đến mobile.').
+Bạn là chuyên gia biên tập ngữ liệu bóc băng giọng nói bài giảng video tiếng Việt chuyên nghiệp.
+Dưới đây là danh sách các câu/mẩu câu bóc băng thô từ giọng nói của giảng viên trong video.
 
-NHIỆM VỤ:
-1. GỘP CÂU HOÀN CHỈNH & MẠCH LẠC:
-   - Hãy chủ động gộp các mẩu câu bị ngắt vụn hoặc lửng lơ liên tiếp nhau thành một câu văn hoàn chỉnh, trọn vẹn ngữ nghĩa và đúng ngữ pháp tiếng Việt.
-   - Với mỗi câu đầu ra, chỉ định:
-     + "start_id": mã id của mẩu câu đầu tiên.
-     + "end_id": mã id của mẩu câu cuối cùng được gộp vào.
-     (Nếu câu độc lập không cần gộp với mẩu khác thì "start_id" và "end_id" giống nhau).
-2. SỬA CHÍNH TẢ & THUẬT NGỮ:
-   - Sửa chính tả tiếng Việt, chuẩn hóa thuật ngữ lập trình/công nghệ (JavaScript, React, Node.js, desktop, web app, mobile, copy-paste, Data Type, console, loop, Array, Object, Function...).
-   - Bỏ các từ ngập ngừng vô nghĩa ("ừm", "ờ").
+NGUYÊN TẮC CỐT LÕI (BẢO TOÀN NGUYÊN VĂN & TÁCH CÂU CHI TIẾT):
+1. ƯU TIÊN TÁCH CÂU CỤ THỂ ĐỂ PHÂN ĐOẠN CHÍNH XÁC:
+   - Hãy cố gắng giữ và tách riêng từng câu đơn cụ thể theo từng phát ngôn hoặc vế câu có nghĩa độc lập.
+   - CÂU ĐƠN ĐỘC LẬP: Nếu một mẩu câu đã diễn đạt xong một ý hoặc đã có cấu trúc câu tương đối hoàn chỉnh (dù ngắn), BẮT BUỘC giữ nguyên là một câu độc lập riêng biệt (chỉ định "start_id" và "end_id" GIỐNG NHAU).
+   - CHỈ GỘP KHI BỊ VỠ CÂU DO NGẮT NGHỈ LẤY HƠI: Chỉ gộp khi một câu thực sự bị đứt gãy lửng lơ giữa chừng (ví dụ: bị ngắt giữa cụm danh từ hoặc vị ngữ: 'Anh em có thể viết app từ desktop' và 'cho đến mobile.'). TUYỆT ĐỐI KHÔNG gộp 2 câu đơn độc lập hoàn chỉnh liên tiếp vào một khối lớn.
+   - Việc tách câu chi tiết và cụ thể là tối quan trọng để hệ thống phân đoạn (video segmentation) xác định chính xác các điểm mốc thời gian bắt đầu và kết thúc của từng chủ đề bài giảng!
+
+2. BẢO TOÀN TỐI ĐA CÂU TỪ (VERBATIM FIDELITY - TUYỆT ĐỐI KHÔNG GỌT TỪ):
+   - Giữ nguyên vẹn 100% tất cả các từ ngữ mà người nói đã phát âm, bao gồm cả từ nối, từ đệm tự nhiên ('thế nhưng mà', 'nói gì đi nữa', 'tuy nhiên', 'cá nhân tôi', 'đấy nhé', 'ạ'...), số liệu, tên riêng, thuật ngữ.
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG LƯỢC BỎ TỪ, KHÔNG TỰ Ý VIẾT LẠI VĂN PHONG (NO PARAPHRASING).
+   - Chỉ sửa các lỗi chính tả hiển nhiên do nhận diện âm thanh nhầm, chuẩn hóa viết hoa danh từ riêng/thuật ngữ kỹ thuật, và đảm bảo câu có dấu kết thúc (. ? !).
 3. {terms_hint}
-4. BẢO TOÀN NỘI DUNG:
-   - Toàn bộ các mẩu id từ {batch[0].id} đến {batch[-1].id} phải được bao phủ liên tục theo thứ tự thời gian tăng dần, không bỏ sót nội dung.
+4. BẢO TOÀN TOÀN BỘ MÃ ID:
+   - Toàn bộ các mẩu id từ {batch[0].id} đến {batch[-1].id} phải được bao phủ liên tục theo thứ tự thời gian tăng dần, không được bỏ rơi bất kỳ mẩu id nào.
 
 DANH SÁCH ĐẦU VÀO:
 {json.dumps(batch_data, ensure_ascii=False, indent=2)}
@@ -236,12 +237,12 @@ DANH SÁCH ĐẦU VÀO:
     {{
       "start_id": "{batch[0].id}",
       "end_id": "{batch[0].id}",
-      "text": "Câu độc lập thứ nhất đã sửa chính tả."
+      "text": "Câu đơn thứ nhất giữ nguyên văn câu từ gốc."
     }},
     {{
       "start_id": "S0002",
       "end_id": "S0003",
-      "text": "Câu hoàn chỉnh sau khi gộp S0002 và S0003."
+      "text": "Câu sau khi ghép 2 mẩu bị vỡ câu lửng lơ do lấy hơi."
     }}
   ]
 }}
@@ -578,7 +579,11 @@ DANH SÁCH CÂU TRANSCRIPT:
             if idx == len(raw_topics):
                 seg_end = total_duration
             else:
-                raw_end = float(e_obj.end)
+                next_item = raw_topics[idx]
+                next_s_obj = resolve_sentence(str(next_item.get("start_id", "")), e_obj)
+                # Khoảng chết giữa 2 phân đoạn mặc định nối trọn vẹn vào cuối phân đoạn trước
+                target_end = float(next_s_obj.start) if next_s_obj.start > e_obj.end else float(e_obj.end)
+                raw_end = target_end
                 if raw_end >= total_duration or raw_end <= seg_start:
                     remaining_count = max(1, len(raw_topics) - idx + 1)
                     raw_end = seg_start + (total_duration - seg_start) / remaining_count

@@ -70,9 +70,10 @@ function normalizeContiguousSegments(segments: Segment[], totalDuration: number)
       end = Number(dur.toFixed(1));
     } else {
       const nextSeg = segments[i + 1];
-      // Nếu có khoảng trống giữa đoạn hiện tại và đoạn kế tiếp (nextSeg.start > s.end)
+      // Khoảng chết/khoảng lặng giữa 2 phân đoạn mặc định nối trọn vẹn vào cuối phân đoạn trước,
+      // giúp phân đoạn kế tiếp bắt đầu chuẩn xác theo mốc thời gian câu nói thực tế
       if (nextSeg && nextSeg.start > s.end) {
-        end = Number(((s.end + nextSeg.start) / 2).toFixed(1));
+        end = Number(nextSeg.start.toFixed(1));
       } else {
         end = Number(s.end.toFixed(1));
       }

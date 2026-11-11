@@ -234,7 +234,8 @@ export async function POST(req: NextRequest) {
         segEnd = totalDuration;
       } else {
         const nextGroupFirstSent = sentences[endIdx];
-        segEnd = Number(((group[group.length - 1].end + nextGroupFirstSent.start) / 2).toFixed(1));
+        // Khoảng chết/khoảng lặng mặc định nối vào cuối phân đoạn trước
+        segEnd = Number(nextGroupFirstSent.start.toFixed(1));
         if (segEnd <= segStart) {
           segEnd = group[group.length - 1].end;
         }
