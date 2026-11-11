@@ -483,14 +483,47 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           </button>
 
           {/* Chuyển video button */}
-          <button
-            onClick={() => onSeek(0)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition ml-1"
-            title="Chuyển video / Phát lại từ đầu"
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-            <span className="hidden sm:inline">Chuyển video</span>
-          </button>
+          {(() => {
+            const currentClipIdx =
+              joinedVideos && joinedVideos.length > 0
+                ? joinedVideos.findIndex(
+                    (v) => currentTime >= v.startOffset && currentTime < v.endOffset
+                  )
+                : -1;
+            const safeClipIdx = currentClipIdx >= 0 ? currentClipIdx : 0;
+            const nextClipIdx =
+              joinedVideos && joinedVideos.length > 1
+                ? (safeClipIdx + 1) % joinedVideos.length
+                : 0;
+            const nextClip = joinedVideos && joinedVideos.length > 0 ? joinedVideos[nextClipIdx] : null;
+
+            const handleCycleVideo = () => {
+              if (joinedVideos && joinedVideos.length > 1 && nextClip) {
+                onSeek(nextClip.startOffset);
+              } else {
+                onSeek(0);
+              }
+            };
+
+            return (
+              <button
+                onClick={handleCycleVideo}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-white/10 transition ml-1 cursor-pointer"
+                title={
+                  joinedVideos && joinedVideos.length > 1 && nextClip
+                    ? `Chuyển sang Video ${nextClipIdx + 1}/${joinedVideos.length}: ${nextClip.title} (${formatTime(nextClip.duration)})`
+                    : "Phát lại từ đầu video (00:00)"
+                }
+              >
+                <ArrowLeftRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden sm:inline">
+                  {joinedVideos && joinedVideos.length > 1
+                    ? `Chuyển video (${safeClipIdx + 1}/${joinedVideos.length})`
+                    : "Chuyển video"}
+                </span>
+              </button>
+            );
+          })()}
         </div>
 
         {/* Right Toolbar Controls: Zoom & + Công cụ */}
@@ -583,7 +616,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
 
           {/* Thanh hiển thị các Video Nối Tiếp (Video Sequence Strip) */}
           {joinedVideos && joinedVideos.length > 1 && (
-            <div className="h-6 relative w-full border-b border-slate-100 bg-slate-50/70 flex items-center overflow-hidden">
+            <div className="h-6 relative w-full border-b border-slate-100 dark:border-white/10 bg-slate-50/70 dark:bg-black/30 flex items-center overflow-hidden">
               {joinedVideos.map((v, vIdx) => {
                 const leftPct = (v.startOffset / Math.max(1, totalDuration)) * 100;
                 const widthPct = Math.min(
@@ -591,28 +624,34 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                   ((v.endOffset - v.startOffset) / Math.max(1, totalDuration)) * 100
                 );
                 const isSecond = vIdx > 0;
+                const isCurrentClip = currentTime >= v.startOffset && currentTime < v.endOffset;
 
                 return (
                   <div
                     key={v.id || `joined_${vIdx}`}
+                    onClick={() => onSeek(v.startOffset)}
                     style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                    className={`absolute top-0.5 bottom-0.5 px-1.5 rounded text-[11px] font-bold flex items-center gap-1 border truncate shadow-2xs ${
-                      isSecond
-                        ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                        : "bg-indigo-100 border-indigo-200 text-indigo-800"
+                    className={`absolute top-0.5 bottom-0.5 px-2 rounded-md text-[11px] font-bold flex items-center gap-1.5 border truncate shadow-2xs cursor-pointer hover:brightness-95 active:scale-[0.99] transition-all select-none ${
+                      isCurrentClip
+                        ? isSecond
+                          ? "bg-emerald-200 dark:bg-emerald-800 border-emerald-500 dark:border-emerald-400 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400/80 z-10 font-black shadow-xs"
+                          : "bg-indigo-200 dark:bg-indigo-800 border-indigo-500 dark:border-indigo-400 text-indigo-950 dark:text-indigo-100 ring-2 ring-indigo-400/80 z-10 font-black shadow-xs"
+                        : isSecond
+                        ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200/80 z-0"
+                        : "bg-indigo-100 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-200/80 z-0"
                     }`}
-                    title={`${isSecond ? "Video nối tiếp" : "Video gốc"}: ${v.title} (${formatTime(v.duration)})`}
+                    title={`Video ${vIdx + 1}: ${v.title} (${formatTime(v.duration)}) - Nhấp để chuyển ngay tới video này`}
                   >
                     {isSecond ? (
-                      <Link2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <Link2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     ) : (
-                      <Film className="w-3 h-3 text-indigo-600 shrink-0" />
+                      <Film className="w-3 h-3 text-indigo-600 dark:text-indigo-400 shrink-0" />
                     )}
                     <span className="truncate">
-                      {isSecond ? `[Nối tiếp] ` : `[Gốc] `}
+                      {isSecond ? `[Video ${vIdx + 1} • Nối tiếp] ` : `[Video 1 • Gốc] `}
                       {v.title}
                     </span>
-                    <span className="font-mono text-[10px] ml-auto shrink-0 opacity-80">
+                    <span className="font-mono text-[10px] ml-auto shrink-0 opacity-85">
                       {formatTime(v.duration)}
                     </span>
                   </div>

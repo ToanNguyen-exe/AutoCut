@@ -1507,7 +1507,8 @@ export default function Home() {
 
   const totalDuration = Math.max(
     1,
-    data.segments.reduce((max, s) => Math.max(max, s.end), 0)
+    data.segments.reduce((max, s) => Math.max(max, s.end), 0),
+    joinedVideos.reduce((max, v) => Math.max(max, v.endOffset), 0)
   );
 
   const handleSeek = useCallback(
@@ -1799,11 +1800,35 @@ export default function Home() {
     [data, totalDuration, transcript, joinedVideos, handleSeek, showToast]
   );
 
-  // Mở riêng một video từ cột Thư viện video
+  // Mở riêng hoặc chuyển tới một video từ cột Thư viện video
   const handleSelectLibraryCard = useCallback(
     (card: LibraryVideoCard) => {
       const validUrl = resolvePlayableVideoUrl(card.url, card.fileName);
       setExternalVideoUrl(validUrl);
+
+      // 1. Kiểm tra xem video này đã có trong danh sách nối tiếp (joinedVideos) chưa
+      const existingClipIndex = joinedVideos.findIndex(
+        (v) =>
+          v.fileName.toLowerCase() === card.fileName.toLowerCase() ||
+          v.title.toLowerCase() === card.title.toLowerCase() ||
+          (card.fileName && v.fileName.toLowerCase().includes(card.fileName.toLowerCase()))
+      );
+
+      if (existingClipIndex >= 0) {
+        // Video này đã nằm trong timeline nối tiếp -> Tua thẳng đến vị trí bắt đầu của video đó!
+        const targetClip = joinedVideos[existingClipIndex];
+        const segInClip = data.segments.find(
+          (s) => s.start >= targetClip.startOffset && s.start < targetClip.endOffset
+        );
+        const seekTime = segInClip ? segInClip.start : targetClip.startOffset;
+        handleSeek(seekTime);
+        if (segInClip) {
+          setActiveSegmentId(segInClip.id);
+        }
+        setIsPlaying(true);
+        showToast("success", `Đang chuyển tới Video ${existingClipIndex + 1}: "${targetClip.title}"`);
+        return;
+      }
 
       if (card.fileName === data.video) {
         // Đang ở video này -> Bật phát video ngay lập tức và đảm bảo đường dẫn nguồn video chuẩn
@@ -1872,7 +1897,7 @@ export default function Home() {
 
         setJoinedVideos([
           {
-            id: card.id,
+            id: card.id || `clip_${Date.now()}`,
             title: card.title,
             fileName: card.fileName,
             url: validUrl,
@@ -1895,7 +1920,7 @@ export default function Home() {
         showToast("success", `Đang mở và phát: ${card.title} (${card.durationStr})`);
       }
     },
-    [data.video, data.segments, showToast]
+    [data.video, data.segments, joinedVideos, handleSeek, showToast]
   );
 
   // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI
@@ -2003,10 +2028,10 @@ export default function Home() {
               activeSegmentId={activeSegmentId}
               onSelectVideo={handleSelectLibraryCard}
               onAppendVideo={handleAppendVideoToTimeline}
-              onSelectSegment={(seg, idx) => {
-                handleOpenSegmentDetail(seg, idx);
+              onSelectSegment={(seg) => {
                 setActiveSegmentId(seg.id);
                 handleSeek(seg.start);
+                setIsPlaying(true);
               }}
             />
 

@@ -250,8 +250,12 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
   const handleTimeUpdate = () => {
     if (!videoRef.current || !isPlaying) return;
+    if (videoRef.current.readyState < 2) return;
+    if (videoRef.current.seeking) return;
 
     const current = videoRef.current.currentTime;
+    if (activeClip && current > activeClip.duration + 1.0) return;
+
     const timelineTime = activeClip
       ? Number((activeClip.startOffset + current).toFixed(1))
       : Number(current.toFixed(1));
@@ -384,32 +388,47 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     <div className="flex-1 flex flex-col bg-transparent overflow-hidden select-none min-h-0 min-w-0 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* Top Header: Trình phát & 16:9 Landscape */}
       <div className="h-12 border-b border-slate-200/80 dark:border-white/10 px-5 flex items-center justify-between shrink-0 bg-white/70 dark:bg-black/50 backdrop-blur-md z-20 select-none">
-        {/* Left: Tiêu đề Trình phát + Badge video đang phát khi nối tiếp */}
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-base text-slate-900 dark:text-white tracking-tight">
+        {/* Left: Tiêu đề Trình phát + Video switcher pills khi nối tiếp */}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="font-bold text-base text-slate-900 dark:text-white tracking-tight shrink-0">
             Trình phát
           </span>
-          {activeClip && joinedVideos && joinedVideos.length > 1 && (
-            <span
-              className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-2xs border ${
-                activeClipIndex > 0
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                  : "bg-indigo-50 border-indigo-200 text-indigo-800"
-              }`}
-              title={`Đang phát: ${activeClip.title} (${formatTime(activeClip.duration)})`}
-            >
-              {activeClipIndex > 0 ? (
-                <Link2 className="w-3 h-3 text-emerald-600" />
-              ) : (
-                <Film className="w-3 h-3 text-indigo-600" />
-              )}
-              <span>
-                {activeClipIndex > 0
-                  ? `[Video ${activeClipIndex + 1}/${joinedVideos.length} • Nối tiếp] `
-                  : `[Video 1/${joinedVideos.length}] `}
-                {activeClip.title}
-              </span>
-            </span>
+          {joinedVideos && joinedVideos.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar max-w-[480px]">
+              {joinedVideos.map((clip, cIdx) => {
+                const isSelectedClip = cIdx === activeClipIndex;
+                const isAppended = cIdx > 0;
+                return (
+                  <button
+                    key={clip.id || `clip_pill_${cIdx}`}
+                    onClick={() => {
+                      if (onSeek) onSeek(clip.startOffset);
+                      if (onPlay && !isPlaying) onPlay();
+                    }}
+                    className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs border transition cursor-pointer shrink-0 ${
+                      isSelectedClip
+                        ? isAppended
+                          ? "bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-300 dark:ring-emerald-800 shadow-xs"
+                          : "bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-300 dark:ring-indigo-800 shadow-xs"
+                        : "bg-white/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/20"
+                    }`}
+                    title={`Chuyển sang Video ${cIdx + 1}: ${clip.title} (${formatTime(clip.duration)})`}
+                  >
+                    {isAppended ? (
+                      <Link2 className="w-3 h-3 shrink-0" />
+                    ) : (
+                      <Film className="w-3 h-3 shrink-0" />
+                    )}
+                    <span className="truncate max-w-[130px] sm:max-w-[160px]">
+                      {cIdx + 1}. {clip.title}
+                    </span>
+                    <span className="font-mono text-[10px] opacity-85 shrink-0">
+                      ({formatTime(clip.duration)})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -496,6 +515,7 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               <div className="w-full h-full flex items-center justify-center bg-black relative">
                 <video
                   ref={videoRef}
+                  key={activeClip ? `${activeClip.id}_${videoSrc}` : (videoSrc || "video_player")}
                   src={videoSrc}
                   onLoadedMetadata={handleLoadedMetadata}
                   onTimeUpdate={handleTimeUpdate}

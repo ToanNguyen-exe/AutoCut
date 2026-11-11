@@ -29,8 +29,8 @@
       "section_no": 2,
       "section": "02_ly-thuyet",
       "topic_no": 1,
-      "topic": "Nỗi oan khuất và vòng kim cô",
-      "slug": "noi-oan-khuat-va-vong-kim-co",
+      "topic": "Nhắc lại chuyện cũ và vòng kim cô",
+      "slug": "nhac-lai-chuyen-cu-va-vong-kim-co",
       "start_id": "S0018",
       "end_id": "S0032",
       "start": 53.72,
@@ -40,7 +40,7 @@
           "part": 1,
           "start": 53.72,
           "end": 105.81,
-          "file": "01_noi-oan-khuat-va-vong-kim-co.mp4"
+          "file": "01_nhac-lai-chuyen-cu-va-vong-kim-co.mp4"
         }
       ]
     },
@@ -49,8 +49,8 @@
       "section_no": 3,
       "section": "03_tong-ket",
       "topic_no": 1,
-      "topic": "Đại sư huynh trở về và sự ngộ đạo",
-      "slug": "dai-su-huynh-tro-ve-va-su-ngo-dao",
+      "topic": "Sự biến đổi và ngộ đạo của đệ tử",
+      "slug": "su-bien-doi-va-ngo-dao-cua-de-tu",
       "start_id": "S0033",
       "end_id": "S0040",
       "start": 110.01,
@@ -60,7 +60,7 @@
           "part": 1,
           "start": 110.01,
           "end": 183.67,
-          "file": "01_dai-su-huynh-tro-ve-va-su-ngo-dao.mp4"
+          "file": "01_su-bien-doi-va-ngo-dao-cua-de-tu.mp4"
         }
       ]
     }
