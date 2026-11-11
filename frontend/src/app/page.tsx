@@ -18,6 +18,7 @@ import {
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
+import { DEFAULT_BG_COLOR, applyWebBackgroundColor } from "@/components/ThemeColorPicker";
 import { VideoLibraryColumn, LibraryVideoCard, PASTEL_GRADIENTS } from "@/components/VideoLibraryColumn";
 import { VideoCanvasViewport } from "@/components/VideoCanvasViewport";
 import { AiAssistantChatPanel } from "@/components/AiAssistantChatPanel";
@@ -337,6 +338,27 @@ export default function Home() {
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
+
+  // Theme background color state (Hỗ trợ hơn 16 màu sáng & tối)
+  const [themeBgColor, setThemeBgColor] = useState<string>(DEFAULT_BG_COLOR);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("autocut_web_bg_color");
+        if (saved) {
+          setThemeBgColor(saved);
+          applyWebBackgroundColor(saved);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const handleThemeColorChange = useCallback((color: string) => {
+    setThemeBgColor(color);
+  }, []);
 
   const showToast = useCallback((type: "success" | "error" | "info", message: string) => {
     setNotification({ type, message });
@@ -1822,7 +1844,10 @@ export default function Home() {
 
   if (!isSessionLoaded) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#f8fafc] text-slate-800 font-sans select-none">
+      <div
+        className="h-screen w-screen flex flex-col items-center justify-center font-sans select-none transition-colors duration-200"
+        style={{ backgroundColor: themeBgColor }}
+      >
         <div className="w-9 h-9 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3" />
         <span className="text-xs font-bold text-slate-600">Đang đồng bộ phiên làm việc AutoCut...</span>
       </div>
@@ -1830,7 +1855,10 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f4f6f8] text-slate-800 font-sans select-none selection:bg-indigo-600 selection:text-white">
+    <div
+      className="h-screen w-screen overflow-hidden flex flex-col font-sans select-none selection:bg-indigo-600 selection:text-white transition-colors duration-200 text-slate-800"
+      style={{ backgroundColor: themeBgColor }}
+    >
       {/* Top Header matching reference image */}
       <StudioHeader
         user={currentUser}
@@ -1840,6 +1868,8 @@ export default function Home() {
         isAnalyzing={isAnalyzing}
         isSaving={isSaving}
         isDemo={isDemo}
+        themeColor={themeBgColor}
+        onThemeColorChange={handleThemeColorChange}
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
         onSave={handleSaveProject}

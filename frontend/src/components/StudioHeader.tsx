@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { AccountModal } from "@/components/AccountModal";
+import { ThemeColorPicker } from "@/components/ThemeColorPicker";
 
 interface StudioHeaderProps {
   user: User | null;
@@ -27,6 +28,8 @@ interface StudioHeaderProps {
   isAnalyzing?: boolean;
   isSaving?: boolean;
   isDemo?: boolean;
+  themeColor?: string;
+  onThemeColorChange?: (color: string, isDark: boolean) => void;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
   onSave?: () => void;
@@ -42,6 +45,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   isRendering,
   isAnalyzing = false,
   isSaving = false,
+  themeColor,
+  onThemeColorChange,
   onOpenAddVideo,
   onExport,
   onSave,
@@ -200,6 +205,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               <span>Export</span>
             )}
           </button>
+
+          {/* Ô Thay Đổi Màu Nền Trang Web (Hơn 16 màu sáng & tối + Tự chọn) */}
+          <ThemeColorPicker
+            currentColor={themeColor}
+            onColorChange={onThemeColorChange}
+          />
 
           {/* User Account Dropdown with Avatar */}
           {user && (
