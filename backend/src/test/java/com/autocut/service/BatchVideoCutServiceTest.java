@@ -173,7 +173,10 @@ class BatchVideoCutServiceTest {
         assertEquals(2, finalResp.current());
 
         // Kiểm tra file chapters.txt và report.json được tạo trên ổ đĩa
-        Path lessonDir = Path.of("output", "users", "toan_unit_test", "lesson_async_test");
+        Path lessonDir = Path.of("..", "output", "users", "toan_unit_test", "lesson_async_test");
+        if (!Files.exists(lessonDir)) {
+            lessonDir = Path.of("output", "users", "toan_unit_test", "lesson_async_test");
+        }
         assertTrue(Files.exists(lessonDir.resolve("chapters.txt")), "chapters.txt phải được tạo");
         assertTrue(Files.exists(lessonDir.resolve("report.json")), "report.json phải được tạo");
 

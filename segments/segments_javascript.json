@@ -8,95 +8,95 @@
     "section_no" : 1,
     "section" : "01_gioi-thieu",
     "topic_no" : 1,
-    "topic" : "Tổng quan về JavaScript và mục lục bài giảng",
-    "slug" : "tong-quan-ve-javascript-va-muc-luc",
+    "topic" : "Tổng quan và mục lục bài giảng",
+    "slug" : "tong-quan-va-muc-luc",
     "start_id" : "S0001",
     "end_id" : "S0017",
     "start" : 0.0,
-    "end" : 170.54,
+    "end" : 152.6,
     "parts" : [ {
       "part" : 1,
       "start" : 0.0,
-      "end" : 170.54,
-      "file" : "01_tong-quan-ve-javascript-va-muc-luc.mp4"
+      "end" : 152.6,
+      "file" : "01_tong-quan-va-muc-luc.mp4"
     } ]
   }, {
     "id" : "seg_ai_02",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 1,
-    "topic" : "Thiết lập môi trường và lệnh đầu tiên",
+    "topic" : "Thiết lập môi trường & Lệnh đầu tiên",
     "slug" : "thiet-lap-moi-truong-va-lenh-dau-tien",
     "start_id" : "S0018",
-    "end_id" : "S0044",
-    "start" : 170.54,
-    "end" : 355.74,
+    "end_id" : "S0039",
+    "start" : 152.6,
+    "end" : 274.46,
     "parts" : [ {
       "part" : 1,
-      "start" : 170.54,
-      "end" : 355.74,
+      "start" : 152.6,
+      "end" : 274.46,
       "file" : "01_thiet-lap-moi-truong-va-lenh-dau-tien.mp4"
     } ]
   }, {
     "id" : "seg_ai_03",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 2,
-    "topic" : "Các kiểu dữ liệu cơ bản",
-    "slug" : "cac-kieu-du-lieu-co-ban",
-    "start_id" : "S0045",
-    "end_id" : "S0060",
-    "start" : 355.74,
+    "topic" : "Biến và các kiểu dữ liệu nguyên thủy",
+    "slug" : "bien-va-kieu-du-lieu-nguyen-thuy",
+    "start_id" : "S0040",
+    "end_id" : "S0070",
+    "start" : 274.46,
     "end" : 454.62,
     "parts" : [ {
       "part" : 1,
-      "start" : 355.74,
+      "start" : 274.46,
       "end" : 454.62,
-      "file" : "02_cac-kieu-du-lieu-co-ban.mp4"
+      "file" : "02_bien-va-kieu-du-lieu-nguyen-thuy.mp4"
     } ]
   }, {
     "id" : "seg_ai_04",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 3,
     "topic" : "Nhập xuất dữ liệu (Input & Output)",
-    "slug" : "nhap-xuat-du-lieu",
-    "start_id" : "S0061",
-    "end_id" : "S0082",
+    "slug" : "nhap-xuat-du-lieu-input-output",
+    "start_id" : "S0071",
+    "end_id" : "S0104",
     "start" : 454.62,
-    "end" : 612.62,
+    "end" : 641.86,
     "parts" : [ {
       "part" : 1,
       "start" : 454.62,
-      "end" : 612.62,
-      "file" : "03_nhap-xuat-du-lieu.mp4"
+      "end" : 641.86,
+      "file" : "03_nhap-xuat-du-lieu-input-output.mp4"
     } ]
   }, {
     "id" : "seg_ai_05",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 4,
-    "topic" : "Biểu thức và toán tử",
-    "slug" : "bieu-thuc-va-toan-tu",
-    "start_id" : "S0083",
-    "end_id" : "S0134",
-    "start" : 612.62,
+    "topic" : "Toán tử, biểu thức và phép toán",
+    "slug" : "toan-tu-bieu-thuc-va-phep-toan",
+    "start_id" : "S0105",
+    "end_id" : "S0153",
+    "start" : 641.86,
     "end" : 826.6,
     "parts" : [ {
       "part" : 1,
-      "start" : 612.62,
+      "start" : 641.86,
       "end" : 826.6,
-      "file" : "04_bieu-thuc-va-toan-tu.mp4"
+      "file" : "04_toan-tu-bieu-thuc-va-phep-toan.mp4"
     } ]
   }, {
     "id" : "seg_ai_06",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 5,
-    "topic" : "Cấu trúc rẽ nhánh If-Else",
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else",
     "slug" : "cau-truc-re-nhanh-if-else",
-    "start_id" : "S0135",
-    "end_id" : "S0173",
+    "start_id" : "S0154",
+    "end_id" : "S0199",
     "start" : 827.22,
     "end" : 1093.57,
     "parts" : [ {
@@ -108,29 +108,29 @@
   }, {
     "id" : "seg_ai_07",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-cu-phap-co-ban",
+    "section" : "02_kien-thuc-co-ban",
     "topic_no" : 6,
-    "topic" : "Cấu trúc lặp Loop (Vòng lặp For)",
-    "slug" : "cau-truc-lap-loop",
-    "start_id" : "S0174",
-    "end_id" : "S0230",
+    "topic" : "Cấu trúc vòng lặp For",
+    "slug" : "cau-truc-vong-lap-for",
+    "start_id" : "S0200",
+    "end_id" : "S0260",
     "start" : 1093.57,
     "end" : 1325.11,
     "parts" : [ {
       "part" : 1,
       "start" : 1093.57,
       "end" : 1325.11,
-      "file" : "06_cau-truc-lap-loop.mp4"
+      "file" : "06_cau-truc-vong-lap-for.mp4"
     } ]
   }, {
     "id" : "seg_ai_08",
     "section_no" : 3,
-    "section" : "03_kieu-du-lieu-nang-cao",
+    "section" : "03_cac-cau-truc-du-lieu-nang-cao",
     "topic_no" : 1,
     "topic" : "Kiểu dữ liệu Object",
     "slug" : "kieu-du-lieu-object",
-    "start_id" : "S0231",
-    "end_id" : "S0290",
+    "start_id" : "S0261",
+    "end_id" : "S0320",
     "start" : 1325.11,
     "end" : 1502.55,
     "parts" : [ {
@@ -142,138 +142,138 @@
   }, {
     "id" : "seg_ai_09",
     "section_no" : 3,
-    "section" : "03_kieu-du-lieu-nang-cao",
+    "section" : "03_cac-cau-truc-du-lieu-nang-cao",
     "topic_no" : 2,
-    "topic" : "Kiểu dữ liệu Function (Hàm) (Phần 1)",
-    "slug" : "kieu-du-lieu-function-phan-1",
-    "start_id" : "S0291",
-    "end_id" : "S0350",
+    "topic" : "Hàm (Function) và tái sử dụng code (Phần 1)",
+    "slug" : "ham-function-tai-su-dung-code-phan-1",
+    "start_id" : "S0321",
+    "end_id" : "S0382",
     "start" : 1502.89,
-    "end" : 1743.76,
+    "end" : 1751.34,
     "parts" : [ {
       "part" : 1,
       "start" : 1502.89,
-      "end" : 1743.76,
-      "file" : "02_kieu-du-lieu-function/02_kieu-du-lieu-function_Phan1.mp4"
+      "end" : 1751.34,
+      "file" : "02_ham-function-tai-su-dung-code-phan-1.mp4"
     } ]
   }, {
     "id" : "seg_ai_10",
     "section_no" : 3,
-    "section" : "03_kieu-du-lieu-nang-cao",
-    "topic_no" : 2,
-    "topic" : "Kiểu dữ liệu Function (Hàm) (Phần 2)",
-    "slug" : "kieu-du-lieu-function-phan-2",
-    "start_id" : "S0351",
-    "end_id" : "S0396",
-    "start" : 1743.76,
+    "section" : "03_cac-cau-truc-du-lieu-nang-cao",
+    "topic_no" : 3,
+    "topic" : "Hàm (Function) - Tham số và Giá trị trả về (Phần 2)",
+    "slug" : "ham-function-tham-so-va-tra-ve-phan-2",
+    "start_id" : "S0383",
+    "end_id" : "S0428",
+    "start" : 1751.34,
     "end" : 1990.88,
     "parts" : [ {
       "part" : 1,
-      "start" : 1743.76,
+      "start" : 1751.34,
       "end" : 1990.88,
-      "file" : "02_kieu-du-lieu-function/02_kieu-du-lieu-function_Phan2.mp4"
+      "file" : "03_ham-function-tham-so-va-tra-ve-phan-2.mp4"
     } ]
   }, {
     "id" : "seg_ai_11",
     "section_no" : 3,
-    "section" : "03_kieu-du-lieu-nang-cao",
-    "topic_no" : 3,
-    "topic" : "Kiểu dữ liệu Array (Mảng)",
-    "slug" : "kieu-du-lieu-array",
-    "start_id" : "S0397",
-    "end_id" : "S0439",
+    "section" : "03_cac-cau-truc-du-lieu-nang-cao",
+    "topic_no" : 4,
+    "topic" : "Mảng (Array) và thao tác CRUD",
+    "slug" : "mang-array-va-thao-tac-crud",
+    "start_id" : "S0429",
+    "end_id" : "S0476",
     "start" : 1990.88,
     "end" : 2232.04,
     "parts" : [ {
       "part" : 1,
       "start" : 1990.88,
       "end" : 2232.04,
-      "file" : "03_kieu-du-lieu-array.mp4"
+      "file" : "04_mang-array-va-thao-tac-crud.mp4"
     } ]
   }, {
     "id" : "seg_ai_12",
     "section_no" : 3,
-    "section" : "03_kieu-du-lieu-nang-cao",
-    "topic_no" : 4,
-    "topic" : "Kiểu dữ liệu String (Chuỗi ký tự)",
-    "slug" : "kieu-du-lieu-string",
-    "start_id" : "S0440",
-    "end_id" : "S0461",
+    "section" : "03_cac-cau-truc-du-lieu-nang-cao",
+    "topic_no" : 5,
+    "topic" : "Chuỗi ký tự (String) và cơ chế Type Coercion",
+    "slug" : "chuoi-ky-tu-string-va-type-coercion",
+    "start_id" : "S0477",
+    "end_id" : "S0503",
     "start" : 2232.04,
     "end" : 2397.92,
     "parts" : [ {
       "part" : 1,
       "start" : 2232.04,
       "end" : 2397.92,
-      "file" : "04_kieu-du-lieu-string.mp4"
+      "file" : "05_chuoi-ky-tu-string-va-type-coercion.mp4"
     } ]
   }, {
     "id" : "seg_ai_13",
     "section_no" : 4,
-    "section" : "04_thuc-hanh-nang-cao-co-che-web",
+    "section" : "04_ung-dung-va-ky-thuat-nang-cao",
     "topic_no" : 1,
-    "topic" : "Cơ chế DOM (Document Object Model) (Phần 1)",
-    "slug" : "co-che-dom-phan-1",
-    "start_id" : "S0462",
-    "end_id" : "S0512",
+    "topic" : "Thao tác DOM - Bắt sự kiện và lấy dữ liệu (Phần 1)",
+    "slug" : "thao-tac-dom-bat-su-kien-lay-du-lieu-phan-1",
+    "start_id" : "S0504",
+    "end_id" : "S0617",
     "start" : 2397.92,
-    "end" : 2641.64,
+    "end" : 2746.92,
     "parts" : [ {
       "part" : 1,
       "start" : 2397.92,
-      "end" : 2641.64,
-      "file" : "01_co-che-dom/01_co-che-dom_Phan1.mp4"
+      "end" : 2746.92,
+      "file" : "01_thao-tac-dom-bat-su-kien-lay-du-lieu-phan-1.mp4"
     } ]
   }, {
     "id" : "seg_ai_14",
     "section_no" : 4,
-    "section" : "04_thuc-hanh-nang-cao-co-che-web",
-    "topic_no" : 1,
-    "topic" : "Cơ chế DOM (Document Object Model) (Phần 2)",
-    "slug" : "co-che-dom-phan-2",
-    "start_id" : "S0513",
-    "end_id" : "S0623",
-    "start" : 2641.64,
-    "end" : 2884.54,
+    "section" : "04_ung-dung-va-ky-thuat-nang-cao",
+    "topic_no" : 2,
+    "topic" : "Thao tác DOM - Cập nhật giao diện với innerHTML (Phần 2)",
+    "slug" : "thao-tac-dom-cap-nhat-giao-dien-phan-2",
+    "start_id" : "S0618",
+    "end_id" : "S0667",
+    "start" : 2746.92,
+    "end" : 2881.72,
     "parts" : [ {
       "part" : 1,
-      "start" : 2641.64,
-      "end" : 2884.54,
-      "file" : "01_co-che-dom/01_co-che-dom_Phan2.mp4"
+      "start" : 2746.92,
+      "end" : 2881.72,
+      "file" : "02_thao-tac-dom-cap-nhat-giao-dien-phan-2.mp4"
     } ]
   }, {
     "id" : "seg_ai_15",
     "section_no" : 4,
-    "section" : "04_thuc-hanh-nang-cao-co-che-web",
-    "topic_no" : 2,
-    "topic" : "Bất đồng bộ (Asynchronous)",
-    "slug" : "bat-dong-bo-asynchronous",
-    "start_id" : "S0624",
-    "end_id" : "S0674",
-    "start" : 2884.76,
+    "section" : "04_ung-dung-va-ky-thuat-nang-cao",
+    "topic_no" : 3,
+    "topic" : "Cơ chế bất đồng bộ (Asynchronous)",
+    "slug" : "co-che-bat-dong-bo-asynchronous",
+    "start_id" : "S0668",
+    "end_id" : "S0723",
+    "start" : 2882.56,
     "end" : 3175.8,
     "parts" : [ {
       "part" : 1,
-      "start" : 2884.76,
+      "start" : 2882.56,
       "end" : 3175.8,
-      "file" : "02_bat-dong-bo-asynchronous.mp4"
+      "file" : "03_co-che-bat-dong-bo-asynchronous.mp4"
     } ]
   }, {
     "id" : "seg_ai_16",
     "section_no" : 4,
-    "section" : "04_thuc-hanh-nang-cao-co-che-web",
-    "topic_no" : 3,
-    "topic" : "Lưu trữ dữ liệu (Data Storage)",
-    "slug" : "luu-tru-du-lieu",
-    "start_id" : "S0675",
-    "end_id" : "S0712",
+    "section" : "04_ung-dung-va-ky-thuat-nang-cao",
+    "topic_no" : 4,
+    "topic" : "Lưu trữ dữ liệu với LocalStorage",
+    "slug" : "luu-tru-du-lieu-localstorage",
+    "start_id" : "S0724",
+    "end_id" : "S0767",
     "start" : 3175.8,
     "end" : 3392.14,
     "parts" : [ {
       "part" : 1,
       "start" : 3175.8,
       "end" : 3392.14,
-      "file" : "03_luu-tru-du-lieu.mp4"
+      "file" : "04_luu-tru-du-lieu-localstorage.mp4"
     } ]
   }, {
     "id" : "seg_ai_17",
@@ -281,16 +281,16 @@
     "section" : "05_tong-ket",
     "topic_no" : 1,
     "topic" : "Tổng kết bài giảng và định hướng học tập",
-    "slug" : "tong-ket-bai-giang",
-    "start_id" : "S0713",
-    "end_id" : "S0718",
+    "slug" : "tong-ket-va-dinh-huong-hoc-tap",
+    "start_id" : "S0768",
+    "end_id" : "S0773",
     "start" : 3392.14,
     "end" : 3427.57,
     "parts" : [ {
       "part" : 1,
       "start" : 3392.14,
       "end" : 3427.57,
-      "file" : "01_tong-ket-bai-giang.mp4"
+      "file" : "01_tong-ket-va-dinh-huong-hoc-tap.mp4"
     } ]
   } ]
 }
