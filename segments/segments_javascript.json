@@ -1,0 +1,296 @@
+{
+  "video" : "javascript.mp4",
+  "lesson" : "javascript",
+  "mode" : "analyzed",
+  "reviewed" : false,
+  "segments" : [ {
+    "id" : "seg_ai_01",
+    "section_no" : 1,
+    "section" : "01_gioi-thieu",
+    "topic_no" : 1,
+    "topic" : "Tổng quan và mục lục bài giảng",
+    "slug" : "tong-quan-va-muc-luc-bai-giang",
+    "start_id" : "S0001",
+    "end_id" : "S0017",
+    "start" : 0.0,
+    "end" : 111.46,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 0.0,
+      "end" : 111.46,
+      "file" : "01_tong-quan-va-muc-luc-bai-giang.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_02",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 1,
+    "topic" : "Thiết lập môi trường & Lệnh đầu tiên",
+    "slug" : "thiet-lap-moi-truong-va-lenh-dau-tien",
+    "start_id" : "S0018",
+    "end_id" : "S0064",
+    "start" : 111.46,
+    "end" : 274.46,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 111.46,
+      "end" : 274.46,
+      "file" : "01_thiet-lap-moi-truong-va-lenh-dau-tien.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_03",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 2,
+    "topic" : "Khai báo biến và Kiểu dữ liệu",
+    "slug" : "khai-bao-bien-va-kieu-du-lieu",
+    "start_id" : "S0065",
+    "end_id" : "S0112",
+    "start" : 274.46,
+    "end" : 454.62,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 274.46,
+      "end" : 454.62,
+      "file" : "02_khai-bao-bien-va-kieu-du-lieu.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_04",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 3,
+    "topic" : "Nhập xuất dữ liệu và Phép toán",
+    "slug" : "nhap-xuat-du-lieu-va-phep-toan",
+    "start_id" : "S0113",
+    "end_id" : "S0256",
+    "start" : 454.62,
+    "end" : 851.72,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 454.62,
+      "end" : 851.72,
+      "file" : "03_nhap-xuat-du-lieu-va-phep-toan.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_05",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 4,
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else (Phần 1)",
+    "slug" : "cau-truc-dieu-khien-re-nhanh-if-else-phan-1",
+    "start_id" : "S0257",
+    "end_id" : "S0422",
+    "start" : 851.72,
+    "end" : 1257.13,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 851.72,
+      "end" : 1257.13,
+      "file" : "04_cau-truc-dieu-khien-re-nhanh-if-else/04_cau-truc-dieu-khien-re-nhanh-if-else_Phan1.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_06",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 4,
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else (Phần 2)",
+    "slug" : "cau-truc-dieu-khien-re-nhanh-if-else-phan-2",
+    "start_id" : "S0423",
+    "end_id" : "S0582",
+    "start" : 1257.13,
+    "end" : 1663.83,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1257.13,
+      "end" : 1663.83,
+      "file" : "04_cau-truc-dieu-khien-re-nhanh-if-else/04_cau-truc-dieu-khien-re-nhanh-if-else_Phan2.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_07",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 4,
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else (Phần 3)",
+    "slug" : "cau-truc-dieu-khien-re-nhanh-if-else-phan-3",
+    "start_id" : "S0583",
+    "end_id" : "S0723",
+    "start" : 1663.83,
+    "end" : 2069.86,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1663.83,
+      "end" : 2069.86,
+      "file" : "04_cau-truc-dieu-khien-re-nhanh-if-else/04_cau-truc-dieu-khien-re-nhanh-if-else_Phan3.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_08",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 4,
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else (Phần 4)",
+    "slug" : "cau-truc-dieu-khien-re-nhanh-if-else-phan-4",
+    "start_id" : "S0724",
+    "end_id" : "S0893",
+    "start" : 2069.86,
+    "end" : 2475.56,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2069.86,
+      "end" : 2475.56,
+      "file" : "04_cau-truc-dieu-khien-re-nhanh-if-else/04_cau-truc-dieu-khien-re-nhanh-if-else_Phan4.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_09",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet-va-can-ban",
+    "topic_no" : 4,
+    "topic" : "Cấu trúc điều khiển rẽ nhánh If-Else (Phần 5)",
+    "slug" : "cau-truc-dieu-khien-re-nhanh-if-else-phan-5",
+    "start_id" : "S0894",
+    "end_id" : "S1031",
+    "start" : 2475.56,
+    "end" : 2881.72,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2475.56,
+      "end" : 2881.72,
+      "file" : "04_cau-truc-dieu-khien-re-nhanh-if-else/04_cau-truc-dieu-khien-re-nhanh-if-else_Phan5.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_10",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 1,
+    "topic" : "Cấu trúc lặp For và While",
+    "slug" : "cau-truc-lap-for-va-while",
+    "start_id" : "S0359",
+    "end_id" : "S0440",
+    "start" : 2881.72,
+    "end" : 2949.95,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2881.72,
+      "end" : 2949.95,
+      "file" : "01_cau-truc-lap-for-va-while.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_11",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 2,
+    "topic" : "Kiểu dữ liệu Object",
+    "slug" : "kieu-du-lieu-object",
+    "start_id" : "S0441",
+    "end_id" : "S0501",
+    "start" : 2949.95,
+    "end" : 3018.18,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2949.95,
+      "end" : 3018.18,
+      "file" : "02_kieu-du-lieu-object.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_12",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 3,
+    "topic" : "Kiểu dữ liệu Function (Hàm)",
+    "slug" : "kieu-du-lieu-function-ham",
+    "start_id" : "S0502",
+    "end_id" : "S0698",
+    "start" : 3018.18,
+    "end" : 3086.41,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3018.18,
+      "end" : 3086.41,
+      "file" : "03_kieu-du-lieu-function-ham.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_13",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 4,
+    "topic" : "Kiểu dữ liệu Array (Mảng)",
+    "slug" : "kieu-du-lieu-array-mang",
+    "start_id" : "S0699",
+    "end_id" : "S0794",
+    "start" : 3086.41,
+    "end" : 3154.64,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3086.41,
+      "end" : 3154.64,
+      "file" : "04_kieu-du-lieu-array-mang.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_14",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 5,
+    "topic" : "Kiểu dữ liệu String và Cơ chế Type Coercion",
+    "slug" : "kieu-du-lieu-string-va-co-che-type-coercion",
+    "start_id" : "S0795",
+    "end_id" : "S0861",
+    "start" : 3154.64,
+    "end" : 3222.87,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3154.64,
+      "end" : 3222.87,
+      "file" : "05_kieu-du-lieu-string-va-co-che-type-coercion.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_15",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 6,
+    "topic" : "Cơ chế DOM (Document Object Model)",
+    "slug" : "co-che-dom-document-object-model",
+    "start_id" : "S0862",
+    "end_id" : "S1031",
+    "start" : 3222.87,
+    "end" : 3291.1,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3222.87,
+      "end" : 3291.1,
+      "file" : "06_co-che-dom-document-object-model.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_16",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 7,
+    "topic" : "Cơ chế Bất đồng bộ (Asynchronous)",
+    "slug" : "co-che-bat-dong-bo-asynchronous",
+    "start_id" : "S1032",
+    "end_id" : "S1179",
+    "start" : 3291.1,
+    "end" : 3359.34,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3291.1,
+      "end" : 3359.34,
+      "file" : "07_co-che-bat-dong-bo-asynchronous.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_17",
+    "section_no" : 3,
+    "section" : "03_nang-cao-va-chuyen-de",
+    "topic_no" : 8,
+    "topic" : "Lưu trữ dữ liệu với Local Storage và Tổng kết",
+    "slug" : "luu-tru-du-lieu-voi-local-storage-va-tong-ket",
+    "start_id" : "S1180",
+    "end_id" : "S1241",
+    "start" : 3359.34,
+    "end" : 3427.57,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3359.34,
+      "end" : 3427.57,
+      "file" : "08_luu-tru-du-lieu-voi-local-storage-va-tong-ket.mp4"
+    } ]
+  } ]
+}

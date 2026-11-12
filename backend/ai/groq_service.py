@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 from .models import TranscriptOutput, Sentence
-from .config_loader import default_ai_config
+from .config_loader import default_ai_config, log_ai_api_error
 from .post_processor import sanitize_transcript_stem
 
 logger = logging.getLogger("AutoCut.AI.Groq")
@@ -72,7 +72,7 @@ def extract_audio_mp3(video_path: str, output_mp3_path: str) -> bool:
         )
         return Path(output_mp3_path).exists() and Path(output_mp3_path).stat().st_size > 0
     except Exception as e:
-        logger.warning(f"Không thể trích xuất mp3 bằng ffmpeg: {e}. Sẽ dùng file gốc.")
+        logger.warning(f"Khong the trich xuat mp3 bang ffmpeg: {e}. Se dung file goc.")
         return False
 
 
@@ -127,13 +127,15 @@ def call_groq_whisper_api(
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = resp.read().decode("utf-8")
+            logger.info(f"[GROQ] Model: {model}")
             return json.loads(data)
     except urllib.error.HTTPError as http_err:
         err_body = http_err.read().decode("utf-8", errors="ignore")
-        logger.error(f"Groq API HTTP Error {http_err.code}: {err_body}")
-        raise RuntimeError(f"Groq API trả về lỗi {http_err.code}: {err_body}")
+        wrapped = RuntimeError(f"Groq API tra ve loi {http_err.code}: {err_body}")
+        log_ai_api_error(logger, "GROQ", model, wrapped, is_fatal=True)
+        raise wrapped
     except Exception as e:
-        logger.error(f"Lỗi khi gọi Groq API: {e}")
+        log_ai_api_error(logger, "GROQ", model, e, is_fatal=True)
         raise e
 
 
@@ -154,6 +156,7 @@ def transcribe_with_groq(
         or getattr(default_ai_config, "whisper_api_key", "")
     )
     if not groq_key or not groq_key.startswith("gsk_"):
+        logger.error("[GROQ-API_KEY_ERROR] Thieu/sai GROQ_API_KEY trong .env")
         raise ValueError("Chưa cấu hình GROQ_API_KEY hoặc WHISPER_API_KEY của Groq (bắt đầu bằng gsk_...) trong .env!")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -161,12 +164,12 @@ def transcribe_with_groq(
 
     # 1. Trích xuất âm thanh nhẹ sang file tạm
     temp_mp3 = CACHE_DIR / f"groq_audio_{p.stem}_{os.getpid()}.mp3"
-    logger.info(f"[*] Đang chuẩn bị âm thanh nén cho Groq từ: {p.name}...")
+    logger.info(f"[GROQ] Nen audio: {p.name}")
     extracted = extract_audio_mp3(str(p), str(temp_mp3))
     target_audio = str(temp_mp3) if extracted else str(p)
 
     try:
-        logger.info(f"[*] Đang gọi Groq Whisper Cloud API cho {p.name}...")
+        logger.info(f"[GROQ] Goi API: {p.name}")
         api_res = call_groq_whisper_api(
             audio_path=target_audio,
             api_key=groq_key,
@@ -238,7 +241,7 @@ def transcribe_with_groq(
     json_str = transcript_out.model_dump_json(indent=2, exclude_none=True)
     with open(dedicated_file, "w", encoding="utf-8") as f:
         f.write(json_str)
-    logger.info(f"[+] Đã lưu transcript tại: {dedicated_file}")
+    logger.info(f"[+] Da luu transcript tai: {dedicated_file}")
 
     # File output chỉ định (nếu có và trùng path thì đã lưu, nếu khác thì lưu vào đích)
     if output_file:

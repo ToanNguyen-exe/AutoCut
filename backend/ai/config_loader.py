@@ -1,14 +1,17 @@
 """Cấu hình cho AI Module từ config.yaml và .env
 """
 
+import logging
 import os
+import re
+import unicodedata
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 import yaml
 from dotenv import load_dotenv
 
-# Tải biến môi trường từ .env
-load_dotenv()
+# Tải biến môi trường từ .env (ưu tiên cấu hình trong .env hơn biến môi trường hệ thống)
+load_dotenv(override=True)
 
 
 def load_yaml_config(config_path: Optional[str] = None) -> Dict[str, Any]:
@@ -75,7 +78,7 @@ class AIConfig:
             or os.getenv("LLM_API_KEY")
             or ""
         )
-        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
         # Thư mục cache, output và segments duy nhất tại thư mục gốc AutoCut
         project_root = Path(__file__).resolve().parent.parent.parent
@@ -91,3 +94,72 @@ class AIConfig:
 
 # Singleton config instance
 default_ai_config = AIConfig()
+
+_API_ERROR_RULES: Tuple[Tuple[str, str, re.Pattern[str]], ...] = (
+    (
+        "TOKEN_OR_QUOTA_EXHAUSTED",
+        "Het token/quota",
+        re.compile(
+            r"(?<![\w.])(?:429|413)(?![\w.])|resource_exhausted|quota|rate_limit|rate limit"
+            r"|too many requests|insufficient_quota|context_length|context length|max_tokens"
+            r"|payload too large|token limit|token quota|het token"
+        ),
+    ),
+    (
+        "API_KEY_ERROR",
+        "Loi API key",
+        re.compile(
+            r"(?<![\w.])(?:401|403)(?![\w.])|unauthenticated|permission_denied|permission denied"
+            r"|api_key|api key|invalid_api_key|unauthorized|key expired"
+        ),
+    ),
+    (
+        "TOKEN_OR_QUOTA_EXHAUSTED",
+        "Het token/quota",
+        re.compile(r"\btokens?\b"),
+    ),
+    (
+        "API_UNREACHABLE",
+        "Loi ket noi/model",
+        re.compile(
+            r"(?<![\w.])(?:503|404)(?![\w.])|unavailable|not_found|not found"
+            r"|timeout|timed out|connecterror|connection|getaddrinfo"
+        ),
+    ),
+)
+
+
+def classify_ai_api_error(err: Exception) -> Tuple[str, str]:
+    """Phan loai loi goi AI API thanh (ma_loi, mo_ta_ngan) dua tren regex uu tien."""
+    err_lower = to_ascii_log(str(err)).lower()
+    for code, description, pattern in _API_ERROR_RULES:
+        if pattern.search(err_lower):
+            return code, description
+    return "API_ERROR", "Loi AI API"
+
+
+def to_ascii_log(text: str) -> str:
+    """Chuyen chuoi log ve dang ASCII khong dau, gon tren 1 dong."""
+    normalized = unicodedata.normalize("NFD", text.replace("đ", "d").replace("Đ", "D"))
+    ascii_chars = "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn")
+    return " ".join(ascii_chars.encode("ascii", errors="ignore").decode("ascii").split())
+
+
+def summarize_error(err: Exception, max_len: int = 80) -> str:
+    """Tom gon thong diep loi thanh 1 dong ngan de log sach se."""
+    clean = to_ascii_log(str(err))
+    return clean if len(clean) <= max_len else f"{clean[:max_len - 3]}..."
+
+
+def log_ai_api_error(
+    target_logger: logging.Logger,
+    provider: str,
+    target_model: str,
+    err: Exception,
+    is_fatal: bool = True,
+) -> str:
+    """Ghi log tom gon (khong dau, 1 dong) cho loi goi AI API; tra ve ma loi."""
+    code, reason = classify_ai_api_error(err)
+    log_fn = target_logger.error if is_fatal else target_logger.warning
+    log_fn(f"[{provider}-{code}] {target_model}: {reason} ({summarize_error(err)})")
+    return code

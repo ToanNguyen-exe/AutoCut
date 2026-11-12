@@ -15,13 +15,14 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Set
 
 logger = logging.getLogger("AutoCut.AI.CLI")
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
+from .config_loader import summarize_error
 from .gemini_transcriber import GeminiTranscriber
 from .post_processor import post_process_transcript, sanitize_transcript_stem
 from .models import Sentence, TranscriptOutput
@@ -124,7 +125,8 @@ def _find_matching_transcript_or_video(
     video_name: str,
     lesson: str,
     file_hash: Optional[str],
-    duration: float
+    duration: float,
+    exhausted_models: Optional[Set[str]] = None
 ) -> TranscriptOutput:
     """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video vật lý."""
     cache_dir = PROJECT_ROOT / "cache"
@@ -213,7 +215,7 @@ def _find_matching_transcript_or_video(
             from .groq_service import transcribe_with_groq
             res = transcribe_with_groq(str(vid_path))
         except Exception as groq_err:
-            logger.warning(f"Groq API không khả dụng ({groq_err}), chuyển sang Whisper cục bộ.")
+            logger.warning(f"[CLI] Groq fallback -> Whisper cuc bo ({summarize_error(groq_err)})")
             from .whisper_service import WhisperTranscriber
             transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
             res = transcriber.transcribe(media_path=str(vid_path))
@@ -222,10 +224,10 @@ def _find_matching_transcript_or_video(
         print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
         try:
             from .transcript_refiner import TranscriptRefiner
-            refiner = TranscriptRefiner()
+            refiner = TranscriptRefiner(exhausted_models=exhausted_models)
             res = refiner.refine_transcript(res)
         except Exception as ref_err:
-            logger.warning(f"Gemini Refiner không khả dụng ({ref_err}), sử dụng bộ tách câu chuẩn hóa cục bộ.")
+            logger.warning(f"[CLI] Refiner fallback -> tach cau cuc bo ({summarize_error(ref_err)})")
             res = post_process_transcript(res)
 
         v_hash = file_hash or compute_file_sha256(str(vid_path))
@@ -343,17 +345,19 @@ def run_backend_analysis(
     output_path: str
 ):
     """Thực thi trọn vẹn pipeline AI cho API /api/video/analyze của Spring Boot."""
+    session_exhausted_models: Set[str] = set()
     transcript = _find_matching_transcript_or_video(
         video_name=video_name,
         lesson=lesson,
         file_hash=file_hash,
-        duration=duration
+        duration=duration,
+        exhausted_models=session_exhausted_models
     )
 
     from .transcript_refiner import TranscriptRefiner
     is_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
     try:
-        refiner = TranscriptRefiner()
+        refiner = TranscriptRefiner(exhausted_models=session_exhausted_models)
         segments_data = refiner.segment_transcript(
             transcript,
             lesson_name=lesson or video_name,
@@ -366,7 +370,7 @@ def run_backend_analysis(
             dummy_refiner._generate_with_fallback = lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("No API Key"))
             segments_data = TranscriptRefiner.segment_transcript(dummy_refiner, transcript, lesson_name=lesson or video_name, force_ai=False)
         else:
-            logger.error(f"[CLI] Lỗi khi chạy AI phân đoạn: {e}")
+            logger.error(f"[CLI] Loi phan doan: {summarize_error(e)}")
             raise e
 
     # Tự động xuất file json phân đoạn vào thư mục segments/ ngay khi phân tích AI

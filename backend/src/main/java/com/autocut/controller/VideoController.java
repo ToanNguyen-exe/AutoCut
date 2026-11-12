@@ -655,6 +655,15 @@ public class VideoController {
 
 
 
+                if (!processLog.isBlank()) {
+                    for (String line : processLog.split("\\r?\\n")) {
+                        if (line.contains("[GEMINI") || line.contains("[GROQ") || line.contains("[SEGMENTER")
+                                || line.contains("[REFINER") || line.contains("[CLI]")) {
+                            log.info("[Python AI] {}", line.trim());
+                        }
+                    }
+                }
+
                 log.info("Module Python AI hoàn tất: {} câu transcript, {} phân đoạn.",
 
                         transcriptDTO != null ? transcriptDTO.sentences().size() : 0,

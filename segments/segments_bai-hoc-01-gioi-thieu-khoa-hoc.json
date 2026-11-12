@@ -1,0 +1,88 @@
+{
+  "video": "BaiGiang_Test_Output.mp4",
+  "lesson": "Bài Học 01: Giới Thiệu Khóa Học",
+  "mode": "analyzed",
+  "reviewed": false,
+  "segments": [
+    {
+      "id": "seg_ai_01",
+      "section_no": 1,
+      "section": "01_GioiThieu",
+      "topic_no": 1,
+      "topic": "Chào mừng các bạn đến với bài giảng chuyên đề Bài Học 01: Giới...",
+      "slug": "chao-mung-cac-ban-den-voi-bai-giang-chuyen-de-ba",
+      "start_id": "S0001",
+      "end_id": "S0002",
+      "start": 0.0,
+      "end": 75.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 0.0,
+          "end": 75.0,
+          "file": "01_chao-mung-cac-ban-den-voi-bai-giang-chuyen-de-ba.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_02",
+      "section_no": 2,
+      "section": "02_KhaiNiemCoBan",
+      "topic_no": 2,
+      "topic": "Tiếp theo, chúng ta đi sâu vào các khái niệm nền tảng và cú pháp...",
+      "slug": "tiep-theo-chung-ta-di-sau-vao-cac-khai-niem-nen",
+      "start_id": "S0003",
+      "end_id": "S0004",
+      "start": 75.0,
+      "end": 150.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 75.0,
+          "end": 150.0,
+          "file": "02_tiep-theo-chung-ta-di-sau-vao-cac-khai-niem-nen.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_03",
+      "section_no": 3,
+      "section": "03_NoiDungTrongTam",
+      "topic_no": 3,
+      "topic": "Bây giờ, chúng ta sẽ áp dụng lý thuyết vừa học vào một ví dụ...",
+      "slug": "bay-gio-chung-ta-se-ap-dung-ly-thuyet-vua-hoc-va",
+      "start_id": "S0005",
+      "end_id": "S0006",
+      "start": 150.0,
+      "end": 225.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 150.0,
+          "end": 225.0,
+          "file": "03_bay-gio-chung-ta-se-ap-dung-ly-thuyet-vua-hoc-va.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_04",
+      "section_no": 4,
+      "section": "04_PhanTichChiTiet",
+      "topic_no": 4,
+      "topic": "Tóm tắt lại những kinh nghiệm quan trọng và lỗi cần tránh khi...",
+      "slug": "tom-tat-lai-nhung-kinh-nghiem-quan-trong-va-loi",
+      "start_id": "S0007",
+      "end_id": "S0008",
+      "start": 225.0,
+      "end": 300.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 225.0,
+          "end": 300.0,
+          "file": "04_tom-tat-lai-nhung-kinh-nghiem-quan-trong-va-loi.mp4"
+        }
+      ]
+    }
+  ]
+}

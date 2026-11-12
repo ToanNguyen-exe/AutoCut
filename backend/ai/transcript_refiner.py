@@ -14,14 +14,19 @@ import re
 import sys
 import time
 import unicodedata
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Set
 
 from google import genai
 from google.genai import types
 
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import extract_terms_from_outline
-from .config_loader import default_ai_config
+from .config_loader import (
+    classify_ai_api_error,
+    default_ai_config,
+    log_ai_api_error,
+    summarize_error,
+)
 from .post_processor import (
     ensure_sentence_casing_and_punctuation,
     split_segment_into_timed_sentences,
@@ -32,6 +37,8 @@ logger = logging.getLogger("AutoCut.AI.Refiner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FALLBACK_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
     "gemini-3.5-flash",
     "gemini-flash-latest",
     "gemini-3.5-flash-lite",
@@ -50,29 +57,59 @@ def slugify_vi(text: str) -> str:
     return s[:48].strip("-") or "chu-de"
 
 
+def _parse_json_response(response: Any, model_name: str) -> Dict[str, Any]:
+    """Kiểm tra giới hạn token đầu ra và parse JSON từ phản hồi Gemini."""
+    candidates = getattr(response, "candidates", None)
+    if candidates:
+        finish_reason = str(getattr(candidates[0], "finish_reason", "") or "")
+        if "MAX_TOKENS" in finish_reason.upper():
+            logger.warning(f"[GEMINI-TOKEN_OR_QUOTA_EXHAUSTED] {model_name}: cham MAX_TOKENS, JSON co the bi cat")
+    raw_text = response.text.strip()
+    if raw_text.startswith("```json"):
+        raw_text = raw_text[7:]
+    if raw_text.startswith("```"):
+        raw_text = raw_text[3:]
+    if raw_text.endswith("```"):
+        raw_text = raw_text[:-3]
+    return json.loads(raw_text.strip())
+
+
 class TranscriptRefiner:
     """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề bằng Gemini LLM."""
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: Optional[str] = None
+        model_name: Optional[str] = None,
+        exhausted_models: Optional[Set[str]] = None
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
+            logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
         primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
+        self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
         self.client = genai.Client(
             api_key=self.api_key,
             http_options={"timeout": 90000.0}
         )
 
     def _generate_with_fallback(self, prompt: str):
-        """Gọi Gemini API với cơ chế tự động chuyển sang model dự phòng nếu gặp lỗi 429 Quota hoặc 503."""
+        """Gọi Gemini API: tự động loại bỏ model hết quota trong phiên và chuyển sang model còn quota."""
+        exhausted = getattr(self, "exhausted_models", None)
+        if exhausted is None:
+            exhausted = set()
+            self.exhausted_models = exhausted
+
+        candidates = [m for m in self.models_to_try if m not in exhausted]
+        if not candidates:
+            exhausted.clear()
+            candidates = list(self.models_to_try)
+
         last_err = None
-        for model_candidate in self.models_to_try:
+        for model_candidate in candidates:
             for attempt in range(1, 3):
                 try:
                     response = self.client.models.generate_content(
@@ -84,16 +121,26 @@ class TranscriptRefiner:
                         )
                     )
                     self.model_name = model_candidate
+                    logger.info(f"[GEMINI] Model: {model_candidate}")
                     return response
                 except Exception as err:
                     last_err = err
                     err_str = str(err)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    code, _ = classify_ai_api_error(err)
+                    is_key_err = code == "API_KEY_ERROR"
+                    log_ai_api_error(logger, "GEMINI", model_candidate, err, is_fatal=is_key_err)
+                    if is_key_err:
+                        raise err
+                    if code == "TOKEN_OR_QUOTA_EXHAUSTED":
+                        exhausted.add(model_candidate)
                         break
                     if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
                         time.sleep(2)
                         continue
                     break
+        if last_err is not None:
+            target_label = candidates[0] if len(candidates) == 1 else ",".join(candidates)
+            log_ai_api_error(logger, "GEMINI", target_label, last_err, is_fatal=True)
         # pyrefly: ignore[bad-raise]
         raise last_err
 
@@ -249,16 +296,7 @@ DANH SÁCH ĐẦU VÀO:
 """
             try:
                 response = self._generate_with_fallback(prompt)
-                raw_text = response.text.strip()
-                if raw_text.startswith("```json"):
-                    raw_text = raw_text[7:]
-                if raw_text.startswith("```"):
-                    raw_text = raw_text[3:]
-                if raw_text.endswith("```"):
-                    raw_text = raw_text[:-3]
-                raw_text = raw_text.strip()
-
-                parsed = json.loads(raw_text)
+                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
                 batch_map = {s.id: s for s in batch}
                 merged_sentences = parsed.get("sentences") or parsed.get("items") or []
 
@@ -327,10 +365,7 @@ DANH SÁCH ĐẦU VÀO:
                         )
 
             except Exception as e:
-                logger.warning(
-                    f"[REFINER] Lỗi khi gọi Gemini ở lô {b_idx} ({e}). "
-                    f"Sử dụng bộ tách câu cục bộ cho lô này."
-                )
+                log_ai_api_error(logger, f"REFINER lo {b_idx}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
                 for orig_s in batch:
                     refined_items.extend(
                         split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
@@ -471,26 +506,23 @@ DANH SÁCH CÂU TRANSCRIPT:
         while True:
             attempt += 1
             try:
-                logger.info(f"[SEGMENTER] Đang gửi yêu cầu phân đoạn tới AI (Lần thử #{attempt})...")
+                logger.info(f"[SEGMENTER] Goi AI lan #{attempt}")
                 response = self._generate_with_fallback(prompt)
-                raw_text = response.text.strip()
-                if raw_text.startswith("```json"):
-                    raw_text = raw_text[7:]
-                if raw_text.startswith("```"):
-                    raw_text = raw_text[3:]
-                if raw_text.endswith("```"):
-                    raw_text = raw_text[:-3]
-                parsed = json.loads(raw_text.strip())
+                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
 
                 # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
+                used_model = getattr(self, "model_name", None) or (
+                    self.models_to_try[0] if getattr(self, "models_to_try", None) else "unknown"
+                )
                 if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
                     try:
                         llm_raw_path = PROJECT_ROOT / "cache" / "llm_raw.json"
                         llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
+                        llm_raw_payload = {"model": used_model, **parsed}
                         with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
-                            json.dump(parsed, f_raw, ensure_ascii=False, indent=2)
-                    except Exception:
-                        pass
+                            json.dump(llm_raw_payload, f_raw, ensure_ascii=False, indent=2)
+                    except Exception as raw_err:
+                        logger.warning(f"[SEGMENTER] Loi ghi llm_raw.json: {summarize_error(raw_err)}")
 
                     raw_topics = []
                     for sec_idx, sec in enumerate(parsed["sections"], start=1):
@@ -507,7 +539,7 @@ DANH SÁCH CÂU TRANSCRIPT:
                                 "end_id": str(top.get("end_id", ""))
                             })
                     if raw_topics:
-                        logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(parsed['sections'])} phần lớn với {len(raw_topics)} bài học cụ thể (Lần thử #{attempt}).")
+                        logger.info(f"[SEGMENTER] {used_model}: {len(parsed['sections'])} phan, {len(raw_topics)} muc (lan #{attempt})")
                         break
                     else:
                         raise ValueError("AI trả về danh sách sections/topics rỗng.")
@@ -515,18 +547,18 @@ DANH SÁCH CÂU TRANSCRIPT:
                     candidate_segs = parsed.get("segments", [])
                     if isinstance(candidate_segs, list) and len(candidate_segs) >= 2:
                         raw_topics = candidate_segs
-                        logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(raw_topics)} phân đoạn ngữ nghĩa (Lần thử #{attempt}).")
+                        logger.info(f"[SEGMENTER] {used_model}: {len(raw_topics)} phan doan (lan #{attempt})")
                         break
                     else:
                         raise ValueError("AI không trả về cấu trúc sections hoặc segments hợp lệ.")
 
             except Exception as e:
-                logger.warning(f"[SEGMENTER] AI phân đoạn gặp lỗi ở lần thử #{attempt}: {e}")
+                log_ai_api_error(logger, f"SEGMENTER #{attempt}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
                 if not force_ai:
-                    logger.warning("[SEGMENTER] Chế độ force_ai=False, cho phép chuyển sang fallback.")
+                    logger.warning("[SEGMENTER] Fallback cuc bo (force_ai=False)")
                     break
                 if max_retries is not None and attempt >= max_retries:
-                    logger.error(f"[SEGMENTER] Đã thử {attempt} lần nhưng AI không thể phân đoạn: {e}")
+                    logger.error(f"[SEGMENTER] That bai sau {attempt} lan: {summarize_error(e)}")
                     raise RuntimeError(f"Bắt buộc phân đoạn bằng AI nhưng AI gặp lỗi sau {attempt} lần thử: {e}")
 
                 wait_sec = 0.05 if "pytest" in sys.modules else min(30, 2 + attempt * 2)
@@ -534,7 +566,7 @@ DANH SÁCH CÂU TRANSCRIPT:
                 if ("429" in err_str or "RESOURCE_EXHAUSTED" in err_str) and "pytest" not in sys.modules:
                     wait_sec = min(60, max(5, 5 * attempt))
 
-                print(f"\n[AI Segmenter] AI chưa phân đoạn thành công (Lỗi: {e}). Đang đợi {wait_sec}s để thử lại lần {attempt + 1}...")
+                print(f"\n[AI Segmenter] Loi ({summarize_error(e)}). Doi {wait_sec}s thu lai lan {attempt + 1}...")
                 time.sleep(wait_sec)
 
         # 2. Nếu force_ai=False và Gemini không khả dụng: mới dùng fallback chia đều từ câu thật

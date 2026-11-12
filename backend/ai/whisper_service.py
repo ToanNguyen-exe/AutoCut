@@ -85,7 +85,7 @@ def clear_all_cache(cache_dir: Optional[str] = None) -> int:
             count += 1
         except Exception:
             pass
-    logger.info(f"Đã dọn dẹp sạch sẽ {count} tệp cache tại: {target_dir}")
+    logger.info(f"Da don dep sach se {count} tep cache tai: {target_dir}")
     return count
 
 
@@ -125,7 +125,7 @@ class WhisperTranscriber:
                     chosen_compute = "int8" if chosen_compute == "auto" else chosen_compute
 
             logger.info(
-                f"Đang tải Faster-Whisper model '{self.model_size}' trên thiết bị: {chosen_device} "
+                f"Dang tai Faster-Whisper model '{self.model_size}' tren thiet bi: {chosen_device} "
                 f"(compute_type: {chosen_compute})..."
             )
             self._model = WhisperModel(
@@ -133,7 +133,7 @@ class WhisperTranscriber:
                 device=chosen_device,
                 compute_type=chosen_compute
             )
-            logger.info("Đã tải xong model Whisper.")
+            logger.info("Da tai xong model Whisper.")
         return self._model
 
     def get_cache_path(self, file_hash: str) -> Path:
@@ -196,17 +196,17 @@ class WhisperTranscriber:
         if groq_api_key and groq_api_key.startswith("gsk_"):
             try:
                 from .groq_service import transcribe_with_groq
-                logger.info(f"[*] Sử dụng Groq Whisper Cloud API cho {media_p.name}...")
+                logger.info(f"[*] Su dung Groq Whisper Cloud API cho {media_p.name}...")
                 return transcribe_with_groq(media_path, api_key=groq_api_key, output_file=output_file)
             except Exception as groq_err:
-                logger.warning(f"[!] Groq API gặp sự cố ({groq_err}), chuyển sang chạy offline Faster-Whisper...")
+                logger.warning(f"[!] Groq API gap su co ({groq_err}), chuyen sang chay offline Faster-Whisper...")
 
-        logger.info(f"Đang tính SHA-256 hash cho tệp {media_p.name}...")
+        logger.info(f"Dang tinh SHA-256 hash cho tep {media_p.name}...")
         file_hash = compute_file_sha256(str(media_p))
         cache_file = self.get_cache_path(file_hash)
 
         if not force_recompute and cache_file.exists():
-            logger.info(f"[CACHE HIT] Đã tìm thấy transcript có sẵn cho hash {file_hash[:8]}... Đang tải từ cache.")
+            logger.info(f"[CACHE HIT] Da tim thay transcript co san cho hash {file_hash[:8]}... Dang tai tu cache.")
             with open(cache_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             transcript_obj = TranscriptOutput.model_validate(data)
@@ -222,10 +222,10 @@ class WhisperTranscriber:
                     f.write(transcript_obj.model_dump_json(indent=2, exclude_none=True))
             return transcript_obj
 
-        logger.info(f"[CACHE MISS] Chưa có cache cho {media_p.name}. Tiến hành bóc băng với Whisper...")
+        logger.info(f"[CACHE MISS] Chua co cache cho {media_p.name}. Tien hanh boc bang voi Whisper...")
 
         initial_prompt = build_initial_prompt(outline_text)
-        logger.info(f"Đã tạo initial_prompt nâng cao: '{initial_prompt}'")
+        logger.info(f"Da tao initial_prompt nang cao: '{initial_prompt}'")
 
         model = self._get_model()
         transcribe_kwargs = dict(
@@ -256,8 +256,8 @@ class WhisperTranscriber:
         except RuntimeError as e:
             if ("cublas" in str(e).lower() or "cudnn" in str(e).lower() or "cuda" in str(e).lower()) and self.device in ("auto", "cuda"):
                 logger.warning(
-                    f"[CUDA WARNING] Không tìm thấy thư viện CUDA DLLs ({e}). "
-                    f"Tự động chuyển sang chạy bằng CPU (int8)..."
+                    f"[CUDA WARNING] Khong tim thay thu vien CUDA DLLs ({e}). "
+                    f"Tu dong chuyen sang chay bang CPU (int8)..."
                 )
                 from faster_whisper import WhisperModel
                 self.device = "cpu"
@@ -270,11 +270,11 @@ class WhisperTranscriber:
                 raise
 
         total_segments = len(raw_segments)
-        logger.info(f"Whisper hoàn thành: nhận diện được {total_segments} raw segments.")
+        logger.info(f"Whisper hoan thanh: nhan dien duoc {total_segments} raw segments.")
 
         merged_items = merge_fragmented_segments(raw_segments)
         total_merged = len(merged_items)
-        logger.info(f"Sau khi chuẩn hóa & tách câu đơn: {total_merged} câu hoàn chỉnh (từ {total_segments} segments).")
+        logger.info(f"Sau khi chuan hoa & tach cau don: {total_merged} cau hoan chinh (tu {total_segments} segments).")
 
         digit_count = 5 if total_merged > 9999 else 4
         sentences: List[Sentence] = []
@@ -303,7 +303,7 @@ class WhisperTranscriber:
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         with open(cache_file, "w", encoding="utf-8") as f:
             f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
-        logger.info(f"Đã lưu transcript vào cache: {cache_file}")
+        logger.info(f"Da luu transcript vao cache: {cache_file}")
 
         if output_file:
             out_p = Path(output_file)
@@ -313,6 +313,6 @@ class WhisperTranscriber:
             out_p.parent.mkdir(parents=True, exist_ok=True)
             with open(out_p, "w", encoding="utf-8") as f:
                 f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
-            logger.info(f"Đã xuất tệp transcript: {out_p}")
+            logger.info(f"Da xuat tep transcript: {out_p}")
 
         return transcript_output
