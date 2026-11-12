@@ -66,8 +66,6 @@ def test_refine_transcript_merges_fragmented_sentences():
     # Không có trường words trong JSON xuất ra
     json_str = result.model_dump_json()
     assert '"words"' not in json_str
-
-
 def test_refine_transcript_preserves_independent_sentences_and_verbatim_words():
     """Kiểm tra: Giữ nguyên vẹn từng câu đơn độc lập và bảo toàn từ ngữ gốc (không gọt câu quá tay)."""
     sentences = [

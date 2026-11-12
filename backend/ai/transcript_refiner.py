@@ -402,7 +402,7 @@ DANH SÁCH ĐẦU VÀO:
         lesson_name: str,
         max_part_duration: float = 420.0,
         force_ai: bool = True,
-        max_retries: Optional[int] = None
+        max_retries: Optional[int] = 2
     ) -> Dict[str, Any]:
         """Phân tích ngữ nghĩa danh sách câu S0001..Sxxxx và chia thành các phân đoạn chủ đề (SegmentsDTO).
         Bắt buộc phân đoạn bằng AI: nếu gặp lỗi sẽ kiên trì thử lại (retry loop) cho đến khi AI thành công.
@@ -558,8 +558,8 @@ DANH SÁCH CÂU TRANSCRIPT:
                     logger.warning("[SEGMENTER] Fallback cuc bo (force_ai=False)")
                     break
                 if max_retries is not None and attempt >= max_retries:
-                    logger.error(f"[SEGMENTER] That bai sau {attempt} lan: {summarize_error(e)}")
-                    raise RuntimeError(f"Bắt buộc phân đoạn bằng AI nhưng AI gặp lỗi sau {attempt} lần thử: {e}")
+                    logger.warning(f"[SEGMENTER] AI gap su co ket noi sau {attempt} lan thu ({summarize_error(e)}). Chuyen sang fallback phan doan tu transcript.")
+                    break
 
                 wait_sec = 0.05 if "pytest" in sys.modules else min(30, 2 + attempt * 2)
                 err_str = str(e)

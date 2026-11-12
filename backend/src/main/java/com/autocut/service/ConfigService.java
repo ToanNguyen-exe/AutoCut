@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,15 +21,43 @@ public class ConfigService {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigService.class);
     private final Dotenv dotenv;
+    private final Map<String, String> fallbackEnvMap = new HashMap<>();
     private Map<String, Object> configMap;
 
     public ConfigService() {
-        Dotenv loaded = Dotenv.configure().ignoreIfMissing().load();
-        if (loaded.get("R2_ACCESS_KEY_ID") == null) {
-            loaded = Dotenv.configure().directory("../").ignoreIfMissing().load();
+        Dotenv loaded = null;
+        try {
+            loaded = Dotenv.configure().ignoreIfMissing().load();
+            if (loaded.get("R2_ACCESS_KEY_ID") == null && loaded.get("LLM_API_KEY") == null) {
+                loaded = Dotenv.configure().directory("../").ignoreIfMissing().load();
+            }
+        } catch (Exception e) {
+            log.warn("Dotenv load bị gián đoạn ({}), chuyển sang đọc dự phòng file .env...", e.getMessage());
+            loadManualEnv(Paths.get(".env"));
+            loadManualEnv(Paths.get("../.env"));
         }
         this.dotenv = loaded;
         loadYamlConfig();
+    }
+
+    private void loadManualEnv(Path envPath) {
+        if (!Files.exists(envPath)) return;
+        try {
+            List<String> lines = Files.readAllLines(envPath);
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                int eqIdx = trimmed.indexOf('=');
+                if (eqIdx > 0) {
+                    String key = trimmed.substring(0, eqIdx).trim();
+                    String val = trimmed.substring(eqIdx + 1).trim();
+                    fallbackEnvMap.put(key, val);
+                }
+            }
+            log.info("Đã nạp thủ công file .env từ: {}", envPath.toAbsolutePath());
+        } catch (Exception ex) {
+            log.warn("Không thể đọc file .env thủ công: {}", ex.getMessage());
+        }
     }
 
     private void loadYamlConfig() {
@@ -53,7 +82,17 @@ public class ConfigService {
     }
 
     public String getEnv(String key, String defaultValue) {
-        String val = dotenv.get(key);
+        String val = null;
+        if (dotenv != null) {
+            try {
+                val = dotenv.get(key);
+            } catch (Exception ignored) {
+                // Ignore Dotenv lookup error
+            }
+        }
+        if (val == null || val.isBlank()) {
+            val = fallbackEnvMap.get(key);
+        }
         if (val == null || val.isBlank()) {
             val = System.getenv(key);
         }
@@ -108,6 +147,16 @@ public class ConfigService {
             return (List<String>) list;
         }
         return List.of("tiếp theo", "chuyển sang", "bây giờ chúng ta", "bài tập số");
+    }
+
+    public double getPaddingStart() {
+        Object val = getSection("output").getOrDefault("padding_start", 0.3);
+        return ((Number) val).doubleValue();
+    }
+
+    public double getPaddingEnd() {
+        Object val = getSection("output").getOrDefault("padding_end", 0.5);
+        return ((Number) val).doubleValue();
     }
 
     public Map<String, Object> getRawConfig() {

@@ -1,31 +1,28 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Segment } from "@/types";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { Segment, JoinedVideoClip } from "@/types";
 import { formatTime } from "@/lib/utils";
-import { saveVideoBlob } from "@/lib/videoStorage";
+import { resolvePlayableVideoUrl } from "@/lib/videoLibrary";
 import {
-  Monitor,
-  Smartphone,
-  Video,
-  Upload,
   Maximize2,
-  X,
   Play,
-  Pause,
   RotateCcw,
-  RotateCw,
   Volume2,
-  VolumeX,
   Sparkles,
+  Film,
+  Link2,
+  UploadCloud,
 } from "lucide-react";
 
 interface VideoCanvasViewportProps {
   currentSegment?: Segment;
+  segments?: Segment[];
   currentTime: number;
   totalDuration: number;
   videoTitle: string;
   externalVideoUrl?: string | null;
+  joinedVideos?: JoinedVideoClip[];
   isPlaying?: boolean;
   volume?: number;
   isMuted?: boolean;
@@ -46,11 +43,11 @@ interface VideoCanvasViewportProps {
 }
 
 export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
-  currentSegment,
   currentTime,
   totalDuration,
-  videoTitle,
   externalVideoUrl,
+  joinedVideos = [],
+  segments = [],
   isPlaying = false,
   volume = 100,
   isMuted = false,
@@ -63,63 +60,102 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   onTogglePlay,
   onDurationChange,
   onOpenAddVideo,
-  onAnalyzeAI,
   onSelectSegment,
   onPlay,
-  onVolumeChange,
   onToggleMute,
 }) => {
   const [aspect, setAspect] = useState<"landscape" | "portrait">("landscape");
-  const [videoSrc, setVideoSrc] = useState<string | null>(externalVideoUrl || null);
-  const [videoFileName, setVideoFileName] = useState<string | null>(null);
+
+  // Xác định clip đang hoạt động dựa trên currentTime và danh sách joinedVideos
+  const { activeClip, activeClipIndex } = useMemo(() => {
+    if (!joinedVideos || joinedVideos.length === 0) {
+      return { activeClip: null, activeClipIndex: 0 };
+    }
+    const idx = joinedVideos.findIndex(
+      (v) => currentTime >= v.startOffset && currentTime < v.endOffset
+    );
+    if (idx >= 0) {
+      return { activeClip: joinedVideos[idx], activeClipIndex: idx };
+    }
+    return {
+      activeClip: joinedVideos[joinedVideos.length - 1],
+      activeClipIndex: joinedVideos.length - 1,
+    };
+  }, [joinedVideos, currentTime]);
+
+  const rawUrl = activeClip?.url || externalVideoUrl || null;
+  const activeVideoUrl = useMemo(() => {
+    const fileName = activeClip?.fileName || activeClip?.title || "Bai08_Ep_kieu_du_lieu.mp4";
+    if (!rawUrl) {
+      return resolvePlayableVideoUrl(undefined, fileName);
+    }
+    return resolvePlayableVideoUrl(rawUrl, fileName);
+  }, [rawUrl, activeClip]);
+
+  const localTargetTime = activeClip
+    ? Math.max(0, Math.min(activeClip.duration, currentTime - activeClip.startOffset))
+    : currentTime;
+
+  const [videoSrc, setVideoSrc] = useState<string | null>(activeVideoUrl);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [needsUserUnmute, setNeedsUserUnmute] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (externalVideoUrl) {
-      setVideoSrc(externalVideoUrl);
+    if (activeVideoUrl) {
+      setVideoSrc(activeVideoUrl);
       setVideoLoadError(null);
     }
-  }, [externalVideoUrl]);
+  }, [activeVideoUrl]);
+
+  const handleVideoError = async () => {
+    const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+
+    // 1. Kiểm tra trong IndexedDB xem có blob của file đã lưu không
+    try {
+      const { getVideoBlob } = await import("@/lib/videoStorage");
+      const blob = await getVideoBlob(fileName);
+      if (blob) {
+        const freshBlobUrl = URL.createObjectURL(blob);
+        if (videoSrc !== freshBlobUrl) {
+          console.info("Khôi phục video từ IndexedDB thành công cho:", fileName);
+          setVideoSrc(freshBlobUrl);
+          setVideoLoadError(null);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Thử fallback API stream
+    const apiStreamUrl = `/api/stream?file=${encodeURIComponent(fileName)}`;
+
+    if (videoSrc !== apiStreamUrl) {
+      console.warn("Thử fallback video stream cho:", fileName);
+      setVideoSrc(apiStreamUrl);
+      setVideoLoadError(null);
+    } else {
+      setVideoLoadError(
+        "Không thể tải video từ luồng hiện tại. Bạn có thể nhấn 'Thử lại' hoặc 'Tải video lên'."
+      );
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const [isPlayerScrubbing, setIsPlayerScrubbing] = useState(false);
 
-  const handleProgressPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (e.button !== 0 || !onSeek || !progressBarRef.current) return;
-    setIsPlayerScrubbing(true);
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    onSeek(Number((ratio * totalDuration).toFixed(1)));
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleProgressPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPlayerScrubbing || !onSeek || !progressBarRef.current) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    onSeek(Number((ratio * totalDuration).toFixed(1)));
-  };
-
-  const handleProgressPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (isPlayerScrubbing) {
-      setIsPlayerScrubbing(false);
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-    }
-  };
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+  const activeClipRef = useRef(activeClip);
+  activeClipRef.current = activeClip;
+  const onSeekRef = useRef(onSeek);
+  onSeekRef.current = onSeek;
+  const onSelectSegmentRef = useRef(onSelectSegment);
+  onSelectSegmentRef.current = onSelectSegment;
 
   const handleUserUnmute = () => {
     if (videoRef.current) {
@@ -132,27 +168,16 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      await saveVideoBlob(file.name, file);
-      const url = URL.createObjectURL(file);
-      setVideoSrc(url);
-      setVideoFileName(file.name);
-      setVideoLoadError(null);
-    }
-  };
-
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const realDuration = videoRef.current.duration;
-      if (realDuration && isFinite(realDuration) && realDuration > 0) {
+      if (realDuration && isFinite(realDuration) && realDuration > 0 && (!joinedVideos || joinedVideos.length <= 1)) {
         if (onDurationChange) {
           onDurationChange(realDuration);
         }
       }
 
-      videoRef.current.currentTime = currentTime;
+      videoRef.current.currentTime = localTargetTime;
       videoRef.current.volume = isMuted ? 0 : volume / 100;
       videoRef.current.muted = isMuted;
 
@@ -183,6 +208,24 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
+        // Kiểm tra nếu currentTime đang rơi vào khoảng đã xóa trước khi phát:
+        const segs = segmentsRef.current;
+        const cTime = currentTimeRef.current;
+        const clip = activeClipRef.current;
+        if (segs && segs.length > 0) {
+          const sorted = [...segs].sort((a, b) => a.start - b.start);
+          const inSeg = sorted.some((s) => cTime >= s.start - 0.1 && cTime < s.end);
+          if (!inSeg) {
+            const next = sorted.find((s) => s.start > cTime) || sorted[0];
+            const localTarget = clip
+              ? Math.max(0, Math.min(clip.duration, next.start - clip.startOffset))
+              : next.start;
+            videoRef.current.currentTime = localTarget;
+            onSeekRef.current?.(next.start);
+            onSelectSegmentRef.current?.(next.id);
+          }
+        }
+
         videoRef.current
           .play()
           .then(() => setNeedsUserUnmute(false))
@@ -200,19 +243,89 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
   useEffect(() => {
     if (videoRef.current) {
-      const diff = Math.abs(videoRef.current.currentTime - currentTime);
+      const diff = Math.abs(videoRef.current.currentTime - localTargetTime);
       if (diff > 0.3) {
-        videoRef.current.currentTime = currentTime;
+        videoRef.current.currentTime = localTargetTime;
       }
     }
-  }, [currentTime]);
+  }, [localTargetTime]);
 
   const handleTimeUpdate = () => {
-    if (videoRef.current && isPlaying && onSeek) {
-      const current = videoRef.current.currentTime;
-      if (Math.abs(current - currentTime) >= 0.5) {
-        onSeek(Number(current.toFixed(1)));
+    if (!videoRef.current || !isPlaying) return;
+    if (videoRef.current.readyState < 2) return;
+    if (videoRef.current.seeking) return;
+
+    const current = videoRef.current.currentTime;
+    if (activeClip && current > activeClip.duration + 1.0) return;
+
+    const timelineTime = activeClip
+      ? Number((activeClip.startOffset + current).toFixed(1))
+      : Number(current.toFixed(1));
+
+    // Tính năng tự động BỎ QUA các phân đoạn đã xóa khi phát video
+    if (segments && segments.length > 0) {
+      const sortedSegs = [...segments].sort((a, b) => a.start - b.start);
+      const firstSeg = sortedSegs[0];
+      const lastSeg = sortedSegs[sortedSegs.length - 1];
+
+      // 1. Nếu vị trí trước phân đoạn hợp lệ đầu tiên: Nhảy thẳng đến đầu phân đoạn đó
+      if (timelineTime < firstSeg.start - 0.2) {
+        const localTarget = activeClip
+          ? Math.max(0, Math.min(activeClip.duration, firstSeg.start - activeClip.startOffset))
+          : firstSeg.start;
+        videoRef.current.currentTime = localTarget;
+        if (onSeek) onSeek(firstSeg.start);
+        if (onSelectSegment) onSelectSegment(firstSeg.id);
+        return;
       }
+
+      // 2. Nếu vị trí đã vượt qua phân đoạn hợp lệ cuối cùng: Dừng phát
+      if (timelineTime >= lastSeg.end) {
+        videoRef.current.pause();
+        if (onTogglePlay) onTogglePlay();
+        if (onSeek) onSeek(lastSeg.end);
+        return;
+      }
+
+      // 3. Kiểm tra xem timelineTime có nằm trong phân đoạn hợp lệ nào không
+      const inAnySegment = sortedSegs.some(
+        (s) => timelineTime >= s.start - 0.1 && timelineTime < s.end
+      );
+
+      // Nếu timelineTime rơi vào khoảng trống (đoạn đã bị xóa giữa 2 phân đoạn)
+      if (!inAnySegment) {
+        const nextSeg = sortedSegs.find((s) => s.start > timelineTime);
+        if (nextSeg) {
+          // BỎ QUA ĐOẠN ĐÃ XÓA: Tua nhanh tới đầu phân đoạn kế tiếp!
+          const localTarget = activeClip
+            ? Math.max(0, Math.min(activeClip.duration, nextSeg.start - activeClip.startOffset))
+            : nextSeg.start;
+          videoRef.current.currentTime = localTarget;
+          if (onSeek) onSeek(nextSeg.start);
+          if (onSelectSegment) onSelectSegment(nextSeg.id);
+          return;
+        }
+      }
+    }
+
+    if (onSeek && Math.abs(timelineTime - currentTime) >= 0.4) {
+      onSeek(timelineTime);
+    }
+  };
+
+  const handleEnded = () => {
+    if (joinedVideos && joinedVideos.length > 1 && activeClip) {
+      const currentIdx = joinedVideos.findIndex((v) => v.id === activeClip.id);
+      if (currentIdx >= 0 && currentIdx < joinedVideos.length - 1) {
+        const nextClip = joinedVideos[currentIdx + 1];
+        if (onSeek) {
+          onSeek(nextClip.startOffset);
+        }
+        return;
+      }
+    }
+    if (onTogglePlay && isPlaying) {
+      onTogglePlay();
     }
   };
 
@@ -258,28 +371,70 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     }
   };
 
+  // Định dạng hiển thị giờ/phút/giây/khung hình (ví dụ 00:00:02:45 / 00:08:55:00)
+  const formatTimecode = (sec: number) => {
+    const totalSec = Math.floor(sec);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    const frames = Math.floor((sec - totalSec) * 30); // 30 fps
+
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}:${frames
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
   return (
-    <div className="flex-1 flex flex-col bg-slate-200/60 overflow-hidden select-none min-h-0 min-w-0 text-slate-800">
-      {/* Top Header Bar of Viewport */}
-      <div className="h-10 border-b border-slate-300 px-4 flex items-center justify-between shrink-0 bg-slate-100 z-20">
-        {/* Left: Video Status Indicator */}
+    <div className="flex-1 flex flex-col bg-transparent overflow-hidden select-none min-h-0 min-w-0 text-slate-800 dark:text-slate-100 transition-colors duration-200">
+      {/* Top Header: Trình phát & 16:9 Landscape */}
+      <div className="h-12 border-b border-slate-200/80 dark:border-white/10 px-5 flex items-center justify-between shrink-0 bg-white/70 dark:bg-black/50 backdrop-blur-md z-20 select-none">
+        {/* Left: Tiêu đề Trình phát + Video switcher pills khi nối tiếp */}
         <div className="flex items-center gap-2 overflow-hidden">
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${
-              videoSrc ? "bg-emerald-500 animate-pulse" : "bg-indigo-600"
-            }`}
-          />
-          <span className="text-xs font-bold text-slate-900 tracking-wide truncate max-w-[280px]">
-            {videoFileName || videoTitle || "Bai05_VongLap.mp4"}
+          <span className="font-bold text-base text-slate-900 dark:text-white tracking-tight shrink-0">
+            Trình phát
           </span>
+          {joinedVideos && joinedVideos.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar max-w-[480px]">
+              {joinedVideos.map((clip, cIdx) => {
+                const isSelectedClip = cIdx === activeClipIndex;
+                const isAppended = cIdx > 0;
+                return (
+                  <button
+                    key={clip.id || `clip_pill_${cIdx}`}
+                    onClick={() => {
+                      if (onSeek) onSeek(clip.startOffset);
+                      if (onPlay && !isPlaying) onPlay();
+                    }}
+                    className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs border transition cursor-pointer shrink-0 ${
+                      isSelectedClip
+                        ? isAppended
+                          ? "bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-300 dark:ring-emerald-800 shadow-xs"
+                          : "bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-300 dark:ring-indigo-800 shadow-xs"
+                        : "bg-white/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/20"
+                    }`}
+                    title={`Chuyển sang Video ${cIdx + 1}: ${clip.title} (${formatTime(clip.duration)})`}
+                  >
+                    {isAppended ? (
+                      <Link2 className="w-3 h-3 shrink-0" />
+                    ) : (
+                      <Film className="w-3 h-3 shrink-0" />
+                    )}
+                    <span className="truncate max-w-[130px] sm:max-w-[160px]">
+                      {cIdx + 1}. {clip.title}
+                    </span>
+                    <span className="font-mono text-[10px] opacity-85 shrink-0">
+                      ({formatTime(clip.duration)})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {isDemo ? (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold">
               Demo Mẫu
-            </span>
-          ) : isAnalyzing ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold animate-pulse flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5 text-indigo-600 animate-spin" />
-              <span>⚡ Đang phân tích AI: {Math.round(analysisProgress)}%</span>
             </span>
           ) : mode === "raw" ? (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-bold">
@@ -292,84 +447,20 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
           ) : null}
         </div>
 
-        {/* Right: Controls (Upload video, Aspect toggle, Fullscreen) */}
+        {/* Right: Tỉ lệ 16:9 Landscape & Nút thao tác */}
         <div className="flex items-center gap-2">
-          {/* Quick AI Analyze Button if raw */}
-          {mode === "raw" && onAnalyzeAI && (
-            <button
-              onClick={onAnalyzeAI}
-              disabled={isAnalyzing}
-              className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98"
-              title="Phân tích nội dung và chia đoạn bằng AI"
-            >
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              <span>Phân Tích AI</span>
-            </button>
+          {isAnalyzing && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 font-bold animate-pulse flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-indigo-600 animate-spin" />
+              <span>⚡ Đang phân tích AI: {Math.round(analysisProgress)}%</span>
+            </span>
           )}
-
-          {/* Nút thêm / chọn video từ máy */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="video/mp4,video/mkv,video/webm,video/*"
-            className="hidden"
-          />
-          <button
-            onClick={() => {
-              if (onOpenAddVideo) {
-                onOpenAddVideo();
-              } else {
-                fileInputRef.current?.click();
-              }
-            }}
-            title="Thêm video từ link URL hoặc tải tệp từ máy tính"
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>{videoSrc ? "Đổi video" : "+ Thêm video"}</span>
-          </button>
-
-          {videoSrc && (
-            <button
-              onClick={() => {
-                if (videoSrc) URL.revokeObjectURL(videoSrc);
-                setVideoSrc(null);
-                setVideoFileName(null);
-              }}
-              title="Đóng video và về màn hình giả lập"
-              className="p-1.5 rounded-lg bg-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-300 transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Landscape / Portrait switcher */}
           <button
             onClick={() => setAspect(aspect === "landscape" ? "portrait" : "landscape")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs transition"
-            title="Đổi tỉ lệ khung hình (16:9 / 9:16)"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/10 transition cursor-pointer shadow-2xs"
+            title="Đổi tỉ lệ khung hình (16:9 Landscape / 9:16 Portrait)"
           >
-            {aspect === "landscape" ? (
-              <>
-                <Monitor className="w-3.5 h-3.5 text-indigo-600" />
-                <span>16:9 Landscape</span>
-              </>
-            ) : (
-              <>
-                <Smartphone className="w-3.5 h-3.5 text-indigo-600" />
-                <span>9:16 Portrait</span>
-              </>
-            )}
-          </button>
-
-          {/* Fullscreen Button */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 shadow-2xs transition"
-            title="Phóng to toàn màn hình"
-          >
-            <Maximize2 className="w-4 h-4" />
+            <span>{aspect === "landscape" ? "16:9 Landscape" : "9:16 Portrait"}</span>
           </button>
         </div>
       </div>
@@ -379,17 +470,17 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="flex-1 min-h-0 min-w-0 w-full h-full flex items-center justify-center p-2 sm:p-3 relative overflow-hidden bg-slate-200/60"
+        className="flex-1 min-h-0 min-w-0 w-full h-full flex flex-col items-center justify-center p-2 sm:p-2.5 relative overflow-hidden bg-transparent transition-colors duration-200"
       >
-        {/* Video Monitor Container */}
+        {/* Video Canvas Container (Khung ngoài ôm sát video với viền mỏng 5px, video phóng to tối đa) */}
         <div
           ref={containerRef}
-          className={`relative bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-300 flex items-center justify-center transition-all duration-200 group ${
+          className={`relative rounded-2xl overflow-hidden shadow-2xl border border-slate-300/80 dark:border-white/20 p-[5px] bg-white/25 dark:bg-black/40 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-200 group ${
             aspect === "landscape" ? "aspect-video" : "aspect-[9/16]"
           }`}
           style={{
-            maxHeight: "100%",
-            maxWidth: "100%",
+            maxHeight: "calc(100% - 36px)",
+            maxWidth: "calc(100% - 16px)",
             height: "100%",
             width: "auto",
           }}
@@ -401,278 +492,164 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
                 <Play className="w-7 h-7 fill-current ml-0.5" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-white tracking-wide flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Thả vào đây để phát phân đoạn này!</span>
-                </p>
-                <p className="text-xs text-indigo-200 mt-1">
-                  Studio sẽ tự động tua thời gian và phát ngay lập tức
+                <p className="text-sm font-bold text-white tracking-wide">
+                  Thả vào đây để phát phân đoạn này!
                 </p>
               </div>
             </div>
           )}
 
-          {/* Real Video Element OR Simulated Canvas */}
-          {/* AI Analyzing Progress Overlay */}
-          {isAnalyzing && (
-            <div className="absolute inset-0 z-35 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-white text-center animate-in fade-in duration-200">
-              <div className="relative mb-3">
-                <div className="w-16 h-16 rounded-full border-3 border-indigo-400/30 border-t-indigo-400 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
-                </div>
-              </div>
-              <div className="text-3xl font-black font-mono text-white tracking-tight mb-1">
-                {Math.round(analysisProgress)}%
-              </div>
-              <p className="text-xs font-bold text-indigo-200 mb-3 max-w-xs truncate">
-                {analysisStep || "Đang phân tích video bằng AI..."}
-              </p>
-              <div className="w-64 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700 shadow-inner">
-                <div
-                  className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {videoSrc ? (
-            <div className="w-full h-full flex items-center justify-center bg-black relative">
-              <video
-                ref={videoRef}
-                src={videoSrc}
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-                onClick={onTogglePlay}
-                onError={() => {
-                  const isWebpage =
-                    videoSrc &&
-                    (videoSrc.includes("tiktok.com") ||
-                      videoSrc.includes("youtube.com") ||
-                      videoSrc.includes("youtu.be") ||
-                      videoSrc.includes("facebook.com"));
-                  if (isWebpage) {
-                    setVideoLoadError(
-                      "Link bạn nhập là trang web TikTok / mạng xã hội. Thẻ phát của trình duyệt cần tệp video trực tiếp (.mp4). Studio vẫn lưu giữ toàn bộ phân đoạn và thời lượng để bạn duyệt và chỉnh sửa bình thường!"
-                    );
-                  } else {
-                    setVideoLoadError(
-                      "Không thể phát video từ URL này (do CORS hoặc định dạng web). Bạn có thể bấm 'Đổi video' để tải tệp MP4 từ máy lên."
-                    );
-                  }
-                }}
-                className="w-full h-full object-contain cursor-pointer"
-                playsInline
-              />
-
-              {/* Webpage / Load Error Fallback Overlay */}
-              {videoLoadError && (
-                <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur-xs p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-2">
-                    <Sparkles className="w-6 h-6" />
+          {/* Inner Video Wrapper: Bo góc tròn bên trong khung viền 5px */}
+          <div className="w-full h-full rounded-xl overflow-hidden relative flex items-center justify-center bg-black">
+            {/* AI Analyzing Progress Overlay */}
+            {isAnalyzing && (
+              <div className="absolute inset-0 z-35 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-white text-center animate-in fade-in duration-200">
+                <div className="relative mb-3">
+                  <div className="w-16 h-16 rounded-full border-3 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Chế độ Studio Dự Án Phân Đoạn</h4>
-                  <p className="text-xs text-slate-300 max-w-sm mb-4 leading-relaxed">
-                    {videoLoadError}
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (onOpenAddVideo) onOpenAddVideo();
-                      else fileInputRef.current?.click();
-                    }}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition hover:scale-105 active:scale-95"
-                  >
-                    + Tải tệp MP4 từ máy tính lên
-                  </button>
                 </div>
-              )}
-
-              {/* Floating Top Info Pill */}
-              <div className="absolute top-2 left-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                <div className="text-[11px] font-semibold text-white/95 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-md flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="truncate max-w-[220px]">{videoFileName || videoTitle}</span>
-                  {currentSegment && (
-                    <span className="text-indigo-300 ml-1 font-mono">
-                      • #{currentSegment.topic_no} {currentSegment.topic}
-                    </span>
-                  )}
+                <div className="text-3xl font-black font-mono text-white tracking-tight mb-1">
+                  {Math.round(analysisProgress)}%
                 </div>
-              </div>
-
-              {/* Browser Autoplay Sound Banner */}
-              {needsUserUnmute && (
-                <button
-                  onClick={handleUserUnmute}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xl flex items-center gap-2 animate-bounce border border-indigo-400 cursor-pointer"
-                >
-                  <Volume2 className="w-4 h-4" />
-                  <span>Trình duyệt đang chặn âm thanh - Nhấn vào đây để BẬT TIẾNG 🔊</span>
-                </button>
-              )}
-
-              {/* Interactive Player Controls */}
-              <div className="absolute bottom-0 left-0 right-0 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3 pt-6 flex flex-col gap-2">
-                {/* Progress Bar Seeker with Playhead */}
-                <div
-                  ref={progressBarRef}
-                  onPointerDown={handleProgressPointerDown}
-                  onPointerMove={handleProgressPointerMove}
-                  onPointerUp={handleProgressPointerUp}
-                  className="w-full h-4 flex items-center cursor-pointer group/bar relative"
-                >
-                  <div className="w-full h-1.5 group-hover/bar:h-2 bg-white/30 rounded-full overflow-hidden transition-all relative">
-                    <div
-                      style={{
-                        width: `${(currentTime / Math.max(1, totalDuration)) * 100}%`,
-                      }}
-                      className="h-full bg-indigo-500 rounded-full"
-                    />
-                  </div>
-
-                  {/* Playhead Dot */}
+                <p className="text-xs font-bold text-indigo-200 mb-3 max-w-xs truncate">
+                  {analysisStep || "Đang phân tích video bằng AI..."}
+                </p>
+                <div className="w-64 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700 shadow-inner">
                   <div
-                    style={{
-                      left: `${(currentTime / Math.max(1, totalDuration)) * 100}%`,
-                    }}
-                    className="absolute top-1/2 -translate-y-1/2 -ml-2 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-indigo-600 transition-[transform] group-hover/bar:scale-110 pointer-events-none"
+                    className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
                   />
                 </div>
+              </div>
+            )}
 
-                {/* Controls Row */}
-                <div className="flex items-center justify-between text-white text-xs">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={onTogglePlay}
-                      className="p-1 hover:text-indigo-400 transition"
-                      title={isPlaying ? "Tạm dừng" : "Phát"}
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-4 h-4 fill-current" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      )}
-                    </button>
+            {/* Real Video Element OR Crisp Modern Slide Canvas matching reference image */}
+            {videoSrc ? (
+              <div className="w-full h-full flex items-center justify-center bg-black relative">
+                <video
+                  ref={videoRef}
+                  key={activeClip ? `${activeClip.id}_${videoSrc}` : (videoSrc || "video_player")}
+                  src={videoSrc}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  onClick={onTogglePlay}
+                  onError={handleVideoError}
+                  className="w-full h-full object-contain cursor-pointer"
+                  playsInline
+                />
 
-                    <button
-                      onClick={() => onSeek && onSeek(Math.max(0, currentTime - 10))}
-                      className="p-1 hover:text-indigo-400 transition"
-                      title="Lùi 10 giây"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        onSeek && onSeek(Math.min(totalDuration, currentTime + 10))
-                      }
-                      className="p-1 hover:text-indigo-400 transition"
-                      title="Tiến 10 giây"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="font-mono text-[11px] text-slate-300 ml-1">
-                      <span className="text-white font-bold">{formatTime(currentTime)}</span>
-                      <span className="text-slate-500 mx-1">/</span>
-                      <span>{formatTime(totalDuration)}</span>
+                {/* Play overlay when paused */}
+                {!isPlaying && !videoLoadError && (
+                  <div
+                    onClick={onTogglePlay}
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition cursor-pointer group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-indigo-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play className="w-7 h-7 fill-current ml-1" />
                     </div>
+                  </div>
+                )}
 
-                    {/* Video Player Volume Slider */}
-                    <div className="flex items-center gap-1.5 ml-2">
+                {/* Webpage / Load Error Fallback Overlay */}
+                {videoLoadError && (
+                  <div className="absolute inset-x-4 bottom-4 z-20 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-white">Chế độ Studio Dự Án Phân Đoạn</p>
+                        <p className="text-[11px] text-slate-300 line-clamp-1">{videoLoadError}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          if (needsUserUnmute) handleUserUnmute();
-                          else if (onToggleMute) onToggleMute();
+                          const fileName = activeClip?.fileName || "Bai08_Ep_kieu_du_lieu.mp4";
+                          setVideoSrc(`/api/stream?file=${encodeURIComponent(fileName)}&t=${Date.now()}`);
+                          setVideoLoadError(null);
                         }}
-                        className="p-1 hover:text-indigo-400 transition"
-                        title={isMuted ? "Bật âm thanh" : "Tắt tiếng"}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                       >
-                        {isMuted || volume === 0 ? (
-                          <VolumeX className="w-4 h-4 text-rose-400" />
-                        ) : (
-                          <Volume2 className="w-4 h-4 text-slate-300" />
-                        )}
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Thử lại</span>
                       </button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={isMuted ? 0 : volume}
-                        onChange={(e) => {
-                          if (needsUserUnmute) handleUserUnmute();
-                          if (onVolumeChange) onVolumeChange(Number(e.target.value));
+                      <button
+                        onClick={() => {
+                          if (onOpenAddVideo) onOpenAddVideo();
+                          else fileInputRef.current?.click();
                         }}
-                        className="w-14 h-1 bg-white/30 rounded appearance-none cursor-pointer accent-indigo-500"
-                      />
-                      <span className="font-mono text-[10px] text-slate-300 w-6">
-                        {isMuted ? "0%" : `${volume}%`}
-                      </span>
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Tải MP4</span>
+                      </button>
                     </div>
                   </div>
+                )}
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleFullscreen}
-                      className="p-1 hover:text-indigo-400 transition"
-                      title="Toàn màn hình"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Khi chưa nạp video: Hiển thị giao diện Studio giả lập to rõ */
-            <div className="w-full h-full flex items-center justify-center relative overflow-hidden pointer-events-none select-none p-6 bg-slate-900">
-              <div className="relative text-center z-10 px-6 py-4 space-y-3 max-w-lg">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 mx-auto flex items-center justify-center shadow-md">
-                  <Video className="w-8 h-8 text-indigo-400" />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-widest text-indigo-400 font-bold">
-                    {isDemo
-                      ? (currentSegment?.section || "DEMO MẪU")
-                      : (currentSegment?.section || "DỰ ÁN STUDIO")}
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
-                    {isDemo
-                      ? (currentSegment?.topic || "Vòng lặp bài giảng")
-                      : (videoFileName || videoTitle || currentSegment?.topic || "Dự án video")}
-                  </div>
-                  {currentSegment && (
-                    <div className="text-xs font-mono text-slate-300">
-                      Mục #{currentSegment.topic_no}: {formatTime(currentSegment.start)} &rarr; {formatTime(currentSegment.end)}
-                      <span className="text-indigo-400 ml-2">({(currentSegment.end - currentSegment.start).toFixed(1)}s)</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2 pointer-events-auto">
+                {/* Browser Autoplay Sound Banner */}
+                {needsUserUnmute && (
                   <button
-                    onClick={() => {
-                      if (onOpenAddVideo) {
-                        onOpenAddVideo();
-                      } else {
-                        fileInputRef.current?.click();
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition hover:scale-102 active:scale-98 shadow-md"
+                    onClick={handleUserUnmute}
+                    className="absolute top-12 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xl flex items-center gap-2 animate-bounce border border-indigo-400 cursor-pointer"
                   >
-                    <Upload className="w-4 h-4 text-white" />
-                    <span>
-                      {isDemo
-                        ? "Thêm video bài giảng từ link URL hoặc tải từ máy"
-                        : `Nạp lại tệp "${videoFileName || videoTitle}" để phát tiếp`}
-                    </span>
+                    <Volume2 className="w-4 h-4" />
+                    <span>Trình duyệt đang chặn âm thanh - Nhấn vào đây để BẬT TIẾNG 🔊</span>
                   </button>
-                </div>
+                )}
               </div>
-            </div>
-          )}
+            ) : (
+              /* Crisp Modern Lecture Slide Matching Reference Image */
+              <div className="w-full h-full bg-[#f4f7fb] flex flex-col justify-between p-6 sm:p-10 relative select-none">
+                {/* Top-Right Domain Watermark */}
+                <div className="w-full flex justify-end">
+                  <span className="text-xs sm:text-sm font-mono text-slate-400 font-semibold tracking-wide">
+                    titv.vn
+                  </span>
+                </div>
+
+                {/* Center Lecture Slide Content */}
+                <div className="my-auto space-y-2 text-left pl-2 sm:pl-6">
+                  <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
+                    BÀI 08
+                  </div>
+                  <div className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                    <div>ÉP KIỂU DỮ LIỆU</div>
+                    <div>TRONG LẬP TRÌNH PYTHON</div>
+                  </div>
+                  <div className="pt-2">
+                    <span className="inline-block px-3 py-1.5 rounded-lg bg-[#a3e635] text-slate-900 text-xs sm:text-sm font-bold tracking-tight shadow-2xs">
+                      TỰ HỌC LẬP TRÌNH PYTHON
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Placeholder spacer */}
+                <div className="w-full h-4" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Time Counter & Fullscreen Icon matching reference image */}
+        <div className="w-full max-w-[96%] flex items-center justify-between pt-1.5 px-2">
+          {/* Digital Timecode (00:00:02:45 / 00:08:55:00) */}
+          <div className="font-mono text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">
+            {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
+          </div>
+
+          {/* Fullscreen icon */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+            title="Toàn màn hình"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

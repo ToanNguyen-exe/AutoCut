@@ -1,4 +1,4 @@
-import { SegmentsData, TranscriptData } from "@/types";
+import { SegmentsData, Segment, TranscriptData } from "@/types";
 
 const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
 export const API_BASE = rawBase.endsWith("/api/video")
@@ -203,11 +203,38 @@ export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>
   }
 }
 
+export interface RenderedClipItem {
+  file: string;
+  sizeBytes: number;
+  executionMs: number;
+  path: string;
+}
+
 export interface RenderResponse {
   success: boolean;
   status?: string;
   message: string;
   savedPlan?: string;
+  totalRendered?: number;
+  renderedFiles?: RenderedClipItem[];
+  outputDirectory?: string;
+  lesson?: string;
+  engine?: string;
+}
+
+/**
+ * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
+ */
+export function getDownloadClipUrl(filePath: string): string {
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(filePath)}`;
+}
+
+/**
+ * Lấy URL tải về toàn bộ các clip đã cắt dưới dạng file nén ZIP
+ */
+export function getDownloadZipUrl(lesson: string, user?: string): string {
+  const userParam = user ? `&user=${encodeURIComponent(user)}` : "";
+  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(lesson)}${userParam}`;
 }
 
 /**
@@ -241,13 +268,23 @@ export async function submitRenderSegments(
       status?: string;
       message?: string;
       savedPlan?: string;
+      totalRendered?: number;
+      renderedFiles?: RenderedClipItem[];
+      outputDirectory?: string;
+      lesson?: string;
+      engine?: string;
     };
 
     return {
       success: true,
       status: json.status,
-      message: json.message || "Đã tiếp nhận và chuẩn bị cắt phân đoạn.",
+      message: json.message || "Đã hoàn thành cắt phân đoạn video.",
       savedPlan: json.savedPlan,
+      totalRendered: json.totalRendered,
+      renderedFiles: json.renderedFiles,
+      outputDirectory: json.outputDirectory,
+      lesson: json.lesson,
+      engine: json.engine,
     };
   } catch (err) {
     return {
@@ -316,6 +353,7 @@ export interface BackendVideoItem {
   sha256Hash: string;
   status?: string;
   fileSize?: number;
+  duration?: number;
   r2Key?: string;
   cloudUrl?: string;
   createdAt?: string;
@@ -391,5 +429,121 @@ export async function analyzeVideoBackend(payload: {
       error: err instanceof Error ? err.message : "Lỗi khi gọi AI phân tích trên backend",
       source: "fallback",
     };
+  }
+}
+
+export interface SaveProjectPayload {
+  user?: string;
+  lesson: string;
+  video: string;
+  videoUrl?: string;
+  duration?: number;
+  segments: unknown[];
+  [key: string]: unknown;
+}
+
+export interface SaveProjectResponse {
+  status: string;
+  message: string;
+  user?: string;
+  lesson?: string;
+  localDirectory?: string;
+  cloudUrl?: string;
+  r2Url?: string;
+  files?: string[];
+  savedAt?: number;
+}
+
+export async function saveProjectToBackend(
+  payload: SaveProjectPayload
+): Promise<ApiResponse<SaveProjectResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SaveProjectResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể kết nối API lưu dự án",
+      source: "fallback",
+    };
+  }
+}
+
+export interface ConcatVideosPayload {
+  clips: string[];
+  output?: string;
+  forceReencode?: boolean;
+}
+
+export interface ConcatVideosResponse {
+  status: string;
+  message: string;
+  outputFile?: string;
+  outputSizeBytes?: number;
+  executionTimeMs?: number;
+  totalClips?: number;
+}
+
+/**
+ * Ghép nối nhiều file clip thành 1 video tổng hợp qua FFmpeg Concat của SV1 (POST /api/video/concat)
+ */
+export async function submitConcatVideos(
+  payload: ConcatVideosPayload
+): Promise<ApiResponse<ConcatVideosResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/concat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) {
+          errorMsg = errJson.error;
+        }
+      } catch {}
+      throw new Error(errorMsg);
+    }
+
+    const data: ConcatVideosResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể kết nối API ghép nối video (Video Concat)",
+      source: "fallback",
+    };
+  }
+}
+
+/**
+ * Gửi yêu cầu xóa một phân đoạn (segment) tới Backend API.
+ */
+export async function deleteSegmentBackend(
+  videoId: string | number,
+  segmentId: string
+): Promise<ApiResponse<{ deleted: boolean; message: string; segments?: Segment[] }>> {
+  try {
+    const res = await fetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { data, source: "api" };
+    }
+    return { error: `HTTP ${res.status}`, source: "fallback" };
+  } catch (err) {
+    return { error: String(err), source: "fallback" };
   }
 }

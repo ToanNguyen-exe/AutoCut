@@ -313,6 +313,6 @@ class WhisperTranscriber:
             out_p.parent.mkdir(parents=True, exist_ok=True)
             with open(out_p, "w", encoding="utf-8") as f:
                 f.write(transcript_output.model_dump_json(indent=2, exclude_none=True))
-            logger.info(f"Da xuat tep transcript: {out_p}")
+            logger.info(f"Đã xuất tệp transcript: {out_p}")
 
         return transcript_output

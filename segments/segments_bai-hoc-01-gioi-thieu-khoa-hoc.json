@@ -7,80 +7,60 @@
     {
       "id": "seg_ai_01",
       "section_no": 1,
-      "section": "01_GioiThieu",
+      "section": "01_gioi-thieu",
       "topic_no": 1,
-      "topic": "Chào mừng các bạn đến với bài giảng chuyên đề Bài Học 01: Giới...",
-      "slug": "chao-mung-cac-ban-den-voi-bai-giang-chuyen-de-ba",
+      "topic": "Cuộc đối thoại giữa sư phụ và đệ tử",
+      "slug": "cuoc-doi-thoai-giua-su-phu-va-de-tu",
       "start_id": "S0001",
-      "end_id": "S0002",
+      "end_id": "S0017",
       "start": 0.0,
-      "end": 75.0,
+      "end": 53.72,
       "parts": [
         {
           "part": 1,
           "start": 0.0,
-          "end": 75.0,
-          "file": "01_chao-mung-cac-ban-den-voi-bai-giang-chuyen-de-ba.mp4"
+          "end": 53.72,
+          "file": "01_cuoc-doi-thoai-giua-su-phu-va-de-tu.mp4"
         }
       ]
     },
     {
       "id": "seg_ai_02",
       "section_no": 2,
-      "section": "02_KhaiNiemCoBan",
-      "topic_no": 2,
-      "topic": "Tiếp theo, chúng ta đi sâu vào các khái niệm nền tảng và cú pháp...",
-      "slug": "tiep-theo-chung-ta-di-sau-vao-cac-khai-niem-nen",
-      "start_id": "S0003",
-      "end_id": "S0004",
-      "start": 75.0,
-      "end": 150.0,
+      "section": "02_ly-thuyet",
+      "topic_no": 1,
+      "topic": "Nhắc lại chuyện cũ và vòng kim cô",
+      "slug": "nhac-lai-chuyen-cu-va-vong-kim-co",
+      "start_id": "S0018",
+      "end_id": "S0032",
+      "start": 53.72,
+      "end": 105.81,
       "parts": [
         {
           "part": 1,
-          "start": 75.0,
-          "end": 150.0,
-          "file": "02_tiep-theo-chung-ta-di-sau-vao-cac-khai-niem-nen.mp4"
+          "start": 53.72,
+          "end": 105.81,
+          "file": "01_nhac-lai-chuyen-cu-va-vong-kim-co.mp4"
         }
       ]
     },
     {
       "id": "seg_ai_03",
       "section_no": 3,
-      "section": "03_NoiDungTrongTam",
-      "topic_no": 3,
-      "topic": "Bây giờ, chúng ta sẽ áp dụng lý thuyết vừa học vào một ví dụ...",
-      "slug": "bay-gio-chung-ta-se-ap-dung-ly-thuyet-vua-hoc-va",
-      "start_id": "S0005",
-      "end_id": "S0006",
-      "start": 150.0,
-      "end": 225.0,
+      "section": "03_tong-ket",
+      "topic_no": 1,
+      "topic": "Sự biến đổi và ngộ đạo của đệ tử",
+      "slug": "su-bien-doi-va-ngo-dao-cua-de-tu",
+      "start_id": "S0033",
+      "end_id": "S0040",
+      "start": 110.01,
+      "end": 183.67,
       "parts": [
         {
           "part": 1,
-          "start": 150.0,
-          "end": 225.0,
-          "file": "03_bay-gio-chung-ta-se-ap-dung-ly-thuyet-vua-hoc-va.mp4"
-        }
-      ]
-    },
-    {
-      "id": "seg_ai_04",
-      "section_no": 4,
-      "section": "04_PhanTichChiTiet",
-      "topic_no": 4,
-      "topic": "Tóm tắt lại những kinh nghiệm quan trọng và lỗi cần tránh khi...",
-      "slug": "tom-tat-lai-nhung-kinh-nghiem-quan-trong-va-loi",
-      "start_id": "S0007",
-      "end_id": "S0008",
-      "start": 225.0,
-      "end": 300.0,
-      "parts": [
-        {
-          "part": 1,
-          "start": 225.0,
-          "end": 300.0,
-          "file": "04_tom-tat-lai-nhung-kinh-nghiem-quan-trong-va-loi.mp4"
+          "start": 110.01,
+          "end": 183.67,
+          "file": "01_su-bien-doi-va-ngo-dao-cua-de-tu.mp4"
         }
       ]
     }
