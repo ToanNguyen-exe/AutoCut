@@ -241,10 +241,9 @@ public class VideoController {
             videoEntity.setStatus("UPLOADED");
             videoRepository.save(videoEntity);
 
-            // BƯỚC: Phân tích AI tự động (Whisper + Gemini)
+            // BƯỚC: Khởi tạo file transcript ban đầu (Hướng 1: Tách rời upload khỏi quá trình bóc băng AI đồng bộ)
             String transcriptFile = generateTranscriptForUploadedVideo(localFile, safeFilename, hash);
             TranscriptDTO transcriptDTO = null;
-            SegmentsDTO segmentsDTO = null;
 
             Path transPath = projectRoot.resolve(transcriptFile);
             if (Files.exists(transPath)) {
@@ -253,40 +252,6 @@ public class VideoController {
                 } catch (Exception ex) {
                     log.warn("Không thể đọc transcript vừa tạo {}: {}", transPath, ex.getMessage());
                 }
-            }
-
-            if (transcriptDTO != null && transcriptDTO.sentences() != null && !transcriptDTO.sentences().isEmpty()) {
-                List<Sentence> sents = transcriptDTO.sentences();
-                double totalDur = transcriptDTO.duration() > 0 ? transcriptDTO.duration() : 180.0;
-                int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
-                int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-                List<Segment> segList = new ArrayList<>();
-
-                for (int i = 0; i < segCount; i++) {
-                    int sIdx = i * chunkSize;
-                    if (sIdx >= sents.size()) break;
-                    int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-                    Sentence fSent = sents.get(sIdx);
-                    Sentence lSent = sents.get(eIdx);
-                    double sStart = (i == 0) ? 0.0 : fSent.start();
-                    double sEnd = (i == segCount - 1 || eIdx == sents.size() - 1) ? totalDur : lSent.end();
-                    String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-                    String topName = "Đoạn " + (i + 1);
-                    segList.add(new Segment(
-                            "seg_ai_" + (i + 1),
-                            i + 1,
-                            secFolder,
-                            i + 1,
-                            topName,
-                            "doan-" + (i + 1),
-                            fSent.id(),
-                            lSent.id(),
-                            Math.round(sStart * 10.0) / 10.0,
-                            Math.round(sEnd * 10.0) / 10.0,
-                            List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
-                    ));
-                }
-                segmentsDTO = new SegmentsDTO(originalFilename, originalFilename, "analyzed", false, segList);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -299,10 +264,8 @@ public class VideoController {
             if (transcriptDTO != null) {
                 response.put("transcript", transcriptDTO);
             }
-            if (segmentsDTO != null) {
-                response.put("segmentsData", segmentsDTO);
-            }
-            response.put("message", "Tải video lên và phân tích AI thành công!");
+            // Hướng 1: Video mới upload được khởi tạo ở mode raw (1 đoạn duy nhất), không sinh dummy segments
+            response.put("message", "Tải video lên thành công! Hãy bấm 'Phân tích AI' để trích xuất nội dung và phân đoạn.");
 
             return ResponseEntity.ok(response);
 
@@ -377,7 +340,9 @@ public class VideoController {
     }
 
     /**
-     * Kích hoạt Whisper + Gemini tạo file transcript riêng cho video vừa upload tại transcripts/<tên_video>_transcript.json.
+     * Khởi tạo file transcript riêng cho video vừa upload tại transcripts/<tên_video>_transcript.json.
+     * Hướng 1: Tách rời upload khỏi quá trình bóc băng AI đồng bộ để upload hoàn tất tức thì trong 1-3s.
+     * Khi người dùng ấn nút "Phân tích AI", Whisper & Gemini sẽ bóc băng và phân đoạn ngữ nghĩa hoàn chỉnh.
      */
     private String generateTranscriptForUploadedVideo(Path localVideoFile, String originalFilename, String hash) {
         Path projectRoot = resolveProjectRoot();
@@ -391,49 +356,25 @@ public class VideoController {
                 Files.createDirectories(transcriptsDir);
             }
 
-            List<String> command = List.of(
-                    resolvePythonExecutable(), "-m", "backend.ai.cli",
-                    "--input", localVideoFile.toAbsolutePath().toString(),
-                    "--engine", "whisper",
-                    "--refine",
-                    "--output", transcriptPath.toAbsolutePath().toString()
-            );
-
-            log.info("Đang chạy Whisper + Gemini tạo transcript cho video mới '{}' tại {}...", originalFilename, transcriptPath);
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.directory(projectRoot.toFile());
-            pb.environment().put("PYTHONPATH", ".");
-            pb.environment().put("PYTHONIOENCODING", "utf-8");
-            pb.redirectErrorStream(true);
-
-            Process process = pb.start();
-            String outputLog = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            boolean finished = process.waitFor(30, TimeUnit.MINUTES);
-
-            if (finished && process.exitValue() == 0 && Files.exists(transcriptPath)) {
-                TranscriptDTO dto = objectMapper.readValue(transcriptPath.toFile(), TranscriptDTO.class);
-                if (hash != null && !hash.isBlank()) {
-                    cacheService.saveTranscriptCache(hash, dto);
+            // 1. Nếu video đã có transcript trong cacheService theo hash, nạp ngay
+            if (hash != null && !hash.isBlank()) {
+                Optional<TranscriptDTO> cachedOpt = cacheService.getCachedTranscript(hash);
+                if (cachedOpt.isPresent()) {
+                    objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), cachedOpt.get());
+                    log.info("Đã khôi phục transcript từ Cache cho video '{}' tại: {}", originalFilename, transcriptPath.toAbsolutePath());
+                    return "transcripts/" + fileName;
                 }
-                log.info("Đã xuất thành công file transcript tại: {}", transcriptPath.toAbsolutePath());
-                return "transcripts/" + fileName;
-            } else {
-                log.warn("Whisper CLI không thể giải mã tệp (exit={}): {}. Khởi tạo file transcript mặc định tại {}.",
-                        finished ? process.exitValue() : "TIMEOUT", outputLog, transcriptPath);
             }
-        } catch (Exception e) {
-            log.warn("Lỗi khi gọi Whisper CLI lúc upload ({}): khởi tạo file transcript mặc định.", e.getMessage());
-        }
 
-        // Đảm bảo file transcripts/<tên_video>_transcript.json luôn được tạo ra kể cả với tệp test giả định
-        try {
+            // 2. Nếu file transcript chưa tồn tại, tạo file khởi tạo ban đầu để sẵn sàng lưu trữ
             if (!Files.exists(transcriptPath)) {
-                TranscriptDTO fallbackDto = new TranscriptDTO(
+                TranscriptDTO initialDto = new TranscriptDTO(
                         originalFilename,
                         60.0,
                         List.of(new Sentence("S0001", 0.0, 60.0, "Nội dung bóc băng của video " + originalFilename + "."))
                 );
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), fallbackDto);
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(transcriptPath.toFile(), initialDto);
+                log.info("Đã khởi tạo file transcript ban đầu cho video mới tại: {}", transcriptPath.toAbsolutePath());
             }
         } catch (IOException ioEx) {
             log.error("Không thể tạo file transcript tại {}: {}", transcriptPath, ioEx.getMessage());

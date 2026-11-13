@@ -370,7 +370,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
           )}
         </div>
 
-        {/* Action Button: Phân Tích AI / Chạy lại AI */}
+        {/* Action Button: Phân Tích AI */}
         {isAnalyzing ? (
           <button
             disabled
@@ -379,23 +379,14 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
             <span>AI: {Math.round(analysisProgress)}%</span>
           </button>
-        ) : isRaw && onAnalyzeAI ? (
-          <button
-            onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
-            title="Khởi chạy Whisper & AI để phân tích video và phân đoạn"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Phân Tích AI</span>
-          </button>
         ) : onAnalyzeAI ? (
           <button
             onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-indigo-700 border border-slate-200 transition shrink-0 shadow-2xs"
-            title="Chạy lại phân tích AI nếu nội dung chưa vừa ý"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
+            title="Khởi chạy AI để phân tích và phân đoạn video"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Chạy lại AI</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Phân Tích AI</span>
           </button>
         ) : (
           <button

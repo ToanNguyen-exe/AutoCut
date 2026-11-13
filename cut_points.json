@@ -1,3862 +1,3242 @@
 {
   "cut_points" : [ {
     "after_id" : "S0001",
-    "time" : 9.42,
+    "time" : 6.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0002",
-    "time" : 15.19,
+    "time" : 15.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0003",
-    "time" : 27.3,
+    "time" : 22.32,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0004",
-    "time" : 37.42,
+    "time" : 27.24,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0005",
-    "time" : 39.44,
+    "time" : 31.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0006",
-    "time" : 51.32,
-    "score" : 4,
-    "reasons" : [ "RANH_GIOI_CO_BAN", "KHOANG_LANG_LON (11.96s >= 1.5s)", "KHOANG_LANG_RAT_LON (11.96s >= 3.0s)" ]
+    "time" : 35.94,
+    "score" : 1,
+    "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0007",
-    "time" : 70.26,
+    "time" : 41.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0008",
-    "time" : 83.82,
+    "time" : 45.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0009",
-    "time" : 93.82,
+    "time" : 51.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0010",
-    "time" : 102.04,
+    "time" : 54.92,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0011",
-    "time" : 111.0,
+    "time" : 57.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0012",
-    "time" : 113.48,
+    "time" : 59.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0013",
-    "time" : 120.88,
+    "time" : 61.06,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0014",
-    "time" : 128.56,
+    "time" : 61.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0015",
-    "time" : 136.42,
+    "time" : 64.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0016",
-    "time" : 142.84,
+    "time" : 67.04,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0017",
-    "time" : 152.6,
+    "time" : 67.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0018",
-    "time" : 155.6,
+    "time" : 71.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0019",
-    "time" : 164.85,
-    "score" : 4,
-    "reasons" : [ "RANH_GIOI_CO_BAN", "KHOANG_LANG_LON (4.38s >= 1.5s)", "KHOANG_LANG_RAT_LON (4.38s >= 3.0s)" ]
+    "time" : 75.28,
+    "score" : 1,
+    "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0020",
-    "time" : 170.54,
+    "time" : 77.94,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0021",
-    "time" : 177.13,
+    "time" : 79.5,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0022",
-    "time" : 180.22,
+    "time" : 80.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0023",
-    "time" : 184.48,
+    "time" : 81.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0024",
-    "time" : 189.54,
+    "time" : 82.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0025",
-    "time" : 192.48,
+    "time" : 83.04,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0026",
-    "time" : 197.84,
+    "time" : 84.44,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0027",
-    "time" : 201.08,
+    "time" : 85.34,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0028",
-    "time" : 207.72,
+    "time" : 86.58,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0029",
-    "time" : 214.64,
+    "time" : 88.52,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0030",
-    "time" : 226.78,
+    "time" : 90.54,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0031",
-    "time" : 232.74,
+    "time" : 91.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0032",
-    "time" : 245.58,
+    "time" : 93.34,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0033",
-    "time" : 253.34,
+    "time" : 94.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0034",
-    "time" : 254.07,
+    "time" : 97.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0035",
-    "time" : 260.5,
+    "time" : 99.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0036",
-    "time" : 265.16,
+    "time" : 102.64,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0037",
-    "time" : 267.93,
+    "time" : 106.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0038",
-    "time" : 270.7,
+    "time" : 109.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0039",
-    "time" : 274.46,
+    "time" : 112.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0040",
-    "time" : 280.48,
+    "time" : 115.7,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0041",
-    "time" : 286.62,
+    "time" : 117.5,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0042",
-    "time" : 297.86,
+    "time" : 117.5,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0043",
-    "time" : 301.86,
+    "time" : 119.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0044",
-    "time" : 308.18,
+    "time" : 122.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0045",
-    "time" : 317.6,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
+    "time" : 123.72,
+    "score" : 4,
+    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'bây giờ chúng ta'" ]
   }, {
     "after_id" : "S0046",
-    "time" : 323.36,
+    "time" : 125.82,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0047",
-    "time" : 326.28,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
+    "time" : 127.84,
+    "score" : 4,
+    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'bây giờ chúng ta'" ]
   }, {
     "after_id" : "S0048",
-    "time" : 328.9,
+    "time" : 131.52,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0049",
-    "time" : 336.93,
+    "time" : 133.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0050",
-    "time" : 345.96,
+    "time" : 133.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0051",
-    "time" : 346.86,
+    "time" : 137.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0052",
-    "time" : 355.74,
+    "time" : 139.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0053",
-    "time" : 359.9,
+    "time" : 142.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0054",
-    "time" : 363.84,
+    "time" : 144.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0055",
-    "time" : 372.92,
+    "time" : 146.36,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0056",
-    "time" : 377.23,
+    "time" : 147.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0057",
-    "time" : 381.19,
+    "time" : 150.64,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0058",
-    "time" : 390.06,
+    "time" : 152.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0059",
-    "time" : 395.32,
+    "time" : 154.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0060",
-    "time" : 399.88,
-    "score" : 4,
-    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'tiếp theo'" ]
+    "time" : 156.48,
+    "score" : 1,
+    "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0061",
-    "time" : 402.44,
+    "time" : 157.32,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0062",
-    "time" : 409.3,
+    "time" : 159.6,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0063",
-    "time" : 418.14,
+    "time" : 162.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0064",
-    "time" : 425.36,
+    "time" : 163.36,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0065",
-    "time" : 425.98,
+    "time" : 166.26,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0066",
-    "time" : 431.02,
+    "time" : 166.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0067",
-    "time" : 438.46,
+    "time" : 168.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0068",
-    "time" : 447.5,
+    "time" : 172.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0069",
-    "time" : 450.36,
+    "time" : 174.34,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0070",
-    "time" : 454.62,
+    "time" : 180.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0071",
-    "time" : 462.54,
+    "time" : 184.14,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0072",
-    "time" : 471.2,
+    "time" : 189.86,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0073",
-    "time" : 476.36,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
+    "time" : 195.26,
+    "score" : 3,
+    "reasons" : [ "RANH_GIOI_CO_BAN", "KHOANG_LANG_LON (2.00s >= 1.5s)" ]
   }, {
     "after_id" : "S0074",
-    "time" : 480.4,
+    "time" : 201.74,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0075",
-    "time" : 485.24,
+    "time" : 207.14,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0076",
-    "time" : 487.84,
+    "time" : 212.3,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0077",
-    "time" : 489.39,
+    "time" : 215.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0078",
-    "time" : 493.64,
+    "time" : 223.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0079",
-    "time" : 499.64,
+    "time" : 226.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0080",
-    "time" : 510.44,
+    "time" : 227.38,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0081",
-    "time" : 514.55,
+    "time" : 232.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0082",
-    "time" : 521.6,
+    "time" : 236.1,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0083",
-    "time" : 525.58,
+    "time" : 240.34,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0084",
-    "time" : 527.3,
+    "time" : 241.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0085",
-    "time" : 530.64,
+    "time" : 243.1,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0086",
-    "time" : 537.23,
+    "time" : 245.64,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0087",
-    "time" : 540.56,
+    "time" : 246.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0088",
-    "time" : 545.56,
+    "time" : 248.36,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0089",
-    "time" : 549.36,
+    "time" : 249.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0090",
-    "time" : 550.66,
+    "time" : 255.06,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0091",
-    "time" : 558.16,
+    "time" : 263.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0092",
-    "time" : 564.84,
+    "time" : 269.52,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0093",
-    "time" : 577.08,
+    "time" : 277.3,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0094",
-    "time" : 588.62,
+    "time" : 284.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0095",
-    "time" : 594.68,
+    "time" : 286.82,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0096",
-    "time" : 600.47,
+    "time" : 289.18,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0097",
-    "time" : 605.12,
+    "time" : 291.1,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0098",
-    "time" : 610.74,
+    "time" : 292.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0099",
-    "time" : 612.62,
+    "time" : 295.16,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0100",
-    "time" : 617.1,
+    "time" : 296.54,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0101",
-    "time" : 625.23,
+    "time" : 303.14,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0102",
-    "time" : 630.7,
+    "time" : 307.14,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0103",
-    "time" : 635.67,
+    "time" : 312.08,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0104",
-    "time" : 641.86,
+    "time" : 313.44,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0105",
-    "time" : 650.18,
+    "time" : 316.86,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0106",
-    "time" : 657.34,
+    "time" : 317.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0107",
-    "time" : 659.08,
+    "time" : 319.3,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0108",
-    "time" : 665.72,
+    "time" : 323.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0109",
-    "time" : 671.18,
+    "time" : 325.18,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0110",
-    "time" : 680.4,
+    "time" : 326.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0111",
-    "time" : 684.6,
+    "time" : 328.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0112",
-    "time" : 688.38,
+    "time" : 329.74,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0113",
-    "time" : 690.24,
+    "time" : 330.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0114",
-    "time" : 696.3,
+    "time" : 332.82,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0115",
-    "time" : 705.2,
+    "time" : 333.08,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0116",
-    "time" : 710.86,
+    "time" : 335.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0117",
-    "time" : 711.75,
+    "time" : 338.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0118",
-    "time" : 713.14,
+    "time" : 345.72,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0119",
-    "time" : 714.76,
+    "time" : 350.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0120",
-    "time" : 716.68,
+    "time" : 355.44,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0121",
-    "time" : 718.64,
+    "time" : 362.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0122",
-    "time" : 719.8,
+    "time" : 377.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0123",
-    "time" : 721.72,
+    "time" : 379.56,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0124",
-    "time" : 723.8,
+    "time" : 382.26,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0125",
-    "time" : 724.96,
+    "time" : 385.04,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0126",
-    "time" : 726.94,
+    "time" : 386.32,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0127",
-    "time" : 727.88,
+    "time" : 387.72,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0128",
-    "time" : 730.46,
+    "time" : 389.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0129",
-    "time" : 733.42,
+    "time" : 390.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0130",
-    "time" : 734.58,
+    "time" : 392.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0131",
-    "time" : 736.44,
+    "time" : 401.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0132",
-    "time" : 738.54,
+    "time" : 412.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0133",
-    "time" : 740.58,
+    "time" : 415.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0134",
-    "time" : 742.26,
+    "time" : 418.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0135",
-    "time" : 742.88,
+    "time" : 421.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0136",
-    "time" : 746.26,
+    "time" : 422.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0137",
-    "time" : 747.86,
+    "time" : 425.2,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0138",
-    "time" : 750.66,
+    "time" : 426.9,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0139",
-    "time" : 753.48,
+    "time" : 430.16,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0140",
-    "time" : 755.58,
+    "time" : 432.32,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0141",
-    "time" : 757.16,
+    "time" : 433.92,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0142",
-    "time" : 758.62,
+    "time" : 434.68,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0143",
-    "time" : 763.4,
+    "time" : 439.68,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0144",
-    "time" : 771.68,
+    "time" : 441.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0145",
-    "time" : 778.36,
+    "time" : 444.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0146",
-    "time" : 781.65,
+    "time" : 447.62,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0147",
-    "time" : 788.56,
+    "time" : 450.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0148",
-    "time" : 796.68,
+    "time" : 453.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0149",
-    "time" : 802.8,
+    "time" : 457.92,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0150",
-    "time" : 806.8,
+    "time" : 460.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0151",
-    "time" : 815.08,
+    "time" : 462.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0152",
-    "time" : 818.7,
+    "time" : 467.64,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0153",
-    "time" : 826.91,
+    "time" : 471.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0154",
-    "time" : 828.56,
+    "time" : 474.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0155",
-    "time" : 841.2,
+    "time" : 478.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0156",
-    "time" : 850.28,
+    "time" : 484.92,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0157",
-    "time" : 865.13,
+    "time" : 487.42,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0158",
-    "time" : 872.81,
+    "time" : 489.72,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0159",
-    "time" : 877.69,
+    "time" : 492.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0160",
-    "time" : 883.57,
+    "time" : 494.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0161",
-    "time" : 889.73,
+    "time" : 497.74,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0162",
-    "time" : 893.09,
+    "time" : 500.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0163",
-    "time" : 899.77,
+    "time" : 502.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0164",
-    "time" : 907.21,
+    "time" : 504.26,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0165",
-    "time" : 914.73,
+    "time" : 507.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0166",
-    "time" : 918.65,
+    "time" : 509.02,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0167",
-    "time" : 923.21,
+    "time" : 512.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0168",
-    "time" : 929.85,
+    "time" : 515.62,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0169",
-    "time" : 935.01,
+    "time" : 517.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0170",
-    "time" : 936.37,
+    "time" : 521.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0171",
-    "time" : 939.59,
+    "time" : 526.46,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0172",
-    "time" : 941.73,
+    "time" : 529.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0173",
-    "time" : 944.18,
+    "time" : 531.78,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0174",
-    "time" : 947.32,
+    "time" : 535.84,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0175",
-    "time" : 948.78,
+    "time" : 540.32,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0176",
-    "time" : 954.63,
+    "time" : 541.9,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0177",
-    "time" : 962.72,
+    "time" : 543.86,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0178",
-    "time" : 966.65,
+    "time" : 547.58,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0179",
-    "time" : 977.21,
+    "time" : 549.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0180",
-    "time" : 984.87,
+    "time" : 555.72,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0181",
-    "time" : 985.62,
+    "time" : 557.14,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0182",
-    "time" : 993.13,
+    "time" : 558.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0183",
-    "time" : 995.37,
+    "time" : 563.62,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0184",
-    "time" : 1002.85,
+    "time" : 568.36,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0185",
-    "time" : 1014.37,
+    "time" : 572.12,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0186",
-    "time" : 1018.99,
+    "time" : 576.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0187",
-    "time" : 1020.69,
+    "time" : 582.7,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0188",
-    "time" : 1021.91,
+    "time" : 585.42,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0189",
-    "time" : 1024.25,
+    "time" : 586.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0190",
-    "time" : 1031.75,
+    "time" : 589.44,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0191",
-    "time" : 1035.53,
+    "time" : 592.3,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0192",
-    "time" : 1042.25,
+    "time" : 596.38,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0193",
-    "time" : 1048.09,
+    "time" : 597.12,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0194",
-    "time" : 1051.83,
+    "time" : 602.1,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0195",
-    "time" : 1060.03,
+    "time" : 605.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0196",
-    "time" : 1065.55,
+    "time" : 610.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0197",
-    "time" : 1073.05,
+    "time" : 611.9,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0198",
-    "time" : 1086.65,
+    "time" : 612.66,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0199",
-    "time" : 1093.57,
+    "time" : 613.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0200",
-    "time" : 1101.24,
+    "time" : 618.86,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0201",
-    "time" : 1107.05,
+    "time" : 624.28,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0202",
-    "time" : 1110.68,
+    "time" : 626.16,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0203",
-    "time" : 1112.87,
+    "time" : 627.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0204",
-    "time" : 1118.63,
+    "time" : 635.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0205",
-    "time" : 1127.23,
+    "time" : 643.74,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0206",
-    "time" : 1135.89,
+    "time" : 650.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0207",
-    "time" : 1139.27,
+    "time" : 651.76,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0208",
-    "time" : 1142.85,
+    "time" : 652.16,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0209",
-    "time" : 1150.81,
+    "time" : 655.12,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0210",
-    "time" : 1154.31,
+    "time" : 660.62,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0211",
-    "time" : 1155.81,
+    "time" : 662.22,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0212",
-    "time" : 1165.59,
+    "time" : 666.08,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0213",
-    "time" : 1169.87,
+    "time" : 671.72,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0214",
-    "time" : 1174.61,
+    "time" : 674.42,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0215",
-    "time" : 1177.79,
+    "time" : 677.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0216",
-    "time" : 1183.11,
+    "time" : 680.24,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0217",
-    "time" : 1187.13,
+    "time" : 684.04,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0218",
-    "time" : 1197.25,
+    "time" : 685.98,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0219",
-    "time" : 1199.93,
+    "time" : 687.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0220",
-    "time" : 1206.49,
+    "time" : 690.94,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0221",
-    "time" : 1211.45,
+    "time" : 694.4,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0222",
-    "time" : 1216.13,
+    "time" : 695.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0223",
-    "time" : 1218.32,
+    "time" : 696.42,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0224",
-    "time" : 1224.89,
+    "time" : 696.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0225",
-    "time" : 1231.25,
+    "time" : 697.1,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0226",
-    "time" : 1237.13,
+    "time" : 697.88,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0227",
-    "time" : 1238.71,
+    "time" : 698.38,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0228",
-    "time" : 1240.37,
+    "time" : 703.3,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0229",
-    "time" : 1244.19,
+    "time" : 705.2,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0230",
-    "time" : 1245.21,
+    "time" : 712.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0231",
-    "time" : 1246.95,
+    "time" : 721.0,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0232",
-    "time" : 1249.25,
+    "time" : 722.7,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0233",
-    "time" : 1251.05,
+    "time" : 726.8,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0234",
-    "time" : 1255.27,
+    "time" : 728.48,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0235",
-    "time" : 1257.13,
+    "time" : 730.74,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0236",
-    "time" : 1260.19,
+    "time" : 732.96,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0237",
-    "time" : 1263.85,
+    "time" : 745.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0238",
-    "time" : 1266.07,
+    "time" : 748.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0239",
-    "time" : 1267.69,
+    "time" : 752.31,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0240",
-    "time" : 1270.65,
+    "time" : 754.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0241",
-    "time" : 1272.81,
+    "time" : 756.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0242",
-    "time" : 1275.29,
+    "time" : 760.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0243",
-    "time" : 1278.83,
+    "time" : 763.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0244",
-    "time" : 1280.79,
+    "time" : 770.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0245",
-    "time" : 1282.39,
+    "time" : 774.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0246",
-    "time" : 1284.57,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
+    "time" : 776.73,
+    "score" : 3,
+    "reasons" : [ "RANH_GIOI_CO_BAN", "KHOANG_LANG_LON (1.56s >= 1.5s)" ]
   }, {
     "after_id" : "S0247",
-    "time" : 1285.31,
+    "time" : 778.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0248",
-    "time" : 1289.79,
+    "time" : 780.04,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0249",
-    "time" : 1291.59,
+    "time" : 782.68,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0250",
-    "time" : 1292.59,
+    "time" : 786.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0251",
-    "time" : 1294.17,
+    "time" : 788.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0252",
-    "time" : 1295.49,
+    "time" : 792.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0253",
-    "time" : 1298.61,
+    "time" : 796.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0254",
-    "time" : 1302.09,
+    "time" : 803.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0255",
-    "time" : 1304.15,
+    "time" : 809.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0256",
-    "time" : 1305.61,
+    "time" : 813.38,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0257",
-    "time" : 1312.01,
+    "time" : 820.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0258",
-    "time" : 1315.69,
+    "time" : 827.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0259",
-    "time" : 1319.49,
+    "time" : 827.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0260",
-    "time" : 1325.11,
+    "time" : 830.25,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0261",
-    "time" : 1329.03,
+    "time" : 833.95,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0262",
-    "time" : 1331.23,
+    "time" : 834.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0263",
-    "time" : 1336.55,
+    "time" : 836.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0264",
-    "time" : 1337.61,
+    "time" : 840.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0265",
-    "time" : 1342.07,
+    "time" : 841.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0266",
-    "time" : 1344.29,
+    "time" : 843.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0267",
-    "time" : 1349.09,
+    "time" : 845.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0268",
-    "time" : 1354.47,
+    "time" : 848.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0269",
-    "time" : 1357.65,
+    "time" : 850.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0270",
-    "time" : 1362.27,
+    "time" : 852.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0271",
-    "time" : 1365.23,
+    "time" : 857.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0272",
-    "time" : 1367.33,
+    "time" : 862.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0273",
-    "time" : 1368.23,
+    "time" : 863.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0274",
-    "time" : 1369.39,
+    "time" : 863.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0275",
-    "time" : 1370.61,
+    "time" : 865.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0276",
-    "time" : 1374.47,
+    "time" : 868.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0277",
-    "time" : 1375.49,
+    "time" : 869.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0278",
-    "time" : 1378.55,
+    "time" : 871.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0279",
-    "time" : 1380.25,
+    "time" : 873.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0280",
-    "time" : 1383.61,
+    "time" : 875.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0281",
-    "time" : 1384.97,
+    "time" : 876.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0282",
-    "time" : 1386.25,
+    "time" : 878.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0283",
-    "time" : 1387.91,
+    "time" : 880.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0284",
-    "time" : 1390.17,
+    "time" : 886.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0285",
-    "time" : 1390.95,
+    "time" : 889.55,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0286",
-    "time" : 1392.21,
+    "time" : 890.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0287",
-    "time" : 1393.91,
+    "time" : 891.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0288",
-    "time" : 1397.53,
+    "time" : 891.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0289",
-    "time" : 1399.23,
+    "time" : 892.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0290",
-    "time" : 1401.63,
+    "time" : 896.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0291",
-    "time" : 1404.51,
+    "time" : 897.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0292",
-    "time" : 1406.63,
+    "time" : 902.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0293",
-    "time" : 1407.43,
+    "time" : 906.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0294",
-    "time" : 1410.05,
+    "time" : 910.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0295",
-    "time" : 1412.23,
+    "time" : 912.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0296",
-    "time" : 1412.91,
+    "time" : 916.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0297",
-    "time" : 1413.64,
+    "time" : 917.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0298",
-    "time" : 1415.85,
+    "time" : 921.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0299",
-    "time" : 1418.33,
+    "time" : 924.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0300",
-    "time" : 1419.87,
+    "time" : 928.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0301",
-    "time" : 1420.91,
+    "time" : 930.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0302",
-    "time" : 1422.93,
+    "time" : 933.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0303",
-    "time" : 1425.17,
+    "time" : 936.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0304",
-    "time" : 1426.61,
+    "time" : 938.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0305",
-    "time" : 1430.23,
+    "time" : 939.83,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0306",
-    "time" : 1437.11,
+    "time" : 944.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0307",
-    "time" : 1441.03,
+    "time" : 945.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0308",
-    "time" : 1448.93,
+    "time" : 947.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0309",
-    "time" : 1455.89,
+    "time" : 948.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0310",
-    "time" : 1463.83,
+    "time" : 949.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0311",
-    "time" : 1468.41,
+    "time" : 951.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0312",
-    "time" : 1472.73,
+    "time" : 952.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0313",
-    "time" : 1476.27,
+    "time" : 954.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0314",
-    "time" : 1477.19,
+    "time" : 955.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0315",
-    "time" : 1483.19,
+    "time" : 956.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0316",
-    "time" : 1485.25,
+    "time" : 957.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0317",
-    "time" : 1487.55,
+    "time" : 958.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0318",
-    "time" : 1493.27,
+    "time" : 959.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0319",
-    "time" : 1500.65,
+    "time" : 960.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0320",
-    "time" : 1502.72,
+    "time" : 961.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0321",
-    "time" : 1507.35,
+    "time" : 962.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0322",
-    "time" : 1516.33,
+    "time" : 963.25,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0323",
-    "time" : 1518.23,
+    "time" : 964.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0324",
-    "time" : 1521.09,
+    "time" : 965.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0325",
-    "time" : 1524.61,
+    "time" : 966.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0326",
-    "time" : 1527.07,
+    "time" : 967.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0327",
-    "time" : 1528.65,
+    "time" : 968.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0328",
-    "time" : 1530.99,
+    "time" : 969.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0329",
-    "time" : 1533.01,
+    "time" : 970.99,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0330",
-    "time" : 1534.12,
+    "time" : 972.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0331",
-    "time" : 1535.23,
+    "time" : 972.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0332",
-    "time" : 1537.33,
+    "time" : 973.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0333",
-    "time" : 1539.48,
+    "time" : 974.83,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0334",
-    "time" : 1540.96,
+    "time" : 975.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0335",
-    "time" : 1542.29,
+    "time" : 976.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0336",
-    "time" : 1545.13,
+    "time" : 977.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0337",
-    "time" : 1547.25,
+    "time" : 981.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0338",
-    "time" : 1549.69,
+    "time" : 982.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0339",
-    "time" : 1551.47,
+    "time" : 983.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0340",
-    "time" : 1553.61,
+    "time" : 984.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0341",
-    "time" : 1555.03,
+    "time" : 985.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0342",
-    "time" : 1557.09,
+    "time" : 986.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0343",
-    "time" : 1557.89,
+    "time" : 986.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0344",
-    "time" : 1560.49,
+    "time" : 988.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0345",
-    "time" : 1562.29,
+    "time" : 988.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0346",
-    "time" : 1564.73,
+    "time" : 990.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0347",
-    "time" : 1567.37,
+    "time" : 991.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0348",
-    "time" : 1568.95,
+    "time" : 992.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0349",
-    "time" : 1577.01,
+    "time" : 993.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0350",
-    "time" : 1581.17,
+    "time" : 994.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0351",
-    "time" : 1587.51,
+    "time" : 995.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0352",
-    "time" : 1595.97,
+    "time" : 996.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0353",
-    "time" : 1604.15,
+    "time" : 997.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0354",
-    "time" : 1610.09,
+    "time" : 998.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0355",
-    "time" : 1622.23,
+    "time" : 999.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0356",
-    "time" : 1623.69,
+    "time" : 1000.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0357",
-    "time" : 1626.05,
+    "time" : 1001.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0358",
-    "time" : 1629.39,
+    "time" : 1003.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0359",
-    "time" : 1633.71,
+    "time" : 1005.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0360",
-    "time" : 1638.91,
+    "time" : 1007.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0361",
-    "time" : 1643.51,
+    "time" : 1008.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0362",
-    "time" : 1650.39,
+    "time" : 1009.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0363",
-    "time" : 1657.13,
+    "time" : 1014.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0364",
-    "time" : 1661.59,
+    "time" : 1017.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0365",
-    "time" : 1665.25,
+    "time" : 1019.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0366",
-    "time" : 1668.25,
+    "time" : 1020.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0367",
-    "time" : 1669.73,
+    "time" : 1025.95,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0368",
-    "time" : 1672.37,
+    "time" : 1026.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0369",
-    "time" : 1674.25,
+    "time" : 1028.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0370",
-    "time" : 1679.53,
+    "time" : 1029.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0371",
-    "time" : 1685.21,
+    "time" : 1030.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0372",
-    "time" : 1688.53,
+    "time" : 1030.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0373",
-    "time" : 1695.93,
+    "time" : 1031.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0374",
-    "time" : 1706.61,
+    "time" : 1032.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0375",
-    "time" : 1721.92,
+    "time" : 1033.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0376",
-    "time" : 1724.24,
+    "time" : 1035.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0377",
-    "time" : 1730.12,
+    "time" : 1036.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0378",
-    "time" : 1732.78,
+    "time" : 1036.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0379",
-    "time" : 1734.7,
+    "time" : 1037.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0380",
-    "time" : 1740.22,
+    "time" : 1038.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0381",
-    "time" : 1743.76,
+    "time" : 1039.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0382",
-    "time" : 1751.34,
+    "time" : 1040.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0383",
-    "time" : 1755.5,
+    "time" : 1040.83,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0384",
-    "time" : 1759.16,
+    "time" : 1041.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0385",
-    "time" : 1762.94,
+    "time" : 1043.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0386",
-    "time" : 1769.18,
+    "time" : 1044.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0387",
-    "time" : 1777.4,
+    "time" : 1044.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0388",
-    "time" : 1781.28,
+    "time" : 1046.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0389",
-    "time" : 1782.76,
+    "time" : 1047.55,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0390",
-    "time" : 1784.62,
+    "time" : 1048.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0391",
-    "time" : 1789.34,
+    "time" : 1049.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0392",
-    "time" : 1792.42,
+    "time" : 1050.25,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0393",
-    "time" : 1797.41,
+    "time" : 1050.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0394",
-    "time" : 1801.1,
+    "time" : 1051.95,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0395",
-    "time" : 1804.68,
+    "time" : 1053.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0396",
-    "time" : 1810.12,
+    "time" : 1054.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0397",
-    "time" : 1815.7,
+    "time" : 1055.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0398",
-    "time" : 1819.82,
+    "time" : 1056.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0399",
-    "time" : 1828.74,
+    "time" : 1057.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0400",
-    "time" : 1830.1,
+    "time" : 1059.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0401",
-    "time" : 1832.8,
+    "time" : 1061.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0402",
-    "time" : 1835.14,
+    "time" : 1061.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0403",
-    "time" : 1839.4,
+    "time" : 1063.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0404",
-    "time" : 1843.0,
+    "time" : 1064.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0405",
-    "time" : 1848.63,
+    "time" : 1067.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0406",
-    "time" : 1857.42,
+    "time" : 1069.95,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0407",
-    "time" : 1860.19,
+    "time" : 1071.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0408",
-    "time" : 1862.49,
+    "time" : 1074.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0409",
-    "time" : 1868.76,
+    "time" : 1076.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0410",
-    "time" : 1873.94,
+    "time" : 1079.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0411",
-    "time" : 1880.89,
+    "time" : 1080.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0412",
-    "time" : 1888.98,
+    "time" : 1083.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0413",
-    "time" : 1893.12,
+    "time" : 1085.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0414",
-    "time" : 1895.32,
+    "time" : 1087.23,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0415",
-    "time" : 1902.02,
+    "time" : 1089.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0416",
-    "time" : 1906.06,
+    "time" : 1089.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0417",
-    "time" : 1912.68,
+    "time" : 1091.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0418",
-    "time" : 1919.0,
+    "time" : 1094.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0419",
-    "time" : 1923.04,
+    "time" : 1097.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0420",
-    "time" : 1929.28,
+    "time" : 1098.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0421",
-    "time" : 1940.28,
+    "time" : 1100.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0422",
-    "time" : 1945.3,
+    "time" : 1102.23,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0423",
-    "time" : 1951.14,
+    "time" : 1104.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0424",
-    "time" : 1960.62,
+    "time" : 1114.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0425",
-    "time" : 1967.75,
+    "time" : 1116.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0426",
-    "time" : 1973.98,
+    "time" : 1116.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0427",
-    "time" : 1981.52,
+    "time" : 1117.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0428",
-    "time" : 1990.88,
-    "score" : 4,
-    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'bây giờ chúng ta'" ]
+    "time" : 1119.55,
+    "score" : 1,
+    "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0429",
-    "time" : 1996.52,
+    "time" : 1120.55,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0430",
-    "time" : 2009.76,
+    "time" : 1121.55,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0431",
-    "time" : 2021.54,
+    "time" : 1122.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0432",
-    "time" : 2023.24,
+    "time" : 1123.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0433",
-    "time" : 2028.34,
+    "time" : 1124.23,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0434",
-    "time" : 2029.88,
+    "time" : 1125.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0435",
-    "time" : 2036.78,
+    "time" : 1126.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0436",
-    "time" : 2040.46,
+    "time" : 1126.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0437",
-    "time" : 2044.44,
+    "time" : 1129.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0438",
-    "time" : 2051.74,
+    "time" : 1130.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0439",
-    "time" : 2058.7,
+    "time" : 1131.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0440",
-    "time" : 2064.64,
+    "time" : 1132.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0441",
-    "time" : 2067.2,
+    "time" : 1133.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0442",
-    "time" : 2069.86,
+    "time" : 1135.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0443",
-    "time" : 2073.34,
+    "time" : 1136.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0444",
-    "time" : 2075.22,
+    "time" : 1139.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0445",
-    "time" : 2081.2,
+    "time" : 1140.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0446",
-    "time" : 2086.1,
+    "time" : 1142.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0447",
-    "time" : 2089.64,
+    "time" : 1144.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0448",
-    "time" : 2094.2,
+    "time" : 1145.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0449",
-    "time" : 2097.62,
+    "time" : 1148.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0450",
-    "time" : 2102.46,
+    "time" : 1149.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0451",
-    "time" : 2107.9,
+    "time" : 1150.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0452",
-    "time" : 2117.04,
+    "time" : 1152.99,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0453",
-    "time" : 2124.68,
+    "time" : 1155.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0454",
-    "time" : 2127.76,
+    "time" : 1157.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0455",
-    "time" : 2130.44,
+    "time" : 1160.99,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0456",
-    "time" : 2132.46,
+    "time" : 1162.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0457",
-    "time" : 2138.64,
+    "time" : 1164.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0458",
-    "time" : 2144.7,
+    "time" : 1169.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0459",
-    "time" : 2148.44,
+    "time" : 1170.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0460",
-    "time" : 2154.38,
+    "time" : 1172.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0461",
-    "time" : 2161.62,
+    "time" : 1174.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0462",
-    "time" : 2164.44,
+    "time" : 1176.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0463",
-    "time" : 2169.76,
+    "time" : 1177.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0464",
-    "time" : 2172.6,
+    "time" : 1179.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0465",
-    "time" : 2177.47,
+    "time" : 1182.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0466",
-    "time" : 2179.16,
+    "time" : 1183.63,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0467",
-    "time" : 2180.64,
+    "time" : 1186.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0468",
-    "time" : 2182.12,
+    "time" : 1187.31,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0469",
-    "time" : 2184.04,
+    "time" : 1190.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0470",
-    "time" : 2188.83,
+    "time" : 1192.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0471",
-    "time" : 2198.56,
+    "time" : 1193.83,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0472",
-    "time" : 2206.02,
+    "time" : 1195.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0473",
-    "time" : 2212.8,
+    "time" : 1198.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0474",
-    "time" : 2224.1,
+    "time" : 1204.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0475",
-    "time" : 2228.18,
+    "time" : 1206.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0476",
-    "time" : 2232.04,
+    "time" : 1209.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0477",
-    "time" : 2243.7,
+    "time" : 1211.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0478",
-    "time" : 2253.16,
+    "time" : 1213.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0479",
-    "time" : 2262.72,
+    "time" : 1213.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0480",
-    "time" : 2269.44,
+    "time" : 1214.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0481",
-    "time" : 2272.38,
+    "time" : 1214.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0482",
-    "time" : 2275.06,
+    "time" : 1215.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0483",
-    "time" : 2275.92,
+    "time" : 1216.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0484",
-    "time" : 2277.51,
+    "time" : 1217.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0485",
-    "time" : 2281.16,
+    "time" : 1218.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0486",
-    "time" : 2283.95,
+    "time" : 1219.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0487",
-    "time" : 2289.32,
+    "time" : 1220.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0488",
-    "time" : 2294.88,
+    "time" : 1222.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0489",
-    "time" : 2297.47,
+    "time" : 1224.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0490",
-    "time" : 2302.95,
+    "time" : 1226.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0491",
-    "time" : 2307.44,
+    "time" : 1228.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0492",
-    "time" : 2313.92,
+    "time" : 1230.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0493",
-    "time" : 2320.52,
+    "time" : 1231.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0494",
-    "time" : 2322.72,
+    "time" : 1234.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0495",
-    "time" : 2325.3,
+    "time" : 1235.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0496",
-    "time" : 2332.64,
+    "time" : 1238.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0497",
-    "time" : 2342.74,
+    "time" : 1240.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0498",
-    "time" : 2346.46,
+    "time" : 1242.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0499",
-    "time" : 2354.04,
+    "time" : 1243.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0500",
-    "time" : 2363.3,
+    "time" : 1245.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0501",
-    "time" : 2371.26,
+    "time" : 1248.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0502",
-    "time" : 2386.62,
+    "time" : 1249.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0503",
-    "time" : 2397.92,
-    "score" : 4,
-    "reasons" : [ "RANH_GIOI_CO_BAN", "TU_NOI_CHUYEN_Y: 'bây giờ chúng ta'" ]
+    "time" : 1250.91,
+    "score" : 1,
+    "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0504",
-    "time" : 2409.28,
+    "time" : 1252.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0505",
-    "time" : 2415.72,
+    "time" : 1253.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0506",
-    "time" : 2422.32,
+    "time" : 1256.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0507",
-    "time" : 2431.68,
+    "time" : 1257.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0508",
-    "time" : 2440.38,
+    "time" : 1260.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0509",
-    "time" : 2445.86,
+    "time" : 1261.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0510",
-    "time" : 2462.9,
+    "time" : 1263.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0511",
-    "time" : 2468.42,
+    "time" : 1264.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0512",
-    "time" : 2472.28,
+    "time" : 1265.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0513",
-    "time" : 2475.56,
+    "time" : 1266.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0514",
-    "time" : 2479.88,
+    "time" : 1266.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0515",
-    "time" : 2485.84,
+    "time" : 1269.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0516",
-    "time" : 2496.48,
+    "time" : 1270.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0517",
-    "time" : 2505.0,
+    "time" : 1271.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0518",
-    "time" : 2506.28,
+    "time" : 1272.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0519",
-    "time" : 2510.32,
+    "time" : 1273.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0520",
-    "time" : 2519.14,
+    "time" : 1274.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0521",
-    "time" : 2520.12,
+    "time" : 1275.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0522",
-    "time" : 2523.66,
+    "time" : 1277.25,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0523",
-    "time" : 2525.6,
+    "time" : 1277.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0524",
-    "time" : 2528.16,
+    "time" : 1278.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0525",
-    "time" : 2532.08,
+    "time" : 1280.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0526",
-    "time" : 2533.96,
+    "time" : 1281.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0527",
-    "time" : 2536.88,
+    "time" : 1282.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0528",
-    "time" : 2539.54,
+    "time" : 1283.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0529",
-    "time" : 2540.94,
+    "time" : 1284.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0530",
-    "time" : 2542.76,
+    "time" : 1285.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0531",
-    "time" : 2544.22,
+    "time" : 1286.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0532",
-    "time" : 2546.32,
+    "time" : 1286.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0533",
-    "time" : 2547.02,
+    "time" : 1287.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0534",
-    "time" : 2547.74,
+    "time" : 1289.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0535",
-    "time" : 2552.38,
+    "time" : 1289.57,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0536",
-    "time" : 2556.38,
+    "time" : 1290.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0537",
-    "time" : 2559.58,
+    "time" : 1291.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0538",
-    "time" : 2563.78,
+    "time" : 1291.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0539",
-    "time" : 2577.22,
+    "time" : 1292.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0540",
-    "time" : 2580.04,
+    "time" : 1293.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0541",
-    "time" : 2581.18,
+    "time" : 1294.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0542",
-    "time" : 2583.8,
+    "time" : 1294.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0543",
-    "time" : 2584.98,
+    "time" : 1295.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0544",
-    "time" : 2588.0,
+    "time" : 1296.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0545",
-    "time" : 2589.82,
+    "time" : 1297.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0546",
-    "time" : 2593.03,
+    "time" : 1298.83,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0547",
-    "time" : 2595.38,
+    "time" : 1300.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0548",
-    "time" : 2605.36,
+    "time" : 1301.35,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0549",
-    "time" : 2617.75,
+    "time" : 1302.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0550",
-    "time" : 2620.26,
+    "time" : 1303.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0551",
-    "time" : 2623.72,
+    "time" : 1304.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0552",
-    "time" : 2627.96,
+    "time" : 1305.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0553",
-    "time" : 2630.16,
+    "time" : 1306.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0554",
-    "time" : 2635.02,
+    "time" : 1307.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0555",
-    "time" : 2638.66,
+    "time" : 1311.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0556",
-    "time" : 2640.26,
+    "time" : 1313.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0557",
-    "time" : 2641.64,
+    "time" : 1315.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0558",
-    "time" : 2644.66,
+    "time" : 1317.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0559",
-    "time" : 2646.46,
+    "time" : 1319.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0560",
-    "time" : 2648.58,
+    "time" : 1321.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0561",
-    "time" : 2650.48,
+    "time" : 1323.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0562",
-    "time" : 2652.6,
+    "time" : 1324.59,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0563",
-    "time" : 2654.8,
+    "time" : 1326.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0564",
-    "time" : 2657.0,
+    "time" : 1328.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0565",
-    "time" : 2658.92,
+    "time" : 1330.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0566",
-    "time" : 2660.22,
+    "time" : 1332.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0567",
-    "time" : 2662.84,
+    "time" : 1333.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0568",
-    "time" : 2664.72,
+    "time" : 1336.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0569",
-    "time" : 2665.84,
+    "time" : 1338.81,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0570",
-    "time" : 2666.72,
+    "time" : 1341.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0571",
-    "time" : 2668.74,
+    "time" : 1343.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0572",
-    "time" : 2671.12,
+    "time" : 1344.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0573",
-    "time" : 2672.3,
+    "time" : 1346.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0574",
-    "time" : 2674.88,
+    "time" : 1348.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0575",
-    "time" : 2676.66,
+    "time" : 1349.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0576",
-    "time" : 2677.47,
+    "time" : 1350.27,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0577",
-    "time" : 2678.66,
+    "time" : 1351.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0578",
-    "time" : 2680.82,
+    "time" : 1352.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0579",
-    "time" : 2681.98,
+    "time" : 1353.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0580",
-    "time" : 2682.76,
+    "time" : 1354.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0581",
-    "time" : 2683.42,
+    "time" : 1355.93,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0582",
-    "time" : 2684.54,
+    "time" : 1356.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0583",
-    "time" : 2687.22,
+    "time" : 1357.89,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0584",
-    "time" : 2687.84,
+    "time" : 1359.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0585",
-    "time" : 2688.86,
+    "time" : 1359.45,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0586",
-    "time" : 2690.74,
+    "time" : 1361.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0587",
-    "time" : 2692.74,
+    "time" : 1362.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0588",
-    "time" : 2694.1,
+    "time" : 1364.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0589",
-    "time" : 2698.64,
+    "time" : 1366.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0590",
-    "time" : 2700.62,
+    "time" : 1367.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0591",
-    "time" : 2702.42,
+    "time" : 1368.19,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0592",
-    "time" : 2704.08,
+    "time" : 1369.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0593",
-    "time" : 2704.5,
+    "time" : 1370.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0594",
-    "time" : 2706.0,
+    "time" : 1371.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0595",
-    "time" : 2707.58,
+    "time" : 1371.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0596",
-    "time" : 2708.42,
+    "time" : 1372.95,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0597",
-    "time" : 2709.83,
+    "time" : 1373.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0598",
-    "time" : 2710.75,
+    "time" : 1374.99,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0599",
-    "time" : 2712.04,
+    "time" : 1376.11,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0600",
-    "time" : 2713.38,
+    "time" : 1376.55,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0601",
-    "time" : 2715.34,
+    "time" : 1377.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0602",
-    "time" : 2716.92,
+    "time" : 1378.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0603",
-    "time" : 2720.0,
+    "time" : 1378.67,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0604",
-    "time" : 2720.38,
+    "time" : 1380.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0605",
-    "time" : 2721.52,
+    "time" : 1381.39,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0606",
-    "time" : 2722.76,
+    "time" : 1383.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0607",
-    "time" : 2724.82,
+    "time" : 1384.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0608",
-    "time" : 2729.18,
+    "time" : 1385.91,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0609",
-    "time" : 2731.0,
+    "time" : 1386.97,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0610",
-    "time" : 2731.68,
+    "time" : 1387.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0611",
-    "time" : 2733.04,
+    "time" : 1389.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0612",
-    "time" : 2735.18,
+    "time" : 1391.77,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0613",
-    "time" : 2736.68,
+    "time" : 1393.09,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0614",
-    "time" : 2737.36,
+    "time" : 1394.25,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0615",
-    "time" : 2740.12,
+    "time" : 1395.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0616",
-    "time" : 2743.64,
+    "time" : 1396.21,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0617",
-    "time" : 2746.92,
+    "time" : 1398.75,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0618",
-    "time" : 2751.1,
+    "time" : 1400.47,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0619",
-    "time" : 2755.58,
+    "time" : 1401.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0620",
-    "time" : 2760.12,
+    "time" : 1403.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0621",
-    "time" : 2768.92,
+    "time" : 1405.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0622",
-    "time" : 2775.43,
+    "time" : 1407.29,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0623",
-    "time" : 2779.24,
+    "time" : 1409.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0624",
-    "time" : 2782.14,
+    "time" : 1411.01,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0625",
-    "time" : 2784.68,
+    "time" : 1412.51,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0626",
-    "time" : 2785.31,
+    "time" : 1413.41,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0627",
-    "time" : 2788.35,
+    "time" : 1414.05,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0628",
-    "time" : 2790.14,
+    "time" : 1415.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0629",
-    "time" : 2791.44,
+    "time" : 1417.53,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0630",
-    "time" : 2792.26,
+    "time" : 1419.71,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0631",
-    "time" : 2792.98,
+    "time" : 1423.37,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0632",
-    "time" : 2796.22,
+    "time" : 1426.87,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0633",
-    "time" : 2798.48,
+    "time" : 1430.49,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0634",
-    "time" : 2800.58,
+    "time" : 1431.15,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0635",
-    "time" : 2802.06,
+    "time" : 1432.61,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0636",
-    "time" : 2804.06,
+    "time" : 1439.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0637",
-    "time" : 2805.64,
+    "time" : 1441.79,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0638",
-    "time" : 2807.64,
+    "time" : 1443.73,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0639",
-    "time" : 2809.7,
+    "time" : 1445.33,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0640",
-    "time" : 2811.6,
+    "time" : 1445.99,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0641",
-    "time" : 2814.58,
+    "time" : 1447.31,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0642",
-    "time" : 2816.7,
+    "time" : 1447.69,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0643",
-    "time" : 2818.48,
+    "time" : 1448.03,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0644",
-    "time" : 2819.84,
+    "time" : 1450.65,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0645",
-    "time" : 2822.24,
+    "time" : 1453.07,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0646",
-    "time" : 2824.4,
+    "time" : 1456.85,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0647",
-    "time" : 2826.3,
+    "time" : 1468.43,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   }, {
     "after_id" : "S0648",
-    "time" : 2828.72,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0649",
-    "time" : 2831.0,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0650",
-    "time" : 2832.32,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0651",
-    "time" : 2834.9,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0652",
-    "time" : 2835.96,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0653",
-    "time" : 2837.78,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0654",
-    "time" : 2841.12,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0655",
-    "time" : 2844.56,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0656",
-    "time" : 2846.78,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0657",
-    "time" : 2848.28,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0658",
-    "time" : 2851.02,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0659",
-    "time" : 2854.32,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0660",
-    "time" : 2858.56,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0661",
-    "time" : 2861.72,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0662",
-    "time" : 2865.02,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0663",
-    "time" : 2868.78,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0664",
-    "time" : 2871.0,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0665",
-    "time" : 2875.24,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0666",
-    "time" : 2879.16,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0667",
-    "time" : 2882.14,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0668",
-    "time" : 2884.65,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0669",
-    "time" : 2887.2,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0670",
-    "time" : 2891.14,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0671",
-    "time" : 2894.58,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0672",
-    "time" : 2898.36,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0673",
-    "time" : 2900.47,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0674",
-    "time" : 2905.48,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0675",
-    "time" : 2912.28,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0676",
-    "time" : 2920.6,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0677",
-    "time" : 2938.26,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0678",
-    "time" : 2948.2,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0679",
-    "time" : 2954.88,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0680",
-    "time" : 2960.56,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0681",
-    "time" : 2964.5,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0682",
-    "time" : 2966.66,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0683",
-    "time" : 2972.44,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0684",
-    "time" : 2975.62,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0685",
-    "time" : 2985.9,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0686",
-    "time" : 2993.3,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0687",
-    "time" : 2996.38,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0688",
-    "time" : 3006.48,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0689",
-    "time" : 3009.36,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0690",
-    "time" : 3011.86,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0691",
-    "time" : 3015.06,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0692",
-    "time" : 3016.07,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0693",
-    "time" : 3018.36,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0694",
-    "time" : 3022.26,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0695",
-    "time" : 3028.12,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0696",
-    "time" : 3036.82,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0697",
-    "time" : 3046.08,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0698",
-    "time" : 3048.12,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0699",
-    "time" : 3049.18,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0700",
-    "time" : 3054.38,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0701",
-    "time" : 3055.8,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0702",
-    "time" : 3059.5,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0703",
-    "time" : 3062.45,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0704",
-    "time" : 3065.92,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0705",
-    "time" : 3070.0,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0706",
-    "time" : 3072.68,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0707",
-    "time" : 3076.66,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0708",
-    "time" : 3081.32,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0709",
-    "time" : 3091.34,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0710",
-    "time" : 3096.56,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0711",
-    "time" : 3104.52,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0712",
-    "time" : 3111.46,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0713",
-    "time" : 3115.22,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0714",
-    "time" : 3122.76,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0715",
-    "time" : 3129.1,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0716",
-    "time" : 3137.88,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0717",
-    "time" : 3143.94,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0718",
-    "time" : 3149.28,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0719",
-    "time" : 3154.0,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0720",
-    "time" : 3159.76,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0721",
-    "time" : 3166.08,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0722",
-    "time" : 3172.08,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0723",
-    "time" : 3175.8,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0724",
-    "time" : 3181.64,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0725",
-    "time" : 3186.08,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0726",
-    "time" : 3189.72,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0727",
-    "time" : 3193.42,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0728",
-    "time" : 3197.28,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0729",
-    "time" : 3205.48,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0730",
-    "time" : 3211.6,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0731",
-    "time" : 3215.72,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0732",
-    "time" : 3220.52,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0733",
-    "time" : 3223.38,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0734",
-    "time" : 3226.94,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0735",
-    "time" : 3232.04,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0736",
-    "time" : 3236.0,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0737",
-    "time" : 3240.22,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0738",
-    "time" : 3248.12,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0739",
-    "time" : 3254.98,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0740",
-    "time" : 3260.32,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0741",
-    "time" : 3271.36,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0742",
-    "time" : 3278.7,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0743",
-    "time" : 3284.72,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0744",
-    "time" : 3289.76,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0745",
-    "time" : 3295.64,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0746",
-    "time" : 3301.46,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0747",
-    "time" : 3305.6,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0748",
-    "time" : 3311.34,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0749",
-    "time" : 3315.6,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0750",
-    "time" : 3316.78,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0751",
-    "time" : 3318.74,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0752",
-    "time" : 3319.48,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0753",
-    "time" : 3326.18,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0754",
-    "time" : 3328.92,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0755",
-    "time" : 3333.24,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0756",
-    "time" : 3336.39,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0757",
-    "time" : 3343.58,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0758",
-    "time" : 3344.74,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0759",
-    "time" : 3351.74,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0760",
-    "time" : 3352.82,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0761",
-    "time" : 3356.82,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0762",
-    "time" : 3362.14,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0763",
-    "time" : 3364.24,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0764",
-    "time" : 3372.78,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0765",
-    "time" : 3377.34,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0766",
-    "time" : 3384.38,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0767",
-    "time" : 3392.14,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0768",
-    "time" : 3399.56,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0769",
-    "time" : 3411.22,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0770",
-    "time" : 3412.82,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0771",
-    "time" : 3424.4,
-    "score" : 1,
-    "reasons" : [ "RANH_GIOI_CO_BAN" ]
-  }, {
-    "after_id" : "S0772",
-    "time" : 3426.58,
+    "time" : 1475.13,
     "score" : 1,
     "reasons" : [ "RANH_GIOI_CO_BAN" ]
   } ]

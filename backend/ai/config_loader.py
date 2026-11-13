@@ -78,7 +78,7 @@ class AIConfig:
             or os.getenv("LLM_API_KEY")
             or ""
         )
-        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
         # Thư mục cache, output và segments duy nhất tại thư mục gốc AutoCut
         project_root = Path(__file__).resolve().parent.parent.parent

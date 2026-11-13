@@ -464,3 +464,23 @@ def test_config_loader_prefers_dotenv_over_existing_env(monkeypatch):
             assert config_loader.default_ai_config.gemini_api_key == expected_key
     finally:
         importlib.reload(config_loader)
+
+
+def test_cli_main_transcription_defines_whisper_start(monkeypatch, tmp_path):
+    """Kiểm tra: cli.main() khi bóc băng không bị lỗi NameError: name 'whisper_start' is not defined."""
+    import backend.ai.cli as cli_mod
+    from backend.ai.models import Sentence, TranscriptOutput
+
+    dummy_res = TranscriptOutput(
+        video="demo.mp4",
+        duration=10.0,
+        sentences=[Sentence(id="S0001", start=0.0, end=10.0, text="Noi dung test.")],
+    )
+
+    monkeypatch.setattr(sys, "argv", ["cli.py", "--input", "demo.mp4", "--engine", "groq"])
+    monkeypatch.setattr("backend.ai.groq_service.transcribe_with_groq", lambda *a, **kw: dummy_res)
+    monkeypatch.setattr(cli_mod, "TRANSCRIPTS_DIR", tmp_path)
+    monkeypatch.setattr(cli_mod, "PROJECT_ROOT", tmp_path)
+
+    # Nếu whisper_start chưa được khai báo trước khi bóc băng, dòng tính whisper_elapsed sẽ quăng NameError
+    cli_mod.main()

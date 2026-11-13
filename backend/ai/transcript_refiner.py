@@ -37,11 +37,9 @@ logger = logging.getLogger("AutoCut.AI.Refiner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FALLBACK_MODELS = [
-    "gemini-3.8-flash",
-    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
     "gemini-flash-latest",
-    "gemini-3.5-flash-lite",
     "gemini-pro-latest",
 ]
 
@@ -87,13 +85,13 @@ class TranscriptRefiner:
         if not self.api_key:
             logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
+        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash-lite")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
         self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
         self.client = genai.Client(
             api_key=self.api_key,
-            http_options={"timeout": 90000.0}
+            http_options={"timeout": 15000.0}
         )
 
     def _generate_with_fallback(self, prompt: str):
@@ -558,8 +556,8 @@ DANH SÁCH CÂU TRANSCRIPT:
                     logger.warning("[SEGMENTER] Fallback cuc bo (force_ai=False)")
                     break
                 if max_retries is not None and attempt >= max_retries:
-                    logger.warning(f"[SEGMENTER] AI gap su co ket noi sau {attempt} lan thu ({summarize_error(e)}). Chuyen sang fallback phan doan tu transcript.")
-                    break
+                    logger.error(f"[SEGMENTER] That bai sau {attempt} lan: {summarize_error(e)}")
+                    raise RuntimeError(f"Bắt buộc phân đoạn bằng AI nhưng AI gặp lỗi sau {attempt} lần thử: {e}")
 
                 wait_sec = 0.05 if "pytest" in sys.modules else min(30, 2 + attempt * 2)
                 err_str = str(e)

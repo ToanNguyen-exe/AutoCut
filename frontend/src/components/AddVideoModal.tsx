@@ -258,36 +258,41 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
       setIsUploading(true);
       setUploadPercent(10);
-      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini)...");
+      setUploadProgressMsg("Đang tải video lên hệ thống...");
 
       const upStartTime = Date.now();
       const upTimer = setInterval(() => {
         const sec = (Date.now() - upStartTime) / 1000;
         setUploadPercent(() => {
-          if (sec < 3) return Math.min(30, 10 + sec * 7);
-          if (sec < 8) return Math.min(65, 30 + (sec - 3) * 7);
-          return Math.min(94, 65 + (sec - 8) * 3);
+          if (sec < 1.5) return Math.min(50, 10 + sec * 30);
+          if (sec < 4) return Math.min(85, 50 + (sec - 1.5) * 15);
+          return Math.min(95, 85 + (sec - 4) * 2);
         });
-      }, 250);
+      }, 100);
 
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
         if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
           clearInterval(upTimer);
           setUploadPercent(100);
-          const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
-            ? uploadRes.data.transcript.duration
-            : finalDurationSeconds;
+          setUploadProgressMsg("Tải video lên thành công!");
+
+          // Kiểm tra xem transcript có lời thoại thật hay chỉ là bản ghi khởi tạo ban đầu
+          const hasRealTranscript = uploadRes.data.transcript &&
+            Array.isArray(uploadRes.data.transcript.sentences) &&
+            uploadRes.data.transcript.sentences.length > 1 &&
+            !uploadRes.data.transcript.sentences.some((s: { text?: string }) => s.text?.includes("Nội dung bóc băng của video"));
+
           deliverVideo({
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: Number(cloudDur.toFixed(1)),
+            duration: finalDurationSeconds,
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
             sha256: uploadRes.data.sha256,
-            transcript: uploadRes.data.transcript,
-            segmentsData: uploadRes.data.segmentsData,
+            transcript: hasRealTranscript ? uploadRes.data.transcript : undefined,
+            segmentsData: undefined,
             transcriptFile: uploadRes.data.transcript_file,
           });
           return;

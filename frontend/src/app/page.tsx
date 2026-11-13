@@ -1242,21 +1242,40 @@ export default function Home() {
       let clipSentences: Sentence[] = [];
       let clipSegments: Segment[] = [];
 
-      // 1. Kiểm tra cache trong thư viện video (videoLibrary)
-      const matchedLib = libVideos.find(
-        (v) =>
-          (v.name && v.name.toLowerCase() === clip.fileName.toLowerCase()) ||
-          (v.lesson && v.lesson.toLowerCase() === clip.title.toLowerCase()) ||
-          (v.title && v.title.toLowerCase() === clip.title.toLowerCase())
-      );
-
-      if (matchedLib?.transcript?.sentences && matchedLib.transcript.sentences.length > 0) {
-        clipSentences = matchedLib.transcript.sentences;
-        clipSegments = matchedLib.segments && matchedLib.segments.length > 0 ? matchedLib.segments : [];
+      // 1. ƯU TIÊN SỐ 1: Gọi trực tiếp Backend AI Spring Boot (/api/video/analyze) để chạy Gemini Segmenter
+      try {
+        const res = await analyzeVideoBackend({
+          videoName: clip.fileName,
+          lesson: clip.title,
+          duration: clipDur,
+        });
+        if (res.source === "api" && res.data?.segmentsData?.segments && res.data.segmentsData.segments.length > 0) {
+          clipSegments = res.data.segmentsData.segments;
+          clipSentences = res.data.transcript?.sentences || [];
+        }
+      } catch (backendErr) {
+        console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
       }
 
-      // 2. Gọi Groq Whisper / file transcript API (/api/groq)
-      if (clipSentences.length === 0) {
+      // 2. Dự phòng: Nếu Backend offline, kiểm tra cache trong thư viện video (videoLibrary) nếu đã từng phân tích
+      if (clipSegments.length === 0) {
+        const matchedLib = libVideos.find(
+          (v) =>
+            (v.name && v.name.toLowerCase() === clip.fileName.toLowerCase()) ||
+            (v.lesson && v.lesson.toLowerCase() === clip.title.toLowerCase()) ||
+            (v.title && v.title.toLowerCase() === clip.title.toLowerCase())
+        );
+
+        if (matchedLib?.segments && matchedLib.segments.length > 0) {
+          clipSegments = matchedLib.segments;
+          clipSentences = matchedLib.transcript?.sentences || [];
+        } else if (matchedLib?.transcript?.sentences && matchedLib.transcript.sentences.length > 0) {
+          clipSentences = matchedLib.transcript.sentences;
+        }
+      }
+
+      // 3. Dự phòng: Gọi route handler /api/groq nếu vẫn chưa có phân đoạn
+      if (clipSegments.length === 0) {
         try {
           const groqFormData = new FormData();
           groqFormData.append("videoName", clip.fileName);
@@ -1269,30 +1288,15 @@ export default function Home() {
 
           if (groqResp.ok) {
             const groqJson = await groqResp.json();
-            if (groqJson.transcript?.sentences && groqJson.transcript.sentences.length > 0) {
+            if (groqJson.segmentsData?.segments && groqJson.segmentsData.segments.length > 0) {
+              clipSegments = groqJson.segmentsData.segments;
+            }
+            if (clipSentences.length === 0 && groqJson.transcript?.sentences && groqJson.transcript.sentences.length > 0) {
               clipSentences = groqJson.transcript.sentences;
-              clipSegments = groqJson.segmentsData?.segments || [];
             }
           }
         } catch (groqErr) {
           console.warn(`Groq API warning cho video "${clip.fileName}":`, groqErr);
-        }
-      }
-
-      // 3. Gọi Backend AI Spring Boot (/api/video/analyze)
-      if (clipSentences.length === 0) {
-        try {
-          const res = await analyzeVideoBackend({
-            videoName: clip.fileName,
-            lesson: clip.title,
-            duration: clipDur,
-          });
-          if (res.source === "api" && res.data?.transcript?.sentences) {
-            clipSentences = res.data.transcript.sentences;
-            clipSegments = res.data.segmentsData?.segments || [];
-          }
-        } catch (backendErr) {
-          console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
         }
       }
 

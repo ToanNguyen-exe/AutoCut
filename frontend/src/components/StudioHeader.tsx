@@ -118,17 +118,13 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Nút Phân Tích AI / Chạy Lại AI */}
+          {/* Nút Phân Tích AI để phân đoạn */}
           {onAnalyzeAI && (
             <button
               onClick={onAnalyzeAI}
               disabled={isAnalyzing}
-              title="Phân tích nội dung video, trích xuất âm thanh và bóc băng lời thoại bằng AI"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition shadow-2xs cursor-pointer ${
-                data.mode === "raw"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-200"
-                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title="Phân tích AI để phân đoạn video"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition shadow-2xs cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAnalyzing ? (
                 <div className="flex items-center gap-1.5">
@@ -143,8 +139,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 </div>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-200" />
-                  <span>{data.mode === "raw" ? "Phân tích AI" : "Chạy lại AI"}</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Phân tích AI</span>
                 </>
               )}
             </button>

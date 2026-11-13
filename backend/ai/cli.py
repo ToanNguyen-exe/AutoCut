@@ -459,6 +459,7 @@ def main():
     if args.refine:
         print("[*] Gemini Refiner: BẬT (Whisper bóc băng ➔ Gemini sửa chính tả & tách câu đơn S0001, S0002...)")
 
+    whisper_start = time.perf_counter()
     if args.engine == "groq":
         from .groq_service import transcribe_with_groq
         res = transcribe_with_groq(args.input, output_file=target_output)

@@ -11,9 +11,9 @@
     "topic" : "Giới thiệu chủ đề và khách mời",
     "slug" : "gioi-thieu-chu-de-va-khach-moi",
     "start_id" : "S0001",
-    "end_id" : "S0017",
+    "end_id" : "S0046",
     "start" : 0.0,
-    "end" : 125.82,
+    "end" : 123.72,
     "parts" : [ {
       "part" : 1,
       "start" : 0.0,
@@ -23,121 +23,87 @@
   }, {
     "id" : "seg_ai_02",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-lo-trinh-web3",
+    "section" : "02_ly-thuyet-lo-trinh",
     "topic_no" : 1,
-    "topic" : "Lựa chọn hệ sinh thái blockchain",
-    "slug" : "lua-chon-he-sinh-thai-blockchain",
-    "start_id" : "S0018",
-    "end_id" : "S0046",
-    "start" : 125.82,
-    "end" : 303.14,
+    "topic" : "Hệ sinh thái blockchain và các tiêu chí đánh giá",
+    "slug" : "he-sinh-thai-blockchain-va-tieu-chi-danh-gia",
+    "start_id" : "S0047",
+    "end_id" : "S0123",
+    "start" : 123.72,
+    "end" : 379.56,
     "parts" : [ {
       "part" : 1,
       "start" : 125.82,
-      "end" : 303.14,
-      "file" : "01_lua-chon-he-sinh-thai-blockchain.mp4"
+      "end" : 379.56,
+      "file" : "01_he-sinh-thai-blockchain-va-tieu-chi-danh-gia.mp4"
     } ]
   }, {
     "id" : "seg_ai_03",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-lo-trinh-web3",
+    "section" : "02_ly-thuyet-lo-trinh",
     "topic_no" : 2,
-    "topic" : "Xây dựng nền tảng Web2 và Backend",
-    "slug" : "xay-dung-nen-tang-web2-va-backend",
-    "start_id" : "S0047",
-    "end_id" : "S0080",
-    "start" : 303.14,
-    "end" : 517.22,
+    "topic" : "Lựa chọn ngôn ngữ lập trình cho Web3",
+    "slug" : "lua-chon-ngon-ngu-lap-trinh-cho-web3",
+    "start_id" : "S0124",
+    "end_id" : "S0236",
+    "start" : 379.56,
+    "end" : 732.96,
     "parts" : [ {
       "part" : 1,
-      "start" : 303.14,
-      "end" : 517.22,
-      "file" : "02_xay-dung-nen-tang-web2-va-backend.mp4"
+      "start" : 379.56,
+      "end" : 732.96,
+      "file" : "02_lua-chon-ngon-ngu-lap-trinh-cho-web3.mp4"
     } ]
   }, {
     "id" : "seg_ai_04",
     "section_no" : 2,
-    "section" : "02_ly-thuyet-lo-trinh-web3",
+    "section" : "02_ly-thuyet-lo-trinh",
     "topic_no" : 3,
-    "topic" : "Ngôn ngữ Smart Contract: Solidity và Rust",
-    "slug" : "ngon-ngu-smart-contract-solidity-va-rust",
-    "start_id" : "S0081",
-    "end_id" : "S0124",
-    "start" : 517.22,
-    "end" : 674.42,
+    "topic" : "Framework và định hướng tham gia Hackathon",
+    "slug" : "framework-va-dinh-huong-tham-gia-hackathon",
+    "start_id" : "S0237",
+    "end_id" : "S0327",
+    "start" : 732.96,
+    "end" : 968.59,
     "parts" : [ {
       "part" : 1,
-      "start" : 517.22,
-      "end" : 674.42,
-      "file" : "03_ngon-ngu-smart-contract-solidity-va-rust.mp4"
+      "start" : 732.96,
+      "end" : 968.59,
+      "file" : "03_framework-va-dinh-huong-tham-gia-hackathon.mp4"
     } ]
   }, {
     "id" : "seg_ai_05",
-    "section_no" : 2,
-    "section" : "02_ly-thuyet-lo-trinh-web3",
-    "topic_no" : 4,
-    "topic" : "Framework và chiến lược tham gia Hackathon",
-    "slug" : "framework-va-chien-luoc-tham-gia-hackathon",
-    "start_id" : "S0125",
-    "end_id" : "S0190",
-    "start" : 674.42,
-    "end" : 917.67,
+    "section_no" : 3,
+    "section" : "03_hoi-dap-tong-ket",
+    "topic_no" : 1,
+    "topic" : "Giải đáp thắc mắc về thị trường blockchain tại Việt Nam",
+    "slug" : "giai-dap-thac-mac-ve-thi-truong-blockchain-tai-v",
+    "start_id" : "S0328",
+    "end_id" : "S0507",
+    "start" : 968.59,
+    "end" : 1257.93,
     "parts" : [ {
       "part" : 1,
-      "start" : 674.42,
-      "end" : 917.67,
-      "file" : "04_framework-va-chien-luoc-tham-gia-hackathon.mp4"
+      "start" : 968.59,
+      "end" : 1257.93,
+      "file" : "01_giai-dap-thac-mac-ve-thi-truong-blockchain-tai-v.mp4"
     } ]
   }, {
     "id" : "seg_ai_06",
     "section_no" : 3,
-    "section" : "03_hoi-dap-dinh-huong-nghe-nghiep",
-    "topic_no" : 1,
-    "topic" : "Giải đáp thắc mắc về thị trường việc làm blockchain",
-    "slug" : "giai-dap-thac-mac-ve-thi-truong-viec-lam",
-    "start_id" : "S0191",
-    "end_id" : "S0278",
-    "start" : 917.67,
-    "end" : 1192.87,
-    "parts" : [ {
-      "part" : 1,
-      "start" : 917.67,
-      "end" : 1192.87,
-      "file" : "01_giai-dap-thac-mac-ve-thi-truong-viec-lam.mp4"
-    } ]
-  }, {
-    "id" : "seg_ai_07",
-    "section_no" : 3,
-    "section" : "03_hoi-dap-dinh-huong-nghe-nghiep",
+    "section" : "03_hoi-dap-tong-ket",
     "topic_no" : 2,
-    "topic" : "Lời khuyên thực tập và cơ hội toàn cầu",
-    "slug" : "loi-khuyen-thuc-tap-va-co-hoi-toan-cau",
-    "start_id" : "S0279",
-    "end_id" : "S0365",
-    "start" : 1192.87,
-    "end" : 1328.41,
-    "parts" : [ {
-      "part" : 1,
-      "start" : 1192.87,
-      "end" : 1328.41,
-      "file" : "02_loi-khuyen-thuc-tap-va-co-hoi-toan-cau.mp4"
-    } ]
-  }, {
-    "id" : "seg_ai_08",
-    "section_no" : 3,
-    "section" : "03_hoi-dap-dinh-huong-nghe-nghiep",
-    "topic_no" : 3,
-    "topic" : "Gửi CV và kinh nghiệm vượt qua khó khăn",
-    "slug" : "gui-cv-va-kinh-nghiem-vuot-qua-kho-khan",
-    "start_id" : "S0366",
-    "end_id" : "S0458",
-    "start" : 1328.41,
+    "topic" : "Cơ hội thực tập, tìm kiếm việc làm và lời khuyên tổng kết",
+    "slug" : "co-hoi-thuc-tap-tim-kiem-viec-lam-va-loi-khuyen",
+    "start_id" : "S0508",
+    "end_id" : "S0649",
+    "start" : 1257.93,
     "end" : 1479.46,
     "parts" : [ {
       "part" : 1,
-      "start" : 1328.41,
+      "start" : 1257.93,
       "end" : 1479.46,
-      "file" : "03_gui-cv-va-kinh-nghiem-vuot-qua-kho-khan.mp4"
+      "file" : "02_co-hoi-thuc-tap-tim-kiem-viec-lam-va-loi-khuyen.mp4"
     } ]
   } ]
 }

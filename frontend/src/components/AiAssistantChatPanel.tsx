@@ -424,17 +424,17 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
             onClick={onAnalyzeAI}
             disabled={isAnalyzing}
             className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-            title="Chạy Whisper AI để phân tích video và bóc băng toàn bộ câu thoại"
+            title="Phân tích AI để phân đoạn video"
           >
             {isAnalyzing ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Đang chạy...</span>
+                <span>Đang phân tích...</span>
               </>
             ) : (
               <>
-                <Zap className="w-3.5 h-3.5" />
-                <span>Chạy AI</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Phân tích AI</span>
               </>
             )}
           </button>
