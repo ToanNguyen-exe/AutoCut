@@ -228,12 +228,24 @@ class TranscriptRefiner:
                 resuming = False
                 target_sentences.append(s)
 
-        batches = self._build_char_batches(target_sentences, max_chars=6000, max_items=25)
+        batch_max_items = 60 if len(target_sentences) > 200 else 25
+        batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
+        batches = self._build_char_batches(target_sentences, max_chars=batch_max_chars, max_items=batch_max_items)
         total_batches = len(batches)
         refined_items: List[dict] = list(prefix_items)
         refine_start_wall = time.perf_counter()
+        consecutive_failures = 0
 
         for b_idx, batch in enumerate(batches, start=1):
+            ex_models = getattr(self, "exhausted_models", None)
+            try_models = getattr(self, "models_to_try", [])
+            if consecutive_failures >= 2 or (ex_models and len(ex_models) >= len(try_models)):
+                for orig_s in batch:
+                    refined_items.extend(
+                        split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
+                    )
+                continue
+
             batch_data = [{"id": s.id, "text": s.text} for s in batch]
 
             elapsed_ref = time.perf_counter() - refine_start_wall
@@ -356,6 +368,7 @@ DANH SÁCH ĐẦU VÀO:
                             })
                         extracted_batch_items.sort(key=lambda x: x["start"])
                     refined_items.extend(extracted_batch_items)
+                    consecutive_failures = 0
                 else:
                     for orig_s in batch:
                         refined_items.extend(
@@ -363,6 +376,7 @@ DANH SÁCH ĐẦU VÀO:
                         )
 
             except Exception as e:
+                consecutive_failures += 1
                 log_ai_api_error(logger, f"REFINER lo {b_idx}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
                 for orig_s in batch:
                     refined_items.extend(
@@ -618,12 +632,14 @@ DANH SÁCH CÂU TRANSCRIPT:
                     remaining_count = max(1, len(raw_topics) - idx + 1)
                     raw_end = seg_start + (total_duration - seg_start) / remaining_count
                 max_allowed = total_duration - (len(raw_topics) - idx)
-                seg_end = round(max(seg_start + 1.0, min(max_allowed, raw_end)), 2)
+                min_step = 5.0 if total_duration > 30.0 else 1.0
+                seg_end = round(max(seg_start + min_step, min(max_allowed, raw_end)), 2)
 
             if seg_end > total_duration:
                 seg_end = total_duration
             if seg_end <= seg_start:
-                seg_end = round(seg_start + 1.0, 2)
+                min_step = 5.0 if total_duration > 30.0 else 1.0
+                seg_end = round(min(total_duration, seg_start + min_step), 2)
             running_start = seg_end
 
             section_no = int(item.get("section_no") or idx)
@@ -730,12 +746,39 @@ DANH SÁCH CÂU TRANSCRIPT:
                     p_start = p_end
                     p_idx += 1
 
+        # Loại bỏ triệt để các phân đoạn ngắn vô nghĩa (< 5s hoặc 1s gây chật chỗ trên timeline)
+        clean_segments: List[Dict[str, Any]] = []
+        for s in segments_out:
+            dur = s["end"] - s["start"]
+            if dur < 5.0 and clean_segments and total_duration > 15.0:
+                prev = clean_segments[-1]
+                prev["end"] = s["end"]
+                prev["end_id"] = s["end_id"]
+                if prev.get("parts"):
+                    prev["parts"][-1]["end"] = s["end"]
+            else:
+                clean_segments.append(s)
+
+        if len(clean_segments) > 1 and (clean_segments[0]["end"] - clean_segments[0]["start"]) < 5.0 and total_duration > 15.0:
+            first = clean_segments.pop(0)
+            clean_segments[0]["start"] = first["start"]
+            clean_segments[0]["start_id"] = first["start_id"]
+            if clean_segments[0].get("parts"):
+                clean_segments[0]["parts"][0]["start"] = first["start"]
+
+        for idx, seg in enumerate(clean_segments, start=1):
+            seg["id"] = f"seg_ai_{idx:02d}"
+            seg["topic_no"] = idx
+            if seg.get("parts") and len(seg["parts"]) == 1:
+                seg["parts"][0]["start"] = seg["start"]
+                seg["parts"][0]["end"] = seg["end"]
+
         return {
             "video": transcript.video,
             "lesson": lesson_name,
             "mode": "analyzed",
             "reviewed": False,
-            "segments": segments_out
+            "segments": clean_segments
         }
 
     @staticmethod

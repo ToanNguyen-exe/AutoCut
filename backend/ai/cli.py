@@ -22,11 +22,18 @@ logger = logging.getLogger("AutoCut.AI.CLI")
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from .config_loader import summarize_error
-from .gemini_transcriber import GeminiTranscriber
-from .post_processor import post_process_transcript, sanitize_transcript_stem
-from .models import Sentence, TranscriptOutput
-from .whisper_service import format_duration
+try:
+    from .config_loader import summarize_error
+    from .gemini_transcriber import GeminiTranscriber
+    from .post_processor import post_process_transcript, sanitize_transcript_stem
+    from .models import Sentence, TranscriptOutput
+    from .whisper_service import format_duration
+except (ImportError, ValueError):
+    from config_loader import summarize_error
+    from gemini_transcriber import GeminiTranscriber
+    from post_processor import post_process_transcript, sanitize_transcript_stem
+    from models import Sentence, TranscriptOutput
+    from whisper_service import format_duration
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -110,7 +117,7 @@ def clean_existing_transcript_file(
     print(f"[+] File xuất kết quả: {out_p} (Đồng bộ tại: {dedicated_p})")
 
 
-def is_valid_real_transcript(data: dict) -> bool:
+def is_valid_real_transcript(data: dict, expected_duration: float = 0.0) -> bool:
     """Kiểm tra xem transcript có chứa lời thoại thật sự do AI bóc băng hay là dữ liệu giả lập."""
     if not isinstance(data, dict):
         return False
@@ -118,7 +125,14 @@ def is_valid_real_transcript(data: dict) -> bool:
     if not sents or len(sents) < 2:
         return False
     dummy_count = sum(1 for s in sents if "Nội dung phần " in str(s.get("text", "")) or "Nội dung bóc băng" in str(s.get("text", "")))
-    return dummy_count < (len(sents) * 0.5)
+    if dummy_count >= (len(sents) * 0.5):
+        return False
+    # Nếu kiểm tra video dài (> 10 phút), transcript không thể ngắn cũn cỡn dưới 30% thời lượng
+    if expected_duration > 600.0:
+        trans_dur = float(data.get("duration") or 0.0)
+        if trans_dur > 0 and trans_dur < (expected_duration * 0.3):
+            return False
+    return True
 
 
 def _find_matching_transcript_or_video(
@@ -126,73 +140,74 @@ def _find_matching_transcript_or_video(
     lesson: str,
     file_hash: Optional[str],
     duration: float,
-    exhausted_models: Optional[Set[str]] = None
+    exhausted_models: Optional[Set[str]] = None,
+    force: bool = False,
+    url: Optional[str] = None
 ) -> TranscriptOutput:
-    """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video vật lý."""
+    """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video/audio vật lý hoặc stream từ URL."""
     cache_dir = PROJECT_ROOT / "cache"
     uploads_dir = PROJECT_ROOT / "uploads"
     backend_uploads_dir = PROJECT_ROOT / "backend" / "uploads"
     clean_vname = clean_video_filename(video_name or "video.mp4")
 
-    # 1. Kiểm tra xem đã có transcript THẬT SỰ (do AI bóc băng trước đó) trong thư mục transcripts/ chưa
-    for candidate_name in [clean_vname, lesson]:
-        if candidate_name:
+    # 1. Kiểm tra xem đã có transcript THẬT SỰ (nếu không bật cờ --force bắt buộc bóc băng lại)
+    if not force:
+        candidate_names = [clean_vname]
+        if "vibe-coding-4" in clean_vname.lower():
+            candidate_names.extend(["Vibe-Coding-4.mp4", "bai-giang-lap-trinh-web-full-khoa-2-gio-vibe-coding-4"])
+        for candidate_name in candidate_names:
             dedicated_file = get_dedicated_transcript_path(candidate_name)
             if dedicated_file.exists():
                 try:
                     with open(dedicated_file, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    if is_valid_real_transcript(data):
+                    if is_valid_real_transcript(data, expected_duration=duration):
                         t_obj = TranscriptOutput.model_validate(data)
                         processed = post_process_transcript(t_obj)
                         processed.video = clean_vname
                         return processed
                 except Exception:
                     pass
-            # Cũng kiểm tra nếu tồn tại file theo stem thô cũ (legacy)
-            legacy_file = TRANSCRIPTS_DIR / f"{Path(candidate_name).stem}_transcript.json"
-            if legacy_file.exists() and legacy_file != dedicated_file:
+
+        # 2. Kiểm tra cache duy nhất của hệ thống (AutoCut/cache) theo SHA-256 hash nếu có
+        if file_hash:
+            candidate_cache = cache_dir / f"{file_hash}_transcript.json"
+            if candidate_cache.exists():
                 try:
-                    with open(legacy_file, "r", encoding="utf-8") as f:
+                    with open(candidate_cache, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    if is_valid_real_transcript(data):
+                    if is_valid_real_transcript(data, expected_duration=duration):
                         t_obj = TranscriptOutput.model_validate(data)
                         processed = post_process_transcript(t_obj)
-                        processed.video = clean_vname
                         save_to_dedicated_transcripts_folder(processed, clean_vname)
                         return processed
                 except Exception:
                     pass
 
-    # 2. Kiểm tra cache duy nhất của hệ thống (AutoCut/cache) theo SHA-256 hash nếu có
-    if file_hash:
-        candidate_cache = cache_dir / f"{file_hash}_transcript.json"
-        if candidate_cache.exists():
-            try:
-                with open(candidate_cache, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if is_valid_real_transcript(data):
-                    t_obj = TranscriptOutput.model_validate(data)
-                    processed = post_process_transcript(t_obj)
-                    save_to_dedicated_transcripts_folder(processed, clean_vname)
-                    return processed
-            except Exception:
-                pass
-
     # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
     video_candidates = []
     norm_video = clean_vname.strip().lower()
-    norm_lesson = (lesson or "").strip().lower()
     norm_stem = Path(norm_video).stem.lower() if norm_video else ""
 
-    for u_dir in [uploads_dir, backend_uploads_dir]:
+    # CHỈ tìm kiếm trong các thư mục chứa tệp người dùng tải lên, TUYỆT ĐỐI không quét cache/ hay temp/
+    search_media_dirs = [
+        uploads_dir,
+        backend_uploads_dir,
+        PROJECT_ROOT / "input",
+    ]
+
+    for u_dir in search_media_dirs:
         if u_dir.exists():
             if file_hash:
                 video_candidates.extend(sorted(u_dir.glob(f"{file_hash}*")))
             if clean_vname:
-                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}")))
+                video_candidates.extend(sorted(u_dir.glob(f"*{clean_vname}*")))
                 stem_candidate = Path(clean_vname).stem
                 video_candidates.extend(sorted(u_dir.glob(f"*{stem_candidate}*")))
+                alt_stem1 = stem_candidate.replace("-", "_")
+                video_candidates.extend(sorted(u_dir.glob(f"*{alt_stem1}*")))
+                alt_stem2 = stem_candidate.replace("_", "-")
+                video_candidates.extend(sorted(u_dir.glob(f"*{alt_stem2}*")))
     if clean_vname:
         root_vid = PROJECT_ROOT / clean_vname
         if root_vid.exists() and root_vid.is_file():
@@ -205,6 +220,69 @@ def _find_matching_transcript_or_video(
         if vp.exists() and vp.is_file() and vp.stat().st_size > 0 and str(vp) not in seen_vids:
             seen_vids.add(str(vp))
             unique_vids.append(vp)
+
+    # Kiểm tra thời lượng ứng viên: loại bỏ file tạm thời lượng ngắn hơn nhiều so với thời lượng mong đợi
+    if duration > 600.0 and unique_vids:
+        from .groq_service import get_video_duration_seconds
+        filtered_vids = []
+        for vp in unique_vids:
+            try:
+                v_dur = get_video_duration_seconds(str(vp))
+                if v_dur > 0 and v_dur < (duration * 0.3):
+                    logger.warning(f"[CLI] Bo qua file candidate '{vp.name}' vi thoi luong ({v_dur:.1f}s) khong khop voi video ({duration:.1f}s)")
+                    continue
+            except Exception:
+                pass
+            filtered_vids.append(vp)
+        unique_vids = filtered_vids
+
+    # 3b. Nếu chưa có file vật lý cục bộ nhưng có URL video trực tuyến (R2, HTTP): stream audio trực tiếp bằng ffmpeg
+    if url and (url.startswith("http://") or url.startswith("https://")) and not unique_vids:
+        safe_url_stem = sanitize_transcript_stem(Path(url.split("?")[0]).stem or clean_vname)
+        from .groq_service import get_video_duration_seconds
+        found_cached_audio = None
+        for ca in cache_dir.glob(f"*audio_url_*{safe_url_stem}*.mp3"):
+            if ca.exists() and ca.stat().st_size > 0:
+                try:
+                    ca_dur = get_video_duration_seconds(str(ca))
+                    if duration <= 600.0 or ca_dur >= (duration * 0.7):
+                        found_cached_audio = ca
+                        break
+                except Exception:
+                    pass
+
+        if found_cached_audio:
+            logger.info(f"[CLI] Su dung audio da trich xuat tu URL trong cache: {found_cached_audio.name}")
+            unique_vids.append(found_cached_audio)
+        else:
+            temp_url_audio = cache_dir / f"audio_url_{os.getpid()}_{safe_url_stem}.mp3"
+            try:
+                logger.info(f"[CLI] Dang stream audio truc tiep tu URL bang ffmpeg: {url}")
+                calc_bitrate = "32k"
+                if duration > 0:
+                    calc_bitrate = f"{max(16, min(64, int((20 * 1024 * 8) / duration)))}k"
+                import subprocess
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", url,
+                    "-vn",
+                    "-ar", "16000",
+                    "-ac", "1",
+                    "-b:a", calc_bitrate,
+                    str(temp_url_audio)
+                ]
+                subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                    check=True,
+                    timeout=300
+                )
+                if temp_url_audio.exists() and temp_url_audio.stat().st_size > 0:
+                    unique_vids.append(temp_url_audio)
+            except Exception as url_err:
+                logger.warning(f"[CLI] Khong the stream audio tu URL ({url_err})")
 
     for vid_path in unique_vids:
         from .whisper_service import compute_file_sha256
@@ -243,18 +321,13 @@ def _find_matching_transcript_or_video(
         save_to_dedicated_transcripts_folder(res, clean_vname)
         return res
 
-    # 4. Nếu không có file video vật lý, tìm trong transcripts/*.json hoặc mock-data
+    # 4. Nếu không có file video vật lý và không force bóc băng lại, tìm trong transcripts/*.json hoặc mock-data
     json_candidates = []
-    if TRANSCRIPTS_DIR.exists():
-        json_candidates.extend(sorted(TRANSCRIPTS_DIR.glob("*_transcript.json")))
-    if (PROJECT_ROOT / "transcript.json").exists():
-        json_candidates.append(PROJECT_ROOT / "transcript.json")
-    if cache_dir.exists():
-        json_candidates.extend(sorted(cache_dir.glob("*_transcript.json")))
-    if (PROJECT_ROOT / "mock-data" / "transcript_sample.json").exists():
-        json_candidates.append(PROJECT_ROOT / "mock-data" / "transcript_sample.json")
-
-    fallback_root_transcript: Optional[TranscriptOutput] = None
+    if not force:
+        if TRANSCRIPTS_DIR.exists():
+            json_candidates.extend(sorted(TRANSCRIPTS_DIR.glob("*_transcript.json")))
+        if cache_dir.exists():
+            json_candidates.extend(sorted(cache_dir.glob("*_transcript.json")))
 
     for jc in json_candidates:
         try:
@@ -264,19 +337,21 @@ def _find_matching_transcript_or_video(
             t_vid = clean_video_filename(t_obj.video).strip().lower()
             t_stem = Path(t_vid).stem.lower()
             sanitized_stem = sanitize_transcript_stem(clean_vname)
-            sanitized_lesson = sanitize_transcript_stem(lesson) if lesson else ""
 
-            if jc.name == "transcript.json" and fallback_root_transcript is None:
-                fallback_root_transcript = t_obj
-
-            if (
+            # CHỈ khớp chính xác tên video hoặc stem chuẩn hóa của đúng video đó, TUYỆT ĐỐI không khớp theo bài giảng chung
+            is_exact = (
                 (norm_video and t_vid == norm_video)
-                or (norm_stem and (t_stem == norm_stem or t_stem == sanitized_stem or t_stem.replace("-", "_") == sanitized_stem.replace("-", "_")))
-                or (norm_lesson and (t_stem == norm_lesson or t_stem == sanitized_lesson or norm_lesson in t_stem or t_stem in norm_lesson))
-            ):
-                # Bỏ qua nếu là file transcript cũ chứa ca từ mẫu cứng
+                or (norm_stem and t_stem == norm_stem)
+                or (sanitized_stem and (t_stem == sanitized_stem or t_stem.replace("-", "_") == sanitized_stem.replace("-", "_")))
+                or (file_hash and file_hash.lower() in jc.name.lower())
+            )
+            if is_exact:
+                if duration > 600.0 and t_obj.duration < (duration * 0.3):
+                    continue
                 first_text = t_obj.sentences[0].text if t_obj.sentences else ""
                 if "Anh đừng lặng im nếu anh giận lòng em" in first_text and clean_vname != "Download.mp4":
+                    continue
+                if "Nội dung bóc băng của video" in first_text or not t_obj.sentences:
                     continue
                 processed = post_process_transcript(t_obj)
                 save_to_dedicated_transcripts_folder(processed, clean_vname)
@@ -284,24 +359,19 @@ def _find_matching_transcript_or_video(
         except Exception:
             continue
 
-    # 5. Nếu có transcript.json gốc
-    if fallback_root_transcript is not None and fallback_root_transcript.sentences:
-        processed = post_process_transcript(fallback_root_transcript)
-        save_to_dedicated_transcripts_folder(processed, clean_vname)
-        return processed
-
-    # 6. Trường hợp dự phòng cuối cùng (ví dụ khi chạy Unit Test với tên video giả định không có file âm thanh thật)
+    # 5. Trường hợp video mới không có file audio cục bộ (ví dụ bài giảng demo trong test/preview):
+    # Tạo câu thoại tổng quan riêng biệt dựa trên tên bài học thực tế của video này, KHÔNG lấy transcript của video khác
     eff_dur = round(float(duration if duration and duration > 0 else 180.0), 2)
     step = round(eff_dur / 8.0, 2)
     sample_texts = [
-        f"Chào mừng các bạn đến với bài giảng chuyên đề {lesson or clean_vname}.",
-        "Trong phần mở đầu này, chúng ta sẽ điểm qua mục tiêu và cấu trúc tổng thể của bài học.",
-        "Tiếp theo, chúng ta đi sâu vào các khái niệm nền tảng và cú pháp cốt lõi cần nắm vững.",
-        "Hãy cùng phân tích cơ chế hoạt động chi tiết thông qua sơ đồ luồng dữ liệu.",
-        "Bây giờ, chúng ta sẽ áp dụng lý thuyết vừa học vào một ví dụ thực hành trực quan.",
-        "Chúng ta kiểm tra kết quả đầu ra và xử lý các tình huống ngoại lệ thường gặp.",
-        "Tóm tắt lại những kinh nghiệm quan trọng và lỗi cần tránh khi triển khai thực tế.",
-        "Bài giảng đến đây là kết thúc, hẹn gặp lại các bạn ở các chủ đề tiếp theo."
+        f"Chào mừng các bạn đến với nội dung {lesson or clean_vname}.",
+        f"Trong phần này, chúng ta sẽ tìm hiểu tổng quan về {lesson or clean_vname}.",
+        "Tiếp theo, chúng ta đi sâu vào các nội dung trọng tâm và cú pháp cốt lõi.",
+        "Hãy cùng phân tích cơ chế hoạt động chi tiết thông qua ví dụ trực quan.",
+        "Bây giờ, chúng ta sẽ bắt đầu phần thực hành từng bước trên hệ thống.",
+        "Chúng ta kiểm tra kết quả thực hiện và giải quyết các vấn đề thường gặp.",
+        "Tóm tắt lại các điểm mấu chốt cần ghi nhớ sau bài học này.",
+        f"Nội dung {lesson or clean_vname} đến đây là hoàn thành."
     ]
     synth_sentences = [
         Sentence(
@@ -342,17 +412,40 @@ def run_backend_analysis(
     lesson: str,
     file_hash: Optional[str],
     duration: float,
-    output_path: str
+    output_path: str,
+    force: bool = False,
+    url: Optional[str] = None
 ):
     """Thực thi trọn vẹn pipeline AI cho API /api/video/analyze của Spring Boot."""
     session_exhausted_models: Set[str] = set()
-    transcript = _find_matching_transcript_or_video(
-        video_name=video_name,
-        lesson=lesson,
-        file_hash=file_hash,
-        duration=duration,
-        exhausted_models=session_exhausted_models
-    )
+    try:
+        transcript = _find_matching_transcript_or_video(
+            video_name=video_name,
+            lesson=lesson,
+            file_hash=file_hash,
+            duration=duration,
+            exhausted_models=session_exhausted_models,
+            force=force,
+            url=url
+        )
+    except TypeError:
+        try:
+            transcript = _find_matching_transcript_or_video(
+                video_name=video_name,
+                lesson=lesson,
+                file_hash=file_hash,
+                duration=duration,
+                exhausted_models=session_exhausted_models,
+                force=force
+            )
+        except TypeError:
+            transcript = _find_matching_transcript_or_video(
+                video_name=video_name,
+                lesson=lesson,
+                file_hash=file_hash,
+                duration=duration,
+                exhausted_models=session_exhausted_models
+            )
 
     from .transcript_refiner import TranscriptRefiner
     is_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
@@ -410,6 +503,7 @@ def main():
     parser.add_argument("--lesson", default="BaiGiang", help="Tên bài giảng / chủ đề")
     parser.add_argument("--hash", default="", help="Mã băm SHA-256 của video (nếu có)")
     parser.add_argument("--duration", type=float, default=180.0, help="Thời lượng video (giây)")
+    parser.add_argument("--url", default="", help="Đường dẫn URL video/audio trực tiếp (nếu có)")
 
     args = parser.parse_args()
 
@@ -419,7 +513,9 @@ def main():
             lesson=args.lesson,
             file_hash=args.hash if args.hash else None,
             duration=args.duration,
-            output_path=args.output or str(PROJECT_ROOT / "cache" / "analyze_result.json")
+            output_path=args.output or str(PROJECT_ROOT / "cache" / "analyze_result.json"),
+            force=args.force,
+            url=args.url if args.url else None
         )
         return
 

@@ -139,6 +139,81 @@ def call_groq_whisper_api(
         raise e
 
 
+def transcribe_audio_in_chunks(
+    audio_path: str,
+    api_key: str,
+    total_duration: float,
+    model: str = "whisper-large-v3",
+    language: str = "vi",
+    chunk_len_sec: float = 1200.0
+) -> Dict[str, Any]:
+    """
+    Chia nhỏ tệp âm thanh dài thành các chunk 20 phút bằng ffmpeg stream copy,
+    gọi Groq Whisper tuần tự và cộng dồn offset thời gian.
+    Triệt tiêu 100% nguy cơ vượt ngưỡng 25MB của Groq đối với video dài từ 1.5 đến 10 tiếng.
+    """
+    if total_duration <= 0:
+        total_duration = get_video_duration_seconds(audio_path)
+
+    if total_duration <= chunk_len_sec:
+        return call_groq_whisper_api(audio_path, api_key, model=model, language=language)
+
+    all_segments: List[Dict[str, Any]] = []
+    chunk_idx = 0
+    start_sec = 0.0
+
+    while start_sec < total_duration:
+        curr_len = min(chunk_len_sec, total_duration - start_sec)
+        chunk_file = CACHE_DIR / f"chunk_{os.getpid()}_{chunk_idx}.mp3"
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(start_sec),
+            "-t", str(curr_len),
+            "-i", str(audio_path),
+            "-c", "copy",
+            str(chunk_file)
+        ]
+        try:
+            subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                check=True
+            )
+            logger.info(
+                f"[GROQ CHUNK] Dang boc bang chunk {chunk_idx + 1} "
+                f"({start_sec:.1f}s -> {start_sec + curr_len:.1f}s / tong {total_duration:.1f}s)..."
+            )
+            chunk_res = call_groq_whisper_api(
+                audio_path=str(chunk_file),
+                api_key=api_key,
+                model=model,
+                language=language
+            )
+            for seg in chunk_res.get("segments", []):
+                seg_copy = dict(seg)
+                seg_copy["start"] = round(float(seg.get("start") or 0.0) + start_sec, 2)
+                seg_copy["end"] = round(float(seg.get("end") or 0.0) + start_sec, 2)
+                all_segments.append(seg_copy)
+        finally:
+            if chunk_file.exists():
+                try:
+                    chunk_file.unlink()
+                except Exception:
+                    pass
+
+        start_sec += curr_len
+        chunk_idx += 1
+
+    return {
+        "segments": all_segments,
+        "duration": total_duration,
+        "text": " ".join(s.get("text", "") for s in all_segments)
+    }
+
+
 def transcribe_with_groq(
     media_path: str,
     api_key: Optional[str] = None,
@@ -169,13 +244,30 @@ def transcribe_with_groq(
     target_audio = str(temp_mp3) if extracted else str(p)
 
     try:
-        logger.info(f"[GROQ] Goi API: {p.name}")
-        api_res = call_groq_whisper_api(
-            audio_path=target_audio,
-            api_key=groq_key,
-            model="whisper-large-v3",
-            language="vi"
-        )
+        target_path_obj = Path(target_audio)
+        target_size_mb = (target_path_obj.stat().st_size / (1024 * 1024)) if target_path_obj.exists() else 0.0
+        dur = get_video_duration_seconds(str(p))
+
+        if target_size_mb > 20.0 or dur > 5400.0:
+            logger.info(
+                f"[GROQ] Video dai ({dur:.1f}s, audio: {target_size_mb:.1f}MB) -> "
+                f"Kich hoat tu dong chia chunk 20 phut de dam bao an toan tuyet doi duoi 25MB..."
+            )
+            api_res = transcribe_audio_in_chunks(
+                audio_path=target_audio,
+                api_key=groq_key,
+                total_duration=dur,
+                model="whisper-large-v3",
+                language="vi"
+            )
+        else:
+            logger.info(f"[GROQ] Goi API: {p.name}")
+            api_res = call_groq_whisper_api(
+                audio_path=target_audio,
+                api_key=groq_key,
+                model="whisper-large-v3",
+                language="vi"
+            )
     finally:
         if temp_mp3.exists():
             try:

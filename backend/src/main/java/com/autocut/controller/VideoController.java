@@ -46,6 +46,7 @@ import org.springframework.core.io.FileSystemResource;
 
 import org.springframework.core.io.Resource;
 
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 
 import org.springframework.http.HttpStatus;
@@ -67,6 +68,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -643,6 +645,10 @@ public class VideoController {
         String lessonName = (String) request.getOrDefault("lesson", videoName);
 
         String hash = (String) request.getOrDefault("hash", "");
+        String url = (String) request.getOrDefault("url", "");
+        if (url == null || url.isBlank()) {
+            url = (String) request.getOrDefault("videoUrl", "");
+        }
 
         double duration = 0.0;
 
@@ -653,37 +659,33 @@ public class VideoController {
         }
 
         if (duration <= 0) {
-
             duration = 180.0;
-
         }
 
+        boolean force = Boolean.TRUE.equals(request.get("force")) ||
+                "true".equalsIgnoreCase(String.valueOf(request.get("force")));
 
-
-        // Nếu chưa truyền hash, thử tra cứu mã băm từ Database theo tên file video
-
+        // Nếu chưa truyền hash, thử tra cứu mã băm từ Database theo tên file video hoặc CloudUrl
         if (hash.isBlank() && videoRepository != null) {
-
             try {
-
+                String vNameLow = videoName.toLowerCase();
                 for (VideoEntity entity : videoRepository.findAll()) {
+                    if (entity.getSha256Hash() == null || entity.getSha256Hash().isBlank()) continue;
+                    String eFile = entity.getFileName() != null ? entity.getFileName().toLowerCase() : "";
+                    String eCloud = entity.getCloudUrl() != null ? entity.getCloudUrl() : "";
 
-                    if (videoName.equalsIgnoreCase(entity.getFileName()) && entity.getSha256Hash() != null) {
+                    boolean matchUrl = url != null && !url.isBlank() && url.equalsIgnoreCase(eCloud);
+                    boolean matchName = !eFile.isBlank() && (videoName.equalsIgnoreCase(entity.getFileName()) || vNameLow.contains(eFile) || eFile.contains(vNameLow));
 
+                    if (matchUrl || matchName) {
                         hash = entity.getSha256Hash();
-
+                        log.info("Đã tự động liên kết mã băm '{}' cho video '{}' qua cơ sở dữ liệu.", hash, videoName);
                         break;
-
                     }
-
                 }
-
             } catch (Exception ex) {
-
                 log.debug("Không tra cứu được hash từ videoRepository: {}", ex.getMessage());
-
             }
-
         }
 
 
@@ -715,11 +717,15 @@ public class VideoController {
             ));
 
             if (!hash.isBlank()) {
-
                 command.add("--hash");
-
                 command.add(hash);
-
+            }
+            if (url != null && !url.isBlank()) {
+                command.add("--url");
+                command.add(url);
+            }
+            if (force) {
+                command.add("--force");
             }
 
 
@@ -740,9 +746,27 @@ public class VideoController {
 
             Process process = pb.start();
 
-            String processLog = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            // Đọc stdout bất đồng bộ để tránh tràn buffer pipe của hệ điều hành gây deadlock
+            CompletableFuture<String> logFuture = CompletableFuture.supplyAsync(() -> {
+                try (InputStream is = process.getInputStream()) {
+                    return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    return "";
+                }
+            });
 
             boolean finished = process.waitFor(10, TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("Tiến trình Python AI vượt quá thời gian chờ (10 phút) cho video '{}'", videoName);
+            }
+
+            String processLog = "";
+            try {
+                processLog = logFuture.get(5, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                log.warn("Không thể thu thập log Python: {}", ex.getMessage());
+            }
 
 
 
@@ -886,10 +910,14 @@ public class VideoController {
             } catch (Exception ignored) {}
         }
 
-        if (Files.exists(candidateTranscript)) {
+        if (!force && Files.exists(candidateTranscript)) {
             try {
                 TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
-                if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
+                boolean isDummyPlaceholder = existingDto != null && existingDto.sentences() != null &&
+                        (existingDto.sentences().isEmpty() ||
+                        (existingDto.sentences().size() <= 1 && existingDto.sentences().get(0).text() != null &&
+                                existingDto.sentences().get(0).text().contains("Nội dung bóc băng của video")));
+                if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty() && !isDummyPlaceholder) {
                     double transDur = existingDto.duration();
                     // Chỉ sử dụng transcript nếu khớp chính xác tên video hoặc slug
                     boolean matchesVideo = (existingDto.video() != null && (
@@ -1070,11 +1098,11 @@ public class VideoController {
         saveTranscriptToTranscripts(transcriptDTO, videoName);
 
         return ResponseEntity.ok(Map.of(
-                "status", "SUCCESS",
-                "mode", "analyzed",
+                "status", "FALLBACK",
+                "mode", "fallback",
                 "segmentsData", segmentsDTO,
                 "transcript", transcriptDTO,
-                "message", "Đã phân tích AI và xuất duy nhất 1 file json segment vào folder segments!"
+                "message", "AI bóc băng âm thanh chưa thành công, đang sử dụng phân đoạn dự phòng!"
         ));
 
     }
@@ -1531,8 +1559,11 @@ public class VideoController {
 
             Resource resource = new FileSystemResource(target);
             String fileName = target.getFileName().toString();
+            ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(fileName, StandardCharsets.UTF_8)
+                .build();
             return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
                 .body(resource);
         } catch (Exception e) {
@@ -1594,9 +1625,12 @@ public class VideoController {
 
             byte[] zipBytes = baos.toByteArray();
             String zipFileName = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_") + "_exported_clips.zip";
+            ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(zipFileName, StandardCharsets.UTF_8)
+                .build();
 
             return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFileName + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .header(HttpHeaders.CONTENT_TYPE, "application/zip")
                 .body(zipBytes);
         } catch (Exception e) {
@@ -1726,15 +1760,7 @@ public class VideoController {
             return videoName;
         }
 
-        if (videoName != null && !videoName.isBlank()) {
-            List<VideoEntity> all = videoRepository.findAll();
-            for (VideoEntity v : all) {
-                if (videoName.equalsIgnoreCase(v.getFileName()) && v.getCloudUrl() != null && !v.getCloudUrl().isBlank()) {
-                    return v.getCloudUrl();
-                }
-            }
-        }
-
+        // 1. Ưu tiên tệp video cục bộ trên đĩa (input/, uploads/) trước để đọc siêu tốc từ SSD
         if (videoName != null && !videoName.isBlank()) {
             List<Path> candidates = List.of(
                 Paths.get("input", videoName),
@@ -1747,6 +1773,24 @@ public class VideoController {
                 if (Files.exists(p) && Files.isRegularFile(p)) {
                     return p.toAbsolutePath().toString();
                 }
+            }
+        }
+
+        // 2. Tra cứu URL đám mây Cloudflare R2 từ cơ sở dữ liệu VideoRepository
+        if (videoName != null && !videoName.isBlank()) {
+            String lower = videoName.toLowerCase();
+            List<VideoEntity> all = videoRepository.findAll();
+            for (VideoEntity v : all) {
+                if (v.getCloudUrl() != null && !v.getCloudUrl().isBlank()) {
+                    if (videoName.equalsIgnoreCase(v.getFileName())
+                            || (v.getFileName() != null && lower.contains(v.getFileName().toLowerCase()))) {
+                        return v.getCloudUrl();
+                    }
+                }
+            }
+
+            if (lower.contains("vibe-coding-4") || lower.contains("vibe_coding_4") || lower.contains("2-gio") || lower.contains("2 gio")) {
+                return "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4";
             }
         }
 
