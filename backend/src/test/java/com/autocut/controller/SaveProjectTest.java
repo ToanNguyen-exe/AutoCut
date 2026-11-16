@@ -149,4 +149,36 @@ class SaveProjectTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         Assertions.assertEquals("SAVED", body.get("status"));
     }
+
+    @Test
+    @DisplayName("4. Nạp lại dự án đã lưu (GET /api/video/load) trả về đúng dữ liệu project và segments")
+    void testLoadProjectSuccess() {
+        Map<String, Object> payload = Map.of(
+                "user", "test_u01",
+                "lesson", "Bai05_VongLap",
+                "video", "Bai05_VongLap.mp4",
+                "segments", List.of(
+                        Map.of("id", "seg_1", "topic", "Tổng quan th:each", "start", 0.0, "end", 15.0)
+                )
+        );
+
+        controller.saveProject(payload);
+
+        ResponseEntity<?> loadResp = controller.loadProject("Bai05_VongLap", "test_u01", "Bai05_VongLap.mp4");
+        Assertions.assertEquals(HttpStatus.OK, loadResp.getStatusCode());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> loadBody = (Map<String, Object>) loadResp.getBody();
+        Assertions.assertNotNull(loadBody);
+        Assertions.assertEquals("SUCCESS", loadBody.get("status"));
+        Assertions.assertNotNull(loadBody.get("project"));
+        Assertions.assertNotNull(loadBody.get("segments"));
+    }
+
+    @Test
+    @DisplayName("5. Nạp dự án chưa từng lưu trả về HTTP 404 NOT_FOUND")
+    void testLoadProjectNotFound() {
+        ResponseEntity<?> loadResp = controller.loadProject("Bai_Chua_Luu_Never_Exist", "test_u01", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, loadResp.getStatusCode());
+    }
 }

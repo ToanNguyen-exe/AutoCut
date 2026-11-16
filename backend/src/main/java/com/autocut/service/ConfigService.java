@@ -149,6 +149,16 @@ public class ConfigService {
         return List.of("tiếp theo", "chuyển sang", "bây giờ chúng ta", "bài tập số");
     }
 
+    public double getPaddingStart() {
+        Object val = getSection("output").getOrDefault("padding_start", 0.3);
+        return ((Number) val).doubleValue();
+    }
+
+    public double getPaddingEnd() {
+        Object val = getSection("output").getOrDefault("padding_end", 0.5);
+        return ((Number) val).doubleValue();
+    }
+
     public Map<String, Object> getRawConfig() {
         return Collections.unmodifiableMap(configMap != null ? configMap : Collections.emptyMap());
     }

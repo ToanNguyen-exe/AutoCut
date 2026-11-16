@@ -15,6 +15,7 @@ public enum ErrorCode {
     TIMEOUT("Tiến trình chạy quá thời gian chờ cho phép (timeout)"),
     PROCESS_EXECUTION_FAILED("Không thể khởi chạy công cụ ffmpeg/ffprobe"),
     JSON_PARSE_ERROR("Không thể giải mã cấu trúc JSON từ ffprobe"),
+    INVALID_INPUT("Đầu vào không hợp lệ (null, rỗng hoặc thiếu tham số bắt buộc)"),
     UNKNOWN_ERROR("Lỗi không xác định");
 
     private final String description;

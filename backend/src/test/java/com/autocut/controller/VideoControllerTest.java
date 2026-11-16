@@ -70,6 +70,21 @@ class VideoControllerTest {
     }
 
     @Test
+    void testConcatVideos_EmptyClips() {
+        ResponseEntity<?> response = controller.concatVideos(Map.of("clips", List.of()));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void testConcatVideos_MissingClips() {
+        ResponseEntity<?> response = controller.concatVideos(Map.of(
+            "clips", List.of("missing_clip1.mp4", "missing_clip2.mp4"),
+            "output", "output/merged_test.mp4"
+        ));
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    @Test
     void testListVideos() {
         Mockito.when(videoRepository.findAll()).thenReturn(List.of(new VideoEntity("test.mp4", "hash123", "UPLOADED", 1024L)));
         ResponseEntity<List<VideoEntity>> response = controller.listVideos();

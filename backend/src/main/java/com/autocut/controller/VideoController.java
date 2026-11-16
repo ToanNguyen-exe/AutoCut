@@ -22,8 +22,12 @@ import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
 import com.autocut.service.CutPointService;
+import com.autocut.service.BatchVideoCutService;
+import com.autocut.service.SegmentPersistenceService;
 import com.autocut.dto.Models.CutPointsDTO;
 import com.autocut.dto.Models.CutPoint;
+import com.autocut.dto.Models.CutRequestDTO;
+import com.autocut.dto.Models.CutJobResponse;
 import java.io.File;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
@@ -54,21 +58,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
 import java.io.InputStream;
-
 import java.nio.charset.StandardCharsets;
-
 import java.nio.file.Files;
-
 import java.nio.file.Path;
-
 import java.nio.file.Paths;
-
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 
@@ -89,24 +90,55 @@ public class VideoController {
     private final VideoRepository videoRepository;
     private final VideoCutter videoCutter;
     private final CutPointService cutPointService;
+    private final BatchVideoCutService batchVideoCutService;
+    private final com.autocut.video.VideoConcat videoConcat;
+    private final SegmentPersistenceService segmentPersistenceService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps()), new CutPointService(configService, new ObjectMapper()));
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()));
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null);
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, com.autocut.video.VideoConcat videoConcat) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null);
+    }
+
+    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService, com.autocut.video.VideoConcat videoConcat) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null);
     }
 
     @Autowired
-    public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
+    public VideoController(
+            CacheService cacheService,
+            ConfigService configService,
+            CloudflareR2Service r2Service,
+            VideoRepository videoRepository,
+            VideoCutter videoCutter,
+            CutPointService cutPointService,
+            BatchVideoCutService batchVideoCutService,
+            com.autocut.video.VideoConcat videoConcat,
+            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
         this.videoRepository = videoRepository;
-        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps());
+        this.videoCutter = videoCutter != null ? videoCutter : new VideoCutter(new VideoProps(), configService);
         this.cutPointService = cutPointService != null ? cutPointService : new CutPointService(configService, objectMapper);
+        this.batchVideoCutService = batchVideoCutService != null ? batchVideoCutService : new BatchVideoCutService(this.videoCutter, r2Service, configService, objectMapper);
+        this.videoConcat = videoConcat != null ? videoConcat : new com.autocut.video.VideoConcat(new VideoProps());
+        this.segmentPersistenceService = segmentPersistenceService;
     }
 
 
@@ -1154,27 +1186,217 @@ public class VideoController {
                 log.warn("Không thể đồng bộ dự án lên Cloudflare R2: {}", r2Ex.getMessage());
             }
 
+            // 4. Đồng bộ lưu vào Database Neon Postgres (Thẻ 3.4) nếu tìm thấy VideoEntity
+            int dbTopicsCount = 0;
+            if (segmentPersistenceService != null && segmentsData != null) {
+                try {
+                    String videoTarget = String.valueOf(payload.getOrDefault("video", ""));
+                    Optional<VideoEntity> matchedVideo = segmentPersistenceService.findVideo(videoTarget);
+                    if (matchedVideo.isEmpty()) {
+                        matchedVideo = segmentPersistenceService.findVideo(safeLesson);
+                    }
+                    if (matchedVideo.isPresent()) {
+                        List<Segment> segs = objectMapper.convertValue(
+                            segmentsData,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Segment.class)
+                        );
+                        dbTopicsCount = segmentPersistenceService.saveSegmentsToDatabase(matchedVideo.get().getId(), segs);
+                        log.info("Đã đồng bộ {} chủ đề vào Database Neon Postgres cho video id={}", dbTopicsCount, matchedVideo.get().getId());
+                    }
+                } catch (Exception dbEx) {
+                    log.warn("Không thể đồng bộ segments vào Database Neon: {}", dbEx.getMessage());
+                }
+            }
+
             log.info("Đã lưu dự án của user '{}' tại: {}", safeUser, userDir.toAbsolutePath());
 
-            return ResponseEntity.ok(Map.of(
-                "status", "SAVED",
-                "user", safeUser,
-                "lesson", safeLesson,
-                "directory", userDir.toAbsolutePath().toString(),
-                "localDirectory", userDir.toAbsolutePath().toString(),
-                "r2Url", r2Url != null ? r2Url : "",
-                "cloudUrl", r2Url != null ? r2Url : "",
-                "files", List.of(
-                    "output/users/" + safeUser + "/" + safeLesson + "/project.json",
-                    "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
-                ),
-                "savedAt", nowMs,
-                "message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson
+            Map<String, Object> respMap = new LinkedHashMap<>();
+            respMap.put("status", "SAVED");
+            respMap.put("user", safeUser);
+            respMap.put("lesson", safeLesson);
+            respMap.put("directory", userDir.toAbsolutePath().toString());
+            respMap.put("localDirectory", userDir.toAbsolutePath().toString());
+            respMap.put("r2Url", r2Url != null ? r2Url : "");
+            respMap.put("cloudUrl", r2Url != null ? r2Url : "");
+            respMap.put("dbTopicsSaved", dbTopicsCount);
+            respMap.put("files", List.of(
+                "output/users/" + safeUser + "/" + safeLesson + "/project.json",
+                "output/users/" + safeUser + "/" + safeLesson + "/segments.json"
             ));
+            respMap.put("savedAt", nowMs);
+            respMap.put("message", "Đã lưu dự án vào thư mục người dùng: output/users/" + safeUser + "/" + safeLesson);
+
+            return ResponseEntity.ok(respMap);
         } catch (Exception e) {
             log.error("Lỗi khi lưu dự án cho user '{}': {}", safeUser, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Không thể lưu dự án: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API Lấy cấu trúc phân đoạn từ Database Neon Postgres theo Video ID (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/segments")
+    public ResponseEntity<?> getSegmentsFromDatabase(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        SegmentsDTO segments = segmentPersistenceService.getSegmentsFromDatabase(id);
+        if (segments == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(segments);
+    }
+
+    /**
+     * API Lưu trực tiếp cấu trúc phân đoạn vào Database Neon Postgres theo Video ID (Thẻ 3.4).
+     */
+    @PostMapping("/{id}/segments")
+    public ResponseEntity<?> saveSegmentsToDatabase(@PathVariable("id") Long id, @RequestBody List<Segment> segments) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        int count = segmentPersistenceService.saveSegmentsToDatabase(id, segments);
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "videoId", id,
+            "totalTopics", count,
+            "message", "Đã lưu " + count + " chủ đề vào Database Neon Postgres thành công!"
+        ));
+    }
+
+    /**
+     * API Lấy toàn bộ dữ liệu dự án (segments + transcript) từ Database Neon Postgres (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/db-project")
+    public ResponseEntity<?> getDbProject(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        SegmentsDTO segments = segmentPersistenceService.getSegmentsFromDatabase(id);
+        TranscriptDTO transcript = segmentPersistenceService.getTranscriptFromDatabase(id);
+        if (segments == null && transcript == null) {
+            return ResponseEntity.notFound().build();
+        }
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("status", "SUCCESS");
+        resp.put("videoId", id);
+        resp.put("segments", segments);
+        resp.put("transcript", transcript);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * API Lấy dữ liệu transcript từ bảng transcripts của Database Neon Postgres (Thẻ 3.4).
+     */
+    @GetMapping("/{id}/transcripts")
+    public ResponseEntity<?> getTranscriptFromDatabase(@PathVariable("id") Long id) {
+        if (segmentPersistenceService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "Database service chưa kích hoạt"));
+        }
+        TranscriptDTO transcript = segmentPersistenceService.getTranscriptFromDatabase(id);
+        if (transcript == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(transcript);
+    }
+
+    /**
+     * API Nạp lại dự án đã lưu của User (Thẻ 3.1 & Phục hồi Workspace Studio).
+     * Trả về project.json, segments.json và transcript tương ứng nếu có.
+     */
+    @GetMapping({"/project", "/load"})
+    public ResponseEntity<?> loadProject(
+            @RequestParam(value = "lesson", required = false) String rawLesson,
+            @RequestParam(value = "user", defaultValue = "admin") String rawUser,
+            @RequestParam(value = "video", required = false) String rawVideo) {
+
+        String safeUser = rawUser != null ? rawUser.replaceAll("[^a-zA-Z0-9._-]", "_") : "admin";
+        if (safeUser.isBlank()) safeUser = "admin";
+
+        List<String> lessonCandidates = new ArrayList<>();
+        if (rawLesson != null && !rawLesson.isBlank()) {
+            lessonCandidates.add(rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_"));
+            lessonCandidates.add(sanitizeToSafeSlug(rawLesson));
+        }
+        if (rawVideo != null && !rawVideo.isBlank()) {
+            lessonCandidates.add(rawVideo.replaceAll("[^a-zA-Z0-9._-]", "_"));
+            lessonCandidates.add(sanitizeToSafeSlug(rawVideo));
+            String stem = rawVideo.contains(".") ? rawVideo.substring(0, rawVideo.lastIndexOf('.')) : rawVideo;
+            lessonCandidates.add(sanitizeToSafeSlug(stem));
+        }
+
+        Path projectRoot = resolveProjectRoot();
+        Path foundDir = null;
+
+        for (String candidate : lessonCandidates) {
+            Path direct = Paths.get("output", "users", safeUser, candidate);
+            if (Files.exists(direct) && Files.isDirectory(direct)) {
+                foundDir = direct;
+                break;
+            }
+            Path fromRoot = projectRoot.resolve("output").resolve("users").resolve(safeUser).resolve(candidate);
+            if (Files.exists(fromRoot) && Files.isDirectory(fromRoot)) {
+                foundDir = fromRoot;
+                break;
+            }
+        }
+
+        if (foundDir == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "status", "NOT_FOUND",
+                "message", "Chưa có dự án nào được lưu cho bài học này",
+                "user", safeUser
+            ));
+        }
+
+        try {
+            Map<String, Object> responseData = new LinkedHashMap<>();
+            responseData.put("status", "SUCCESS");
+            responseData.put("user", safeUser);
+            responseData.put("directory", foundDir.toAbsolutePath().toString());
+
+            Path projectFile = foundDir.resolve("project.json");
+            if (Files.exists(projectFile)) {
+                JsonNode projectNode = objectMapper.readTree(projectFile.toFile());
+                responseData.put("project", projectNode);
+            }
+
+            Path segmentsFile = foundDir.resolve("segments.json");
+            if (Files.exists(segmentsFile)) {
+                JsonNode segmentsNode = objectMapper.readTree(segmentsFile.toFile());
+                responseData.put("segments", segmentsNode);
+            }
+
+            // Tìm transcript tương ứng nếu có
+            String videoName = rawVideo;
+            if ((videoName == null || videoName.isBlank()) && responseData.containsKey("project")) {
+                JsonNode proj = (JsonNode) responseData.get("project");
+                if (proj.has("video")) {
+                    videoName = proj.get("video").asText();
+                }
+            }
+
+            if (videoName != null && !videoName.isBlank()) {
+                String safeSlug = sanitizeToSafeSlug(videoName);
+                Path transP = projectRoot.resolve("transcripts").resolve(safeSlug + "_transcript.json");
+                if (!Files.exists(transP)) {
+                    transP = Paths.get("transcripts", safeSlug + "_transcript.json");
+                }
+                if (Files.exists(transP)) {
+                    JsonNode transNode = objectMapper.readTree(transP.toFile());
+                    responseData.put("transcript", transNode);
+                }
+            }
+
+            return ResponseEntity.ok(responseData);
+        } catch (Exception e) {
+            log.error("Lỗi khi nạp dự án từ {}: {}", foundDir, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Lỗi đọc tệp dự án: " + e.getMessage()
+            ));
         }
     }
 
@@ -1268,21 +1490,164 @@ public class VideoController {
                 }
             }
 
-            return ResponseEntity.ok(Map.of(
-                "status", "COMPLETED",
-                "engine", "FFmpeg libx264 (SV1)",
-                "lesson", lesson,
-                "totalRendered", successCount,
-                "renderedFiles", renderedFiles,
-                "outputDirectory", outputDir.toAbsolutePath().toString(),
-                "message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson
-            ));
+            // Tự động ghép nối các clip con thành video tổng hợp nếu có yêu cầu hoặc mặc định khi cắt nhiều clip
+            boolean autoConcat = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("autoConcat", "true")));
+            String combinedFilePath = null;
+            if (autoConcat && renderedFiles.size() >= 2) {
+                List<File> clipsToConcat = new ArrayList<>();
+                for (Map<String, Object> rf : renderedFiles) {
+                    Object p = rf.get("path");
+                    if (p != null) {
+                        clipsToConcat.add(new File(String.valueOf(p)));
+                    }
+                }
+                File combinedOut = outputDir.resolve(lesson + "_full.mp4").toFile();
+                com.autocut.video.ConcatResult concatRes = videoConcat.concat(clipsToConcat, combinedOut);
+                if (concatRes.success()) {
+                    combinedFilePath = combinedOut.getAbsolutePath();
+                    log.info("Đã tự động ghép thành công {} clip thành: {}", clipsToConcat.size(), combinedFilePath);
+                } else {
+                    log.warn("Tự động ghép nối {} clip thất bại: {}", clipsToConcat.size(), concatRes.errorMessage());
+                }
+            }
+
+            Map<String, Object> respMap = new HashMap<>();
+            respMap.put("status", "COMPLETED");
+            respMap.put("engine", "FFmpeg libx264 (SV1)");
+            respMap.put("lesson", lesson);
+            respMap.put("totalRendered", successCount);
+            respMap.put("renderedFiles", renderedFiles);
+            respMap.put("outputDirectory", outputDir.toAbsolutePath().toString());
+            respMap.put("message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson);
+            if (combinedFilePath != null) {
+                respMap.put("combinedFile", combinedFilePath);
+            }
+
+            return ResponseEntity.ok(respMap);
         } catch (Exception e) {
             log.error("Không thể hoàn tất cắt video: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
                 "error", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * API Khởi tạo tác vụ cắt video bài giảng theo lô bất đồng bộ (Thẻ 3.3).
+     * Phản hồi ngay HTTP 202 ACCEPTED với jobId để Client theo dõi tiến trình.
+     */
+    @PostMapping("/cut")
+    public ResponseEntity<?> startBatchCut(@RequestBody CutRequestDTO request) {
+        try {
+            CutJobResponse response = batchVideoCutService.submitCutJob(request);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi khởi tạo job cắt video: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi máy chủ nội bộ: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Tải về clip con đã cắt trong thư mục output (GET /api/video/download-clip?path=...).
+     */
+    @GetMapping("/download-clip")
+    public ResponseEntity<Resource> downloadClip(@RequestParam("path") String filePath) {
+        try {
+            Path target = Paths.get(filePath);
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                target = Paths.get("output").resolve(filePath);
+            }
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                target = resolveProjectRoot().resolve("output").resolve(filePath);
+            }
+            if (!Files.exists(target) || !Files.isRegularFile(target)) {
+                log.warn("Không tìm thấy tệp clip để tải về: {}", filePath);
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new FileSystemResource(target);
+            String fileName = target.getFileName().toString();
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
+                .body(resource);
+        } catch (Exception e) {
+            log.error("Lỗi khi tải file clip: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * API Thăm dò trạng thái tiến trình cắt video theo jobId (Thẻ 3.3).
+     */
+    @GetMapping("/cut/status")
+    public ResponseEntity<?> getCutJobStatus(@RequestParam("jobId") String jobId) {
+        CutJobResponse response = batchVideoCutService.getJobStatus(jobId);
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Không tìm thấy tác vụ với mã: " + jobId));
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Nén toàn bộ các clip đã cắt trong thư mục output của bài học thành file ZIP và tải về (GET /api/video/download-zip?lesson=...).
+     */
+    @GetMapping("/download-zip")
+    public ResponseEntity<byte[]> downloadZip(
+            @RequestParam("lesson") String lesson,
+            @RequestParam(value = "user", required = false) String user) {
+        try {
+            Path outputDir;
+            if (user != null && !user.isBlank()) {
+                String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
+                outputDir = Paths.get("output", "users", safeUser, lesson);
+                if (!Files.exists(outputDir)) {
+                    outputDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(lesson);
+                }
+            } else {
+                outputDir = Paths.get("output", lesson);
+                if (!Files.exists(outputDir)) {
+                    outputDir = resolveProjectRoot().resolve("output").resolve(lesson);
+                }
+            }
+
+            if (!Files.exists(outputDir) || !Files.isDirectory(outputDir)) {
+                log.warn("Không tìm thấy thư mục xuất bản để nén ZIP: {}", outputDir.toAbsolutePath());
+                return ResponseEntity.notFound().build();
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+                final Path base = outputDir;
+                try (var stream = Files.walk(base)) {
+                    stream.filter(Files::isRegularFile).forEach(p -> {
+                        String entryName = base.relativize(p).toString().replace("\\", "/");
+                        try {
+                            zos.putNextEntry(new ZipEntry(entryName));
+                            Files.copy(p, zos);
+                            zos.closeEntry();
+                        } catch (IOException ex) {
+                            log.warn("Lỗi thêm file vào ZIP: {}", ex.getMessage());
+                        }
+                    });
+                }
+            }
+
+            byte[] zipBytes = baos.toByteArray();
+            String zipFileName = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_") + "_exported_clips.zip";
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFileName + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/zip")
+                .body(zipBytes);
+        } catch (Exception e) {
+            log.error("Lỗi nén ZIP các file clip: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -1351,6 +1716,55 @@ public class VideoController {
             }
         }
         return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * API ghép nối các video thành 1 video tổng hợp (Mục 4 SV1).
+     * Hỗ trợ tự động fallback sang Concat Filter khi ghép các video khác nguồn/chuẩn thông số.
+     */
+    @PostMapping("/concat")
+    public ResponseEntity<?> concatVideos(@RequestBody Map<String, Object> payload) {
+        List<?> rawClips = (List<?>) payload.get("clips");
+        if (rawClips == null || rawClips.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Danh sách clips không được để trống"
+            ));
+        }
+
+        String rawOutput = (String) payload.get("output");
+        if (rawOutput == null || rawOutput.isBlank()) {
+            rawOutput = "output/combined_" + System.currentTimeMillis() + ".mp4";
+        }
+
+        boolean forceReencode = Boolean.TRUE.equals(payload.get("forceReencode"));
+
+        List<File> clipFiles = new ArrayList<>();
+        for (Object item : rawClips) {
+            String pathStr = String.valueOf(item);
+            File f = findFilePath(pathStr).toFile();
+            clipFiles.add(f);
+        }
+
+        File outFile = Paths.get(rawOutput).toFile();
+        com.autocut.video.ConcatResult result = videoConcat.concat(clipFiles, outFile, forceReencode);
+
+        if (result.success()) {
+            return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "Ghép video thành công!",
+                "outputFile", result.outputFile(),
+                "outputSizeBytes", result.outputSizeBytes(),
+                "executionTimeMs", result.executionTimeMs(),
+                "totalClips", clipFiles.size()
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "errorCode", result.errorCode() != null ? result.errorCode().name() : "UNKNOWN",
+                "error", result.errorMessage() != null ? result.errorMessage() : "Ghép video thất bại"
+            ));
+        }
     }
 
     private String resolveVideoSource(String videoName) {

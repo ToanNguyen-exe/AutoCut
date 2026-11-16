@@ -28,6 +28,12 @@ import { StatsCards } from "@/components/StatsCards";
 import { TranscriptDrawer } from "@/components/TranscriptDrawer";
 import { AddVideoModal, NewVideoData } from "@/components/AddVideoModal";
 import { VideoLibraryDrawer } from "@/components/VideoLibraryDrawer";
+import {
+  ExportProgressModal,
+  ProgressModalMode,
+  ProgressStep,
+} from "@/components/ExportProgressModal";
+import { RenderedClipItem } from "@/lib/api";
 import { VideoLibraryItem } from "@/types";
 import {
   getLibraryVideos,
@@ -310,6 +316,17 @@ export default function Home() {
   // AI Analysis States
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Tiến độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal)
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
+  const [progressModalMode, setProgressModalMode] = useState<ProgressModalMode>("render");
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const [progressActionText, setProgressActionText] = useState<string>("");
+  const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([]);
+  const [progressError, setProgressError] = useState<string | null>(null);
+  const [renderedClips, setRenderedClips] = useState<RenderedClipItem[]>([]);
+  const [renderedOutputDir, setRenderedOutputDir] = useState<string>("");
+  const [totalRenderedCount, setTotalRenderedCount] = useState<number>(0);
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -678,16 +695,93 @@ export default function Home() {
 
   const handleRender = async () => {
     setIsRendering(true);
+    setIsProgressModalOpen(true);
+    setProgressModalMode("render");
+    setProgressPercent(15);
+    setProgressError(null);
+    setRenderedClips([]);
+    setRenderedOutputDir("");
+    setProgressActionText("Đang khởi tạo kế hoạch cắt FFmpeg & nạp cấu hình padding...");
+
+    const initialSteps: ProgressStep[] = [
+      {
+        id: "step-plan",
+        title: "1. Khởi tạo danh sách phân đoạn",
+        description: `Áp dụng padding_start (0.3s) và padding_end (0.5s) kẹp biên [0, duration] cho ${data.segments.length} phân đoạn.`,
+        status: "running",
+      },
+      {
+        id: "step-cut",
+        title: "2. Cắt video Accurate Cut bằng FFmpeg (libx264)",
+        description: "Re-encode chính xác từng frame, khử hoàn toàn lỗi đen hình I-Frame.",
+        status: "pending",
+      },
+      {
+        id: "step-output",
+        title: "3. Đóng gói & tạo liên kết tải file xuất bản",
+        description: "Lưu tại thư mục output và sẵn sàng tải về máy tính.",
+        status: "pending",
+      },
+    ];
+    setProgressSteps(initialSteps);
+
+    // Tự động tăng phần trăm nhịp nhàng để người dùng thấy rõ tiến trình
+    let currentP = 20;
+    const progressTimer = setInterval(() => {
+      currentP = Math.min(88, currentP + Math.floor(Math.random() * 8) + 3);
+      setProgressPercent(currentP);
+      if (currentP > 30 && currentP < 85) {
+        const segIdx = Math.min(
+          data.segments.length - 1,
+          Math.floor(((currentP - 30) / 55) * data.segments.length)
+        );
+        const activeSeg = data.segments[segIdx];
+        setProgressActionText(
+          `Đang cắt clip #${segIdx + 1}/${data.segments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
+        );
+        setProgressSteps((prev) =>
+          prev.map((s) => {
+            if (s.id === "step-plan") return { ...s, status: "completed" };
+            if (s.id === "step-cut") return { ...s, status: "running" };
+            return s;
+          })
+        );
+      }
+    }, 700);
+
     try {
       const result = await submitRenderSegments({ ...data, reviewed: true });
+      clearInterval(progressTimer);
+
       if (result.success) {
+        setProgressPercent(100);
+        setProgressActionText("Đã hoàn tất xuất bản toàn bộ các clip video!");
+        setProgressSteps((prev) =>
+          prev.map((s) => ({ ...s, status: "completed" }))
+        );
+        setRenderedClips(result.renderedFiles || []);
+        setRenderedOutputDir(result.outputDirectory || "");
+        setTotalRenderedCount(
+          result.totalRendered || result.renderedFiles?.length || data.segments.length
+        );
+
         showToast(
           "success",
           `${result.message} ${result.savedPlan ? `(Lưu tại: ${result.savedPlan})` : ""}`
         );
       } else {
+        setProgressPercent(60);
+        setProgressError(result.message || "Lỗi khi thực thi cắt video");
+        setProgressSteps((prev) =>
+          prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+        );
         showToast("error", `Lỗi: ${result.message}`);
       }
+    } catch (err) {
+      clearInterval(progressTimer);
+      setProgressError(
+        err instanceof Error ? err.message : "Lỗi ngoại lệ khi cắt video"
+      );
     } finally {
       setIsRendering(false);
     }
@@ -930,11 +1024,77 @@ export default function Home() {
 
   const handleAnalyzeAI = useCallback(async () => {
     setIsAnalyzing(true);
+    setIsProgressModalOpen(true);
+    setProgressModalMode("analyze");
+    setProgressPercent(15);
+    setProgressError(null);
+    setProgressActionText("Đang kiểm định cấu trúc media và trích xuất audio qua ffprobe...");
+
+    const initialSteps: ProgressStep[] = [
+      {
+        id: "step-probe",
+        title: "1. Kiểm tra cấu trúc media & ffprobe",
+        description: "Xác thực codec video, luồng âm thanh và thời lượng tổng thể.",
+        status: "running",
+      },
+      {
+        id: "step-whisper",
+        title: "2. Nhận dạng giọng nói (Whisper Speech-to-Text)",
+        description: "Trích xuất audio và nhận diện từng câu thoại chính xác theo dấu thời gian.",
+        status: "pending",
+      },
+      {
+        id: "step-segment",
+        title: "3. Phân đoạn chủ đề AI & kẹp mốc thời gian",
+        description: "Phân tích ngữ nghĩa để chia bài học thành các phân đoạn logic.",
+        status: "pending",
+      },
+      {
+        id: "step-sync",
+        title: "4. Đồng bộ dữ liệu lên Timeline Studio",
+        description: "Khởi tạo các khối phân đoạn và sẵn sàng biên tập.",
+        status: "pending",
+      },
+    ];
+    setProgressSteps(initialSteps);
+
+    let tickerP = 15;
+    const ticker = setInterval(() => {
+      tickerP = Math.min(85, tickerP + Math.floor(Math.random() * 8) + 4);
+      setProgressPercent(tickerP);
+      if (tickerP >= 30 && tickerP < 60) {
+        setProgressActionText("Đang bóc băng lời thoại bằng mô hình Whisper...");
+        setProgressSteps((prev) =>
+          prev.map((s) => {
+            if (s.id === "step-probe") return { ...s, status: "completed" };
+            if (s.id === "step-whisper") return { ...s, status: "running" };
+            return s;
+          })
+        );
+      } else if (tickerP >= 60) {
+        setProgressActionText("Đang phân chia chủ đề AI và tính toán mốc thời gian...");
+        setProgressSteps((prev) =>
+          prev.map((s) => {
+            if (s.id === "step-probe" || s.id === "step-whisper") return { ...s, status: "completed" };
+            if (s.id === "step-segment") return { ...s, status: "running" };
+            return s;
+          })
+        );
+      }
+    }, 600);
 
     const totalSecs = Math.max(
       5,
       data.segments.reduce((max, s) => Math.max(max, s.end), 0)
     );
+
+    const finalizeAnalysisSuccess = (segCount: number) => {
+      clearInterval(ticker);
+      setProgressPercent(100);
+      setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn video!`);
+      setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+      setIsAnalyzing(false);
+    };
 
     // 1. Thử gọi API Backend Spring Boot (/api/video/analyze)
     try {
@@ -962,7 +1122,7 @@ export default function Home() {
         setVideoLibrary(getLibraryVideos());
         setUndoStack([]);
         setRedoStack([]);
-        setIsAnalyzing(false);
+        finalizeAnalysisSuccess(normalizedSegs.length);
         showToast("success", "AI Backend đã hoàn tất phân tích nội dung video thành công!");
         return;
       }
@@ -994,7 +1154,7 @@ export default function Home() {
           setVideoLibrary(getLibraryVideos());
           setUndoStack([]);
           setRedoStack([]);
-          setIsAnalyzing(false);
+          finalizeAnalysisSuccess(normalizedSegs.length);
           showToast(
             "success",
             `✓ Groq Whisper đã bóc băng thành công! Đã lưu file và hiển thị ${groqJson.transcript.sentences.length} câu trên Timeline.`
@@ -1180,7 +1340,7 @@ export default function Home() {
     updateVideoSegmentsInLibrary(data.video, analyzedSegments);
     setVideoLibrary(getLibraryVideos());
 
-    setIsAnalyzing(false);
+    finalizeAnalysisSuccess(analyzedSegments.length);
     showToast("success", `✓ AI đã phân tích xong! Chia thành ${analyzedSegments.length} phân đoạn phù hợp với video.`);
   }, [data.video, data.lesson, data.segments, externalVideoUrl, currentVideoHash, showToast]);
 
@@ -1514,6 +1674,24 @@ export default function Home() {
         onClose={() => setIsLibraryOpen(false)}
         onSelectVideo={handleSelectLibraryVideo}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
+      />
+
+      {/* Modal Tiến Độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal) */}
+      <ExportProgressModal
+        isOpen={isProgressModalOpen}
+        mode={progressModalMode}
+        videoTitle={data.video}
+        lessonTitle={data.lesson}
+        isRunning={progressModalMode === "render" ? isRendering : isAnalyzing}
+        progressPercent={progressPercent}
+        currentActionText={progressActionText}
+        steps={progressSteps}
+        error={progressError}
+        renderedClips={renderedClips}
+        outputDirectory={renderedOutputDir}
+        totalRendered={totalRenderedCount}
+        onClose={() => setIsProgressModalOpen(false)}
+        onExportJson={handleExportJson}
       />
     </div>
   );
