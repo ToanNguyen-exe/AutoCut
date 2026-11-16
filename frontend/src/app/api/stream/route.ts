@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { Readable } from "node:stream";
 
 /**
  * Next.js API Route phát / stream video hỗ trợ HTTP Range requests (206 Partial Content)
@@ -102,16 +103,8 @@ export async function GET(request: NextRequest) {
         const chunksize = end - start + 1;
 
         const fileStream = fs.createReadStream(resolvedPath, { start, end });
-        const webStream = new ReadableStream({
-          start(controller) {
-            fileStream.on("data", (chunk) => controller.enqueue(chunk));
-            fileStream.on("end", () => controller.close());
-            fileStream.on("error", (err) => controller.error(err));
-          },
-          cancel() {
-            fileStream.destroy();
-          },
-        });
+        // Readable.toWeb giữ backpressure và hủy file stream khi client ngắt kết nối.
+        const webStream = Readable.toWeb(fileStream) as ReadableStream;
 
         return new NextResponse(webStream, {
           status: 206,
@@ -124,16 +117,7 @@ export async function GET(request: NextRequest) {
         });
       } else {
         const fileStream = fs.createReadStream(resolvedPath);
-        const webStream = new ReadableStream({
-          start(controller) {
-            fileStream.on("data", (chunk) => controller.enqueue(chunk));
-            fileStream.on("end", () => controller.close());
-            fileStream.on("error", (err) => controller.error(err));
-          },
-          cancel() {
-            fileStream.destroy();
-          },
-        });
+        const webStream = Readable.toWeb(fileStream) as ReadableStream;
 
         return new NextResponse(webStream, {
           status: 200,

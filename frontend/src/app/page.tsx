@@ -189,7 +189,7 @@ const REAL_DOWNLOAD_LYRICS: Sentence[] = [
 
 function normalizeContiguousSegments(segments: Segment[], totalDuration: number): Segment[] {
   if (!segments || segments.length === 0) return segments;
-  const result: Segment[] = [];
+  const rawResult: Segment[] = [];
   let currentStart = 0.0;
   const dur = Math.max(1, totalDuration);
 
@@ -213,19 +213,52 @@ function normalizeContiguousSegments(segments: Segment[], totalDuration: number)
     }
 
     if (end <= start) {
-      end = Number((start + Math.max(1, (dur - start) / (segments.length - i))).toFixed(1));
+      end = Number((start + Math.max(5, (dur - start) / (segments.length - i))).toFixed(1));
     }
     currentStart = end;
 
     const sectionFolder = `${s.section_no.toString().padStart(2, "0")}_${s.section.replace(/\s+/g, "")}`;
-    result.push({
+    rawResult.push({
       ...s,
       start,
       end,
       parts: recalculateParts(start, end, sectionFolder, s.topic_no, s.slug),
     });
   }
-  return result;
+
+  // Loại bỏ triệt để các phân đoạn ngắn vô nghĩa (dưới 5s hoặc 1s không có ý nghĩa)
+  const merged: Segment[] = [];
+  for (const seg of rawResult) {
+    const segDur = seg.end - seg.start;
+    if (segDur < 5.0 && merged.length > 0 && dur > 15.0) {
+      // Gộp vào phân đoạn ngay trước đó
+      const prev = merged[merged.length - 1];
+      prev.end = seg.end;
+      const secFolder = `${prev.section_no.toString().padStart(2, "0")}_${prev.section.replace(/\s+/g, "")}`;
+      prev.parts = recalculateParts(prev.start, prev.end, secFolder, prev.topic_no, prev.slug);
+    } else {
+      merged.push(seg);
+    }
+  }
+
+  // Nếu đoạn đầu tiên bị ngắn dưới 5s và có đoạn sau thì gộp vào đoạn sau
+  if (merged.length > 1 && (merged[0].end - merged[0].start) < 5.0 && dur > 15.0) {
+    const first = merged.shift()!;
+    merged[0].start = first.start;
+    const secFolder = `${merged[0].section_no.toString().padStart(2, "0")}_${merged[0].section.replace(/\s+/g, "")}`;
+    merged[0].parts = recalculateParts(merged[0].start, merged[0].end, secFolder, merged[0].topic_no, merged[0].slug);
+  }
+
+  // Đánh lại số thứ tự phân đoạn liên tục
+  return merged.map((s, idx) => {
+    const topicNo = idx + 1;
+    const secFolder = `${s.section_no.toString().padStart(2, "0")}_${s.section.replace(/\s+/g, "")}`;
+    return {
+      ...s,
+      topic_no: topicNo,
+      parts: recalculateParts(s.start, s.end, secFolder, topicNo, s.slug),
+    };
+  });
 }
 
 function normalizeTranscript(trans: TranscriptData | undefined, totalDur: number): TranscriptData | undefined {
@@ -291,6 +324,8 @@ export default function Home() {
   const [transcript, setTranscript] = useState<TranscriptData | undefined>(BAI08_TRANSCRIPT_DATA);
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeSegmentId, setActiveSegmentId] = useState<string | undefined>("seg_01");
   const [isRendering, setIsRendering] = useState<boolean>(false);
@@ -386,6 +421,20 @@ export default function Home() {
   // 1. Phục hồi Active Session từ localStorage & IndexedDB ngay khi mount (F5)
   useEffect(() => {
     let isCancelled = false;
+    const restoredBlobUrls = new Set<string>();
+    const blobUrlRequests = new Map<string, Promise<string | null>>();
+    const restoreBlobUrl = (name: string): Promise<string | null> => {
+      const existing = blobUrlRequests.get(name);
+      if (existing) return existing;
+      const request = getVideoBlob(name).then((blob) => {
+        if (!blob || isCancelled) return null;
+        const url = URL.createObjectURL(blob);
+        restoredBlobUrls.add(url);
+        return url;
+      });
+      blobUrlRequests.set(name, request);
+      return request;
+    };
 
     async function restoreSessionAndLoad() {
       let restored = false;
@@ -442,9 +491,9 @@ export default function Home() {
         let finalUrl: string | null = null;
         if (!restoredUrl || restoredUrl.startsWith("blob:") || restoredUrl.includes("commondatastorage.googleapis.com")) {
           // Thử lấy blob từ IndexedDB để tạo lại object URL mới
-          const cachedBlob = await getVideoBlob(restoredVideoName);
-          if (cachedBlob && !isCancelled) {
-            finalUrl = URL.createObjectURL(cachedBlob);
+          const cachedUrl = await restoreBlobUrl(restoredVideoName);
+          if (cachedUrl && !isCancelled) {
+            finalUrl = cachedUrl;
           } else if (restoredHash) {
             finalUrl = `${API_BASE}/stream/${restoredHash}`;
           } else {
@@ -463,9 +512,9 @@ export default function Home() {
               restoredJoinedVideos.map(async (clip, idx) => {
                 let clipUrl = clip.url;
                 if (!clipUrl || clipUrl.startsWith("blob:") || clipUrl.includes("commondatastorage.googleapis.com")) {
-                  const blob = await getVideoBlob(clip.fileName);
-                  if (blob) {
-                    clipUrl = URL.createObjectURL(blob);
+                  const cachedUrl = await restoreBlobUrl(clip.fileName);
+                  if (cachedUrl) {
+                    clipUrl = cachedUrl;
                   } else if (idx === 0 && finalUrl) {
                     clipUrl = finalUrl;
                   } else {
@@ -510,9 +559,9 @@ export default function Home() {
         const refreshedLib = await Promise.all(
           loadedLib.map(async (item) => {
             if (item.url && item.url.startsWith("blob:")) {
-              const b = await getVideoBlob(item.name);
-              if (b) {
-                return { ...item, url: URL.createObjectURL(b) };
+              const cachedUrl = await restoreBlobUrl(item.name);
+              if (cachedUrl) {
+                return { ...item, url: cachedUrl };
               }
               return { ...item, url: resolvePlayableVideoUrl(undefined, item.name) };
             }
@@ -571,6 +620,7 @@ export default function Home() {
 
     return () => {
       isCancelled = true;
+      restoredBlobUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -598,20 +648,23 @@ export default function Home() {
     if (typeof window === "undefined") return;
     if (!data || !data.video) return;
 
-    try {
-      const sessionData = {
-        data,
-        transcript,
-        externalVideoUrl,
-        currentVideoHash,
-        activeSegmentId,
-        currentTime,
-        joinedVideos,
-      };
-      localStorage.setItem("autocut_active_session", JSON.stringify(sessionData));
-    } catch (e) {
-      console.warn("Khong the ghi session vao localStorage:", e);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const sessionData = {
+          data,
+          transcript,
+          externalVideoUrl,
+          currentVideoHash,
+          activeSegmentId,
+          currentTime: currentTimeRef.current,
+          joinedVideos,
+        };
+        localStorage.setItem("autocut_active_session", JSON.stringify(sessionData));
+      } catch (e) {
+        console.warn("Khong the ghi session vao localStorage:", e);
+      }
+    }, 1500);
+    return () => window.clearTimeout(timer);
   }, [
     isSessionLoaded,
     data,
@@ -619,7 +672,7 @@ export default function Home() {
     externalVideoUrl,
     currentVideoHash,
     activeSegmentId,
-    currentTime,
+    isPlaying,
     joinedVideos,
   ]);
 
@@ -765,21 +818,33 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSaveProject]);
 
-  const handleRender = async () => {
-    setIsRendering(true);
+  const handleOpenExportModal = () => {
+    setIsRendering(false);
+    setProgressModalMode("render");
+    setRenderedClips([]);
+    setProgressPercent(0);
+    setProgressError(null);
     setIsProgressModalOpen(true);
+  };
+
+  const handleStartRender = async (selectedSegments: Segment[]) => {
+    if (!selectedSegments || selectedSegments.length === 0) {
+      showToast("error", "Vui lòng chọn ít nhất 1 phân đoạn để tải về!");
+      return;
+    }
+    setIsRendering(true);
     setProgressModalMode("render");
     setProgressPercent(15);
     setProgressError(null);
     setRenderedClips([]);
     setRenderedOutputDir("");
-    setProgressActionText("Đang khởi tạo kế hoạch cắt FFmpeg & nạp cấu hình padding...");
+    setProgressActionText(`Đang khởi tạo cắt ${selectedSegments.length} phân đoạn đã chọn...`);
 
     const initialSteps: ProgressStep[] = [
       {
         id: "step-plan",
         title: "1. Khởi tạo danh sách phân đoạn",
-        description: `Áp dụng padding_start (0.3s) và padding_end (0.5s) kẹp biên [0, duration] cho ${data.segments.length} phân đoạn.`,
+        description: `Áp dụng padding âm thanh cho ${selectedSegments.length} phân đoạn được chọn.`,
         status: "running",
       },
       {
@@ -791,7 +856,7 @@ export default function Home() {
       {
         id: "step-output",
         title: "3. Đóng gói & tạo liên kết tải file xuất bản",
-        description: "Lưu tại thư mục output và sẵn sàng tải về máy tính.",
+        description: "Tạo liên kết tải trực tiếp về máy tính.",
         status: "pending",
       },
     ];
@@ -804,12 +869,12 @@ export default function Home() {
       setProgressPercent(currentP);
       if (currentP > 30 && currentP < 85) {
         const segIdx = Math.min(
-          data.segments.length - 1,
-          Math.floor(((currentP - 30) / 55) * data.segments.length)
+          selectedSegments.length - 1,
+          Math.floor(((currentP - 30) / 55) * selectedSegments.length)
         );
-        const activeSeg = data.segments[segIdx];
+        const activeSeg = selectedSegments[segIdx];
         setProgressActionText(
-          `Đang cắt clip #${segIdx + 1}/${data.segments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
+          `Đang cắt clip #${segIdx + 1}/${selectedSegments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
         );
         setProgressSteps((prev) =>
           prev.map((s) => {
@@ -822,7 +887,11 @@ export default function Home() {
     }, 700);
 
     try {
-      const result = await submitRenderSegments({ ...data, reviewed: true });
+      const result = await submitRenderSegments({
+        ...data,
+        segments: selectedSegments,
+        reviewed: true,
+      });
       clearInterval(progressTimer);
 
       if (result.success) {
@@ -834,12 +903,12 @@ export default function Home() {
         setRenderedClips(result.renderedFiles || []);
         setRenderedOutputDir(result.outputDirectory || "");
         setTotalRenderedCount(
-          result.totalRendered || result.renderedFiles?.length || data.segments.length
+          result.totalRendered || result.renderedFiles?.length || selectedSegments.length
         );
 
         showToast(
           "success",
-          `${result.message} ${result.savedPlan ? `(Lưu tại: ${result.savedPlan})` : ""}`
+          `Đã cắt xong ${selectedSegments.length} phân đoạn! File đang được tải trực tiếp về máy tính của bạn.`
         );
       } else {
         setProgressPercent(60);
@@ -1031,10 +1100,8 @@ export default function Home() {
     if (newVideo.transcript) {
       setTranscript(newVideo.transcript);
     } else {
-      const isMusicOrDownload = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-        `${newVideo.name} ${lessonTitle}`
-      );
-      if (isMusicOrDownload) {
+      const isDownloadSong = newVideo.name.toLowerCase() === "download.mp4";
+      if (isDownloadSong) {
         setTranscript({
           video: newVideo.name,
           duration: totalSecs > 0 ? totalSecs : 356.3,
@@ -1096,10 +1163,14 @@ export default function Home() {
     showToast("success", `Đã thêm video: "${lessonTitle}" (1 đoạn duy nhất). Hãy bấm "Phân Tích AI" để trích xuất nội dung!`);
   };
 
-  const handleAnalyzeAI = useCallback(async () => {
+  const handleAnalyzeAI = useCallback(async (forceRefresh: boolean = false) => {
     setIsAnalyzing(true);
     setAnalysisProgress(5);
-    setAnalysisStep("Đang kết nối AI Engine & trích xuất đặc trưng âm thanh...");
+    setAnalysisStep(
+      forceRefresh
+        ? "Đang chạy lại AI từ đầu (bỏ qua cache, yêu cầu bóc băng & phân đoạn thật)..."
+        : "Đang kết nối AI Engine & trích xuất đặc trưng âm thanh..."
+    );
 
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     const startTime = Date.now();
@@ -1243,13 +1314,24 @@ export default function Home() {
       let clipSegments: Segment[] = [];
 
       // 1. ƯU TIÊN SỐ 1: Gọi trực tiếp Backend AI Spring Boot (/api/video/analyze) để chạy Gemini Segmenter
+      const shouldForce = forceRefresh;
+      const videoUrlToSend = clip.url || externalVideoUrl || undefined;
+
       try {
         const res = await analyzeVideoBackend({
           videoName: clip.fileName,
           lesson: clip.title,
           duration: clipDur,
+          hash: currentVideoHash || undefined,
+          force: shouldForce,
+          url: videoUrlToSend,
         });
-        if (res.source === "api" && res.data?.segmentsData?.segments && res.data.segmentsData.segments.length > 0) {
+        if (
+          res.source === "api" &&
+          res.data?.status === "SUCCESS" &&
+          res.data?.segmentsData?.segments &&
+          res.data.segmentsData.segments.length > 0
+        ) {
           clipSegments = res.data.segmentsData.segments;
           clipSentences = res.data.transcript?.sentences || [];
         }
@@ -1257,20 +1339,20 @@ export default function Home() {
         console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
       }
 
-      // 2. Dự phòng: Nếu Backend offline, kiểm tra cache trong thư viện video (videoLibrary) nếu đã từng phân tích
-      if (clipSegments.length === 0) {
+      // 2. Dự phòng: Nếu Backend offline và KHÔNG bật forceRefresh, kiểm tra cache trong thư viện video (videoLibrary)
+      if (clipSegments.length === 0 && !forceRefresh && data.mode !== "raw") {
         const matchedLib = libVideos.find(
           (v) =>
-            (v.name && v.name.toLowerCase() === clip.fileName.toLowerCase()) ||
-            (v.lesson && v.lesson.toLowerCase() === clip.title.toLowerCase()) ||
-            (v.title && v.title.toLowerCase() === clip.title.toLowerCase())
+            v.name &&
+            v.name.toLowerCase() === clip.fileName.toLowerCase() &&
+            v.status === "edited" &&
+            v.transcript?.sentences &&
+            v.transcript.sentences.length > 1
         );
 
         if (matchedLib?.segments && matchedLib.segments.length > 0) {
           clipSegments = matchedLib.segments;
           clipSentences = matchedLib.transcript?.sentences || [];
-        } else if (matchedLib?.transcript?.sentences && matchedLib.transcript.sentences.length > 0) {
-          clipSentences = matchedLib.transcript.sentences;
         }
       }
 
@@ -1280,6 +1362,19 @@ export default function Home() {
           const groqFormData = new FormData();
           groqFormData.append("videoName", clip.fileName);
           groqFormData.append("lesson", clip.title);
+          if (shouldForce) {
+            groqFormData.append("force", "true");
+          }
+          if (currentVideoHash) {
+            groqFormData.append("hash", currentVideoHash);
+          }
+          if (videoUrlToSend) {
+            groqFormData.append("url", videoUrlToSend);
+          }
+          const localBlob = await getVideoBlob(clip.fileName);
+          if (localBlob) {
+            groqFormData.append("file", localBlob, clip.fileName);
+          }
 
           const groqResp = await fetch("/api/groq", {
             method: "POST",
@@ -1300,36 +1395,17 @@ export default function Home() {
         }
       }
 
-      // 4. Fallback nội dung nếu offline
-      if (clipSentences.length === 0) {
-        const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-          `${clip.fileName} ${clip.title}`
-        );
-        if (isMusic && clip.fileName.toLowerCase().includes("download")) {
+      // 4. Nếu video có ca từ mẫu thực tế (như Download.mp4)
+      if (clipSentences.length === 0 && !forceRefresh) {
+        const isMusic = /download/i.test(clip.fileName);
+        if (isMusic) {
           clipSentences = REAL_DOWNLOAD_LYRICS;
-        } else if (isMusic) {
-          clipSentences = [
-            { id: "S0001", start: 0, end: Number((clipDur * 0.2).toFixed(1)), text: `Dạo nhạc mở màn: ${clip.title}` },
-            { id: "S0002", start: Number((clipDur * 0.2).toFixed(1)), end: Number((clipDur * 0.5).toFixed(1)), text: `Lời ca khúc & Giai điệu chính (${clip.title})` },
-            { id: "S0003", start: Number((clipDur * 0.5).toFixed(1)), end: Number((clipDur * 0.8).toFixed(1)), text: "Điệp khúc cao trào và biến tấu âm thanh" },
-            { id: "S0004", start: Number((clipDur * 0.8).toFixed(1)), end: clipDur, text: "Giai điệu kết thúc Outro Fade" },
-          ];
-        } else {
-          const c1 = Number((clipDur * 0.25).toFixed(1));
-          const c2 = Number((clipDur * 0.5).toFixed(1));
-          const c3 = Number((clipDur * 0.75).toFixed(1));
-          clipSentences = [
-            { id: "S0001", start: 0, end: c1, text: `Khởi đầu chủ đề: "${clip.title}".` },
-            { id: "S0002", start: c1, end: c2, text: "Làm rõ các luận điểm chính và cú pháp cần ghi nhớ." },
-            { id: "S0003", start: c2, end: c3, text: "Thực hành áp dụng kiến thức vào ví dụ thực tế." },
-            { id: "S0004", start: c3, end: clipDur, text: "Tổng kết kinh nghiệm thực tiễn và bài tập rèn luyện." },
-          ];
         }
       }
 
-      // Tự động sinh phân đoạn cho clip nếu chưa có
+      // Tự động sinh phân đoạn cho clip nếu chưa có (target 360s, max 420s mỗi đoạn)
       if (clipSegments.length === 0) {
-        const numSecs = Math.min(4, Math.max(2, Math.ceil(clipDur / 60)));
+        const numSecs = Math.max(1, Math.ceil(clipDur / 360));
         const step = Number((clipDur / numSecs).toFixed(1));
         let cStart = 0;
         for (let s = 1; s <= numSecs; s++) {
@@ -1454,6 +1530,24 @@ export default function Home() {
       setActiveSegmentId(normalizedSegs[0].id);
     }
 
+    // BẮT BUỘC: Phải có câu thoại thực tế từ âm thanh video mới coi là PASS!
+    if (allSentences.length === 0) {
+      clearInterval(ticker);
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      setIsAnalyzing(false);
+      setProgressPercent(100);
+      setProgressError("Phân tích không đạt yêu cầu: Chưa trích xuất được câu thoại nào từ âm thanh video!");
+      setProgressActionText("Chưa có câu thoại (0 câu).");
+      showToast(
+        "error",
+        "❌ AI chưa trích xuất được câu thoại nào từ âm thanh video!"
+      );
+      return;
+    }
+
     setVideoLibrary(getLibraryVideos());
     setLibraryCards(syncLibraryCardsFromLibrary(getLibraryVideos()));
     setUndoStack([]);
@@ -1464,7 +1558,11 @@ export default function Home() {
       "success",
       `✓ AI đã hoàn tất phân tích lời thoại và phân đoạn cho toàn bộ ${clipsToAnalyze.length} video (${normalizedSegs.length} phân đoạn, ${allSentences.length} câu thoại)!`
     );
-  }, [joinedVideos, data, externalVideoUrl, showToast]);
+  }, [joinedVideos, data, externalVideoUrl, currentVideoHash, showToast]);
+
+  const handleReAnalyzeAI = useCallback(() => {
+    handleAnalyzeAI(true);
+  }, [handleAnalyzeAI]);
 
   const totalDuration = Math.max(
     1,
@@ -1996,9 +2094,10 @@ export default function Home() {
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
         onSave={handleSaveProject}
-        onRender={handleRender}
+        onRender={handleOpenExportModal}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
         onAnalyzeAI={handleAnalyzeAI}
+        onReAnalyzeAI={handleReAnalyzeAI}
         onUserUpdate={(u) => setCurrentUser(u)}
       />
 
@@ -2067,6 +2166,7 @@ export default function Home() {
               sentences={transcript?.sentences || []}
               isAnalyzing={isAnalyzing}
               onAnalyzeAI={handleAnalyzeAI}
+              onReAnalyzeAI={handleReAnalyzeAI}
               onMergeSegments={handleMergeSegments}
               onOpenSegmentDetail={handleOpenSegmentDetail}
             />
@@ -2222,8 +2322,10 @@ export default function Home() {
         renderedClips={renderedClips}
         outputDirectory={renderedOutputDir}
         totalRendered={totalRenderedCount}
+        segments={data.segments}
         onClose={() => setIsProgressModalOpen(false)}
         onExportJson={handleExportJson}
+        onStartRender={handleStartRender}
       />
     </div>
   );

@@ -97,6 +97,11 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     : currentTime;
 
   const [videoSrc, setVideoSrc] = useState<string | null>(activeVideoUrl);
+  const fallbackBlobUrls = useRef(new Map<string, string>());
+  useEffect(() => {
+    const urls = fallbackBlobUrls.current;
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [needsUserUnmute, setNeedsUserUnmute] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
@@ -114,10 +119,18 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     // 1. Kiểm tra trong IndexedDB xem có blob của file đã lưu không
     try {
       const { getVideoBlob } = await import("@/lib/videoStorage");
-      const blob = await getVideoBlob(fileName);
-      if (blob) {
-        const freshBlobUrl = URL.createObjectURL(blob);
-        if (videoSrc !== freshBlobUrl) {
+      const cachedUrl = fallbackBlobUrls.current.get(fileName);
+      if (cachedUrl) {
+        if (videoSrc !== cachedUrl) {
+          setVideoSrc(cachedUrl);
+          setVideoLoadError(null);
+          return;
+        }
+      } else {
+        const blob = await getVideoBlob(fileName);
+        if (blob) {
+          const freshBlobUrl = URL.createObjectURL(blob);
+          fallbackBlobUrls.current.set(fileName, freshBlobUrl);
           console.info("Khôi phục video từ IndexedDB thành công cho:", fileName);
           setVideoSrc(freshBlobUrl);
           setVideoLoadError(null);

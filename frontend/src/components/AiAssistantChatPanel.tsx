@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Loader2,
   Bot,
-  Zap,
+  RefreshCw,
 } from "lucide-react";
 
 export interface ChatMessage {
@@ -30,6 +30,7 @@ interface AiAssistantChatPanelProps {
   sentences?: Sentence[];
   isAnalyzing?: boolean;
   onAnalyzeAI?: () => void;
+  onReAnalyzeAI?: () => void;
   onMergeSegments?: (segIndex1: number, segIndex2: number) => void;
   onSplitSegment?: (segId: string) => void;
   onOpenSegmentDetail?: (segment: Segment, index: number) => void;
@@ -48,6 +49,7 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
   sentences = [],
   isAnalyzing = false,
   onAnalyzeAI,
+  onReAnalyzeAI,
   onMergeSegments,
 }) => {
   const [selectedModel, setSelectedModel] = useState<AiProvider>("groq");
@@ -414,30 +416,45 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
       </div>
 
       {/* Re-analyze banner if video not analyzed or quick trigger */}
-      {onAnalyzeAI && (
+      {(onAnalyzeAI || onReAnalyzeAI) && (
         <div className="px-4 py-2 bg-gradient-to-r from-indigo-50/70 via-purple-50/60 to-blue-50/70 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-blue-950/40 border-b border-indigo-100/90 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-indigo-950 dark:text-indigo-200">
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span>Phân tích giọng nói & bóc băng AI</span>
           </div>
-          <button
-            onClick={onAnalyzeAI}
-            disabled={isAnalyzing}
-            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-            title="Phân tích AI để phân đoạn video"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Đang phân tích...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Phân tích AI</span>
-              </>
+          <div className="flex items-center gap-1.5">
+            {onReAnalyzeAI && (
+              <button
+                onClick={onReAnalyzeAI}
+                disabled={isAnalyzing}
+                className="text-xs font-bold px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                title="Bắt buộc chạy lại AI từ đầu (bỏ qua cache)"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Chạy lại AI</span>
+              </button>
             )}
-          </button>
+            {onAnalyzeAI && (
+              <button
+                onClick={onAnalyzeAI}
+                disabled={isAnalyzing}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                title="Phân tích AI để phân đoạn video"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang phân tích...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Phân tích AI</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

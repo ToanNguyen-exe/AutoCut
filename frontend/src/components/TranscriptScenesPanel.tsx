@@ -40,6 +40,7 @@ interface TranscriptScenesPanelProps {
   onRenameLesson: (newName: string) => void;
   onOpenAddVideo?: () => void;
   onAnalyzeAI?: () => void;
+  onReAnalyzeAI?: () => void;
 }
 
 // Helper tạo đồ họa xem trước sinh động tương ứng với nội dung chủ đề bài giảng hoặc âm nhạc (Light Pastel theme)
@@ -278,6 +279,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   onRenameLesson,
   onOpenAddVideo,
   onAnalyzeAI,
+  onReAnalyzeAI,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(lessonName);
@@ -379,15 +381,29 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
             <span>AI: {Math.round(analysisProgress)}%</span>
           </button>
-        ) : onAnalyzeAI ? (
-          <button
-            onClick={onAnalyzeAI}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
-            title="Khởi chạy AI để phân tích và phân đoạn video"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Phân Tích AI</span>
-          </button>
+        ) : (onAnalyzeAI || onReAnalyzeAI) ? (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onReAnalyzeAI && (
+              <button
+                onClick={onReAnalyzeAI}
+                className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition hover:scale-102 active:scale-98 shadow-2xs cursor-pointer"
+                title="Bắt buộc bóc băng lại toàn bộ câu thoại (bỏ qua cache)"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Chạy lại AI</span>
+              </button>
+            )}
+            {onAnalyzeAI && (
+              <button
+                onClick={onAnalyzeAI}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 cursor-pointer"
+                title="Khởi chạy AI để phân tích và phân đoạn video"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Phân Tích AI</span>
+              </button>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => alert("Tính năng Auto-Segment LLM đang đồng bộ với transcript!")}

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import cp from "child_process";
+import { Readable } from "stream";
+import type { ReadableStream as WebReadableStream } from "stream/web";
+import { pipeline } from "stream/promises";
 import { Sentence, TranscriptData, Segment, SegmentsData } from "@/types";
 import { recalculateParts } from "@/lib/utils";
 
@@ -32,6 +35,8 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
         try {
           const content = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
+            const first = content.sentences[0]?.text || "";
+            if (first.includes("Nội dung bóc băng của video")) continue;
             return content as TranscriptData;
           }
         } catch {}
@@ -55,21 +60,6 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
       if (match) {
         try {
           const content = JSON.parse(fs.readFileSync(path.join(dir, match), "utf-8"));
-          if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
-            return content as TranscriptData;
-          }
-        } catch {}
-      }
-    }
-
-    // 3. Khớp tương đối / chuỗi con
-    for (const f of files) {
-      if (!f.endsWith(".json")) continue;
-      const fStem = f.replace(/_transcript\.json$/, "").replace(/\.json$/, "").toLowerCase();
-      const fNorm = norm(fStem);
-      if (fNorm.includes(targetNorm) || targetNorm.includes(fNorm)) {
-        try {
-          const content = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
             return content as TranscriptData;
           }
@@ -106,8 +96,9 @@ function generateSegmentsFromSentences(
   }
 
   const segments: Segment[] = [];
-  const numSections = Math.min(5, Math.max(2, Math.ceil(sentences.length / 3)));
-  const sentencesPerSection = Math.ceil(sentences.length / numSections);
+  const minByDur = Math.max(1, Math.ceil(totalDuration / 420));
+  const numSections = Math.max(minByDur, Math.min(30, Math.max(2, Math.ceil(sentences.length / 10))));
+  const sentencesPerSection = Math.max(1, Math.ceil(sentences.length / numSections));
   let currentStart = 0.0;
 
   for (let i = 0; i < numSections; i++) {
@@ -127,6 +118,10 @@ function generateSegmentsFromSentences(
       if (segEnd <= segStart) {
         segEnd = group[group.length - 1].end;
       }
+    }
+
+    if (segEnd <= segStart + 5.0 && totalDuration > 15.0) {
+      segEnd = Math.min(totalDuration, segStart + Math.max(5.0, (totalDuration - segStart) / (numSections - i)));
     }
     currentStart = segEnd;
     const secNo = i + 1;
@@ -155,13 +150,37 @@ function generateSegmentsFromSentences(
     });
   }
 
-  return segments;
+  // Loại bỏ triệt để các phân đoạn ngắn < 5s
+  const cleanSegs: Segment[] = [];
+  for (const seg of segments) {
+    if ((seg.end - seg.start) < 5.0 && cleanSegs.length > 0 && totalDuration > 15.0) {
+      cleanSegs[cleanSegs.length - 1].end = seg.end;
+      const prev = cleanSegs[cleanSegs.length - 1];
+      prev.parts = recalculateParts(prev.start, prev.end, prev.section, prev.topic_no, prev.slug);
+    } else {
+      cleanSegs.push(seg);
+    }
+  }
+
+  return cleanSegs.map((s, idx) => {
+    const sNo = idx + 1;
+    const sName = `0${sNo}_Doan_${sNo}`;
+    return {
+      ...s,
+      section_no: sNo,
+      section: sName,
+      topic_no: sNo,
+      parts: recalculateParts(s.start, s.end, sName, sNo, s.slug),
+    };
+  });
 }
 
 async function processTranscription(
   rawVideoName: string,
   lesson: string,
-  file: File | null
+  file: File | null,
+  force: boolean = false,
+  videoUrl?: string
 ) {
   const cleanName = rawVideoName.replace(/^[0-9a-fA-F]{64}_/, "");
   const videoStem = cleanName.replace(/\.[^/.]+$/, "") || "video";
@@ -177,45 +196,72 @@ async function processTranscription(
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
   if (!fs.existsSync(transcriptsDir)) fs.mkdirSync(transcriptsDir, { recursive: true });
 
-  // 1. Kiểm tra trước nếu đã có file transcript sẵn trong transcripts/ hoặc cache/
-  const existing = findExistingTranscript(projectRoot, cleanName);
-  if (existing && existing.sentences && existing.sentences.length > 0) {
-    const dur = existing.duration && existing.duration > 0
-      ? existing.duration
-      : existing.sentences[existing.sentences.length - 1].end || 180.0;
+  // 1. Kiểm tra trước nếu đã có file transcript sẵn trong transcripts/ hoặc cache/ (nếu không force)
+  if (!force) {
+    const existing = findExistingTranscript(projectRoot, cleanName);
+    if (existing && existing.sentences && existing.sentences.length > 0) {
+      const dur = existing.duration && existing.duration > 0
+        ? existing.duration
+        : existing.sentences[existing.sentences.length - 1].end || 180.0;
 
-    const segments = generateSegmentsFromSentences(existing.sentences, dur, cleanName, lesson);
-    return {
-      status: "SUCCESS",
-      source: "cached_transcript",
-      transcript: {
-        video: cleanName,
-        duration: dur,
-        sentences: existing.sentences,
-      },
-      segmentsData: {
-        video: cleanName,
-        lesson: lesson,
-        mode: "analyzed",
-        reviewed: false,
-        segments: segments,
-      },
-    };
+      const segments = generateSegmentsFromSentences(existing.sentences, dur, cleanName, lesson);
+      return {
+        status: "SUCCESS",
+        source: "cached_transcript",
+        transcript: {
+          video: cleanName,
+          duration: dur,
+          sentences: existing.sentences,
+        },
+        segmentsData: {
+          video: cleanName,
+          lesson: lesson,
+          mode: "analyzed",
+          reviewed: false,
+          segments: segments,
+        },
+      };
+    }
   }
 
   // 2. Chuẩn bị file âm thanh (MP3 64k mono < 25MB) nếu có file upload hoặc file trong uploads/
   let audioBuffer: Buffer | null = null;
   let tempAudioPath: string | null = null;
 
+  // Helper: Tính bitrate động để file audio luôn < 20MB (an toàn trong giới hạn 25MB của Groq)
+  const getDynamicBitrate = (targetVid: string): string => {
+    try {
+      const probe = cp.execSync(
+        `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${targetVid}"`,
+        { encoding: "utf-8", timeout: 10000 }
+      );
+      const dur = parseFloat(probe.trim());
+      if (dur > 0) {
+        const calc = Math.floor((20 * 1024 * 8) / dur);
+        return `${Math.max(16, Math.min(64, calc))}k`;
+      }
+    } catch {}
+    return "32k";
+  };
+
   if (file && file.size > 0) {
     const tempVideo = path.join(cacheDir, `upload_${Date.now()}_${cleanName}`);
-    const arrayBuf = await file.arrayBuffer();
-    fs.writeFileSync(tempVideo, Buffer.from(arrayBuf));
+    try {
+      // Stream trực tiếp sang file đĩa, tránh nạp mảng byte lớn vào V8 RAM
+      const nodeReadable = Readable.fromWeb(file.stream() as unknown as WebReadableStream);
+      await pipeline(nodeReadable, fs.createWriteStream(tempVideo));
+    } catch {
+      const arrayBuf = await file.arrayBuffer();
+      fs.writeFileSync(tempVideo, Buffer.from(arrayBuf));
+    }
 
     tempAudioPath = path.join(cacheDir, `audio_${Date.now()}_${videoStem}.mp3`);
     try {
-      cp.execSync(`ffmpeg -y -i "${tempVideo}" -vn -ar 16000 -ac 1 -b:a 64k "${tempAudioPath}"`);
-      audioBuffer = fs.readFileSync(tempAudioPath);
+      const bitrate = getDynamicBitrate(tempVideo);
+      cp.execSync(`ffmpeg -y -i "${tempVideo}" -vn -ar 16000 -ac 1 -b:a ${bitrate} "${tempAudioPath}"`);
+      if (fs.existsSync(tempAudioPath)) {
+        audioBuffer = fs.readFileSync(tempAudioPath);
+      }
     } catch (err) {
       console.warn("FFmpeg extract warning for uploaded file:", err);
     } finally {
@@ -252,11 +298,28 @@ async function processTranscription(
     if (foundVideoPath && fs.existsSync(foundVideoPath)) {
       tempAudioPath = path.join(cacheDir, `audio_${Date.now()}_${videoStem}.mp3`);
       try {
-        cp.execSync(`ffmpeg -y -i "${foundVideoPath}" -vn -ar 16000 -ac 1 -b:a 64k "${tempAudioPath}"`);
-        audioBuffer = fs.readFileSync(tempAudioPath);
+        const bitrate = getDynamicBitrate(foundVideoPath);
+        cp.execSync(`ffmpeg -y -i "${foundVideoPath}" -vn -ar 16000 -ac 1 -b:a ${bitrate} "${tempAudioPath}"`);
+        if (fs.existsSync(tempAudioPath)) {
+          audioBuffer = fs.readFileSync(tempAudioPath);
+        }
       } catch (err) {
         console.warn("FFmpeg extract warning for existing file:", err);
       }
+    }
+  }
+
+  // Nếu chưa có audioBuffer nhưng có videoUrl (R2, direct URL): stream audio trực tiếp bằng ffmpeg
+  if (!audioBuffer && videoUrl && (videoUrl.startsWith("http://") || videoUrl.startsWith("https://"))) {
+    tempAudioPath = path.join(cacheDir, `audio_url_${Date.now()}_${videoStem}.mp3`);
+    try {
+      const bitrate = getDynamicBitrate(videoUrl);
+      cp.execSync(`ffmpeg -y -i "${videoUrl}" -vn -ar 16000 -ac 1 -b:a ${bitrate} "${tempAudioPath}"`);
+      if (fs.existsSync(tempAudioPath)) {
+        audioBuffer = fs.readFileSync(tempAudioPath);
+      }
+    } catch (err) {
+      console.warn("FFmpeg extract warning for videoUrl:", err);
     }
   }
 
@@ -327,67 +390,11 @@ async function processTranscription(
     sIdx++;
   }
 
-  const filledSentences: Sentence[] = [];
-  if (rawSentences.length > 0 && rawSentences[0].start > 1.5) {
-    filledSentences.push({
-      id: "S0000",
-      start: 0.0,
-      end: Number(rawSentences[0].start.toFixed(1)),
-      text: "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
-    });
+  if (rawSentences.length === 0) {
+    throw new Error("Không thể bóc băng lời thoại từ âm thanh video. Vui lòng kiểm tra lại mic/audio nguồn!");
   }
 
-  for (let s = 0; s < rawSentences.length; s++) {
-    const curr = rawSentences[s];
-    filledSentences.push(curr);
-    if (s < rawSentences.length - 1) {
-      const next = rawSentences[s + 1];
-      const gap = next.start - curr.end;
-      if (gap >= 8.0) {
-        filledSentences.push({
-          id: `S_gap_${s}`,
-          start: Number(curr.end.toFixed(1)),
-          end: Number(next.start.toFixed(1)),
-          text: "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
-        });
-      }
-    }
-  }
-
-  if (rawSentences.length > 0 && totalDuration - rawSentences[rawSentences.length - 1].end >= 5.0) {
-    filledSentences.push({
-      id: "S_outro",
-      start: Number(rawSentences[rawSentences.length - 1].end.toFixed(1)),
-      end: Number(totalDuration.toFixed(1)),
-      text: "Giai điệu kết thúc (Outro Fade)",
-    });
-  }
-
-  // Nếu không có âm thanh bóc băng được: dùng câu thoại mô tả thông minh
-  if (filledSentences.length === 0) {
-    const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-      `${cleanName} ${lesson}`
-    );
-    if (isMusic) {
-      filledSentences.push(
-        { id: "S0001", start: 0.0, end: 60.0, text: "Giai điệu mở màn & Intro Beat" },
-        { id: "S0002", start: 60.0, end: 96.0, text: `Lời ca từ & Điệp khúc (${lesson})` },
-        { id: "S0003", start: 96.0, end: 233.0, text: "Đoạn Beat Drop sôi động Remix Nonstop Bass" },
-        { id: "S0004", start: 233.0, end: 266.0, text: "Điệp khúc cao trào và lời ca kết nối" },
-        { id: "S0005", start: 266.0, end: totalDuration, text: "Giai điệu kết thúc Outro Fade Out" }
-      );
-    } else {
-      const c1 = Number((totalDuration * 0.25).toFixed(1));
-      const c2 = Number((totalDuration * 0.5).toFixed(1));
-      const c3 = Number((totalDuration * 0.75).toFixed(1));
-      filledSentences.push(
-        { id: "S0001", start: 0.0, end: c1, text: `Khởi đầu chủ đề bài học: "${lesson}".` },
-        { id: "S0002", start: c1, end: c2, text: "Phân tích nội dung cốt lõi và kiến thức trọng tâm." },
-        { id: "S0003", start: c2, end: c3, text: "Thực hành ví dụ chuyên sâu và kiểm thử thực tế." },
-        { id: "S0004", start: c3, end: totalDuration, text: "Tổng kết bài học và định hướng áp dụng." }
-      );
-    }
-  }
+  const filledSentences: Sentence[] = rawSentences;
 
   // Đánh số lại thứ tự S0001, S0002... chuẩn xác
   const sentences: Sentence[] = filledSentences.map((item, idx) => ({
@@ -451,7 +458,9 @@ export async function POST(req: NextRequest) {
     const rawVideoName = (formData.get("videoName") as string) || (file?.name ?? "video.mp4");
     const lesson = (formData.get("lesson") as string) || rawVideoName.replace(/\.[^/.]+$/, "");
 
-    const result = await processTranscription(rawVideoName, lesson, file);
+    const force = formData.get("force") === "true";
+    const videoUrl = (formData.get("url") as string) || undefined;
+    const result = await processTranscription(rawVideoName, lesson, file, force, videoUrl);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Groq POST error:", error);
