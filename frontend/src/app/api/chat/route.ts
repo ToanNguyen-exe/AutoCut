@@ -68,8 +68,7 @@ Nhiệm vụ của bạn:
       const groqKey =
         customKey ||
         process.env.GROQ_API_KEY ||
-        process.env.WHISPER_API_KEY ||
-        process.env.NEXT_PUBLIC_WHISPER_API_KEY;
+        process.env.WHISPER_API_KEY;
 
       if (!groqKey) {
         return NextResponse.json({
@@ -134,8 +133,7 @@ Nhiệm vụ của bạn:
       const geminiKey =
         customKey ||
         process.env.GEMINI_API_KEY ||
-        process.env.LLM_API_KEY ||
-        process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+        process.env.LLM_API_KEY;
 
       if (!geminiKey) {
         return NextResponse.json({
