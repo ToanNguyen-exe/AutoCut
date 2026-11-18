@@ -6,10 +6,12 @@
 | **Nhóm** | AI |
 | **Ưu tiên** | P1 |
 | **Người phụ trách gợi ý** | SV3 (service + API) + SV4 (nút tải, xem trước) |
-| **Phụ thuộc** | F02 (quyền), F04 (tải tệp an toàn). F21 không bắt buộc nhưng giúp tiêu đề đẹp hơn |
+| **Phụ thuộc** | F00 (topic `ACTIVE` trong DB), F02 (quyền), F04 (tải tệp an toàn). F21 không bắt buộc nhưng giúp tiêu đề đẹp hơn. Phụ thuộc mềm F44 (`video_parts.intro_offset_sec`) |
 | **Ước lượng** | S (≤ 2 ngày) |
 | **Thư viện mới cần duyệt** | Không |
 | **Tham khảo** | YouTube Chapters, Vimeo Chapters, chuẩn WebVTT (`kind="chapters"`) |
+
+> **Cập nhật 18/11/2026:** thống nhất định dạng giờ với `formatTimestamp` hiện có (`MM:SS` / `HH:MM:SS`); `chapters.txt` của job cắt dùng trục `source` (job xuất clip rời, không ghép); bỏ token màu `charcoal` (không có trong dự án, AD-12); quyền theo AD-2 (404); link chia sẻ dùng tiền tố `/api/v1/share/**` (AD-5).
 
 ## 1. Bối cảnh & vấn đề
 
@@ -40,8 +42,8 @@
 
 ## 4. Yêu cầu chức năng
 
-- **FR-1** Lấy danh sách topic `ACTIVE` từ DB (sau F13) hoặc từ `SegmentsDTO` trong bộ nhớ, sắp theo `start`.
-- **FR-2** Định dạng `youtube`: mỗi dòng `HH:MM:SS Tiêu đề` (bỏ giờ nếu video < 1 giờ: `MM:SS`). Không có tiền tố "Phần N". Tuỳ chọn `includeSection=true` thêm dòng tiêu đề section in hoa không có mốc thời gian **chỉ ở định dạng txt** (YouTube bỏ qua dòng không có mốc).
+- **FR-1** Lấy danh sách topic `ACTIVE` từ DB (F00), sắp theo `start`. Không đọc từ bộ nhớ hay tệp JSON.
+- **FR-2** Định dạng `youtube`: mỗi dòng `<mốc> Tiêu đề`, trong đó `<mốc>` do `TimeFormat.format` sinh ra, giữ đúng quy tắc của `formatTimestamp` hiện có ([BatchVideoCutService.java:310](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L310)): `MM:SS` khi video < 1 giờ, `HH:MM:SS` có số 0 đứng đầu khi ≥ 1 giờ (ví dụ `01:02:10`, YouTube chấp nhận dạng này). Nếu video ≥ 1 giờ thì **mọi** dòng đều dùng `HH:MM:SS`, kể cả dòng `00:00:00`, để các dòng thẳng hàng. Không có tiền tố "Phần N". Tuỳ chọn `includeSection=true` thêm dòng tiêu đề section in hoa không có mốc thời gian **chỉ ở định dạng txt** (YouTube bỏ qua dòng không có mốc).
 - **FR-3** Định dạng `vtt`:
   ```
   WEBVTT
@@ -56,8 +58,9 @@
   - Chương < 10s → gộp vào chương liền trước, cảnh báo `SHORT_CHAPTER_MERGED`.
   - Ít hơn 3 chương → vẫn trả nội dung, kèm cảnh báo `TOO_FEW_CHAPTERS` ("YouTube sẽ không hiển thị chương").
 - **FR-6** Trục `concat`: mốc của mỗi chương = tổng thời lượng các đoạn được giữ trước nó (có tính `padding_start/end` trong [config.yaml](../../../config.yaml) mục `output`).
+- **FR-6b** Clip có intro (F44): khi tính trục `concat` từ các clip đã render, thời lượng mỗi clip **gồm cả** `video_parts.intro_offset_sec`, và mốc của chương ứng với clip đó được cộng thêm `intro_offset_sec` để chương bắt đầu ở nội dung thật, sau intro. Khi chưa có F44 (cột không tồn tại hoặc bằng 0) thì hành vi không đổi.
 - **FR-7** Tiêu đề được làm sạch: bỏ xuống dòng, cắt ≤ 100 ký tự, giữ dấu tiếng Việt.
-- **FR-8** `generateChaptersContent` hiện có gọi sang service mới để chỉ còn một nguồn sinh duy nhất. `chapters.txt` trong job cắt dùng trục `concat`.
+- **FR-8** `generateChaptersContent` hiện có gọi sang service mới để chỉ còn một nguồn sinh duy nhất. `chapters.txt` trong job cắt dùng trục **`source`**: job xuất từng clip rời ([BatchVideoCutService.java:247-250](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L247-L250)), không ghép thành một video, nên mốc theo video gốc mới đúng. Trục `concat` chỉ dùng cho video ghép từ `/concat` (VideoConcat) và cho F41.
 
 ## 5. Yêu cầu phi chức năng
 
@@ -73,7 +76,9 @@ Không thay đổi.
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/videos/{id}/chapters?format=youtube\|vtt\|json&timeline=source\|concat&includeSection=false` | Chủ video / link chia sẻ (F40) | Trả nội dung |
+| GET | `/api/v1/videos/{videoId}/chapters?format=youtube\|vtt\|json&timeline=source\|concat&includeSection=false` | Xem video | Trả nội dung |
+
+Không có quyền xem thì trả 404 (AD-2). Người xem qua link chia sẻ dùng endpoint ẩn danh của F40 dưới tiền tố `/api/v1/share/{token}/chapters?format=vtt` (AD-5), endpoint này gọi lại cùng `ChapterService`.
 
 - `format=youtube` → `text/plain; charset=utf-8`; `vtt` → `text/vtt`; `json` → `application/json`.
 - Thêm `download=true` → header `Content-Disposition: attachment; filename="<slug>_chapters.<ext>"`.
@@ -90,7 +95,7 @@ Không thay đổi.
   public String toYoutube(ChapterResult r, boolean includeSection);
   public String toVtt(ChapterResult r);
   ```
-  Các hàm đều thuần (không đọc DB) để dễ test. Dùng lại `formatTimestamp` của `BatchVideoCutService` (dòng ~309) bằng cách chuyển nó thành tiện ích chung `video/TimeFormat.java`.
+  Các hàm đều thuần (không đọc DB) để dễ test. Chuyển `formatTimestamp` của `BatchVideoCutService` ([dòng 310](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L310)) thành tiện ích chung `video/TimeFormat.java`, **giữ nguyên hành vi**, thêm một tham số `forceHours` để FR-2 dùng khi video ≥ 1 giờ. WebVTT dùng hàm riêng `TimeFormat.vtt(seconds)` → `HH:MM:SS.mmm`.
 - `controller/ChapterController.java`.
 - `BatchVideoCutService.generateChaptersContent` chuyển sang gọi `ChapterService` (FR-8). Sửa test cũ nếu định dạng đổi và ghi rõ lý do trong PR.
 
@@ -103,7 +108,7 @@ Không thay đổi.
 - `StudioHeader.tsx`: menu "Xuất" thêm mục **"Chapters"**, mở popup gồm:
   - Chọn định dạng (YouTube / WebVTT / JSON) và trục thời gian.
   - Ô xem trước có nút **"Sao chép"**.
-  - Danh sách cảnh báo màu vàng; dùng chữ `charcoal`, không dùng màu vàng làm màu chữ.
+  - Danh sách cảnh báo: nền `bg-amber-50`, viền `border-amber-300`, biểu tượng `AlertTriangle`; chữ dùng `text-slate-800` (không viết chữ màu vàng vì khó đọc). Chỉ dùng class Tailwind chuẩn (AD-12).
 - `ExportProgressModal.tsx`: sau khi cắt xong, link `chapters.txt` dùng API mới.
 
 ## 7. Tiêu chí chấp nhận
@@ -116,28 +121,32 @@ Không thay đổi.
   25:00 Tổng kết
   ```
 - **AC-2** — *Given* topic thứ 2 dài 6s. *Then* nó được gộp vào topic 1 và có cảnh báo `SHORT_CHAPTER_MERGED`.
-- **AC-3** — *Given* video 1 giờ 5 phút. *Then* mọi mốc có dạng `H:MM:SS` (ví dụ `1:02:10`).
+- **AC-3** — *Given* video 1 giờ 5 phút. *Then* mọi mốc có dạng `HH:MM:SS` (ví dụ `00:00:00`, `01:02:10`), giống đầu ra của `formatTimestamp` hiện có.
 - **AC-4** — *Given* topic 2 (60s) bị loại vì ngoài lề, trục `concat`. *Then* topic 3 bắt đầu sớm hơn 60s (± padding) so với trục `source`.
 - **AC-5** — Tệp `.vtt` hợp lệ: chạy qua bộ kiểm tra WebVTT (dùng `<track kind="chapters">` trong Chrome không báo lỗi console).
-- **AC-6** — Người không phải chủ video gọi API thì nhận `403`.
+- **AC-6** — Người không có quyền xem video gọi API thì nhận `404` (AD-2).
+- **AC-7** — *Given* job cắt hàng loạt có topic 2 bị loại vì ngoài lề. *Then* `chapters.txt` của job dùng mốc theo video gốc (trục `source`), không bị dịch.
 
 ## 8. Kế hoạch kiểm thử (TDD)
 
 JUnit (`ChapterServiceTest`):
 - `toYoutube_underOneHour_usesMmSs()`
-- `toYoutube_overOneHour_usesHMmSs()`
+- `toYoutube_overOneHour_usesHhMmSsForAllLines()`
+- `timeFormat_keepsLegacyFormatTimestampBehavior()` (hồi quy)
 - `build_firstChapterNotZero_isFixedWithWarning()`
 - `build_shortChapter_mergedIntoPrevious()`
 - `build_lessThanThreeChapters_warns()`
 - `build_concatTimeline_shiftsAfterDroppedSegment()`
+- `build_concatTimeline_addsIntroOffsetPerClip()` (FR-6b: clip 1 có intro 5s thì chương 1 bắt đầu ở 00:05 và chương 2 dịch thêm 5s)
 - `toVtt_producesValidHeaderAndCueTimes()`
 - `sanitizeTitle_stripsNewlinesKeepsVietnamese()`
 
 `ChapterControllerTest`:
 - `get_vtt_returnsTextVttContentType()`
 - `get_download_setsContentDisposition()`
+- `get_withoutAccess_returns404()` (AD-2)
 
-Hồi quy: `BatchVideoCutServiceTest` (đã có) vẫn chạy qua sau khi chuyển sang `ChapterService`.
+Hồi quy: `BatchVideoCutServiceTest` (đã có) vẫn chạy qua sau khi chuyển sang `ChapterService`; thêm `chaptersTxt_usesSourceTimeline()` (AC-7). Test nào khẳng định chuỗi có tiền tố "Phần N" thì sửa assertion và ghi lý do trong PR (CONSTRAINTS §1).
 
 ## 9. Rủi ro & failure modes
 

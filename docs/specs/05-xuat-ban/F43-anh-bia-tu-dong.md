@@ -6,10 +6,15 @@
 | **Nhóm** | Xuất bản |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV1 (FFmpeg trích khung, vẽ chữ) · SV3 (API, lưu R2) · SV4 (chọn và đổi ảnh bìa) |
-| **Phụ thuộc** | F09 (job nền), F13. Không bắt buộc: F21 (tiêu đề AI), F44 (logo thương hiệu) |
+| **Phụ thuộc** | F00 (`video_parts` do job ghi, `partId` ổn định), F02 (`AccessService`), F09 (job nền), F13, F39 (`presignGet` của `CloudflareR2Service`). Không bắt buộc: F21 (tiêu đề AI), F44 (logo thương hiệu) |
 | **Ước lượng** | M (3–5 ngày) |
-| **Thư viện mới cần duyệt** | Không có thư viện code mới. Cần duyệt **một tệp font**: `Be Vietnam Pro Bold` (SIL Open Font License 1.1, Google Fonts), có đủ dấu tiếng Việt. Đặt ở `backend/src/main/resources/fonts/` và ghi nguồn + giấy phép vào README. |
+| **Thư viện mới cần duyệt** | Không có thư viện code mới. Cần duyệt **một tệp font** (AD-11): `Be Vietnam Pro Bold` (SIL Open Font License 1.1, Google Fonts), có đủ dấu tiếng Việt. Đặt ở `backend/src/main/resources/fonts/` và ghi nguồn + giấy phép vào README. |
 | **Tham khảo** | YouTube (3 ảnh gợi ý tự động), Vimeo thumbnail picker, Opus Clip, Panopto |
+
+> **Cập nhật 18/11/2026:** Theo AD:
+> - Ảnh trả về bằng presigned URL (bucket private, AD-3) thay cho URL CDN công khai; DB chỉ lưu `r2_key`.
+> - Job `THUMBNAIL` thuộc F09; clip `STALE` được render lại thì sinh ảnh lại.
+> - Lỗi quyền theo AD-2 (404/403); migration đặt tên theo dấu thời gian.
 
 ## 1. Bối cảnh & vấn đề
 
@@ -36,7 +41,7 @@
 
 ## 4. Yêu cầu chức năng
 
-- **FR-1** Khi một clip chuyển sang `COMPLETED`, tạo job `THUMBNAIL` cho clip đó.
+- **FR-1** Khi một clip chuyển sang `COMPLETED` (do job cắt ghi, F00 FR-7), tạo job `THUMBNAIL` trong bảng `jobs` (F09) cho clip đó. Clip đang `STALE` rồi được render lại thì sinh lại các ảnh `CANDIDATE`/`TITLED`, nhưng giữ ảnh `UPLOAD` và lựa chọn ảnh bìa nếu đó là ảnh tự upload.
 - **FR-2** Chọn 3 khung gợi ý:
   1. Chia clip thành 3 đoạn bằng nhau.
   2. Trong mỗi đoạn, dùng filter `thumbnail` của FFmpeg (chọn khung tiêu biểu nhất trong mỗi nhóm N khung) và bỏ qua 1 giây đầu.
@@ -56,14 +61,15 @@
 ## 5. Yêu cầu phi chức năng
 
 - Sinh xong 4 ảnh của một clip 5 phút trong ≤ 5 giây (FFmpeg dùng `-ss` trước `-i` để tua nhanh).
-- Ảnh trên R2 đặt `Cache-Control: public, max-age=31536000, immutable`. Tên tệp chứa hash nội dung, nên đổi ảnh là đổi URL và không cần xoá cache.
+- Bucket private (AD-3). Ảnh trả cho client bằng **presigned URL** (15 phút). Object trên R2 đặt `Cache-Control: private, max-age=31536000, immutable`; tên tệp chứa hash nội dung, nên đổi ảnh là đổi key. Trình duyệt vẫn cache được theo URL trong thời hạn chữ ký.
+- `og:image` của trang chia sẻ (F40) cần URL mà Zalo/Facebook tải được. Dùng presigned URL hạn **7 ngày** (mức tối đa của SigV4), sinh lại mỗi lần render trang. Đây là ngoại lệ có chủ đích của AD-3, chỉ áp dụng cho ảnh bìa bản nhỏ.
 - Chữ tiếng Việt hiển thị đúng dấu. Kiểm tra bằng ảnh mẫu chứa "Ứng dụng đệ quy – Tổng kết".
 
 ## 6. Thiết kế kỹ thuật
 
 ### 6.1 Cơ sở dữ liệu
 
-`V<n>__add_thumbnails.sql`:
+`V<yyyyMMddHHmm>__add_thumbnails.sql`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS thumbnails (
@@ -86,27 +92,35 @@ ALTER TABLE video_parts ADD COLUMN IF NOT EXISTS cover_thumbnail_id BIGINT REFER
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/parts/{partId}/thumbnails` | Chủ clip | Danh sách ảnh + ảnh bìa đang chọn |
-| PUT | `/api/v1/parts/{partId}/cover` | Chủ clip | `{ "thumbnailId": 81 }` |
-| POST | `/api/v1/parts/{partId}/thumbnails/frame` | Chủ clip | `{ "atSec": 47.2 }` → tạo ảnh `FRAME` và chọn luôn |
-| POST | `/api/v1/parts/{partId}/thumbnails/upload` | Chủ clip | `multipart/form-data`, trường `file` |
-| POST | `/api/v1/parts/{partId}/thumbnails:regenerate` | Chủ clip | Sinh lại ảnh gợi ý và ảnh có chữ |
+| GET | `/api/v1/parts/{partId}/thumbnails` | Quyền xem video chứa clip | Danh sách ảnh + ảnh bìa đang chọn |
+| PUT | `/api/v1/parts/{partId}/cover` | Quyền `EDIT` | `{ "thumbnailId": 81 }` |
+| POST | `/api/v1/parts/{partId}/thumbnails/frame` | Quyền `EDIT` | `{ "atSec": 47.2 }` → tạo ảnh `FRAME` và chọn luôn |
+| POST | `/api/v1/parts/{partId}/thumbnails/upload` | Quyền `EDIT` | `multipart/form-data`, trường `file` |
+| POST | `/api/v1/parts/{partId}/thumbnails:regenerate` | Quyền `EDIT` | Tạo lại job sinh ảnh |
 
-Response `GET`:
+Response `GET` (URL là presigned R2, hết hạn 15 phút):
 
 ```json
 {
   "coverId": 84,
+  "expiresAt": "2026-11-18T10:40:00Z",
   "items": [
-    { "id": 81, "kind": "CANDIDATE", "atSec": 12.0, "url": "https://cdn/.../c1_9f3a.jpg", "smallUrl": "https://cdn/.../c1_9f3a_s.jpg" },
-    { "id": 82, "kind": "CANDIDATE", "atSec": 55.5, "url": "..." },
-    { "id": 83, "kind": "CANDIDATE", "atSec": 98.1, "url": "..." },
-    { "id": 84, "kind": "TITLED", "atSec": 12.0, "url": "..." }
+    { "id": 81, "kind": "CANDIDATE", "atSec": 12.0,
+      "url": "https://<account>.r2.cloudflarestorage.com/autocut/thumbs/55/c1_9f3a.jpg?X-Amz-Expires=900&X-Amz-Signature=…",
+      "smallUrl": "https://<account>.r2.cloudflarestorage.com/autocut/thumbs/55/c1_9f3a_s.jpg?X-Amz-…" },
+    { "id": 82, "kind": "CANDIDATE", "atSec": 55.5, "url": "…" },
+    { "id": 83, "kind": "CANDIDATE", "atSec": 98.1, "url": "…" },
+    { "id": 84, "kind": "TITLED", "atSec": 12.0, "url": "…" }
   ]
 }
 ```
 
-Lỗi: `400 INVALID_IMAGE` (sai định dạng hoặc > 5 MB), `400 AT_SEC_OUT_OF_RANGE`.
+Lỗi:
+- `422 INVALID_IMAGE`: sai định dạng hoặc lớn hơn 5 MB.
+- `422 AT_SEC_OUT_OF_RANGE`.
+- `404 PART_NOT_FOUND`: part không tồn tại, hoặc người gọi không có quyền xem (AD-2).
+- `403 FORBIDDEN_ACTION`: xem được nhưng không có quyền sửa.
+- `409 PART_NOT_READY`: part chưa `COMPLETED` hoặc đang `STALE`.
 
 ### 6.3 Backend (Spring Boot)
 
@@ -115,7 +129,7 @@ Lỗi: `400 INVALID_IMAGE` (sai định dạng hoặc > 5 MB), `400 AT_SEC_OUT_O
   - `List<Double> pickCandidates(File clip, double durationSec)`
   - `File renderTitled(File frame, String kicker, String title, Path logoOrNull, Path out)`
   - Chạy lệnh bằng `ProcessBuilder` + `StreamUtil`, timeout theo `VideoProps.cutTimeoutSeconds`.
-- **Tạo** `service/ThumbnailService` (SV3): điều phối job, upload R2 qua `CloudflareR2Service.uploadFile` ([CloudflareR2Service.java:98](../../../backend/src/main/java/com/autocut/service/CloudflareR2Service.java#L98)), ghi bảng `thumbnails`.
+- **Tạo** `service/ThumbnailService` (SV3): là handler của job `THUMBNAIL` (F09). Upload R2 qua `CloudflareR2Service.uploadFile` ([CloudflareR2Service.java:98](../../../backend/src/main/java/com/autocut/service/CloudflareR2Service.java#L98)); **chỉ lưu key**, bỏ qua URL công khai mà hàm trả về (AD-3). Ghi bảng `thumbnails`. Khi trả API thì gọi `presignGet` (F39).
 - Khi `kind = UPLOAD`: dùng FFmpeg để kiểm tra và thu nhỏ ảnh. Không tin phần mở rộng tệp; kiểm tra magic bytes `FFD8FF` (JPEG) và `89504E47` (PNG).
 - Tiêu đề đưa vào `drawtext` **phải ghi ra tệp tạm và dùng `textfile=`**, không nhúng thẳng vào chuỗi filter, để tránh lỗi escape với `:` `'` `%` `\` (đây cũng là lỗ hổng injection vào filtergraph).
 
@@ -159,6 +173,8 @@ ffmpeg -y -i titled.jpg -vf scale=320:180 -q:v 5 titled_s.jpg
 - **AC-5** — *Given* upload tệp `.jpg` nhưng thực chất là PDF, *Then* nhận `400 INVALID_IMAGE`.
 - **AC-6** — *Given* người dùng đã upload ảnh riêng, *When* đổi tiêu đề clip, *Then* ảnh bìa không đổi.
 - **AC-7** — *Given* `atSec = 47.2`, *When* gọi `/thumbnails/frame`, *Then* ảnh trả về đúng khung tại giây đó (so với ảnh chụp tay từ trình phát, lệch ≤ 1 khung).
+- **AC-8** — *Given* người dùng không có quyền xem video, *When* gọi `GET /thumbnails`, *Then* nhận `404 PART_NOT_FOUND`. *Given* người dùng là `VIEWER`, *When* gọi `PUT /cover`, *Then* nhận `403 FORBIDDEN_ACTION`.
+- **AC-9** — Mọi `url` trong response đều có `X-Amz-Signature`. Gọi thẳng object R2 không chữ ký thì bị R2 từ chối.
 
 ## 8. Kế hoạch kiểm thử (TDD)
 
@@ -170,7 +186,9 @@ ffmpeg -y -i titled.jpg -vf scale=320:180 -q:v 5 titled_s.jpg
 | `ThumbnailExtractorTest.extract_onTestsrc_produces1280x720` | integration `@Tag("ffmpeg")`, nguồn `ffmpeg -f lavfi -i testsrc=duration=10` |
 | `ThumbnailExtractorTest.darkFrame_rejected` | integration, nguồn `color=black:d=3` nối với `testsrc` |
 | `ImageMagicBytesTest.pdfRenamedJpg_rejected` | unit |
-| `ThumbnailControllerTest.atSecOutOfRange_400` / `notOwner_403` | MockMvc |
+| `ThumbnailControllerTest.atSecOutOfRange_422` / `noAccess_404` / `viewerEdits_403` | MockMvc (AC-8) |
+| `ThumbnailControllerTest.list_returnsPresignedUrls` | MockMvc (AC-9) |
+| `ThumbnailServiceTest.rerenderStalePart_keepsUploadedCover` | unit |
 
 ## 9. Rủi ro & failure modes
 

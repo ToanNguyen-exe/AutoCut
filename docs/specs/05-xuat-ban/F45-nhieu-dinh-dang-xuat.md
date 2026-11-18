@@ -6,14 +6,20 @@
 | **Nhóm** | Xuất bản |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV1 (lệnh FFmpeg cho từng profile) · SV3 (mở rộng job cắt, DB) · SV4 (chọn định dạng khi xuất) |
-| **Phụ thuộc** | F09 (job nền), F13. Liên quan F44 (bố cục logo theo khung), F12 (ZIP streaming khi có nhiều định dạng) |
+| **Phụ thuộc** | F00 (`video_parts` do job ghi), F09 (job nền), F13, F35 (`render_kind`), F39 (`presignGet`). Liên quan F25/F32 (filter cắt khoảng của AD-13), F44 (bố cục logo theo khung), F12 (ZIP streaming khi có nhiều định dạng) |
 | **Ước lượng** | M (3–5 ngày) |
 | **Thư viện mới cần duyệt** | Không (FFmpeg có sẵn `libmp3lame` trong bản build chuẩn; kiểm tra lúc khởi động) |
 | **Tham khảo** | Opus Clip (9:16 + chữ phụ đề), Descript export presets, Riverside "Magic Clips", Kapwing resize |
 
+> **Cập nhật 18/11/2026:** Theo review:
+> - Test so sánh với `VideoCutter.buildCommand` (tên đúng, [VideoCutter.java:339](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L339)).
+> - Rendition dùng chung vòng đời với `video_parts` (có `STALE`, `r2_key` nullable) và kế thừa `render_kind` của F35.
+> - Lệnh nhiều đầu ra nối sau filter cắt khoảng của AD-13.
+> - URL tải là presigned (AD-3); lỗi quyền theo AD-2; mã lỗi đầu vào là 422; migration đặt tên theo dấu thời gian.
+
 ## 1. Bối cảnh & vấn đề
 
-- `VideoCutter` hiện chỉ xuất **một định dạng cố định**: giữ độ phân giải gốc, `libx264 -preset fast -crf 22`, AAC, MP4 ([VideoCutter.java:337-360](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L337-L360)). Không có tuỳ chọn hạ độ phân giải hay đổi tỉ lệ khung.
+- `VideoCutter` hiện chỉ xuất **một định dạng cố định**: giữ độ phân giải gốc, `libx264 -preset fast -crf 22`, AAC, MP4 (hàm `buildCommand`, [VideoCutter.java:339-353](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L339-L353)). Không có tuỳ chọn hạ độ phân giải hay đổi tỉ lệ khung.
 - Tên tệp đầu ra được tạo cứng dạng `%02d_%s.mp4` ([BatchVideoCutService.java:197](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L197)) trong thư mục `output/users/{user}/{lesson}/cuts` ([BatchVideoCutService.java:175](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L175)), nên không chứa được nhiều biến thể của cùng một clip.
 - `video_parts` ([schema.sql](../../../database/schema.sql)) chỉ có một `r2_key` cho mỗi clip.
 - Nhu cầu thực tế:
@@ -51,13 +57,14 @@
   | `AUDIO_MP3` | mp3 | — | `libmp3lame -q:a 4` (~165 kbps VBR), mono nếu nguồn mono | có thẻ ID3 tiêu đề/album |
 
 - **FR-2** Khi gửi job cắt, thêm `profiles: ["SOURCE","MP4_720","AUDIO_MP3"]`. Mặc định là `["SOURCE"]`, nên client cũ không bị ảnh hưởng.
-- **FR-3** Mỗi profile được tạo **từ video nguồn**, áp cùng khoảng cắt và cùng padding ([AudioPadding.java:42](../../../backend/src/main/java/com/autocut/video/AudioPadding.java#L42)), không phải mã hoá lại từ bản đã cắt (tránh giảm chất lượng hai lần). Để giảm số lần giải mã, các profile video dùng **một lệnh FFmpeg nhiều đầu ra** (`split`).
+- **FR-3** Mỗi profile được tạo **từ video nguồn**, áp cùng khoảng cắt và cùng padding ([AudioPadding.java:42](../../../backend/src/main/java/com/autocut/video/AudioPadding.java#L42)), không phải mã hoá lại từ bản đã cắt (tránh giảm chất lượng hai lần). Để giảm số lần giải mã, các profile video dùng **một lệnh FFmpeg nhiều đầu ra** (`split`). Nếu topic có khoảng bị cắt (AD-13), `split` lấy đầu vào từ nhãn `[vcat]`/`[acat]` của filter `KeepRanges` thay cho `[0:v]`/`0:a`. Nhờ vậy mọi profile đều đã bỏ cùng các khoảng đó.
 - **FR-4** Bố cục 9:16:
   - `CROP`: cắt vùng 9:16 ở giữa khung theo chiều ngang, vị trí lệch được qua `crop_x_ratio` (0–1, mặc định 0,5).
   - `BLUR_PAD`: video gốc thu vừa chiều ngang 1080 đặt ở giữa; nền là chính video đó phóng to + làm mờ. Phù hợp quay màn hình code, vì cắt giữa sẽ mất chữ.
   - Mặc định là `BLUR_PAD`.
 - **FR-5** Tên tệp: `{NN}_{slug}{suffix}.{ext}`, với suffix là `""` (SOURCE), `_1080p`, `_720p`, `_doc`, `_audio`. Thư mục giữ nguyên.
-- **FR-6** Mỗi biến thể lưu một dòng trong bảng `video_part_renditions` và upload lên R2 theo cùng quy ước khoá hiện tại ([BatchVideoCutService.java:213](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L213)).
+- **FR-6** Mỗi biến thể lưu một dòng trong bảng `video_part_renditions` và upload lên R2 theo cùng quy ước khoá hiện tại ([BatchVideoCutService.java:213](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L213)). Rendition dùng chung trạng thái với part (F00): job ghi `RENDERING → COMPLETED/FAILED` cho từng rendition. Khi part chuyển `STALE`, mọi rendition của nó cũng chuyển `STALE`.
+- **FR-10** Người xem qua link chia sẻ (F40), khoá học (F41) hoặc đẩy lên YouTube/Drive (F42) chỉ thấy rendition của part có `render_kind='RELEASE'` (F35) và `status='COMPLETED'`.
 - **FR-7** Một profile lỗi (ví dụ thiếu `libmp3lame`) không làm hỏng các profile khác. `report.json` liệt kê lỗi theo profile.
 - **FR-8** Tiến độ job tính theo `số clip × số profile`. Thông báo hiện dạng "Đang xuất 3/10 – Cú pháp for (bản 720p)".
 - **FR-9** ZIP (F12) cho lọc theo profile: `?profiles=MP4_720,AUDIO_MP3`.
@@ -73,7 +80,7 @@
 
 ### 6.1 Cơ sở dữ liệu
 
-`V<n>__create_part_renditions.sql`:
+`V<yyyyMMddHHmm>__create_part_renditions.sql`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS video_part_renditions (
@@ -81,11 +88,12 @@ CREATE TABLE IF NOT EXISTS video_part_renditions (
     video_part_id BIGINT NOT NULL REFERENCES video_parts(id) ON DELETE CASCADE,
     profile VARCHAR(20) NOT NULL,           -- SOURCE | MP4_1080 | MP4_720 | VERTICAL_9_16 | AUDIO_MP3
     layout VARCHAR(10),                     -- CROP | BLUR_PAD (chỉ với VERTICAL_9_16)
-    r2_key VARCHAR(500) NOT NULL,
+    r2_key VARCHAR(500),                    -- NULL khi chưa đẩy R2 (giống video_parts sau F00)
     file_size BIGINT,
     width INTEGER,
     height INTEGER,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING | RENDERING | COMPLETED | FAILED
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','RENDERING','COMPLETED','FAILED','STALE')),
     error_message TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_part_profile UNIQUE (video_part_id, profile)
@@ -94,7 +102,8 @@ CREATE TABLE IF NOT EXISTS video_part_renditions (
 -- Dữ liệu cũ: mỗi video_parts hiện có tương ứng một rendition SOURCE
 INSERT INTO video_part_renditions (video_part_id, profile, r2_key, file_size, status)
 SELECT id, 'SOURCE', r2_key, file_size, status FROM video_parts
-ON CONFLICT DO NOTHING;
+WHERE status IN ('COMPLETED','STALE','FAILED')   -- sau migration F00, các dòng giả đã thành STALE
+ON CONFLICT (video_part_id, profile) DO NOTHING;
 ```
 
 `video_parts.r2_key` được giữ lại để tương thích ngược và luôn trùng với rendition `SOURCE`.
@@ -104,8 +113,10 @@ ON CONFLICT DO NOTHING;
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
 | GET | `/api/v1/export-profiles` | Đã đăng nhập | Danh sách profile khả dụng + mô tả tiếng Việt |
-| POST | `/api/video/cut` (sau F09 là `/api/v1/cut-jobs`) | Chủ video | Thêm trường `profiles` và `vertical_layout` |
-| GET | `/api/v1/parts/{partId}/renditions` | Chủ clip / người có link F40 | Danh sách biến thể + URL tải (presigned) |
+| POST | `/api/video/cut` (sau F09 là `/api/v1/cut-jobs`) | Quyền `EDIT` trên video | Thêm trường `profiles` và `vertical_layout` |
+| GET | `/api/v1/parts/{partId}/renditions` | Quyền xem video chứa part | Danh sách biến thể + URL tải (presigned 15 phút, AD-3) |
+
+Người xem qua link F40 lấy rendition qua `/api/v1/share/{token}/download/{partId}?profile=MP4_720` (F40 FR-9). Endpoint này chỉ trả rendition của part `RELEASE`.
 
 Request mở rộng:
 
@@ -134,13 +145,18 @@ Request mở rộng:
 }
 ```
 
-Lỗi: `400 UNKNOWN_PROFILE`, `400 PROFILE_UNAVAILABLE` (ví dụ thiếu `libmp3lame`).
+Lỗi:
+- `422 UNKNOWN_PROFILE`.
+- `422 PROFILE_UNAVAILABLE` (ví dụ thiếu `libmp3lame`).
+- `404 PART_NOT_FOUND`: part không tồn tại, hoặc người gọi không có quyền xem (AD-2).
+- `403 FORBIDDEN_ACTION`: xem được nhưng không có quyền sửa.
 
 ### 6.3 Backend (Spring Boot)
 
 - **Tạo** `video/ExportProfile` (enum gồm `suffix`, `extension`, `maxHeight`) và `video/ExportCommandBuilder` (SV1). Đây là hàm thuần:
   `List<String> build(Path in, double ss, double to, List<ExportProfile> profiles, VerticalLayout layout, Map<ExportProfile, Path> outputs, BrandingSpec brandingOrNull)`.
   - Tham số `brandingOrNull` để nối với F44: logo được vẽ **sau** bước scale/crop của từng nhánh, nên luôn nằm đúng góc của khung đích.
+  - Tham số đầu vào cho biết nhãn video/audio nguồn (`[0:v]`/`0:a`, hoặc `[vcat]`/`[acat]` của AD-13), để ghép được với filter cắt khoảng.
 - **Sửa** `VideoCutter`: thêm `CutResult cutMulti(File in, double start, double end, double total, List<ExportProfile>, VerticalLayout, Map<ExportProfile, File>)`. Vẫn dùng `calculatePaddedRange` ([VideoCutter.java:198](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L198)) để áp padding. Hàm `cut(...)` cũ giữ nguyên và tương đương `cutMulti` với `[SOURCE]`.
 - **Sửa** `BatchVideoCutService.executeJob` ([BatchVideoCutService.java:186-232](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L186-L232)): lặp theo clip, gọi `cutMulti`, upload từng tệp, ghi `video_part_renditions`. Tách `AUDIO_MP3` thành lệnh riêng (không có nhánh video), để lỗi encoder MP3 không làm hỏng các nhánh video.
 
@@ -195,12 +211,16 @@ ffmpeg -y -ss 11.7 -to 108.9 -i source.mp4 -vn -c:a libmp3lame -q:a 4 \
 - **AC-6** — *Given* FFmpeg không có `libmp3lame`, *When* yêu cầu `["SOURCE","AUDIO_MP3"]`, *Then* job vẫn `COMPLETED`, bản SOURCE có đủ, và `report.json` ghi lỗi của `AUDIO_MP3`.
 - **AC-7** — *Given* 3 profile video, *Then* chỉ có **một** tiến trình FFmpeg cho phần video của mỗi clip (kiểm tra qua log lệnh).
 - **AC-8** — Bảng `video_part_renditions` có đúng `số clip × số profile` dòng `COMPLETED`.
+- **AC-9** — *Given* part có rendition `COMPLETED`, *When* sửa khoảng thời gian của topic rồi lưu (F00), *Then* mọi rendition của part chuyển `STALE`.
+- **AC-10** — *Given* part có `render_kind='DRAFT'`, *When* tải qua link chia sẻ F40, *Then* nhận `404 PART_NOT_FOUND`.
+- **AC-11** — *Given* người dùng không có quyền xem video, *When* gọi `GET /renditions`, *Then* nhận `404`. Mọi `url` trả về cho người có quyền đều có `X-Amz-Signature`.
 
 ## 8. Kế hoạch kiểm thử (TDD)
 
 | Test | Loại |
 |---|---|
-| `ExportCommandBuilderTest.sourceOnly_equalsLegacyCommand` | unit: so với kết quả `VideoCutter.buildCutCommand` cũ |
+| `ExportCommandBuilderTest.sourceOnly_equalsLegacyCommand` | unit: so với kết quả `VideoCutter.buildCommand` hiện có |
+| `ExportCommandBuilderTest.withKeepRanges_splitsFromVcatLabel` | unit (AD-13) |
 | `ExportCommandBuilderTest.threeVideoProfiles_singleSplit3` | unit |
 | `ExportCommandBuilderTest.mp4_720_noUpscaleExpression` | unit: chứa `min(720,ih)` |
 | `ExportCommandBuilderTest.vertical_blurPad_filterChain` / `vertical_crop_respectsXRatio` | unit |
@@ -209,6 +229,8 @@ ffmpeg -y -ss 11.7 -to 108.9 -i source.mp4 -vn -c:a libmp3lame -q:a 4 \
 | `VideoCutterMultiTest.cutMulti_testsrc_producesExpectedDimensions` | integration `@Tag("ffmpeg")` dùng `testsrc=size=1920x1080:duration=8` + `sine` |
 | `BatchVideoCutServiceTest.noProfiles_defaultsToSource` | unit (bảo vệ hành vi cũ) |
 | `BatchVideoCutServiceTest.mp3Failure_doesNotFailJob` | unit (mock VideoCutter trả lỗi cho profile MP3) |
+| `RenditionStaleTest.partStale_marksAllRenditionsStale` | integration Postgres (AC-9) |
+| `RenditionControllerTest.noAccess_404_presignedUrls` | MockMvc (AC-11) |
 
 ## 9. Rủi ro & failure modes
 

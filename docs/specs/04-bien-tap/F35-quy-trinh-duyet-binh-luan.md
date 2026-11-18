@@ -6,10 +6,12 @@
 | **Nhóm** | Biên tập |
 | **Ưu tiên** | P1 |
 | **Người phụ trách gợi ý** | SV3 (API, máy trạng thái) + SV4 (giao diện) |
-| **Phụ thuộc** | F01, F02 (vai trò Giảng viên/Biên tập/Người duyệt), F13, F33 (`topics.id` ổn định để gắn bình luận). Thông báo: F48 (nếu có). Nhật ký: F08. |
+| **Phụ thuộc** | F00 (`topics.id` ổn định, `videoId`), F01, F02 (`video_access.permission` = `OWNER`/`EDITOR`/`REVIEWER`/`VIEWER` và enum `Permission` của `AccessService`, AD-1), F13, F33 (version để tự quay về DRAFT), F09 (job cắt có tham số `renderKind`). Thông báo: F48 (nếu có). Nhật ký: F08. |
 | **Ước lượng** | L (1–2 tuần) |
 | **Thư viện mới cần duyệt** | Không |
 | **Tham khảo** | Frame.io (time-coded comments), Vimeo Review, Wistia, GitHub PR review (Approve / Request changes) |
+
+> **Cập nhật 18/11/2026:** quyền dựa trên ma trận `Permission` của F02 (`EDIT` để gửi duyệt, `REVIEW` để duyệt, `COMMENT` để bình luận; AD-1); cấu hình tự duyệt chuyển sang cấu hình hệ thống (không phụ thuộc F49); định nghĩa render "phát hành"/"nháp" bằng tham số `renderKind` của job cắt; `review_events.actor_id` cho phép NULL (hệ thống) và migration ghi sự kiện `legacy_import`; mã lỗi theo AD-2.
 
 ## 1. Bối cảnh & vấn đề
 
@@ -40,19 +42,23 @@
 ## 4. Yêu cầu chức năng
 - **FR-1 Trạng thái** lưu ở cột mới `videos.review_status`. Bảng chuyển trạng thái:
 
+Quyền lấy theo ma trận F02 FR-2: gửi duyệt cần `EDIT` (OWNER, EDITOR); "Người duyệt" là người có `REVIEW` (OWNER, REVIEWER; ADMIN và `ORG_ADMIN` có mọi quyền).
+
 | Từ | Hành động | Sang | Ai được làm |
 |---|---|---|---|
-| DRAFT | `submit` | IN_REVIEW | Chủ video, Biên tập viên |
-| IN_REVIEW | `approve` | APPROVED | Người duyệt (Giảng viên/Admin), **không** phải người vừa gửi duyệt |
+| DRAFT | `submit` | IN_REVIEW | Có `EDIT` |
+| IN_REVIEW | `approve` | APPROVED | Người duyệt, **không** phải người vừa gửi duyệt (trừ khi bật FR-11) |
 | IN_REVIEW | `request_changes` (bắt buộc ít nhất 1 bình luận mở hoặc có lời nhắn) | CHANGES_REQUESTED | Người duyệt |
-| CHANGES_REQUESTED | `submit` | IN_REVIEW | Chủ video, Biên tập viên |
+| CHANGES_REQUESTED | `submit` | IN_REVIEW | Có `EDIT` |
 | IN_REVIEW | `withdraw` | DRAFT | Người đã gửi duyệt |
-| APPROVED | `publish` | PUBLISHED | Người duyệt, Admin |
-| APPROVED, PUBLISHED | `reopen` | DRAFT | Người duyệt, Admin |
+| APPROVED | `publish` | PUBLISHED | Người duyệt |
+| APPROVED, PUBLISHED | `reopen` | DRAFT | Người duyệt |
 
-- **FR-2 Tự động quay lại.** Ở trạng thái `APPROVED`, nếu segments thay đổi (lưu qua F33 tạo version mới) thì tự về `DRAFT` và ghi lý do "Có chỉnh sửa sau khi duyệt". Ở `IN_REVIEW`, chỉnh sửa vẫn được nhưng hiện cảnh báo "Video đang chờ duyệt".
+Khi `submit`, có thể chọn `reviewerId`. Người được chọn phải có quyền duyệt trên video, nếu không thì trả 422 `REVIEWER_NOT_ELIGIBLE`.
+
+- **FR-2 Tự động quay lại.** Ở trạng thái `APPROVED`, nếu lần lưu qua F33 làm tăng `videos.version` thì video tự về `DRAFT`, ghi sự kiện `auto_reopen` (actor là người vừa lưu) với lý do "Có chỉnh sửa sau khi duyệt". Thay đổi `edit_ranges` (F32) cũng tính. Ở `IN_REVIEW`, chỉnh sửa vẫn được nhưng hiện cảnh báo "Video đang chờ duyệt".
 - **FR-3 Mỗi lần chuyển trạng thái** ghi vào `review_events` gồm: ai làm, từ trạng thái nào, sang trạng thái nào, lời nhắn, và `version_no` tại thời điểm đó.
-- **FR-4 Cột `videos.reviewed` cũ** được suy ra: `reviewed = review_status IN ('APPROVED','PUBLISHED')`. Bỏ ba chỗ tự đặt cờ đã nêu ở §1.
+- **FR-4 Cột `videos.reviewed` cũ** được suy ra: `reviewed = review_status IN ('APPROVED','PUBLISHED')`. Bỏ hai chỗ tự đặt cờ ở frontend đã nêu ở §1 (chỗ thứ ba ở backend đã được F00 FR-5 bỏ).
 - **FR-5 Bình luận:** gồm `time_sec` (bắt buộc), `topic_id` (tuỳ chọn, tự gán theo topic chứa `time_sec`), nội dung (1–2.000 ký tự), `parent_id` (trả lời), trạng thái `OPEN | RESOLVED`.
 - **FR-6 @nhắc tên** những người có quyền trên video. Lưu danh sách `mentions` để F48 gửi thông báo.
 - **FR-7 Giao diện bình luận:**
@@ -61,7 +67,13 @@
   - Nhấn phím `C` (bổ sung vào keymap của F31) để mở ô bình luận tại playhead hiện tại. Video tự tạm dừng khi bắt đầu gõ.
 - **FR-8** Không xoá bình luận đã có trả lời. Chỉ người viết được sửa hoặc xoá bình luận của mình trong vòng 15 phút. Admin được xoá mọi bình luận.
 - **FR-9 Thư viện** ([VideoLibraryColumn.tsx](../../../frontend/src/components/VideoLibraryColumn.tsx), [VideoLibraryDrawer.tsx](../../../frontend/src/components/VideoLibraryDrawer.tsx)): hiện huy hiệu trạng thái duyệt và số góp ý chưa xử lý. Có bộ lọc theo trạng thái.
-- **FR-10 Chặn render bản phát hành** khi chưa `APPROVED`. Render bản nháp vẫn được nhưng tên thư mục xuất có hậu tố `_nhap`.
+- **FR-10 Render phát hành và nháp.** Job cắt (`POST /cut`, `CutRequestDTO`) có thêm tham số `renderKind`:
+  - `DRAFT` (mặc định): render ở mọi trạng thái. Thư mục xuất có hậu tố `_nhap`, `video_parts` được ghi bình thường. Clip nháp **không** dùng được cho F40, F41, F42.
+  - `RELEASE`: chỉ chạy khi `review_status IN ('APPROVED','PUBLISHED')`, nếu không thì trả 409 `NOT_APPROVED`. Thư mục xuất không có hậu tố. Thêm cột `video_parts.render_kind` để các spec xuất bản lọc theo.
+
+  `POST /render` cũ không có khái niệm này và được bỏ dần (F00 FR-8, F32).
+- **FR-12 Sự kiện "đã duyệt".** Khi video chuyển sang `APPROVED` (do `approve`, kể cả tự duyệt), `ReviewService` phát Spring `ApplicationEvent` `VideoApprovedEvent(videoId, approverId, approvedAt)`. Phía nghe dùng `@TransactionalEventListener(phase = AFTER_COMMIT)`, nên chỉ nhận sự kiện khi transaction duyệt đã commit. F46 dùng sự kiện này để tính `segment_edit_stats` (so bản `AI_ANALYZE` mới nhất của F33 với bản được duyệt).
+- **FR-11 Tự duyệt.** Cấu hình hệ thống `autocut.review.allow-self-approval` trong `application.properties` (biến môi trường `REVIEW_ALLOW_SELF_APPROVAL`), mặc định `false`. Khi bật, người gửi duyệt được tự `approve`, và sự kiện ghi `message = "Tự duyệt"`. Khi F49 có tổ chức, tổ chức có thể ghi đè giá trị này; phần đó thuộc F49, spec này không phụ thuộc.
 
 ## 5. Yêu cầu phi chức năng
 - Tải 500 bình luận của một video trong dưới 300 ms. Phân trang theo `time_sec`.
@@ -69,17 +81,20 @@
 
 ## 6. Thiết kế kỹ thuật
 ### 6.1 Cơ sở dữ liệu
-`V<n>__review_workflow_comments.sql`
+`V<yyyyMMddHHmm>__review_workflow_comments.sql`
 ```sql
-ALTER TABLE videos ADD COLUMN IF NOT EXISTS review_status VARCHAR(20) NOT NULL DEFAULT 'DRAFT';
-ALTER TABLE videos ADD COLUMN IF NOT EXISTS reviewer_id BIGINT REFERENCES users(id);
-UPDATE videos SET review_status = 'APPROVED' WHERE reviewed = TRUE;
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS review_status VARCHAR(20) NOT NULL DEFAULT 'DRAFT'
+    CHECK (review_status IN ('DRAFT','IN_REVIEW','CHANGES_REQUESTED','APPROVED','PUBLISHED'));
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS reviewer_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_videos_review_status ON videos(review_status);
+
+ALTER TABLE video_parts ADD COLUMN IF NOT EXISTS render_kind VARCHAR(10) NOT NULL DEFAULT 'DRAFT'
+    CHECK (render_kind IN ('DRAFT','RELEASE'));
 
 CREATE TABLE IF NOT EXISTS review_events (
     id BIGSERIAL PRIMARY KEY,
     video_id BIGINT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-    actor_id BIGINT NOT NULL REFERENCES users(id),
+    actor_id BIGINT REFERENCES users(id) ON DELETE SET NULL,   -- NULL = hệ thống (legacy_import)
     action VARCHAR(30) NOT NULL,
     from_status VARCHAR(20) NOT NULL,
     to_status VARCHAR(20) NOT NULL,
@@ -89,17 +104,23 @@ CREATE TABLE IF NOT EXISTS review_events (
 );
 CREATE INDEX IF NOT EXISTS idx_review_events_video ON review_events(video_id, created_at DESC);
 
+-- Dữ liệu cũ (xem câu hỏi mở 2): mặc định đưa về APPROVED và ghi vết để truy lại
+UPDATE videos SET review_status = 'APPROVED' WHERE reviewed = TRUE;
+INSERT INTO review_events (video_id, actor_id, action, from_status, to_status, message, version_no)
+SELECT id, NULL, 'legacy_import', 'DRAFT', 'APPROVED', 'Chuyển từ cờ reviewed=true cũ', version
+FROM videos WHERE reviewed = TRUE;
+
 CREATE TABLE IF NOT EXISTS comments (
     id BIGSERIAL PRIMARY KEY,
     video_id BIGINT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
     topic_id BIGINT REFERENCES topics(id) ON DELETE SET NULL,
     parent_id BIGINT REFERENCES comments(id) ON DELETE CASCADE,
-    author_id BIGINT NOT NULL REFERENCES users(id),
+    author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     time_sec DOUBLE PRECISION NOT NULL CHECK (time_sec >= 0),
     body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 2000),
     mentions BIGINT[] NOT NULL DEFAULT '{}',
-    status VARCHAR(10) NOT NULL DEFAULT 'OPEN',   -- OPEN | RESOLVED
-    resolved_by BIGINT REFERENCES users(id),
+    status VARCHAR(10) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','RESOLVED')),
+    resolved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     resolved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -114,6 +135,8 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
 |---|---|---|---|
 | GET | `` | Xem | `{ status, reviewer, events[] }` |
 | POST | `/actions` | Theo bảng FR-1 | `{ action, message?, reviewerId? }` |
+
+Theo AD-2: không có quyền xem video thì trả 404; có quyền xem nhưng hành động không được phép với role của mình thì trả 403 `FORBIDDEN_ACTION`; tự duyệt khi FR-11 tắt thì trả 403 `SELF_APPROVAL_FORBIDDEN`.
 
 ```json
 // POST /api/v1/videos/42/review/actions
@@ -131,9 +154,9 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
 | GET | `?status=OPEN&from=0&to=600` | Xem | Danh sách, có trả lời lồng 1 cấp |
-| POST | `` | Xem trở lên | Tạo bình luận `{ timeSec, body, parentId?, mentions? }` |
+| POST | `` | Có `COMMENT` (OWNER, EDITOR, REVIEWER) | Tạo bình luận `{ timeSec, body, parentId?, mentions? }` |
 | PATCH | `/{commentId}` | Tác giả (≤ 15 phút) | Sửa nội dung |
-| POST | `/{commentId}/resolve` · `/reopen` | Biên tập trở lên | Đổi trạng thái |
+| POST | `/{commentId}/resolve` · `/reopen` | Có `COMMENT` | Đổi trạng thái |
 | DELETE | `/{commentId}` | Tác giả (≤ 15 phút) / Admin | Xoá |
 
 ```json
@@ -147,10 +170,11 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
 ### 6.3 Backend
 - **Mới** `review/ReviewStatus.java` (enum), `review/ReviewAction.java` (enum), `review/ReviewStateMachine.java`. Lớp này là hàm thuần `ReviewStatus next(ReviewStatus from, ReviewAction a)`, ném `InvalidTransitionException` khi không hợp lệ.
 - **Mới** `service/ReviewService.java`: kiểm tra quyền, tự duyệt, điều kiện `request_changes`, ghi `review_events`, phát `ApplicationEvent` (`ReviewStatusChangedEvent`) cho F48 và F08.
-- **Mới** `service/CommentService.java`: tự gán `topic_id` bằng truy vấn topic ACTIVE có `start_time <= t < end_time`; kiểm tra người được @nhắc có quyền trên video.
-- **Sửa** `ProjectVersionService.save` (F33): nếu trạng thái là `APPROVED` thì gọi `reviewService.autoReopen(videoId, version)` để chuyển về `DRAFT` (FR-2).
-- **Sửa** `SegmentPersistenceService`: xoá dòng `video.setReviewed(true)`.
-- **Sửa** luồng render (`/render`, `/cut`): đọc `review_status` để quyết định có hậu tố `_nhap` hay không (FR-10).
+- **Mới** `service/CommentService.java`: tự gán `topic_id` bằng truy vấn topic ACTIVE có `start_time <= t < end_time` (dùng `topics.video_id` của F00); kiểm tra người được @nhắc có dòng `video_access` trên video. Kiểm tra quyền qua `AccessService.require` (AD-1).
+- **Sửa** `ProjectVersionService.save` (F33) và `EditRangeService.replaceUserRanges` (F32): nếu version tăng và trạng thái là `APPROVED` thì gọi `reviewService.autoReopen(videoId, version, actorId)` để chuyển về `DRAFT` (FR-2).
+- **Sửa** `CutRequestDTO` thêm `renderKind`; `BatchVideoCutService` kiểm tra FR-10, ghi `video_parts.render_kind`.
+- **Mới** `review/VideoApprovedEvent.java` (record `videoId, approverId, approvedAt`), phát trong `ReviewService` khi `to_status = APPROVED` (FR-12). `ReviewStatusChangedEvent` vẫn phát cho mọi lần chuyển trạng thái.
+- **Mới** `config/ReviewProperties.java` (`@ConfigurationProperties("autocut.review")`) với `allowSelfApproval`.
 
 ### 6.5 Frontend
 - **Mới** `components/ReviewStatusBadge.tsx`. Nhãn tiếng Việt: Bản nháp / Chờ duyệt / Cần sửa / Đã duyệt / Đã xuất bản.
@@ -169,6 +193,10 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
 - **AC-6** — *Given* video có 3 bình luận OPEN, *Then* thẻ trong thư viện hiện "3 góp ý".
 - **AC-7** — *Given* đang ở `request_changes` mà không có bình luận mở và không có lời nhắn, *Then* nhận 422.
 - **AC-8** — Bấm vào `StatsCards` không còn đổi được trạng thái duyệt.
+- **AC-9** — *Given* video ở DRAFT, *When* tạo job cắt với `renderKind=RELEASE`, *Then* nhận 409 `NOT_APPROVED`. *When* `renderKind=DRAFT`, *Then* job chạy, thư mục xuất có hậu tố `_nhap` và `video_parts.render_kind='DRAFT'`.
+- **AC-10** — *Given* `REVIEW_ALLOW_SELF_APPROVAL=true`, *When* người gửi tự `approve`, *Then* thành công và sự kiện có `message='Tự duyệt'`.
+- **AC-11** — *Given* DB có 3 video `reviewed=true` trước migration, *Then* sau migration có 3 dòng `review_events` với `action='legacy_import'` và `actor_id IS NULL`.
+- **AC-12** — *Given* user `VIEWER` hoặc `EDITOR`, *When* gọi `approve`, *Then* nhận 403 `FORBIDDEN_ACTION`. *Given* user không có quyền gì, *Then* nhận 404.
 
 ## 8. Kế hoạch kiểm thử (TDD)
 - `ReviewStateMachineTest` (tham số hoá, đủ mọi cặp trạng thái × hành động):
@@ -180,6 +208,12 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
   - `transition_writesEventWithVersionNo`
   - `transition_publishesApplicationEvent`
   - `autoReopen_onlyFromApproved`
+  - `approve_byViewer_forbiddenAction`
+  - `approve_selfWhenAllowed_succeeds`
+  - `submit_withIneligibleReviewer_rejected`
+  - `approve_publishesVideoApprovedEvent_afterCommitOnly` (listener `@TransactionalEventListener` nhận đúng 1 sự kiện khi commit, 0 sự kiện khi transaction rollback)
+- `BatchVideoCutServiceTest`: `releaseRender_notApproved_throwsNotApproved`, `draftRender_addsSuffixAndRenderKind`
+- `ReviewMigrationTest`: `legacyReviewed_becomesApprovedWithEvent` (Postgres, AD-7)
 - `CommentServiceTest`:
   - `create_assignsTopicContainingTime`
   - `create_timeOutsideAnyTopic_topicNull`
@@ -192,13 +226,13 @@ CREATE INDEX IF NOT EXISTS idx_comments_open ON comments(video_id) WHERE status 
 ## 9. Rủi ro & failure modes
 | Rủi ro | Ảnh hưởng | Cách giảm |
 |---|---|---|
-| Dữ liệu cũ đang `reviewed=true` | Bị gán APPROVED hàng loạt mà không ai duyệt thật | Migration ghi `review_events` loại `legacy_import` để truy vết. Hỏi trưởng nhóm có muốn đưa hết về DRAFT không |
+| Dữ liệu cũ đang `reviewed=true` | Bị gán APPROVED hàng loạt mà không ai duyệt thật | Migration ghi `review_events` loại `legacy_import` (actor NULL) để truy vết. Nếu trưởng nhóm muốn đưa về DRAFT thì chỉ cần đổi `UPDATE` trong migration |
 | Bình luận lệch mốc sau khi F32 bỏ bớt đoạn | `time_sec` trỏ sai nội dung | `time_sec` luôn là thời gian của **video gốc**, không phải clip đã cắt. Ghi rõ trong UI |
-| Topic bị DISCARDED | Bình luận mất ngữ cảnh | Dùng `ON DELETE SET NULL` và hiện "(đoạn đã bị bỏ)" |
-| Nhóm nhỏ, chỉ có một người | Không tự duyệt được | Cấu hình `review.allowSelfApproval` theo tổ chức (F49), mặc định `false` |
+| Topic bị DISCARDED | Bình luận mất ngữ cảnh | Topic không bị xoá cứng (F00), nên `topic_id` vẫn trỏ đúng; giao diện hiện "(đoạn đã bị bỏ)" khi `topics.status='DISCARDED'` |
+| Nhóm nhỏ, chỉ có một người | Không tự duyệt được | Bật cấu hình hệ thống `autocut.review.allow-self-approval` (FR-11) |
 
 ## 10. Câu hỏi mở
-- [ ] Có cho phép tự duyệt khi nhóm chỉ có 1 giảng viên không?
+- [ ] Có bật tự duyệt (FR-11) cho môi trường hiện tại không? Mặc định tắt.
 - [ ] Dữ liệu cũ `reviewed=true` chuyển thành APPROVED hay DRAFT?
-- [ ] Người xem/học viên (role Người xem) có được bình luận không, hay chỉ người trong nhóm biên tập?
+- [x] `VIEWER` có được bình luận không? **Đã chốt theo AD-1/F02 FR-2:** không (chỉ người có `COMMENT`).
 - [ ] Render bản nháp có cần đóng watermark "BẢN NHÁP" không (liên quan F44)?

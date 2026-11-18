@@ -6,10 +6,12 @@
 | **Nhóm** | Hạ tầng |
 | **Ưu tiên** | P1 |
 | **Người phụ trách gợi ý** | SV3 (backend, Actuator), SV2 (đo token và chi phí trong Python), SV4 (trang chi phí cho Admin) |
-| **Phụ thuộc** | F09 (gắn chi phí theo job), F13 (bảng mới), F14 (health check của container) |
+| **Phụ thuộc** | F09 (gắn chi phí theo job), F13 (bảng mới), F07 (chat đã chuyển về backend, nên ghi chi phí chat trực tiếp). F14 không phụ thuộc F15: F14 dùng tạm `GET /`, khi F15 merge thì chuyển `HEALTHCHECK` sang `/actuator/health/liveness`. |
 | **Ước lượng** | M (3–5 ngày) |
 | **Thư viện mới cần duyệt** | **Có**: (1) `spring-boot-starter-actuator`: health và metrics, chính chủ Spring. (2) Tuỳ chọn `io.sentry:sentry-spring-boot-starter` và `@sentry/nextjs`: gom lỗi, có gói miễn phí 5.000 lỗi/tháng. Nếu Sentry không được duyệt thì vẫn đủ dùng với log JSON + Actuator. Không cần Prometheus/Grafana ở giai đoạn này. |
 | **Tham khảo** | Spring Boot Actuator, Sentry, Langfuse/Helicone (theo dõi chi phí LLM), trang Usage của OpenAI |
+
+> **Cập nhật 18/11/2026:** Sửa endpoint health cho đúng Actuator (không có `/actuator/health/details`; dùng `show-details=when-authorized` và các nhóm `liveness`/`readiness`); bỏ FR-10 vì F07 đã chuyển chat về backend; đặt timeout kết nối Hikari 5 giây để AC-1 đạt được; tên migration theo quy ước dấu thời gian.
 
 ## 1. Bối cảnh & vấn đề
 
@@ -20,13 +22,13 @@
 - **Không đo chi phí AI.** Hệ thống gọi nhiều nhà cung cấp:
   - Gemini: [gemini_transcriber.py:203](../../../backend/ai/gemini_transcriber.py#L203), [transcript_refiner.py:76](../../../backend/ai/transcript_refiner.py#L76) (có tự đổi model khi lỗi).
   - Groq Whisper: [groq_service.py:56](../../../backend/ai/groq_service.py#L56).
-  - Chat: Groq, Gemini, OpenAI, Anthropic trong [frontend/src/app/api/chat/route.ts:92-288](../../../frontend/src/app/api/chat/route.ts#L92).
+  - Chat: Groq, Gemini, OpenAI, Anthropic trong [frontend/src/app/api/chat/route.ts:92-288](../../../frontend/src/app/api/chat/route.ts#L92). F07 chuyển phần này về backend Spring, nên F15 đo chi phí chat ở backend.
   Không ai biết một video 1 giờ tốn bao nhiêu tiền, ai dùng nhiều nhất, hay khi nào sắp vượt ngân sách.
 - Không có cảnh báo: chỉ biết job lỗi khi người dùng phàn nàn.
 
 ## 2. Mục tiêu
 
-- `/actuator/health` phản ánh đúng tình trạng DB, R2, ffmpeg, Python và hàng đợi job.
+- `/actuator/health/readiness` phản ánh đúng tình trạng DB, R2, ffmpeg, Python và hàng đợi job; `/actuator/health/liveness` chỉ cho biết tiến trình JVM còn sống.
 - Log JSON có cấu trúc, mỗi dòng có `requestId`, `userId`, `videoId`, `jobId` nếu có.
 - Mọi lần gọi AI đều được ghi vào bảng `ai_usage` (nhà cung cấp, model, token, số giây audio, chi phí USD ước tính, gắn với user, video, job).
 - Lỗi chưa xử lý được gom về một nơi (Sentry nếu được duyệt, nếu không thì log ERROR + bảng `jobs.error_*`).
@@ -46,8 +48,12 @@
 ## 4. Yêu cầu chức năng
 
 ### Health & metrics
-- **FR-1** Bật Actuator: `/actuator/health` (public, chỉ trả `UP`/`DOWN`), `/actuator/health/details`, `/actuator/metrics`, `/actuator/flyway` (chỉ Admin, sau F01/F02).
-- **FR-2** Các `HealthIndicator` tự viết: `r2` (`HeadBucket`), `ffmpeg` (`ffmpeg -version` chạy lúc khởi động và cache kết quả), `python` (`python -c "import faster_whisper, google.genai"` chạy lúc khởi động), `jobQueue` (`DOWN` nếu có job `QUEUED` chờ > 30 phút).
+- **FR-1** Bật Actuator. Lưu ý Actuator **không có** endpoint `/actuator/health/details`; chi tiết nằm ngay trong `/actuator/health` và được ẩn hoặc hiện theo cấu hình:
+  - `/actuator/health`: public. Người chưa đăng nhập chỉ thấy `{"status":"UP"}`. Admin thấy cả từng thành phần nhờ `management.endpoint.health.show-details=when-authorized` và `management.endpoint.health.roles=ADMIN`.
+  - `/actuator/health/liveness`: public, chỉ kiểm JVM còn sống (**không** gồm DB hay R2, để DB sập không làm Docker khởi động lại backend liên tục). Dùng cho `HEALTHCHECK` của F14.
+  - `/actuator/health/readiness`: public, gồm DB, R2, ffmpeg, python, jobQueue. Bật bằng `management.endpoint.health.probes.enabled=true` và `management.endpoint.health.group.readiness.include=readinessState,db,r2,ffmpeg,python,jobQueue`.
+  - `/actuator/metrics/**`, `/actuator/flyway`: chỉ Admin (sau F01/F02).
+- **FR-2** Các `HealthIndicator` tự viết: `r2` (`HeadBucket`), `ffmpeg` (`ffmpeg -version` chạy lúc khởi động và cache kết quả), `python` (`python -c "import faster_whisper, google.genai"` chạy lúc khởi động), `jobQueue` (`DOWN` nếu có job `QUEUED` chờ > 30 phút). Mỗi indicator gọi ra ngoài phải có timeout ≤ 3 giây và cache kết quả 30 giây.
 - **FR-3** Metrics tự định nghĩa (Micrometer, có sẵn trong Actuator): `autocut.jobs.duration{type,status}`, `autocut.jobs.queued{type}`, `autocut.ai.cost.usd{provider,model}`, `autocut.upload.bytes`.
 
 ### Log
@@ -64,12 +70,12 @@
 - **FR-9** Python: mọi lần gọi AI đi qua một hàm chung `record_usage(provider, model, input_tokens, output_tokens, audio_seconds, latency_ms, success, error_code)`. Hàm này in một dòng `@@USAGE {...}` ra stdout (cùng cơ chế với `@@PROGRESS` của F10). Java đọc dòng này rồi ghi vào `ai_usage` với `job_id`, `video_id`, `owner_id`.
   - Gemini: lấy `response.usage_metadata.prompt_token_count` và `candidates_token_count`.
   - Groq Whisper: tính theo `audio_seconds` (độ dài tệp mp3).
-- **FR-10** Next.js API route `chat`: sau mỗi lần gọi thì `POST /api/v1/internal/ai-usage` lên backend (xác thực bằng secret nội bộ). Khi F07 chuyển chat về backend thì ghi trực tiếp.
+- **FR-10** *(Đã bỏ)* Không cần endpoint nội bộ để Next.js gửi số liệu lên. F07 (P0, làm trước F15) đã chuyển chat về backend, nên `ChatService` của F07 gọi thẳng `AiUsageService.record(...)` với `feature=CHAT`.
 - **FR-11** Bảng giá đặt trong `config.yaml` → `ai_pricing` (USD trên 1 triệu token, USD trên 1 phút audio), có ngày hiệu lực. Chi phí được tính lúc ghi và lưu lại, nên đổi bảng giá không làm thay đổi số liệu cũ.
 - **FR-12** API cho Admin:
   - `GET /api/v1/admin/ai-usage/summary?from=&to=&groupBy=day|user|provider|model`
   - `GET /api/v1/admin/ai-usage?videoId=&userId=&page=`
-- **FR-13** Ngân sách: `autocut.ai.daily-budget-usd` (mặc định 5). Đạt 80% thì gửi cảnh báo; đạt 100% thì **chặn** tạo job AI mới (trả 503 `AI_BUDGET_EXCEEDED`), Admin bỏ chặn được.
+- **FR-13** Ngân sách: `autocut.ai.daily-budget-usd` (mặc định 5). Đạt 80% thì gửi cảnh báo; đạt 100% thì **chặn** tạo job AI mới (trả 503 `AI_BUDGET_EXCEEDED`), Admin bỏ chặn được. Đây là ngân sách **chi phí toàn hệ thống** (bảo vệ ví tiền của nhóm), khác với hạn mức phút xử lý theo user hoặc tổ chức ở AD-9 (F16/F49). Hai cơ chế kiểm độc lập.
 
 ### Cảnh báo
 - **FR-14** `AlertService` (`@Scheduled` mỗi 5 phút) kiểm: tỉ lệ job FAILED trong 1 giờ > 20%, health `DOWN` > 5 phút, chi phí trong ngày ≥ 80% ngân sách. Gửi qua kênh của F48; trước khi có F48 thì chỉ log ERROR. Chống spam: mỗi loại cảnh báo gửi tối đa 1 lần mỗi giờ.
@@ -79,12 +85,13 @@
 - Ghi `ai_usage` không được làm chậm job: ghi lỗi thì chỉ log WARN, không làm hỏng job.
 - Overhead của filter log ≤ 1 ms mỗi request.
 - Log giữ 14 ngày (do Docker log driver hoặc nền tảng hosting đảm nhiệm).
+- `spring.datasource.hikari.connection-timeout=5000` (mặc định của Hikari là 30 giây). Nếu giữ mặc định thì khi DB sập, health check phải chờ 30 giây mới báo `DOWN`, không đạt AC-1.
 
 ## 6. Thiết kế kỹ thuật
 
 ### 6.1 Cơ sở dữ liệu
 
-`V7__ai_usage.sql`:
+`V<yyyyMMddHHmm>__ai_usage.sql` (chạy sau migration `create_jobs` của F09):
 
 ```sql
 CREATE TABLE ai_usage (
@@ -113,11 +120,11 @@ CREATE INDEX idx_ai_usage_video ON ai_usage(video_id);
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| GET | `/actuator/health` | Public | `{"status":"UP"}` |
-| GET | `/actuator/health/details`, `/actuator/metrics/**` | Admin | Chi tiết |
+| GET | `/actuator/health` | Public (Admin thấy chi tiết từng thành phần) | `{"status":"UP"}` |
+| GET | `/actuator/health/liveness`, `/actuator/health/readiness` | Public | Probe cho Docker và load balancer |
+| GET | `/actuator/metrics/**`, `/actuator/flyway` | Admin | Chi tiết |
 | GET | `/api/v1/admin/ai-usage/summary` | Admin | Tổng hợp |
 | GET | `/api/v1/admin/ai-usage` | Admin | Danh sách chi tiết |
-| POST | `/api/v1/internal/ai-usage` | Secret nội bộ (header `X-Internal-Token`) | Next.js gửi số liệu lên |
 
 Ví dụ `summary?groupBy=provider`:
 
@@ -133,7 +140,17 @@ Ví dụ `summary?groupBy=provider`:
 - Tạo `com.autocut.aiusage.AiUsageEntity`, `AiUsageRepository`, `AiPricing` (đọc từ `config.yaml` qua `ConfigService`), `AiUsageService.record(...)`, `AiBudgetGuard` (gọi trước `jobService.enqueue` cho các job AI), `AiUsageAdminController`.
 - `PythonRunner` (F10): nhận diện dòng `@@USAGE` và gọi `AiUsageService.record`.
 - `AlertService`.
-- `application-prod.properties`: `logging.structured.format.console=ecs`, `management.endpoints.web.exposure.include=health,metrics,flyway`.
+- `application-prod.properties`:
+  ```properties
+  logging.structured.format.console=ecs
+  management.endpoints.web.exposure.include=health,metrics,flyway
+  management.endpoint.health.show-details=when-authorized
+  management.endpoint.health.roles=ADMIN
+  management.endpoint.health.probes.enabled=true
+  management.endpoint.health.group.readiness.include=readinessState,db,r2,ffmpeg,python,jobQueue
+  spring.datasource.hikari.connection-timeout=5000
+  ```
+- `ChatService` (F07): gọi `AiUsageService.record(...)` sau mỗi lần gọi model.
 
 ### 6.4 AI pipeline (Python)
 
@@ -148,10 +165,11 @@ Ví dụ `summary?groupBy=provider`:
 
 ## 7. Tiêu chí chấp nhận
 
-- **AC-1** — *Given* tắt container Postgres, *When* gọi `/actuator/health`, *Then* trả 503 với `DOWN` trong ≤ 10 giây.
+- **AC-1** — *Given* tắt container Postgres, *When* gọi `/actuator/health/readiness`, *Then* trả 503 với `DOWN` trong ≤ 10 giây (nhờ Hikari timeout 5 giây); `/actuator/health/liveness` vẫn trả 200.
+- **AC-1b** — *Given* chưa đăng nhập, *When* gọi `/actuator/health`, *Then* body chỉ có `status`, không có `components`. *Given* Admin, *Then* thấy `components.db`, `components.r2`…
 - **AC-2** — *Given* profile `prod`, *When* gọi bất kỳ API nào, *Then* mỗi dòng log là JSON hợp lệ, có `requestId`; response có header `X-Request-Id` trùng giá trị đó.
 - **AC-3** — *Given* một lỗi `NullPointerException` trong controller, *When* client nhận phản hồi, *Then* body không chứa tên lớp Java, đường dẫn hay stack trace, chỉ có `INTERNAL_ERROR` + `requestId`.
-- **AC-4** — *Given* xử lý xong 1 video 10 phút, *When* xem `ai_usage`, *Then* có ≥ 1 dòng cho TRANSCRIBE và ≥ 1 dòng cho REFINE/SEGMENT, có `video_id` và `job_id`, `cost_usd > 0`.
+- **AC-4** — *Given* xử lý xong 1 video 10 phút, *When* xem `ai_usage`, *Then* có ≥ 1 dòng cho TRANSCRIBE và ≥ 1 dòng cho REFINE/SEGMENT, có `video_id` và `job_id`, `cost_usd > 0`. *Given* gửi 1 tin chat, *Then* có 1 dòng `feature=CHAT`.
 - **AC-5** — *Given* tổng chi phí `ai_usage` của một video, *When* so với trang Usage của Google AI Studio cho cùng khoảng thời gian, *Then* lệch ≤ 10%.
 - **AC-6** — *Given* `daily-budget-usd=0.01` và đã tiêu $0.02, *When* tạo job ANALYZE, *Then* nhận 503 `AI_BUDGET_EXCEEDED` với thông báo tiếng Việt.
 - **AC-7** — Grep `catch (Exception ignored)` và `catch (IOException ignored)` trong các tệp mà PR này sửa không còn kết quả.
@@ -168,6 +186,9 @@ Ví dụ `summary?groupBy=provider`:
 - `AiBudgetGuardTest.overBudget_blocksAiJobs_butNotCutJobs`
 - `PythonRunnerTest.parsesUsageLine_andRecords`
 - `JobQueueHealthIndicatorTest.oldQueuedJob_reportsDown`
+- `HealthEndpointTest.anonymous_seesStatusOnly_adminSeesComponents` (AC-1b)
+- `HealthEndpointTest.dbDown_readinessDown_livenessUp` (AC-1, Postgres của Testcontainers bị dừng giữa chừng)
+- `ChatServiceTest.recordsUsageWithFeatureChat`
 - Python: `tests/test_usage.py::test_track_records_latency_and_tokens` và `::test_failed_call_records_success_false`
 
 ## 9. Rủi ro & failure modes
@@ -176,7 +197,7 @@ Ví dụ `summary?groupBy=provider`:
 |---|---|---|
 | Bảng giá AI thay đổi | Chi phí ước tính sai | Bảng giá có ngày hiệu lực; AC-5 đối soát hằng tháng |
 | Health check gọi R2 quá dày | Tốn request và chậm | Cache kết quả 30 giây |
-| Next.js gửi số liệu lên backend thất bại | Thiếu dữ liệu chi phí chat | Chấp nhận ở bản này; F07 chuyển chat về backend sẽ xử lý triệt để |
+| Sentry nhận dữ liệu lỗi có thể chứa thông tin cá nhân | Lộ dữ liệu ra bên thứ ba (liên quan luật BVDLCN) | Bật `sendDefaultPii=false`, lọc qua `LogSanitizer` trước khi gửi; nếu không được duyệt thì không dùng Sentry |
 | Chặn ngân sách đúng lúc lớp học đang dùng | Gián đoạn | Cảnh báo ở 80%; Admin bỏ chặn được bằng 1 nút |
 
 ## 10. Câu hỏi mở

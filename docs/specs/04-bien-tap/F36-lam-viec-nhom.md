@@ -6,25 +6,29 @@
 | **Nhóm** | Biên tập |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV3 (API, presence) + SV4 (giao diện) |
-| **Phụ thuộc** | F01, F02 (người dùng thật, phân quyền), F33 (chống ghi đè), F10 (hạ tầng SSE — dùng chung cách đẩy sự kiện), F48 (gửi email mời, nếu có) |
-| **Ước lượng** | L (1–2 tuần) |
+| **Phụ thuộc** | F00 (`videoId`), F01 (người dùng thật, vé ngắn hạn AD-4), **F02** (bảng `video_access`, `AccessService`, ma trận `Permission`), F33 (chống ghi đè, sự kiện lưu), F10 (hạ tầng SSE), F48 (gửi email mời, nếu có) |
+| **Ước lượng** | L (1–2 tuần), chia 2 PR: (1) chia sẻ + lời mời (M); (2) presence + khoá mềm (M) |
 | **Thư viện mới cần duyệt** | Không. Dùng `SseEmitter` có sẵn của Spring MVC và `EventSource` có sẵn của trình duyệt. |
 | **Tham khảo** | Figma (avatar người đang xem), Google Docs (chia sẻ theo vai trò), Frame.io (mời người duyệt), Descript (Drive sharing) |
 
+> **Cập nhật 18/11/2026:** bỏ bảng `video_members`, dùng `video_access` và ma trận quyền của F02 (AD-1); presence SSE mở bằng vé ngắn hạn (AD-4); mã lỗi 404/403 theo AD-2; tách ước lượng thành 2 PR.
+
 ## 1. Bối cảnh & vấn đề
 
-- Danh sách người dùng là tệp tĩnh [users.json](../../../frontend/src/mock-data/users.json) có 6 tài khoản (admin, sv1–sv4, demo). Quyền chỉ là chuỗi `role` để hiển thị. Không có khái niệm "video này được chia sẻ cho ai".
-- Bảng `videos` có `owner_id` ([schema.sql](../../../database/schema.sql)) nhưng không có bảng thành viên. F02 sẽ giới hạn mỗi người chỉ thấy video của mình. Spec này mở rộng để **chia sẻ** video cho người khác.
-- Dữ liệu dự án đang lưu theo thư mục người dùng `output/users/<user>/<lesson>` ([VideoController.java:1145-1160](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L1145-L1160)), nên hai người không nhìn thấy cùng một dự án.
+- Danh sách người dùng là tệp tĩnh [users.json](../../../frontend/src/mock-data/users.json) có 6 tài khoản (admin, sv1–sv4, demo). Quyền chỉ là chuỗi `role` để hiển thị.
+- F02 tạo bảng `video_access(video_id, user_id, permission)` với 4 mức `OWNER`/`EDITOR`/`REVIEWER`/`VIEWER`, và `AccessService` là chỗ duy nhất kiểm tra quyền. Nhưng F02 **chưa có cách nào để chủ video chia sẻ** cho người khác (chỉ tạo dòng OWNER khi upload). Spec này bổ sung việc chia sẻ.
+- Dữ liệu dự án đang lưu theo thư mục người dùng `output/users/<user>/<lesson>` ([VideoController.java:1145-1160](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L1145-L1160)), nên hai người không nhìn thấy cùng một dự án. Sau F00/F33, DB là nguồn sự thật, nên chia sẻ theo `videoId` là đủ.
 - Không ai biết đồng nghiệp đang mở cùng video, nên dễ ghi đè nhau. F33 chặn được ở bước lưu, nhưng tốt hơn là cảnh báo từ sớm.
+- `EventSource` của trình duyệt **không gửi được header `Authorization`**, nên không dùng JWT trực tiếp cho kết nối presence. Phải dùng vé ngắn hạn của F01 (AD-4).
 
 ## 2. Mục tiêu
-- **Chia sẻ video** cho thành viên với 3 vai trò: **Người xem** (xem, bình luận), **Biên tập** (sửa, gửi duyệt), **Người duyệt** (Biên tập + duyệt). Chủ sở hữu có toàn quyền và là người duy nhất được xoá video hoặc đổi chủ.
+- **Chia sẻ video** cho người khác với một trong ba mức `EDITOR`, `REVIEWER`, `VIEWER` (quyền chi tiết theo ma trận F02 FR-2). `OWNER` là người duy nhất được chia sẻ, xoá video hoặc đổi chủ (`Permission.MANAGE`).
 - **Mời qua email.** Nếu email chưa có tài khoản thì tạo lời mời chờ, có link dùng một lần, hạn 7 ngày.
 - **Hiện diện (presence):** hiện avatar những người đang mở video. Hiện "Minh đang sửa" khi người đó vừa thao tác trong 30 giây gần nhất.
 - **Khoá mềm:** khi có người khác đang sửa, người vào sau thấy banner gợi ý mở ở chế độ chỉ xem. Vẫn cho phép sửa nếu chọn tiếp tục.
 
 ### Ngoài phạm vi
+- Ma trận quyền và việc kiểm tra quyền: thuộc F02 (spec này chỉ dùng lại).
 - Sửa đồng thời theo thời gian thực có trộn thay đổi (CRDT). Người sửa sau vẫn phải theo luồng xung đột của F33.
 - Hiện con trỏ hoặc playhead của người khác trên timeline.
 - Nhóm và thư mục cấp tổ chức (F49).
@@ -35,84 +39,85 @@
 - Là chủ video, tôi gỡ quyền một bạn đã nghỉ dự án.
 
 ## 4. Yêu cầu chức năng
-- **FR-1 Bảng quyền:**
+- **FR-1 Quyền.** Dùng đúng ma trận `Permission` của F02 FR-2. Nhắc lại cho tiện đọc (nếu khác nhau thì F02 đúng):
 
-| Hành động | Người xem | Biên tập | Người duyệt | Chủ sở hữu |
+| Hành động | VIEWER | REVIEWER | EDITOR | OWNER |
 |---|:-:|:-:|:-:|:-:|
-| Xem video, transcript, segments | ✓ | ✓ | ✓ | ✓ |
-| Bình luận (F35) | ✓ | ✓ | ✓ | ✓ |
-| Sửa segments / transcript, lưu, render nháp | | ✓ | ✓ | ✓ |
-| Gửi duyệt | | ✓ | ✓ | ✓ |
-| Duyệt / Yêu cầu sửa / Xuất bản | | | ✓ | ✓ |
-| Mời / gỡ thành viên, đổi vai trò | | | | ✓ |
-| Xoá video, chuyển chủ sở hữu | | | | ✓ |
+| Xem, phát, tải (`VIEW`, `DOWNLOAD`) | ✓ | ✓ | ✓ | ✓ |
+| Bình luận (`COMMENT`, F35) | | ✓ | ✓ | ✓ |
+| Duyệt / Yêu cầu sửa / Xuất bản (`REVIEW`, F35) | | ✓ | | ✓ |
+| Sửa segments / transcript, lưu, render (`EDIT`) | | | ✓ | ✓ |
+| Chia sẻ, gỡ, đổi mức quyền, xoá video, chuyển chủ (`MANAGE`) | | | | ✓ |
 
-- **FR-2 Mời.** Nhập email và chọn vai trò.
-  - Email đã có tài khoản thì thêm thẳng vào `video_members` và gửi thông báo.
+- **FR-2 Mời.** Nhập email và chọn mức quyền (`EDITOR`, `REVIEWER`, `VIEWER`; không mời được `OWNER`).
+  - Email đã có tài khoản thì thêm thẳng dòng `video_access` (`granted_by` = người mời) và gửi thông báo.
   - Chưa có tài khoản thì tạo `video_invitations` với token ngẫu nhiên 32 byte. Database chỉ lưu SHA-256 của token. Link có dạng `/invite/<token>`, hạn 7 ngày, chỉ dùng được một lần.
-- **FR-3 Mời hàng loạt.** Chọn nhiều video trong thư viện rồi bấm "Chia sẻ" để mời cùng một người với cùng vai trò.
-- **FR-4 Gỡ hoặc đổi vai trò** có hiệu lực ngay. Phiên SSE đang mở của người bị gỡ nhận sự kiện `access_revoked`, frontend đưa họ về thư viện.
-- **FR-5 Thư viện có 2 tab:** "Của tôi" và "Được chia sẻ với tôi".
-- **FR-6 Presence:**
-  - Khi mở studio, client mở `EventSource` tới `/presence/stream` và gửi heartbeat `POST /presence` mỗi 15 giây, kèm `{ sessionId, state: "viewing" | "editing" }`.
+  - Người đã có dòng `video_access` thì cập nhật mức quyền theo lời mời mới, **trừ** khi họ là OWNER (giữ nguyên). Dùng `INSERT … ON CONFLICT (video_id, user_id) DO UPDATE … WHERE video_access.permission <> 'OWNER'` (AD-8).
+- **FR-3 Mời hàng loạt.** Chọn nhiều video trong thư viện rồi bấm "Chia sẻ" để mời cùng một người với cùng mức quyền. Người mời phải có `MANAGE` trên **mọi** video trong danh sách; nếu thiếu một video thì cả yêu cầu bị từ chối và không ghi gì.
+- **FR-4 Gỡ hoặc đổi mức quyền** có hiệu lực ngay. Phiên SSE đang mở của người bị gỡ nhận sự kiện `access_revoked`, frontend đưa họ về thư viện. Không gỡ được dòng `OWNER` (muốn đổi chủ thì dùng "Chuyển chủ sở hữu").
+- **FR-5 Chuyển chủ sở hữu.** OWNER chọn một thành viên đang có quyền làm chủ mới. Trong một transaction: `videos.owner_id` = người mới, dòng của người mới thành `OWNER`, dòng của chủ cũ thành `EDITOR`.
+- **FR-6 Thư viện có 2 tab:** "Của tôi" (`permission='OWNER'`) và "Được chia sẻ với tôi" (các mức còn lại). Danh sách lấy từ `GET /list` đã lọc theo quyền ở F02 FR-4, kèm `myPermission`.
+- **FR-7 Presence:**
+  - Khi mở studio, client gọi `POST /api/v1/auth/tickets { "purpose": "SSE", "resourceId": videoId }` (F01, AD-4) rồi mở `EventSource('/api/v1/videos/{id}/presence/stream?ticket=…')`. Vé SSE sống 60 giây và chỉ dùng một lần; mỗi lần kết nối lại phải xin vé mới.
+  - Client gửi heartbeat `POST /presence` (có JWT) mỗi 15 giây, kèm `{ sessionId, state: "viewing" | "editing" }`.
   - `state = "editing"` nếu trong 30 giây có ít nhất một `commit()` (F31).
   - Máy chủ bỏ phiên không gửi heartbeat sau 45 giây.
   - Máy chủ phát `presence_changed` cho mọi người đang xem cùng video.
-- **FR-7 Header** hiện tối đa 4 avatar, phần còn lại hiện "+N". Người đang sửa có viền màu và tooltip "Đang sửa".
-- **FR-8 Khoá mềm.** Khi mở video mà đang có người khác ở trạng thái `editing`, hiện banner "Trần Quang Minh đang sửa video này. [Chỉ xem] [Vẫn sửa]". Chọn "Chỉ xem" thì tắt mọi thao tác sửa và tắt tự lưu (F34).
-- **FR-9 Cập nhật sau khi người khác lưu.** Khi người khác lưu thành công (F33 tạo version mới), máy chủ phát `version_saved {version, by}`.
+- **FR-8 Header** hiện tối đa 4 avatar, phần còn lại hiện "+N". Người đang sửa có viền màu và tooltip "Đang sửa".
+- **FR-9 Khoá mềm.** Khi mở video mà đang có người khác ở trạng thái `editing`, hiện banner "Trần Quang Minh đang sửa video này. [Chỉ xem] [Vẫn sửa]". Chọn "Chỉ xem" thì tắt mọi thao tác sửa và tắt tự lưu (F34). Người không có `EDIT` luôn ở chế độ chỉ xem, không thấy banner.
+- **FR-10 Cập nhật sau khi người khác lưu.** Khi người khác lưu thành công (F33 tạo version mới), máy chủ phát `version_saved {version, by}`.
   - Nếu client không có thay đổi chưa lưu: hiện toast "Minh vừa lưu — [Tải bản mới]".
   - Nếu client đang có thay đổi chưa lưu: báo trước "Sắp xung đột".
 
 ## 5. Yêu cầu phi chức năng
-- Presence lưu **trong bộ nhớ** (`ConcurrentHashMap`), đủ cho một máy chủ. Nếu sau này chạy nhiều máy chủ thì cần Redis pub/sub. Phần này ghi vào câu hỏi mở, không làm bây giờ (theo YAGNI).
+- Presence lưu **trong bộ nhớ** (`ConcurrentHashMap`), đủ cho một máy chủ. Nếu sau này chạy nhiều máy chủ thì cần Redis pub/sub. Phần này ghi vào câu hỏi mở, không làm bây giờ (YAGNI).
 - Mỗi máy chủ chịu được 500 kết nối SSE đồng thời. Cấu hình timeout `SseEmitter` là 0 và gửi comment `:ping` mỗi 20 giây để proxy không cắt kết nối.
-- Token mời không được ghi ra log.
+- Token mời và vé SSE không được ghi ra log (kể cả query string trong access log).
 
 ## 6. Thiết kế kỹ thuật
 ### 6.1 Cơ sở dữ liệu
-`V<n>__video_members_invitations.sql`
-```sql
-CREATE TABLE IF NOT EXISTS video_members (
-    video_id BIGINT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL,          -- VIEWER | EDITOR | REVIEWER
-    added_by BIGINT REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (video_id, user_id)
-);
-CREATE INDEX IF NOT EXISTS idx_video_members_user ON video_members(user_id);
+Dùng bảng `video_access` của F02, **không** tạo bảng thành viên riêng. Chỉ thêm bảng lời mời:
 
+`V<yyyyMMddHHmm>__video_invitations.sql`
+```sql
 CREATE TABLE IF NOT EXISTS video_invitations (
     id BIGSERIAL PRIMARY KEY,
     video_ids BIGINT[] NOT NULL,
     email VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
+    permission VARCHAR(10) NOT NULL CHECK (permission IN ('EDITOR','REVIEWER','VIEWER')),
     token_hash CHAR(64) NOT NULL UNIQUE,
-    invited_by BIGINT NOT NULL REFERENCES users(id),
+    invited_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     accepted_at TIMESTAMPTZ,
-    accepted_by BIGINT REFERENCES users(id),
+    accepted_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    revoked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_invitations_email ON video_invitations(lower(email));
 ```
 
 ### 6.2 API
-| Method | Path | Quyền | Mô tả |
+| Method | Path | Quyền (F02 `Permission`) | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/videos/{id}/members` | Xem | Danh sách thành viên + lời mời đang chờ |
-| POST | `/api/v1/videos/members/invite` | Chủ sở hữu của **mọi** video trong danh sách | `{ videoIds[], email, role }` |
-| PATCH | `/api/v1/videos/{id}/members/{userId}` | Chủ sở hữu | `{ role }` |
-| DELETE | `/api/v1/videos/{id}/members/{userId}` | Chủ sở hữu, hoặc chính người đó tự rời | Gỡ |
-| DELETE | `/api/v1/invitations/{invitationId}` | Người mời | Huỷ lời mời |
+| GET | `/api/v1/videos/{id}/members` | `VIEW` | Danh sách người có quyền + lời mời đang chờ (lời mời chỉ hiện cho người có `MANAGE`) |
+| POST | `/api/v1/videos/members/invite` | `MANAGE` trên **mọi** video trong danh sách | `{ videoIds[], email, permission }` |
+| PATCH | `/api/v1/videos/{id}/members/{userId}` | `MANAGE` | `{ permission }` |
+| DELETE | `/api/v1/videos/{id}/members/{userId}` | `MANAGE`, hoặc chính người đó tự rời (trừ OWNER) | Gỡ |
+| POST | `/api/v1/videos/{id}/owner` | `MANAGE` | `{ userId }` chuyển chủ sở hữu (FR-5) |
+| DELETE | `/api/v1/invitations/{invitationId}` | Người mời hoặc `MANAGE` | Huỷ lời mời |
 | POST | `/api/v1/invitations/accept` | Đã đăng nhập | `{ token }` |
-| POST | `/api/v1/videos/{id}/presence` | Xem | Heartbeat |
-| GET | `/api/v1/videos/{id}/presence/stream` | Xem | SSE: `presence_changed`, `version_saved`, `access_revoked` |
+| POST | `/api/v1/videos/{id}/presence` | `VIEW` | Heartbeat (JWT) |
+| GET | `/api/v1/videos/{id}/presence/stream?ticket=` | Vé SSE hợp lệ cho video này (AD-4) | SSE: `presence_changed`, `version_saved`, `access_revoked` |
+
+Mã lỗi theo AD-2:
+- Không có `VIEW` trên video thì trả 404 `VIDEO_NOT_FOUND`. Với invite hàng loạt, chỉ cần một video không có `VIEW` là cả yêu cầu trả 404.
+- Có `VIEW` nhưng thiếu `MANAGE` thì trả 403 `FORBIDDEN_ACTION`.
+- Vé SSE sai, hết hạn hoặc đã dùng thì trả 401 `TICKET_INVALID`.
+- Link mời hết hạn hoặc đã dùng thì trả 410 `INVITATION_GONE`.
 
 ```json
 // POST /api/v1/videos/members/invite
-{ "videoIds": [42, 43], "email": "minh.tq@truong.edu.vn", "role": "EDITOR" }
+{ "videoIds": [42, 43], "email": "minh.tq@truong.edu.vn", "permission": "EDITOR" }
 // 200
 { "added": [ { "videoId": 42, "userId": 2 }, { "videoId": 43, "userId": 2 } ], "invited": [] }
 
@@ -123,61 +128,65 @@ data: { "videoId": 42, "users": [ { "userId": 1, "name": "Nguyễn Văn Toàn", 
 ```
 
 ### 6.3 Backend
-- **Mới** `entity/VideoMemberEntity.java`, `entity/VideoInvitationEntity.java` cùng các repository tương ứng.
-- **Mới** `service/AccessService.java` với hàm `Role effectiveRole(userId, videoId)` (chủ sở hữu, hoặc role trong `video_members`, hoặc không có quyền). Đây là **điểm kiểm tra quyền duy nhất**, dùng chung cho F02, F33, F35. Nếu F02 đã tạo lớp tương đương thì mở rộng lớp đó, không tạo lớp thứ hai.
-- **Mới** `service/MembershipService.java` (mời, chấp nhận, gỡ) và `service/PresenceService.java` (map `videoId → Map<sessionId, PresenceEntry>`, `@Scheduled` mỗi 15 giây để dọn phiên hết hạn và phát sự kiện).
-- **Mới** `controller/MembershipController.java`, `controller/PresenceController.java`.
-- **Sửa** truy vấn danh sách video (`GET /list`, [VideoController.java:347](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L347)): trả video mà `owner_id = me` **hoặc** có dòng trong `video_members`, kèm `myRole`.
+- Dùng lại `AccessService` của F02 (`require(p, videoId, Permission)`, `permissionsOf`). **Không** tạo lớp kiểm tra quyền thứ hai.
+- **Mới** `entity/VideoInvitationEntity.java` + repository.
+- **Mới** `service/MembershipService.java`: mời, chấp nhận, gỡ, đổi mức quyền, chuyển chủ. Ghi `video_access` bằng `ON CONFLICT` (AD-8). Phát `AccessRevokedEvent` khi gỡ hoặc hạ quyền.
+- **Mới** `service/PresenceService.java`: map `videoId → Map<sessionId, PresenceEntry>`. Dọn phiên hết hạn theo lịch mỗi 15 giây, rồi phát sự kiện. Đây là tác vụ bộ nhớ ngắn hạn, không phải job nghiệp vụ, nên dùng `@Scheduled` thay vì bảng `jobs` (ngoại lệ hợp lý của AD-10).
+- **Mới** `controller/MembershipController.java`, `controller/PresenceController.java`. Kết nối SSE kiểm tra vé bằng `TicketService.consume(ticket, "SSE", videoId)` của F01.
 - `ProjectVersionService.save` (F33) phát `version_saved` thông qua `PresenceService.broadcast(videoId, ...)`.
 
 ### 6.5 Frontend
-- **Mới** `components/ShareDialog.tsx`: ô email, chọn vai trò, danh sách thành viên kèm dropdown đổi vai trò và nút gỡ, danh sách lời mời chờ.
+- **Mới** `components/ShareDialog.tsx`: ô email, chọn mức quyền, danh sách thành viên kèm dropdown đổi quyền và nút gỡ, danh sách lời mời chờ, nút "Chuyển chủ sở hữu".
 - **Mới** `components/PresenceAvatars.tsx` đặt trong `StudioHeader`.
 - **Mới** `components/SoftLockBanner.tsx`.
-- **Mới** `hooks/usePresence.ts`: mở `EventSource`, gửi heartbeat, tự kết nối lại theo backoff, đóng khi unmount hoặc đổi video.
+- **Mới** `hooks/usePresence.ts`: xin vé → mở `EventSource` → gửi heartbeat → khi lỗi thì xin vé mới và kết nối lại theo backoff; đóng khi unmount hoặc đổi video.
 - **Mới** trang `app/invite/[token]/page.tsx`: nếu chưa đăng nhập thì chuyển tới đăng nhập/đăng ký rồi quay lại, sau đó gọi `accept`.
-- `page.tsx`: lưu `myRole` trong state và truyền `readOnly = myRole === "VIEWER" || chọnChỉXem` xuống các component biên tập (`StudioTimeline`, `TranscriptScenesPanel`, `ReviewTable`) để ẩn hoặc tắt thao tác sửa.
+- `page.tsx`: lưu `myPermissions` (F02 trả về) trong state và truyền `readOnly = !myPermissions.includes("EDIT") || chọnChỉXem` xuống các component biên tập (`StudioTimeline`, `TranscriptScenesPanel`, `ReviewTable`) để ẩn hoặc tắt thao tác sửa.
 - Bỏ phụ thuộc vào `mock-data/users.json` cho danh sách thành viên.
 
 ## 7. Tiêu chí chấp nhận
-- **AC-1** — *Given* A là chủ video 42, *When* A mời `b@x.vn` (đã có tài khoản) với vai trò EDITOR, *Then* B thấy video 42 trong tab "Được chia sẻ với tôi" và sửa, lưu được.
-- **AC-2** — *Given* B là VIEWER, *When* B gọi `PUT /segments`, *Then* nhận 403. Trên giao diện, nút Tách/Gộp bị tắt.
-- **AC-3** — *Given* email chưa có tài khoản, *When* mời, *Then* bảng `video_invitations` có `token_hash` (64 ký tự hex), **không** chứa token gốc. Link hết hạn sau 7 ngày thì trả 410.
-- **AC-4** — *Given* A và B cùng mở video 42, *Then* trong vòng 3 giây mỗi người thấy avatar của người kia. B đóng tab thì avatar của B biến mất khỏi màn hình A trong vòng 60 giây.
-- **AC-5** — *Given* B đang sửa (`editing`), *When* C mở video, *Then* C thấy banner khoá mềm. Chọn "Chỉ xem" thì không có request lưu nào được gửi.
-- **AC-6** — *When* A gỡ B trong lúc B đang mở video, *Then* B được đưa về thư viện kèm thông báo "Bạn không còn quyền truy cập video này".
-- **AC-7** — *When* B lưu xong, *Then* A (không có thay đổi chưa lưu) thấy toast "B vừa lưu — Tải bản mới".
+- **AC-1** — *Given* A là OWNER video 42, *When* A mời `b@x.vn` (đã có tài khoản) với mức EDITOR, *Then* có dòng `video_access(42, B, 'EDITOR')`, B thấy video 42 trong tab "Được chia sẻ với tôi" và sửa, lưu được.
+- **AC-2** — *Given* B là VIEWER video 42, *When* B gọi `PUT /segments`, *Then* nhận 403 `FORBIDDEN_ACTION`. Trên giao diện, nút Tách/Gộp bị tắt.
+- **AC-3** — *Given* C không có quyền gì trên video 42, *When* C gọi `GET /videos/42/members`, *Then* nhận 404.
+- **AC-4** — *Given* email chưa có tài khoản, *When* mời, *Then* bảng `video_invitations` có `token_hash` (64 ký tự hex), **không** chứa token gốc. Link hết hạn sau 7 ngày thì trả 410.
+- **AC-5** — *Given* A và B cùng mở video 42, *Then* trong vòng 3 giây mỗi người thấy avatar của người kia. B đóng tab thì avatar của B biến mất khỏi màn hình A trong vòng 60 giây.
+- **AC-6** — *When* mở `presence/stream` không có vé, hoặc dùng lại vé đã dùng, *Then* nhận 401 `TICKET_INVALID`.
+- **AC-7** — *Given* B đang sửa (`editing`), *When* C (EDITOR) mở video, *Then* C thấy banner khoá mềm. Chọn "Chỉ xem" thì không có request lưu nào được gửi.
+- **AC-8** — *When* A gỡ B trong lúc B đang mở video, *Then* B được đưa về thư viện kèm thông báo "Bạn không còn quyền truy cập video này".
+- **AC-9** — *When* B lưu xong, *Then* A (không có thay đổi chưa lưu) thấy toast "B vừa lưu — Tải bản mới".
+- **AC-10** — *Given* A mời B vào video 42 (A là OWNER) và 99 (A chỉ là EDITOR), *Then* nhận 403 và không có dòng `video_access` mới nào.
+- **AC-11** — *When* A chuyển chủ video 42 cho B, *Then* `videos.owner_id = B`, B là OWNER, A là EDITOR.
 
 ## 8. Kế hoạch kiểm thử (TDD)
-- `AccessServiceTest`:
-  - `owner_hasOwnerRole`
-  - `member_hasMemberRole`
-  - `stranger_hasNoAccess`
-  - `permissionMatrix_matchesTable` (kiểm tra tham số hoá theo bảng FR-1)
-- `MembershipServiceTest`:
-  - `invite_existingUser_addsMember`
+- `MembershipServiceTest` (Postgres, AD-7):
+  - `invite_existingUser_insertsVideoAccess`
+  - `invite_existingOwner_permissionUnchanged`
   - `invite_newEmail_createsHashedInvitation`
-  - `invite_notOwnerOfAllVideos_forbidden`
+  - `invite_missingManageOnOneVideo_rejectsAll`
   - `accept_expiredToken_gone`
   - `accept_usedToken_gone`
+  - `accept_emailMismatch_rejected`
+  - `remove_owner_rejected`
   - `remove_publishesAccessRevoked`
+  - `transferOwnership_swapsRolesAtomically`
 - `PresenceServiceTest` (dùng đồng hồ giả `Clock`):
   - `heartbeat_addsSession`
   - `noHeartbeat45s_evictsAndBroadcasts`
   - `editingState_expiresAfter30sWithoutCommit`
-- `MembershipControllerTest` (MockMvc): `list_returnsMyRole`, `patchRole_byEditor_forbidden`.
-- Frontend: `usePresence` dùng `EventSource` giả, gồm `reconnects_withBackoff`, `closes_onUnmount`.
+- `PresenceControllerTest`: `stream_withoutTicket_401`, `stream_reusedTicket_401`, `stream_ticketForOtherVideo_401`.
+- `MembershipControllerTest` (MockMvc): `list_returnsMyPermission`, `patch_byEditor_403`, `list_noAccess_404`.
+- Frontend: `usePresence` dùng `EventSource` giả, gồm `requestsNewTicketOnReconnect`, `reconnects_withBackoff`, `closes_onUnmount`.
 
 ## 9. Rủi ro & failure modes
 | Rủi ro | Ảnh hưởng | Cách giảm |
 |---|---|---|
-| Proxy hoặc CDN đóng kết nối SSE sau 60 giây | Presence chập chờn | Gửi `:ping` mỗi 20 giây, client tự kết nối lại |
+| Proxy hoặc CDN đóng kết nối SSE sau 60 giây | Presence chập chờn | Gửi `:ping` mỗi 20 giây, client tự xin vé mới và kết nối lại |
 | Chạy nhiều instance backend | Presence không thấy nhau | Ghi rõ giới hạn chỉ chạy 1 instance. Câu hỏi mở về Redis |
 | Lộ link mời | Người lạ vào được | Token dùng một lần, hạn 7 ngày. Khi chấp nhận, email của tài khoản phải khớp email được mời |
-| Quên kiểm tra quyền ở một endpoint cũ | Rò dữ liệu | Thêm test liệt kê mọi `@RequestMapping` và gọi thử khi không có quyền, mong nhận 403 (dùng chung với F02) |
+| Vé SSE lọt vào log của proxy | Kẻ khác dùng lại | Vé dùng một lần và sống 60 giây; tắt ghi query string trong access log |
 
 ## 10. Câu hỏi mở
-- [ ] Khi chấp nhận lời mời, có bắt buộc email tài khoản phải khớp email được mời không? Đề xuất: có.
-- [ ] Có cho Biên tập mời thêm Người xem không, hay chỉ Chủ sở hữu được mời?
+- [x] Khi chấp nhận lời mời, có bắt buộc email tài khoản phải khớp email được mời không? **Có** (đã đưa vào test `accept_emailMismatch_rejected`).
+- [x] Biên tập có được mời thêm người không? **Đã chốt theo AD-1/F02:** chỉ người có `MANAGE` (OWNER).
 - [ ] Dự kiến chạy 1 hay nhiều instance backend? Nếu nhiều thì cần duyệt thêm Redis.
 - [ ] Chia sẻ theo **từng video** hay theo **khoá học/thư mục**? Spec này làm theo video. Theo thư mục để F41/F49.

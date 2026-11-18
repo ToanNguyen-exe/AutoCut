@@ -6,15 +6,22 @@
 | **Nhóm** | Xuất bản |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV1 (filter FFmpeg, ghép intro/outro) · SV3 (lưu cấu hình, tài nguyên) · SV4 (trang cài đặt thương hiệu, xem trước) |
-| **Phụ thuộc** | F02, F09, F13. Liên quan F43 (logo trên ảnh bìa), F45 (bố cục logo cho khung dọc), F49 (thương hiệu theo tổ chức) |
+| **Phụ thuộc** | F00 (`video_parts` do job ghi), F02, F09, F13, F39 (`CloudflareR2Service.openStream`). Liên quan F25/F32 (filter cắt khoảng của AD-13 chạy trước filter thương hiệu), F43 (logo trên ảnh bìa), F45 (bố cục logo cho khung dọc), F49 (thương hiệu theo tổ chức) |
 | **Ước lượng** | L (1–2 tuần) |
-| **Thư viện mới cần duyệt** | Không (dùng FFmpeg sẵn có). Font cho watermark chữ dùng chung tệp với F43. |
+| **Thư viện mới cần duyệt** | Không (dùng FFmpeg sẵn có). Font cho watermark chữ dùng chung tệp `Be Vietnam Pro` với F43, đã nêu ở F43. |
 | **Tham khảo** | Descript Brand Studio, Riverside Brand Kit, Kaltura Player branding, Vimeo "Custom logo" |
+
+> **Cập nhật 18/11/2026:** Theo review:
+> - Sửa tên hàm thành `buildCommand` ([VideoCutter.java:339](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L339)).
+> - Bỏ mô tả `cut_mode` "đang có", vì Java chưa đọc cấu hình này và luôn re-encode. FR-4 và AC-3 giờ chỉ là quy tắc cho tương lai.
+> - Filter thương hiệu nối tiếp sau filter cắt khoảng của AD-13.
+> - `intro_offset_sec` chỉ dịch chapters và phụ đề (bitmap tiến độ của F41 không cần dịch).
+> - Tài nguyên đọc từ R2 private; quyền theo AD-1/AD-2; migration đặt tên theo dấu thời gian.
 
 ## 1. Bối cảnh & vấn đề
 
-- `VideoCutter` đã **mã hoá lại** (re-encode) mọi clip bằng `libx264 -preset fast -crf 22` ([VideoCutter.java:212](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L212), [VideoCutter.java:346-351](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L346-L351)). Vì video đã được giải mã và mã hoá lại trong bước này, thêm filter `overlay` vào cùng lệnh gần như **không tốn thêm thời gian**, không cần một lượt encode thứ hai.
-- `config.yaml` có `output.cut_mode: accurate | fast`. Chế độ `fast` (stream copy, không mã hoá lại) **không thể** chèn logo. Spec cần quy định rõ hành vi trong trường hợp này.
+- `VideoCutter` luôn **mã hoá lại** (re-encode) mọi clip bằng `libx264 -preset fast -crf 22` ([VideoCutter.java:339-353](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L339-L353), hàm `buildCommand`). Vì video đã được giải mã và mã hoá lại ở bước này, thêm filter `overlay` vào cùng lệnh gần như **không tốn thêm thời gian**, không cần lượt encode thứ hai.
+- `config.yaml` có khoá `output.cut_mode: accurate | fast`, nhưng **chưa có code Java nào đọc khoá này**: `VideoCutter` luôn re-encode. Spec này không thêm chế độ `fast`. FR-4 chỉ quy định hành vi khi sau này có spec thêm chế độ đó.
 - `VideoConcat` đã có 2 cách ghép: demuxer `-c copy` ([VideoConcat.java:292-301](../../../backend/src/main/java/com/autocut/video/VideoConcat.java#L292-L301)) và `concatWithFilter` dự phòng khi các tệp khác thông số ([VideoConcat.java:165](../../../backend/src/main/java/com/autocut/video/VideoConcat.java#L165), [VideoConcat.java:249](../../../backend/src/main/java/com/autocut/video/VideoConcat.java#L249)). Có thể dùng lại để ghép intro + clip + outro.
 - Hiện chưa có chỗ nào lưu logo, màu hay intro của trường hoặc giảng viên. Clip xuất ra trông "thô" và dễ bị lấy lại đăng lên kênh khác mà không có dấu nguồn.
 
@@ -49,13 +56,17 @@
   - `skip_intro_outro_under_sec`: mặc định 60.
   - `primary_color`: mã hex, dùng cho F43 và trang F41.
 - **FR-2** Có một Brand Kit mặc định. Khi gửi job cắt (`CutRequestDTO`), thêm trường `brandKitId` (giá trị `null` = dùng mặc định, `0` = không áp dụng thương hiệu).
-- **FR-3** Logo và watermark được áp **trong lượt encode của `VideoCutter`**: mở rộng tham số `-vf` / `-filter_complex` của lệnh cắt hiện tại.
-- **FR-4** Nếu `cut_mode = fast` mà Brand Kit có logo hoặc watermark thì **tự chuyển sang `accurate`** cho job đó và ghi vào `report.json`: `"brandingForcedReencode": true`.
+- **FR-3** Logo và watermark được áp **trong lượt encode của `VideoCutter`**, bằng cách mở rộng `filter_complex` của lệnh cắt.
+  - Nếu topic có khoảng bị cắt (AD-13), chuỗi filter là: `trim/atrim + concat` (từ `KeepRanges`) → nhãn `[vcat][acat]` → filter thương hiệu → `[vout]`.
+  - Nếu không có khoảng bị cắt, filter thương hiệu nhận thẳng `[0:v]`.
+  - `BrandingFilterBuilder` nhận **tên nhãn đầu vào** làm tham số, để ghép được với cả hai trường hợp.
+- **FR-4** *(Quy tắc cho tương lai: hiện chưa có chế độ `fast`.)* Nếu sau này có chế độ cắt không re-encode, mà Brand Kit có logo hoặc watermark, thì job đó phải chuyển sang re-encode và ghi `"brandingForcedReencode": true` vào `report.json`. Spec nào thêm chế độ `fast` phải làm theo quy tắc này.
 - **FR-5** Intro/outro:
   - Khi upload, chuẩn hoá ngay một lần về thông số chuẩn của hệ thống: 1920×1080 (hoặc theo F45), 30 fps, `yuv420p`, AAC 48 kHz stereo. Lưu bản đã chuẩn hoá.
   - Khi xuất: nếu clip có cùng thông số thì dùng concat demuxer `-c copy` (nhanh). Nếu khác (clip 720p, 25 fps) thì dùng `concatWithFilter`.
 - **FR-6** Clip ngắn hơn `skip_intro_outro_under_sec` thì không chèn intro/outro, nhưng vẫn có logo.
-- **FR-7** Chèn intro sẽ làm lệch thời gian. Chapters (F22), phụ đề (F23) và tiến độ xem (F41) của clip có intro phải **cộng thêm `introDurationSec`**. Mỗi clip lưu `intro_offset_sec`.
+- **FR-7** Chèn intro làm lệch thời gian. Chapters (F22) và phụ đề (F23) của clip có intro phải **cộng thêm `intro_offset_sec`**; mỗi clip lưu giá trị này trong `video_parts`. Tiến độ xem của F41 tính bitmap trên **toàn bộ tệp** (gồm cả intro), nên không cần dịch.
+- **FR-9** Tài nguyên Brand Kit (logo, intro, outro) lưu trên R2 private (AD-3). Backend đọc bằng `CloudflareR2Service.openStream(key)`. Giao diện xem logo bằng presigned URL. Việc chuẩn hoá intro/outro sau khi upload là job `BRAND_ASSET_NORMALIZE` của F09 (AD-10).
 - **FR-8** API xem trước: trả 1 ảnh JPEG khung hình tại giây `t` của clip với Brand Kit đang chỉnh (chưa lưu). Thời gian phản hồi ≤ 2 giây.
 
 ## 5. Yêu cầu phi chức năng
@@ -68,7 +79,7 @@
 
 ### 6.1 Cơ sở dữ liệu
 
-`V<n>__create_brand_kits.sql`:
+`V<yyyyMMddHHmm>__create_brand_kits.sql`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS brand_kits (
@@ -101,12 +112,16 @@ ALTER TABLE video_parts ADD COLUMN IF NOT EXISTS intro_offset_sec DOUBLE PRECISI
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| GET/POST | `/api/v1/brand-kits` | Giảng viên | Liệt kê / tạo |
+| GET/POST | `/api/v1/brand-kits` | JWT, role `INSTRUCTOR`/`ADMIN` | Liệt kê kit của mình / tạo |
 | PATCH/DELETE | `/api/v1/brand-kits/{id}` | Chủ kit | Sửa / xoá |
 | POST | `/api/v1/brand-kits/{id}/assets/{logo\|intro\|outro}` | Chủ kit | Upload `multipart` |
-| POST | `/api/v1/brand-kits/preview` | Giảng viên | Body: cấu hình tạm + `partId` + `atSec` → `image/jpeg` |
+| POST | `/api/v1/brand-kits/preview` | JWT + quyền xem video chứa `partId` | Body: cấu hình tạm + `partId` + `atSec` → `image/jpeg` |
 
-Mở rộng `POST /api/video/cut` (`CutRequestDTO`, [Models.java:130](../../../backend/src/main/java/com/autocut/dto/Models.java#L130)): thêm trường `"brand_kit_id": 3` (có alias `brandKitId`). Khi F09 xong và endpoint chuyển sang `/api/v1/cut-jobs` thì giữ nguyên trường này.
+Lỗi theo AD-2:
+- Kit hoặc part không tồn tại, hoặc người gọi không có quyền xem: `404 BRAND_KIT_NOT_FOUND` / `404 PART_NOT_FOUND`.
+- Tệp sai định dạng: `422 INVALID_ASSET`.
+
+Mở rộng `POST /api/video/cut` (`CutRequestDTO`, [Models.java:130](../../../backend/src/main/java/com/autocut/dto/Models.java#L130)): thêm trường `"brand_kit_id": 3` (có alias `brandKitId`). Khi F09 xong và endpoint chuyển sang `/api/v1/cut-jobs` thì giữ nguyên trường này. Người gửi job phải là chủ kit; dùng kit của người khác thì nhận `404 BRAND_KIT_NOT_FOUND`.
 
 ### 6.3 Backend (Spring Boot)
 
@@ -114,16 +129,20 @@ Mở rộng `POST /api/video/cut` (`CutRequestDTO`, [Models.java:130](../../../b
 
   ```java
   record BrandingSpec(Path logo, Corner corner, double scale, double opacity, double margin, Path watermarkTextFile, Path fontFile) {}
-  /** Trả filter_complex hoặc null nếu không có gì để vẽ. Đầu vào [0:v], logo là input [1:v], đầu ra [vout]. */
-  String build(BrandingSpec spec);
+  /**
+   * Trả đoạn filter_complex, hoặc null nếu không có gì để vẽ.
+   * inputLabel: "[0:v]" hoặc "[vcat]" (đầu ra của filter cắt khoảng AD-13). logoInputIndex: chỉ số input của logo (vd 1). Đầu ra luôn là [vout].
+   */
+  String build(BrandingSpec spec, String inputLabel, int logoInputIndex);
   ```
 
-- **Sửa** `VideoCutter.buildCutCommand(...)` ([VideoCutter.java:337-360](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L337-L360)): thêm tham số `BrandingSpec branding` có thể `null`. Khi khác `null`:
+- **Sửa** `VideoCutter.buildCommand(...)` ([VideoCutter.java:339](../../../backend/src/main/java/com/autocut/video/VideoCutter.java#L339)): thêm overload `buildCommand(File in, File out, String start, String end, BrandingSpec brandingOrNull)`. Khi `branding` khác `null`:
   - thêm `-i logo.png`;
-  - thay phần video bằng `-filter_complex <...> -map [vout] -map 0:a?`;
+  - thay phần video bằng `-filter_complex <...> -map [vout] -map 0:a?` (nếu có filter cắt khoảng của AD-13 thì `-map [acat]` thay cho `0:a?`);
   - giữ nguyên `-c:v libx264 -preset fast -crf 22 -c:a aac -movflags +faststart`.
-  - Giữ nguyên các overload cũ để test hiện có không phải sửa.
-- **Sửa** `BatchVideoCutService.executeJob` ([BatchVideoCutService.java:199-205](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L199-L205)): tải tài nguyên Brand Kit từ R2 về thư mục tạm **một lần cho cả job**, truyền `BrandingSpec` vào mỗi lần cắt. Sau khi cắt, nếu cần intro/outro thì gọi `VideoConcat.concat(List.of(intro, clip, outro), out)` và ghi `intro_offset_sec`.
+
+  Overload 4 tham số hiện có giữ nguyên, nên các test trong `VideoCutterTest` (dòng 189, 201, 218) không phải sửa.
+- **Sửa** `BatchVideoCutService.executeJob` ([BatchVideoCutService.java:199-205](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L199-L205)): tải tài nguyên Brand Kit từ R2 (`openStream`) về thư mục làm việc của job **một lần cho cả job**, rồi truyền `BrandingSpec` vào mỗi lần cắt. Sau khi cắt, nếu cần intro/outro thì gọi `VideoConcat.concat(List.of(intro, clip, outro), out)` rồi ghi `intro_offset_sec` vào `video_parts` (cùng lúc job ghi `COMPLETED`, F00 FR-7).
 - **Tạo** `service/BrandKitService`: CRUD, chuẩn hoá intro/outro khi upload (job nền), dựng ảnh xem trước.
 
 Lệnh FFmpeg mẫu: cắt + logo góc phải trên + watermark chữ góc trái dưới, trong một lượt:
@@ -156,7 +175,7 @@ ffmpeg -y -i intro_raw.mp4 -vf "scale=1920:1080:force_original_aspect_ratio=decr
 
 - **AC-1** — *Given* Brand Kit logo `TOP_RIGHT`, scale 0,10, *When* xuất clip 1080p, *Then* logo cao 108px (±2px), cách mép trên và mép phải 32px (±2px). Kiểm tra bằng ảnh chụp khung hình.
 - **AC-2** — Cùng Brand Kit, xuất clip 720p thì logo cao 72px (±2px).
-- **AC-3** — *Given* `cut_mode = fast` và có logo, *When* cắt, *Then* clip vẫn có logo và `report.json` có `"brandingForcedReencode": true`.
+- **AC-3** — *Given* topic có 2 khoảng bị cắt (AD-13) và Brand Kit có logo, *When* xuất, *Then* chỉ chạy **một** lệnh FFmpeg, clip có logo trong suốt thời lượng, và không còn các khoảng bị cắt.
 - **AC-4** — *Given* intro 3 giây, clip 120 giây, *When* xuất, *Then* thời lượng clip ≈ 123 giây (±0,1), `intro_offset_sec = 3`, và chapter đầu tiên trong `chapters.txt` của clip bắt đầu `00:03`.
 - **AC-5** — *Given* clip 45 giây, `skip_intro_outro_under_sec = 60`, *Then* clip không có intro/outro nhưng vẫn có logo.
 - **AC-6** — *Given* intro không có âm thanh, *When* ghép với clip có âm thanh, *Then* ghép thành công, và âm thanh của clip không bị lệch so với hình (kiểm tra tay tại 3 điểm).
@@ -170,10 +189,11 @@ ffmpeg -y -i intro_raw.mp4 -vf "scale=1920:1080:force_original_aspect_ratio=decr
 | `BrandingFilterBuilderTest.topRight_overlayExpression` / `bottomLeft_overlayExpression` | unit |
 | `BrandingFilterBuilderTest.noLogoNoText_returnsNull` | unit |
 | `BrandingFilterBuilderTest.textOnly_usesTextfile_notInline` | unit |
-| `VideoCutterTest.buildCutCommand_withBranding_addsLogoInputAndMaps` | unit (bổ sung vào `VideoCutterTest` sẵn có) |
-| `VideoCutterTest.buildCutCommand_nullBranding_unchanged` | unit (bảo vệ hành vi cũ) |
-| `BatchVideoCutServiceTest.fastModeWithBranding_forcesAccurate_andReports` | unit (mock VideoCutter) |
-| `IntroOffsetTest.chaptersShiftedByIntroDuration` | unit |
+| `BrandingFilterBuilderTest.chainsAfterKeepRangesLabel` | unit (đầu vào `[vcat]`, AC-3) |
+| `VideoCutterTest.buildCommand_withBranding_addsLogoInputAndMaps` | unit (bổ sung vào `VideoCutterTest` sẵn có) |
+| `VideoCutterTest.buildCommand_nullBranding_unchanged` | unit (bảo vệ hành vi cũ) |
+| `IntroOffsetTest.chaptersAndSubtitlesShiftedByIntroDuration` | unit |
+| `BrandKitControllerTest.otherUsersKit_returns404` | MockMvc |
 | `BrandingIntegrationTest.logoHeightMatchesScale_1080_and_720` | integration `@Tag("ffmpeg")`: logo màu đỏ đặc, đo vùng pixel đỏ trên khung trích ra |
 | `BrandKitServiceTest.uploadNonPng_rejected` | unit |
 
@@ -184,12 +204,12 @@ ffmpeg -y -i intro_raw.mp4 -vf "scale=1920:1080:force_original_aspect_ratio=decr
 | Ghép intro bằng `concatWithFilter` buộc mã hoá lại toàn bộ clip | Thời gian xuất tăng gấp đôi | Chuẩn hoá intro/outro trước theo đúng thông số clip đầu ra (cùng độ phân giải, fps, sample rate) để dùng được demuxer `-c copy` |
 | Lệch tiếng và hình sau khi ghép | Trải nghiệm tệ | Chuẩn hoá audio 48 kHz stereo; intro không tiếng thì thêm `anullsrc`; test AC-6 |
 | Logo che chữ trên slide (góc phải trên hay có số trang) | Học viên không đọc được | Có ảnh xem trước; cho chọn 4 góc; opacity mặc định 0,8 |
-| Thay đổi thời gian do intro làm lệch phụ đề và chapters | Sai mốc | `intro_offset_sec` là nguồn duy nhất để dịch mốc; F22/F23/F41 phải đọc giá trị này |
+| Thay đổi thời gian do intro làm lệch phụ đề và chapters | Sai mốc | `intro_offset_sec` là nguồn duy nhất để dịch mốc; F22 và F23 phải đọc giá trị này |
 | `scale2ref` bị đánh dấu deprecated trong FFmpeg mới | Lệnh lỗi khi nâng cấp FFmpeg | Ghi chú phiên bản FFmpeg tối thiểu trong Dockerfile (F14). Phương án thay thế: tính kích thước logo ở Java từ `ffprobe` rồi dùng `scale=-1:<px>` |
 
 ## 10. Câu hỏi mở
 
-- [ ] Brand Kit thuộc **người dùng** hay **tổ chức**? Spec hiện gắn với `owner_id`; khi có F49 sẽ chuyển sang `org_id`.
+- [x] ~~Brand Kit thuộc người dùng hay tổ chức?~~ Đã chốt theo AD-1/AD-9: trước F49 gắn với `owner_id` (user); sau F49 thêm `org_id` và `ORG_ADMIN` quản lý kit của tổ chức.
 - [ ] Có cho áp thương hiệu **lên video đã xuất trước đó** không? Việc này phải cắt lại toàn bộ.
 - [ ] Độ phân giải chuẩn của intro là 1080p hay theo độ phân giải video gốc? (Liên quan F45.)
 - [ ] Có cần mặc định ẩn logo trong khoảng 3 giây đầu và cuối khi đã có intro/outro (vì intro đã có logo) không?

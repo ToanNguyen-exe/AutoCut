@@ -6,10 +6,12 @@
 | **Nhóm** | Biên tập |
 | **Ưu tiên** | P1 |
 | **Người phụ trách gợi ý** | SV4 (Web Studio) — chủ yếu frontend; SV3 hỗ trợ phần render đoạn được chọn |
-| **Phụ thuộc** | F31 (`lib/segmentOps.ts`, `commit()` của lịch sử Undo). F33 (đoạn bị bỏ được đánh dấu `DISCARDED`). |
+| **Phụ thuộc** | F00 (id ổn định, xoá mềm `DISCARDED`, `GET ?includeDiscarded=true`, job cắt có `videoId`/`topicId`), F31 (`lib/segmentOps.ts`, `commit()` của lịch sử Undo, Vitest), F09 (job cắt) |
 | **Ước lượng** | M (3–5 ngày) |
 | **Thư viện mới cần duyệt** | Không |
 | **Tham khảo** | Premiere Pro / DaVinci (chọn nhiều clip trên timeline), Google Sheets (Shift/Ctrl chọn dòng), Descript (bulk delete scenes) |
+
+> **Cập nhật 18/11/2026:** thống nhất cách "Bỏ/Khôi phục" với F00 (bỏ = xoá khỏi danh sách đang hoạt động, khôi phục qua `includeDiscarded`, không thêm trường `discarded`); đặt tên tệp clip theo `section_no`/`topic_no` thật bằng `PathSlugifier.resolveOutputFile` thay vì vị trí trong request; chốt kiểu tên thư mục section theo backend (`02_LyThuyet`).
 
 ## 1. Bối cảnh & vấn đề
 
@@ -21,6 +23,10 @@
   - Chỗ tách đoạn ở `StudioTimeline` ([:218](../../../frontend/src/components/StudioTimeline.tsx#L218)).
 - Tên thư mục section được tính theo hai kiểu khác nhau: `capitalizeFirstLetter(slugify(...))` ở [ReviewTable.tsx:67-69](../../../frontend/src/components/ReviewTable.tsx#L67-L69) và `slugify(...)` ở [TranscriptScenesPanel.tsx:307](../../../frontend/src/components/TranscriptScenesPanel.tsx#L307). Cùng một đoạn có thể ra hai tên thư mục.
 - Danh sách section bị viết cứng `SECTION_OPTIONS` ([ReviewTable.tsx:24-32](../../../frontend/src/components/ReviewTable.tsx#L24-L32)), trong khi `config.yaml` đã có `segmentation.section_labels`. Đổi section cũng không cập nhật `section_no`.
+- Backend đã có cách đặt tên chuẩn: `PathSlugifier.toSectionFolderName` cho ra `01_LyThuyet`, và `resolveOutputFile(base, sectionNo, sectionName, topicNo, slug)` ([PathSlugifier.java:108-195](../../../backend/src/main/java/com/autocut/video/PathSlugifier.java#L108-L195)). Nhưng job cắt **không dùng** các hàm này:
+  - Nó ghi phẳng vào `output/users/<user>/<lesson>/cuts/` ([BatchVideoCutService.java:175](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L175)).
+  - Tên tệp đánh số theo **vị trí trong request**: `String.format("%02d_%s.mp4", i + 1, ...)` ([BatchVideoCutService.java:199](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L199)). Render riêng đoạn 12–14 sẽ ra `01_…`, `02_…`, `03_…`, đè lên clip của đoạn 1–3.
+- Job cắt hiện **không** xoá tệp cũ trong thư mục output (đã kiểm tra, không có lệnh xoá hay duyệt thư mục).
 
 ## 2. Mục tiêu
 - Cho **chọn nhiều đoạn** trên cả `ReviewTable` và `StudioTimeline`. Hai nơi dùng chung một vùng chọn.
@@ -37,7 +43,7 @@
 - Là giảng viên, tôi chỉ muốn render lại 3 đoạn vừa sửa thay vì render cả bài.
 
 ## 4. Yêu cầu chức năng
-- **FR-1 Mô hình chọn.** `selection: { ids: Set<string>; anchorId: string | null }` đặt ở `page.tsx`. Đoạn "đang hoạt động" (`activeSegmentId`) vẫn giữ để điều khiển playhead.
+- **FR-1 Mô hình chọn.** `selection: { ids: Set<string>; anchorId: string | null }` đặt ở `page.tsx`. Đoạn "đang hoạt động" (`activeSegmentId`) vẫn giữ để điều khiển playhead. `ids` là `Segment.id` (UUID ổn định theo F00).
 - **FR-2 Cách chọn** (giống nhau trên bảng và timeline):
 
 | Thao tác | Kết quả |
@@ -55,20 +61,26 @@
 
 | Hành động | Điều kiện | Kết quả | Nhãn Undo |
 |---|---|---|---|
-| **Gộp** | Các đoạn **liền kề** và cùng section | 1 đoạn từ `min(start)` tới `max(end)`, `start_id` của đoạn đầu, `end_id` của đoạn cuối, tiêu đề là tiêu đề đoạn đầu (sửa được ngay sau khi gộp) | "Gộp N đoạn" |
+| **Gộp** | Các đoạn **liền kề** và cùng section | 1 đoạn từ `min(start)` tới `max(end)`, `start_id` của đoạn đầu, `end_id` của đoạn cuối, tiêu đề là tiêu đề đoạn đầu (sửa được ngay sau khi gộp). Đoạn kết quả **giữ `id` của đoạn đầu**; các đoạn còn lại bị bỏ (F00 FR-2) | "Gộp N đoạn" |
 | **Đổi section** | — | Đặt `section` và `section_no` theo danh sách từ `config.yaml`, tính lại `parts` | "Đổi section N đoạn → Bài tập" |
-| **Bỏ** (`Delete`) | — | Đánh dấu bỏ (F33 `DISCARDED`), hiện mờ và gạch ngang. Không xoá khỏi mảng | "Bỏ N đoạn" |
-| **Khôi phục** | Có đoạn đang bị bỏ trong vùng chọn | Bỏ đánh dấu | "Khôi phục N đoạn" |
+| **Bỏ** (`Delete`) | — | Xoá các đoạn khỏi danh sách đang hoạt động (giống phím `Delete` của F31). Khi lưu, backend đặt chúng `DISCARDED` (F00 FR-5) | "Bỏ N đoạn" |
+| **Khôi phục** | Chọn trong ngăn "Đoạn đã bỏ" (FR-8) | Đưa đoạn trở lại danh sách với **cùng `id`**. Khi lưu, backend đặt lại `ACTIVE`, giữ `topicId` và bảng con | "Khôi phục N đoạn" |
 | **Dời thời gian** | — | Hộp thoại nhập ±giây (bước 0,1). Dời cả `start` và `end`. Chặn nếu kết quả < 0, vượt `duration`, hoặc chồng lên đoạn không được chọn | "Dời N đoạn +0,5s" |
 | **Đổi tên theo mẫu** | — | Mẫu có biến `{n}` (thứ tự trong vùng chọn), `{topic}` (tên cũ), `{section}`. Ví dụ `Bài tập {n}` | "Đổi tên N đoạn" |
 | **Đánh số lại** | — | Đánh lại `topic_no` theo thứ tự thời gian, trong từng section | "Đánh số lại" |
-| **Render đã chọn** | Mọi đoạn đã chọn không bị bỏ | Gọi `/cut` chỉ với các đoạn này (6.2) | Không ghi lịch sử |
+| **Render đã chọn** | Dự án không có thay đổi chưa lưu (nếu có thì lưu trước) | Tạo job cắt chỉ với các đoạn này (6.2), `renderKind=DRAFT` mặc định (F35) | Không ghi lịch sử |
 | **Xuất JSON** | — | Tải `segments_<lesson>_selected.json` | Không ghi lịch sử |
 
 - **FR-4** Mỗi hành động hàng loạt chỉ gọi `commit()` **một lần**, nên một lần Ctrl+Z hoàn tác cả lô.
 - **FR-5** Hành động "Bỏ" không hỏi `confirm()` nữa, vì đã có Undo và toast "Đã bỏ 5 đoạn — [Hoàn tác]" hiện trong 6 giây.
 - **FR-6** Khi gộp các đoạn không liền kề hoặc khác section, nút Gộp bị tắt và tooltip nêu lý do.
 - **FR-7** Section lấy từ `GET /api/video/config` (đã có, [VideoController.java:693](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L693)), trường `segmentation.section_labels`. Nếu không lấy được thì dùng `SECTION_OPTIONS` hiện tại làm dự phòng.
+- **FR-8 Ngăn "Đoạn đã bỏ".** Nút "Đã bỏ (N)" trên `ReviewTable` mở danh sách gồm:
+  - Các đoạn `DISCARDED` trên máy chủ, lấy từ `GET /api/v1/videos/{id}/segments?includeDiscarded=true` (F00 FR-6).
+  - Các đoạn đã bỏ trong phiên hiện tại nhưng chưa lưu, tính bằng "có trong bản đã lưu gần nhất nhưng không có trong `present`".
+
+  Chọn một hoặc nhiều đoạn rồi bấm "Khôi phục". Nếu đoạn khôi phục chồng thời gian lên đoạn đang hoạt động thì vẫn cho khôi phục nhưng hiện cảnh báo chồng lấn.
+- **FR-9 Tên tệp clip.** Job cắt đặt tên tệp theo `PathSlugifier.resolveOutputFile(base, section_no, section, topic_no, slug)`, ra `<base>/02_LyThuyet/05_vong_lap_for.mp4`. **Không** dùng vị trí trong request. Nhờ vậy render một phần không đè lên clip của đoạn khác. Topic có nhiều part thì thêm hậu tố `part_label` từ `config.yaml` (`_Phan2`).
 
 ## 5. Yêu cầu phi chức năng
 - Mỗi thao tác trên 200 đoạn chạy dưới 50 ms.
@@ -76,29 +88,29 @@
 
 ## 6. Thiết kế kỹ thuật
 ### 6.1 Cơ sở dữ liệu
-Không thay đổi (dùng `topics.status` của F33).
+Không thay đổi (dùng `topics.status` và `client_id` của F00).
 
 ### 6.2 API
-Không thêm endpoint mới. Dùng lại `POST /api/video/cut` ([VideoController.java:1540](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L1540), `CutRequestDTO` ở [Models.java:130-136](../../../backend/src/main/java/com/autocut/dto/Models.java#L130-L136)) và chỉ gửi các đoạn đã chọn trong `segments`.
-
-**Cần kiểm tra và sửa:** `BatchVideoCutService` không được xoá clip cũ của những đoạn **không** có trong request (nếu hiện đang dọn cả thư mục `outputDir`). Viết test `cut_subset_keepsExistingClipsOfOtherTopics`.
+Không thêm endpoint mới. Dùng lại `POST /api/video/cut` ([VideoController.java:1540](../../../backend/src/main/java/com/autocut/controller/VideoController.java#L1540), `CutRequestDTO` ở [Models.java:130-136](../../../backend/src/main/java/com/autocut/dto/Models.java#L130-L136)), với `videoId` và `topicId` của từng đoạn theo F00 FR-7. Chỉ gửi các đoạn đã chọn trong `segments`. Theo AD-2: người không có `EDIT` thì nhận 403 `FORBIDDEN_ACTION`; `topicId` không thuộc video thì trả 404.
 
 ### 6.3 Backend
-- **Sửa** (chỉ khi test trên đỏ): `BatchVideoCutService`, chỉ ghi đè tệp của các topic có trong request.
+- **Sửa** `BatchVideoCutService` ([:194-200](../../../backend/src/main/java/com/autocut/service/BatchVideoCutService.java#L194-L200)): thay `String.format("%02d_%s.mp4", i + 1, ...)` bằng `PathSlugifier.resolveOutputFile(...)` (FR-9). `video_parts` được upsert theo `(topic_id, part_no)` (F00 FR-7), nên render lại một đoạn chỉ cập nhật dòng của đoạn đó.
 
 ### 6.5 Frontend
 **`lib/segmentOps.ts`** (do F31 tạo, F37 bổ sung):
 ```ts
 export function mergeSegments(segs: Segment[], ids: string[]): Segment[];            // throws MergeError
 export function setSection(segs: Segment[], ids: string[], label: string, sectionNo: number): Segment[];
-export function setDiscarded(segs: Segment[], ids: string[], discarded: boolean): Segment[];
+export function removeSegments(segs: Segment[], ids: string[]): Segment[];          // bỏ
+export function restoreSegments(segs: Segment[], restored: Segment[]): Segment[];   // khôi phục, giữ id, sắp theo start
 export function shiftSegments(segs: Segment[], ids: string[], deltaSec: number, duration: number): Segment[]; // throws ShiftError
 export function renameByTemplate(segs: Segment[], ids: string[], template: string): Segment[];
 export function renumberTopics(segs: Segment[]): Segment[];
-export function sectionFolderName(sectionNo: number, label: string): string;          // MỘT cách đặt tên duy nhất
+export function sectionFolderName(sectionNo: number, label: string): string;          // MỘT cách đặt tên, khớp PathSlugifier.toSectionFolderName ("02_LyThuyet")
 export function canMerge(segs: Segment[], ids: string[]): { ok: true } | { ok: false; reason: string };
 ```
-- `types/index.ts`: thêm `Segment.discarded?: boolean`. Khi lưu (F33), trường này được chuyển thành `status`.
+- `types/index.ts`: **không** thêm trường `discarded`. Đoạn bị bỏ là đoạn vắng mặt trong danh sách gửi lên (F00 FR-5). `Segment.status` (F00) chỉ có trong dữ liệu của ngăn "Đoạn đã bỏ".
+- **Mới** `components/DiscardedSegmentsDrawer.tsx` (FR-8).
 - **Mới** `lib/selection.ts`: hàm thuần `applyClick(selection, orderedIds, clickedId, { ctrl, shift }) → Selection`.
 - **Mới** `components/BulkActionBar.tsx`, `components/ShiftTimeDialog.tsx`, `components/RenameTemplateDialog.tsx`.
 - **Sửa** `ReviewTable.tsx`:
@@ -115,8 +127,9 @@ export function canMerge(segs: Segment[], ids: string[]): { ok: true } | { ok: f
 - **AC-3** — *Given* chọn đoạn 3 và 5 (không liền kề), *Then* nút Gộp bị tắt, tooltip ghi "Chỉ gộp được các đoạn liền kề".
 - **AC-4** — *Given* gộp đoạn 3, 4, 5, *Then* đoạn mới có `start_id` của đoạn 3, `end_id` của đoạn 5, và `topic_no` các đoạn sau được đánh lại liên tục.
 - **AC-5** — *Given* dời +2 giây làm đoạn cuối vượt `duration`, *Then* hiện lỗi "Đoạn 'Tổng kết' sẽ vượt quá cuối video" và dữ liệu không thay đổi.
-- **AC-6** — *When* chọn 3 đoạn rồi bấm "Render đã chọn", *Then* request `/cut` có đúng 3 segments. Clip của các đoạn khác trong thư mục output vẫn còn.
-- **AC-7** — Cùng một đoạn, tên thư mục section tính ở `ReviewTable` và `TranscriptScenesPanel` giống hệt nhau.
+- **AC-6** — *Given* đoạn 1–14 đã render, *When* chọn đoạn 12–14 rồi bấm "Render đã chọn", *Then* request `/cut` có đúng 3 segments, các tệp mới tên `…/<section>/12_…`, `13_…`, `14_…`, và clip của đoạn 1–11 không bị ghi đè.
+- **AC-7** — Cùng một đoạn, tên thư mục section tính ở `ReviewTable`, `TranscriptScenesPanel` và backend (`PathSlugifier.toSectionFolderName`) giống hệt nhau, ví dụ `02_LyThuyet`.
+- **AC-9** — *Given* bỏ 5 đoạn rồi lưu, *When* mở ngăn "Đã bỏ" và khôi phục 2 đoạn rồi lưu, *Then* 2 đoạn đó trở lại `ACTIVE` với cùng `topicId` như trước khi bỏ.
 - **AC-8** — Tìm `grep -rn "recalculateParts(" frontend/src/components` thì chỉ còn kết quả nằm trong `lib/segmentOps.ts` (component không tự tính `parts` nữa).
 
 ## 8. Kế hoạch kiểm thử (TDD)
@@ -125,12 +138,14 @@ export function canMerge(segs: Segment[], ids: string[]): { ok: true } | { ok: f
 - `mergeSegments_nonContiguous_throws`
 - `mergeSegments_differentSection_throws`
 - `setSection_updatesSectionNoAndParts`
-- `setDiscarded_doesNotRemoveFromArray`
+- `removeSegments_removesOnlySelected`
+- `restoreSegments_keepsIdAndSortsByStart`
+- `mergeSegments_keepsFirstId`
 - `shiftSegments_negativeResult_throws`
 - `shiftSegments_overlapUnselected_throws`
 - `renameByTemplate_replacesNTopicSection`
 - `renumberTopics_perSection_sequential`
-- `sectionFolderName_isStable` (snapshot test cho 7 nhãn section tiếng Việt)
+- `sectionFolderName_matchesBackendVectors`: dùng chung tệp `test-vectors/section-folders.json` với `PathSlugifierTest` (7 nhãn tiếng Việt → `01_LyThuyet`…)
 - `inputNotMutated` (chạy mọi hàm, kiểm tra `Object.freeze` trên input không gây lỗi)
 
 `selection.test.ts`:
@@ -139,7 +154,10 @@ export function canMerge(segs: Segment[], ids: string[]): { ok: true } | { ok: f
 - `shiftClick_rangeFromAnchor`
 - `shiftClick_noAnchor_actsAsClick`
 
-Backend: `BatchVideoCutServiceTest.cut_subset_keepsExistingClipsOfOtherTopics`.
+Backend:
+- `BatchVideoCutServiceTest.cut_subset_namesFilesByTopicNo_notRequestIndex`
+- `BatchVideoCutServiceTest.cut_subset_keepsExistingClipsOfOtherTopics`
+- `PathSlugifierTest.sectionFolder_matchesSharedVectors`
 
 ## 9. Rủi ro & failure modes
 | Rủi ro | Ảnh hưởng | Cách giảm |
@@ -150,5 +168,5 @@ Backend: `BatchVideoCutServiceTest.cut_subset_keepsExistingClipsOfOtherTopics`.
 
 ## 10. Câu hỏi mở
 - [ ] Tên đoạn sau khi gộp: giữ tên đoạn đầu (đề xuất) hay nối "A & B" như hiện tại?
-- [ ] Cách đặt tên thư mục section chuẩn là kiểu nào: `02_LyThuyet` (ReviewTable) hay `02_ly-thuyet` (TranscriptScenesPanel)? Cần khớp với `output.section_folder_template` trong `config.yaml` và `PathSlugifier.java` ở backend.
-- [ ] "Render đã chọn" có cần qua bước duyệt của F35 không?
+- [x] Cách đặt tên thư mục section chuẩn: **`02_LyThuyet`**, theo `PathSlugifier.toSectionFolderName` ở backend (nơi thật sự ghi tệp). Frontend chỉ làm theo.
+- [x] "Render đã chọn" có cần qua bước duyệt của F35 không? **Không** với bản nháp (`renderKind=DRAFT`); bản phát hành theo F35 FR-10.

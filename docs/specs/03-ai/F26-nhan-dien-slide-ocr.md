@@ -6,10 +6,12 @@
 | **Nhóm** | AI |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV1 (trích khung hình bằng ffmpeg) + SV2 (OCR, đưa vào điểm cắt) + SV3 (DB, API) |
-| **Phụ thuộc** | F09/F10 (job nền), F18 (đưa tín hiệu vào confidence) |
+| **Phụ thuộc** | F00 (`videoId`), F09/F10 (job nền), F18 (đưa tín hiệu vào confidence theo AD-14), F28 (khoá `features.slides`) |
 | **Ước lượng** | L (1–2 tuần) |
 | **Thư viện mới cần duyệt** | OCR, chọn 1: (A) **Gemini Vision** qua `google-genai` sẵn có, không thêm thư viện nhưng tốn tiền theo ảnh; (B) `paddleocr` (Apache-2.0, hỗ trợ tiếng Việt, chạy offline, nặng ~500 MB). Phát hiện đổi slide dùng ffmpeg `select=gt(scene,x)`, **không cần thư viện mới** |
 | **Tham khảo** | Panopto (OCR slide, tìm kiếm chữ trên slide), Kaltura REACH, Yuja |
+
+> **Cập nhật 18/11/2026:** bỏ việc nâng trần điểm cứng từ 7 lên 10; tín hiệu slide là một trọng số cấu hình được và `maxScore` tự tính theo tín hiệu đang bật (AD-14), nên F18 không bị lệch; chỉ cộng điểm cho khung `SLIDE` (không cộng cho `CAMERA`); lệnh ffmpeg thêm `scale=640:-1` và dùng `-fps_mode vfr`; ghi rõ độ chính xác mốc khoảng 1 giây; thumbnail lưu R2 private (AD-3); khoá bật tắt `features.slides` (F28); quyền theo AD-2.
 
 ## 1. Bối cảnh & vấn đề
 
@@ -37,14 +39,16 @@
 ## 4. Yêu cầu chức năng
 
 - **FR-1** Trích mốc đổi cảnh:
-  `ffmpeg -i in.mp4 -vf "fps=1,select='gt(scene,0.30)',showinfo" -vsync vfr frames/%05d.jpg`
-  Đọc `pts_time` từ stderr. Ngưỡng `slides.scene_threshold` mặc định 0,30, cấu hình được.
+  `ffmpeg -i in.mp4 -vf "fps=1,scale=640:-1,select='gt(scene,0.30)',showinfo" -fps_mode vfr -q:v 4 frames/%05d.jpg`
+  Đọc `pts_time` từ stderr. Ngưỡng `slides.scene_threshold` mặc định 0,30, cấu hình được. (`-vsync` đã bị FFmpeg đánh dấu là cũ, nên dùng `-fps_mode`.)
+  Vì lấy mẫu 1 khung/giây, mốc đổi slide chỉ chính xác tới khoảng **±1 giây**. Độ chính xác này đủ để cộng điểm cho ranh giới câu (cửa sổ ±1,5s ở FR-5), nhưng không dùng làm mốc cắt trực tiếp: mốc cắt vẫn là ranh giới câu.
 - **FR-2** Lọc nhiễu: bỏ các mốc cách nhau < `slides.min_gap` (mặc định 8s), vì giảng viên lướt slide hoặc chuyển cửa sổ nhanh. Với chuỗi mốc dày, chỉ giữ mốc cuối.
 - **FR-3** Phân loại khung hình: `SLIDE` (nhiều chữ, nền đồng nhất), `CODE` (màn hình IDE), `CAMERA` (mặt người). Dùng OCR: số ký tự > 30 và tỉ lệ dòng ngắn cao thì là `SLIDE`/`CODE`; ngược lại là `CAMERA`, bỏ qua OCR toàn văn.
 - **FR-4** OCR: trả `title` (dòng có bounding box cao nhất trong 30% phía trên ảnh) và `text` (toàn bộ, giữ xuống dòng).
-- **FR-5** Chấm điểm: trong `calculateCutPoints`, nếu có mốc đổi slide trong khoảng ±1,5s quanh ranh giới câu thì `score += 3` và thêm `reasons` "ĐỔI_SLIDE". Thang chuẩn hoá của F18 nâng trần từ 7 lên 10.
+- **FR-5** Chấm điểm: trong `calculateCutPoints`, nếu có mốc đổi slide **mà khung hình sau mốc là `SLIDE`** (không tính `CAMERA`, không tính `CODE` vì màn hình IDE đổi liên tục khi cuộn) trong khoảng ±1,5s quanh ranh giới câu, thì `score += cut_points.weights.slide_change` (mặc định 3) và thêm `reasons` "ĐỔI_SLIDE".
+  **Không** đổi thang điểm cứng. Theo AD-14, `CutPointService.maxScore()` cộng thêm `slide_change` chỉ khi `features.slides` đang bật cho video đó; F18 chia cho `maxScore` này, nên khi tắt slide thì điểm tin cậy giữ nguyên như trước.
 - **FR-6** Prompt phân đoạn có thêm khối `MỐC SLIDE` dạng `S0123 ~ [412s] Slide: "Vòng lặp for"`, kèm chỉ dẫn "ưu tiên đặt ranh giới topic ở mốc slide có tiêu đề mới".
-- **FR-7** Tuỳ chọn bật/tắt theo video (`slides.enabled`) và theo preset (F28). Mặc định bật cho preset `lecture_programming`.
+- **FR-7** Bật/tắt bằng khoá `features.slides` (cấu trúc khoá chung của F28: hệ thống → preset → video). Các tham số nằm trong khối `slides.*` (`scene_threshold`, `min_gap`, `crop`). Mặc định bật cho preset `lecture_programming`.
 
 ## 5. Yêu cầu phi chức năng
 
@@ -56,39 +60,41 @@
 
 ### 6.1 Cơ sở dữ liệu
 
-`V<n>__create_slides.sql`:
+`V<yyyyMMddHHmm>__create_slides.sql`:
 ```sql
-CREATE TABLE video_slides (
+CREATE TABLE IF NOT EXISTS video_slides (
     id BIGSERIAL PRIMARY KEY,
     video_id BIGINT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
     at_time DOUBLE PRECISION NOT NULL,
-    frame_kind VARCHAR(10) NOT NULL,     -- SLIDE|CODE|CAMERA
+    frame_kind VARCHAR(10) NOT NULL CHECK (frame_kind IN ('SLIDE','CODE','CAMERA')),
     title VARCHAR(255),
     ocr_text TEXT,
-    thumbnail_r2_key VARCHAR(500),
+    thumbnail_r2_key VARCHAR(500),      -- bucket private, chỉ phát qua presigned URL (AD-3)
     scene_score DOUBLE PRECISION,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_slides_video_time ON video_slides(video_id, at_time);
+CREATE INDEX IF NOT EXISTS idx_slides_video_time ON video_slides(video_id, at_time);
 ```
 
 ### 6.2 API
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/v1/videos/{id}/slides:detect` | Chủ video | `202 jobId` |
-| GET | `/api/v1/videos/{id}/slides` | Chủ video | Danh sách mốc slide + link thumbnail (presigned) |
+| POST | `/api/v1/videos/{videoId}/slides:detect` | Sửa video | `202 { "jobId": … }` (job `SLIDE_DETECT`, F09) |
+| GET | `/api/v1/videos/{videoId}/slides` | Xem video | Danh sách mốc slide + link thumbnail (presigned URL hết hạn sau 15 phút, AD-3) |
+
+Không có quyền xem thì 404, xem được nhưng không sửa được thì 403 `FORBIDDEN_ACTION` (AD-2). Chạy lại phát hiện thì xoá các dòng `video_slides` cũ của video và object thumbnail cũ trên R2 trong cùng job.
 
 ```json
-[ { "atTime": 412.0, "kind": "SLIDE", "title": "Vòng lặp for", "thumbnailUrl": "https://...", "sceneScore": 0.62 } ]
+[ { "atTime": 412.0, "kind": "SLIDE", "title": "Vòng lặp for", "thumbnailUrl": "https://<presigned, 15 phút>", "sceneScore": 0.62 } ]
 ```
 
 ### 6.3 Backend (Spring Boot)
 
 - `video/SceneDetector.java`: chạy ffmpeg theo FR-1, phân tích `showinfo` (`pts_time:`) từ stderr bằng `StreamUtil`; hàm thuần `filterByMinGap(List<Double>, double)`.
-- `CutPointService.calculateCutPoints`: thêm overload nhận `List<Double> slideTimes`; overload cũ gọi với danh sách rỗng để giữ nguyên hành vi và các test cũ.
-- `service/SlideService.java`: điều phối trích khung → gọi `python -m backend.ai.cli --ocr-slides --frames <dir> --output <json>` → lưu DB, upload thumbnail lên R2 (`CloudflareR2Service`).
-- `ConfigService`: `getSceneThreshold()`, `getSlideMinGap()`.
+- `CutPointService.calculateCutPoints`: thêm overload nhận `List<Double> slideTimes` (chỉ các mốc có `frame_kind = SLIDE`); overload cũ gọi với danh sách rỗng để giữ nguyên hành vi và các test cũ. `maxScore()` cộng `slide_change` khi danh sách tín hiệu slide đang bật (AD-14, dùng chung với F18).
+- `service/SlideService.java`: handler của job `SLIDE_DETECT` (F09). Trích khung vào thư mục làm việc của job (F17) → gọi `python -m backend.ai.cli --ocr-slides --frames <dir> --output <json>` qua job runner F10 → lưu DB, upload thumbnail lên R2 (`CloudflareR2Service`), chỉ lưu `r2_key`.
+- `ConfigService`: `getSceneThreshold()`, `getSlideMinGap()`, `getSlideChangeWeight()`.
 
 ### 6.4 AI pipeline (Python)
 
@@ -108,11 +114,14 @@ CREATE INDEX idx_slides_video_time ON video_slides(video_id, at_time);
 
 ## 7. Tiêu chí chấp nhận
 
-- **AC-1** — *Given* video mẫu 20 phút có 25 lần đổi slide (đã gán nhãn tay). *Then* phát hiện được ≥ 22 mốc (recall ≥ 88%), sai lệch ≤ 1s, và ≤ 5 mốc thừa.
+- **AC-1** — *Given* video mẫu 20 phút có 25 lần đổi slide (đã gán nhãn tay). *Then* phát hiện được ≥ 22 mốc (recall ≥ 88%), sai lệch ≤ 1,5s (lấy mẫu 1 khung/giây nên không đòi chặt hơn), và ≤ 5 mốc thừa.
 - **AC-2** — *Given* 5 mốc liên tiếp cách nhau 2s. *Then* chỉ giữ 1 mốc (mốc cuối).
-- **AC-3** — *Given* ranh giới câu tại 412,3s và có slide đổi ở 411,5s. *Then* cut point đó có `reasons` chứa "ĐỔI_SLIDE" và điểm tăng 3.
+- **AC-3** — *Given* ranh giới câu tại 412,3s và có slide đổi ở 411,5s, khung sau mốc là `SLIDE`. *Then* cut point đó có `reasons` chứa "ĐỔI_SLIDE" và điểm tăng 3.
+- **AC-3b** — *Given* cùng ranh giới nhưng khung sau mốc là `CAMERA` hoặc `CODE`. *Then* không cộng điểm.
+- **AC-3c** — *Given* `features.slides = false`. *Then* `maxScore = 7` và confidence của F18 giống hệt khi chưa có F26 (hồi quy AD-14).
 - **AC-4** — Trên 30 slide mẫu: tiêu đề OCR đúng (khớp sau khi chuẩn hoá khoảng trắng) ≥ 85%, giữ đúng dấu tiếng Việt.
-- **AC-5** — Video quay mặt người (không có slide). *Then* phần lớn khung hình là `CAMERA`, không có mốc nào được cộng điểm, pipeline không lỗi.
+- **AC-5** — Video quay mặt người (không có slide). *Then* phần lớn khung hình là `CAMERA`, không có mốc nào được cộng điểm (theo FR-5), pipeline không lỗi.
+- **AC-7** — Người không có quyền xem video gọi `GET …/slides` thì nhận 404 (AD-2).
 - **AC-6** — So sánh trên 3 video có slide, khi bật F26: tỉ lệ biên topic người duyệt phải sửa > 3s giảm ≥ 25% so với khi tắt.
 
 ## 8. Kế hoạch kiểm thử (TDD)
@@ -122,6 +131,9 @@ JUnit:
 - `SceneDetectorTest.filterByMinGap_keepsLastOfBurst()`
 - `CutPointServiceTest.calculateCutPoints_slideNearBoundary_addsScore()`
 - `CutPointServiceTest.calculateCutPoints_noSlides_behavesAsBefore()` (hồi quy)
+- `CutPointServiceTest.calculateCutPoints_cameraOrCodeFrame_noBonus()` (AC-3b)
+- `CutPointServiceTest.maxScore_includesSlideWeightOnlyWhenEnabled()` (AC-3c)
+- `SceneDetectorTest.buildCommand_usesScaleAndFpsMode()`
 
 pytest (`tests/test_f26_slides.py`):
 - `test_pick_title_prefers_tallest_line_in_top_area()`
@@ -139,5 +151,5 @@ pytest (`tests/test_f26_slides.py`):
 
 ## 10. Câu hỏi mở
 
-- [ ] Chọn OCR Gemini Vision hay PaddleOCR (chạy offline)?
+- [ ] Chọn OCR Gemini Vision hay PaddleOCR (chạy offline)? Nếu chọn Gemini Vision thì ảnh slide được gửi ra máy chủ nước ngoài, cần ghi vào phần minh bạch dữ liệu (đề xuất F92).
 - [ ] Có lưu toàn văn OCR lên DB không, hay chỉ tiêu đề + chỉ mục tìm kiếm (vì dữ liệu nặng)?

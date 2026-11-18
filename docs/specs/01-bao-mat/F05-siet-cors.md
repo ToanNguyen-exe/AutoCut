@@ -11,6 +11,8 @@
 | **Thư viện mới cần duyệt** | Không |
 | **Tham khảo** | MDN "CORS"; tài liệu Spring "CORS with Spring Security" |
 
+> **Cập nhật 18/11/2026:** Quy định rõ hành vi khi không đặt profile (coi như `prod`); ghi phạm vi CORS theo tiền tố API của AD-5; câu hỏi proxy `rewrites` đã chốt theo F01.
+
 ## 1. Bối cảnh & vấn đề
 *CORS* là cơ chế trình duyệt dùng để quyết định trang web ở tên miền A có được gọi API ở tên miền B hay không.
 
@@ -38,10 +40,12 @@ Tổ hợp này nghĩa là **bất kỳ trang web nào** người dùng đang m�
 ## 4. Yêu cầu chức năng
 - **FR-1** Đọc `AUTOCUT_CORS_ALLOWED_ORIGINS` qua `ConfigService.getEnv`. Mặc định ở profile `dev` là `http://localhost:3000,http://127.0.0.1:3000`.
 - **FR-2** Ở profile `prod`, giá trị trống hoặc chứa `*` thì **không khởi động** và log lỗi rõ ràng.
+- **FR-2b** **Không đặt profile nào** (`SPRING_PROFILES_ACTIVE` trống, Spring dùng profile `default`) thì áp dụng **quy tắc của `prod`**. Lý do: quên đặt profile trên máy chủ thật không được làm CORS mở ra. Máy dev phải đặt `SPRING_PROFILES_ACTIVE=dev` (thêm vào `.env.example` và script `backend` trong `package.json` gốc).
 - **FR-3** Methods: `GET, POST, PUT, PATCH, DELETE, OPTIONS`. Headers cho phép: `Authorization, Content-Type, X-Requested-With, Idempotency-Key`. Exposed headers: `Content-Disposition` (để frontend đọc tên tệp tải về), `X-Request-Id`.
 - **FR-4** `allowCredentials(true)` chỉ đi kèm danh sách origin cụ thể, không dùng pattern.
 - **FR-5** `maxAge = 3600` giây để giảm số lần gọi preflight.
 - **FR-6** Request từ origin lạ: không trả header `Access-Control-Allow-Origin`. Trình duyệt tự chặn; máy chủ không cần trả lỗi riêng.
+- **FR-7** Phạm vi theo AD-5: cấu hình CORS áp cho `/api/v1/**` và `/api/video/**` (cũ). `/api/v1/hooks/**` là gọi giữa máy chủ với máy chủ nên **không** cần CORS. `/api/ext/v1/**` (F50) do đối tác gọi từ máy chủ, cũng không bật CORS. Upload thẳng lên R2 (F11) cần cấu hình CORS **trên bucket R2**, việc đó thuộc F11.
 
 ## 5. Yêu cầu phi chức năng
 - Đổi danh sách origin chỉ cần sửa biến môi trường và khởi động lại, không cần build lại.
@@ -78,9 +82,10 @@ Vary: Origin
 - **AC-3** — *Given* profile `prod` và `ALLOWED=*` *When* khởi động *Then* ứng dụng dừng, log có `AUTOCUT_CORS_ALLOWED_ORIGINS không được chứa '*'`.
 - **AC-4** — *Given* profile `dev` không đặt biến *When* chạy frontend ở cổng 3000 *Then* Studio hoạt động bình thường.
 - **AC-5** — Preflight không cần JWT (không bị 401).
+- **AC-6** — *Given* không đặt profile và không đặt `AUTOCUT_CORS_ALLOWED_ORIGINS` *When* khởi động *Then* ứng dụng dừng với cùng thông báo lỗi như `prod`.
 
 ## 8. Kế hoạch kiểm thử (TDD)
-- `CorsPropertiesTest`: `prod_wildcard_throws`, `prod_empty_throws`, `dev_default_localhost3000`, `parsesCommaSeparatedAndTrims`.
+- `CorsPropertiesTest`: `prod_wildcard_throws`, `prod_empty_throws`, `noProfile_behavesLikeProd`, `dev_default_localhost3000`, `parsesCommaSeparatedAndTrims`.
 - `CorsIT` (MockMvc): AC 1, 2, 5.
 
 ## 9. Rủi ro & failure modes
@@ -91,5 +96,5 @@ Vary: Origin
 | Dev mở bằng IP LAN để test trên điện thoại | Bị chặn | Thêm IP vào biến môi trường lúc dev; ghi chú trong README |
 
 ## 10. Câu hỏi mở
-- [ ] Dùng proxy Next.js `rewrites` (cùng origin) hay giữ hai origin và CORS? Proxy đơn giản hơn cho cookie nhưng upload 5 GB qua Next.js server là không nên.
+- [x] Proxy Next.js `rewrites` hay hai origin + CORS: đã chốt ở F01 FR-1. Mặc định dùng hai origin cùng site + CORS; chỉ dùng `rewrites` khi frontend và backend khác tên miền đăng ký. Upload lớn không đi qua Next.js vì F11 upload thẳng lên R2.
 - [ ] Tên miền prod chính thức là gì?

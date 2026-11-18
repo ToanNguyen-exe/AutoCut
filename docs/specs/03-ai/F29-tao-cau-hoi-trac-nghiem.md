@@ -6,16 +6,19 @@
 | **Nhóm** | AI |
 | **Ưu tiên** | P2 |
 | **Người phụ trách gợi ý** | SV2 (prompt, kiểm định) + SV3 (API, DB, xuất định dạng) + SV4 (soạn câu hỏi, hiện trong player) |
-| **Phụ thuộc** | F21 (tóm tắt và ý chính làm đầu vào), F09 (job), F41 (hiển thị cho học viên). F42 nếu xuất sang LMS |
+| **Phụ thuộc** | **F00 (bắt buộc:** topic không bị xoá cứng khi Lưu, nên khoá ngoại `ON DELETE CASCADE` tới `topics` mới an toàn), F21 (tóm tắt và ý chính làm đầu vào), F09 (job), F15 (`ai_usage`), F41 (hiển thị cho học viên). F42 nếu xuất sang LMS |
 | **Ước lượng** | L (1–2 tuần) |
 | **Thư viện mới cần duyệt** | Không |
 | **Tham khảo** | Panopto Quizzing, Coursera in-video quiz, Edpuzzle, Moodle GIFT format |
+
+> **Cập nhật 18/11/2026:** ghi rõ phụ thuộc bắt buộc vào F00 (trước F00, mỗi lần Lưu xoá topic nên câu hỏi đã duyệt bị xoá dây chuyền); thêm `model_validator` cho `QuizItem` để ràng buộc số đáp án theo loại câu; định nghĩa cách ghi câu `MULTI` và `TRUE_FALSE` trong CSV; topic bị `DISCARDED` thì ẩn câu hỏi thay vì xoá; quyền theo AD-2, job theo AD-10.
 
 ## 1. Bối cảnh & vấn đề
 
 - Sau khi chia clip, giảng viên thường phải tự soạn câu hỏi kiểm tra cho từng đoạn. Việc này mất nhiều thời gian nhất khi số hoá khoá học.
 - AutoCut đã có transcript theo câu kèm mốc giờ ([models.py:15](../../../backend/ai/models.py)) và cấu trúc topic ([schema.sql](../../../database/schema.sql) bảng `topics`). Đây là đầu vào đủ tốt để sinh câu hỏi bám nội dung và **dẫn được về đúng giây** chứa đáp án.
 - Chưa có bảng hay API nào cho câu hỏi.
+- Hiện mỗi lần Lưu, `SegmentPersistenceService` xoá toàn bộ section (kéo theo topic) rồi tạo lại ([SegmentPersistenceService.java:87-92](../../../backend/src/main/java/com/autocut/service/SegmentPersistenceService.java#L87-L92)). Nếu làm F29 trước F00, mọi câu hỏi (kể cả đã duyệt) sẽ bị xoá dây chuyền sau mỗi lần Lưu. Vì vậy F29 **chỉ được bắt đầu sau khi F00 đã merge**.
 
 ## 2. Mục tiêu
 
@@ -49,7 +52,21 @@
       explanation: str = Field(max_length=500)
       source_sentence_ids: list[str] = Field(min_length=1)
       bloom: Literal["REMEMBER","UNDERSTAND","APPLY"]
+
+      @model_validator(mode="after")
+      def check_shape(self):
+          n = len(self.options)
+          if self.type == "TRUE_FALSE":
+              assert self.options == ["Đúng", "Sai"] and len(self.correct) == 1
+          else:
+              assert n == 4
+              assert len(self.correct) == (1 if self.type == "SINGLE" else len(self.correct)) and len(self.correct) >= 1
+              if self.type == "MULTI":
+                  assert 2 <= len(self.correct) <= 3
+          assert all(0 <= i < n for i in self.correct) and len(set(self.correct)) == len(self.correct)
+          return self
   ```
+  Câu sai hình dạng bị Pydantic từ chối ngay khi parse (`ValidationError`), trước bước kiểm định FR-3. (Trong code thật dùng `raise ValueError(...)` thay cho `assert`, vì `assert` bị tắt khi chạy Python với `-O`.)
 - **FR-3 Kiểm định tự động** (chạy sau khi sinh, câu không đạt thì loại và sinh bù tối đa 1 lần):
   - `source_sentence_ids` phải nằm trong topic.
   - `SINGLE` có đúng 1 đáp án đúng; `MULTI` có 2–3.
@@ -61,8 +78,13 @@
 - **FR-6 Xuất:**
   - GIFT: `::Q1:: Vòng lặp for gồm mấy thành phần? {=3 ~2 ~4 ~1 #Giải thích...}`. Phải escape các ký tự `~ = # { } :`.
   - Moodle XML: `<quiz><question type="multichoice">...`
-  - CSV: `question,option_a,option_b,option_c,option_d,correct,explanation,video_time`.
+  - CSV (UTF-8 có BOM để Excel đọc đúng tiếng Việt): `type,question,option_a,option_b,option_c,option_d,correct,explanation,video_time`.
+    - `correct` ghi **chữ cái** của các đáp án đúng, cách nhau bằng dấu `|`: `B` cho `SINGLE`, `A|C` cho `MULTI`.
+    - `TRUE_FALSE`: `option_a = Đúng`, `option_b = Sai`, `option_c`/`option_d` để trống, `correct` là `A` hoặc `B`.
+    - `video_time` dạng `MM:SS` (hoặc `HH:MM:SS` khi ≥ 1 giờ), là mốc của câu nguồn đầu tiên.
+    - Google Forms và Kahoot không nhập trực tiếp được câu `MULTI`; tài liệu hướng dẫn trong giao diện ghi rõ điều này.
 - **FR-7** Mỗi câu hỏi có link "Xem đoạn giải thích" tới `start` của câu nguồn đầu tiên.
+- **FR-8** Topic chuyển `DISCARDED` (F00) thì câu hỏi của topic **không bị xoá**, chỉ bị ẩn khỏi danh sách và khỏi tệp xuất; khôi phục topic thì câu hỏi hiện lại.
 
 ## 5. Yêu cầu phi chức năng
 
@@ -73,38 +95,41 @@
 
 ### 6.1 Cơ sở dữ liệu
 
-`V<n>__create_quiz.sql`:
+`V<yyyyMMddHHmm>__create_quiz.sql`:
 ```sql
-CREATE TABLE quiz_questions (
+CREATE TABLE IF NOT EXISTS quiz_questions (
     id BIGSERIAL PRIMARY KEY,
     topic_id BIGINT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
     position INTEGER NOT NULL DEFAULT 0,
-    q_type VARCHAR(12) NOT NULL,
+    q_type VARCHAR(12) NOT NULL CHECK (q_type IN ('SINGLE','MULTI','TRUE_FALSE')),
     question TEXT NOT NULL,
     options JSONB NOT NULL,
     correct JSONB NOT NULL,            -- [0] hoặc [0,2]
     explanation TEXT,
     source_sentence_ids TEXT[] NOT NULL,
     bloom VARCHAR(12),
-    status VARCHAR(10) NOT NULL DEFAULT 'DRAFT',
+    status VARCHAR(10) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','APPROVED','REJECTED')),
     edited BOOLEAN NOT NULL DEFAULT FALSE,
     model VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_quiz_topic ON quiz_questions(topic_id, position);
+CREATE INDEX IF NOT EXISTS idx_quiz_topic ON quiz_questions(topic_id, position);
 ```
+`ON DELETE CASCADE` tới `topics` an toàn sau F00, vì topic chỉ bị xoá mềm khi Lưu (AD-6); topic chỉ bị xoá cứng khi cả video bị xoá hẳn (F17).
 
 ### 6.2 API
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/v1/videos/{id}/quiz:generate` | Chủ video | `{ "perTopic": 5, "types": {"SINGLE":3,"TRUE_FALSE":2} }` → `202 jobId` |
-| POST | `/api/v1/topics/{id}/quiz:generate` | Chủ video | Một topic |
-| GET | `/api/v1/topics/{id}/quiz?status=` | Chủ video; học viên chỉ thấy `APPROVED` | Danh sách |
-| PATCH | `/api/v1/quiz/{qid}` | Chủ video | Sửa, đổi trạng thái |
-| DELETE | `/api/v1/quiz/{qid}` | Chủ video | Xoá |
-| GET | `/api/v1/videos/{id}/quiz/export?format=gift\|moodle_xml\|csv\|json&status=APPROVED` | Chủ video | Tải tệp |
+| POST | `/api/v1/videos/{videoId}/quiz:generate` | Sửa video | `{ "perTopic": 5, "types": {"SINGLE":3,"TRUE_FALSE":2} }` → `202 { "jobId": … }` (job `QUIZ_GENERATE`) |
+| POST | `/api/v1/topics/{topicId}/quiz:generate` | Sửa video chứa topic | Một topic → `202 { "jobId": … }` |
+| GET | `/api/v1/topics/{topicId}/quiz?status=` | Xem video chứa topic | Danh sách. Người chỉ có quyền `VIEWER` chỉ thấy `APPROVED` |
+| PATCH | `/api/v1/quiz/{qid}` | Sửa video chứa câu hỏi | Sửa, đổi trạng thái |
+| DELETE | `/api/v1/quiz/{qid}` | Sửa video chứa câu hỏi | Xoá |
+| GET | `/api/v1/videos/{videoId}/quiz/export?format=gift\|moodle_xml\|csv\|json&status=APPROVED` | Sửa video | Tải tệp |
+
+Không có quyền xem thì 404, xem được nhưng không sửa được thì 403 `FORBIDDEN_ACTION` (AD-2). Học viên trên trang khoá học (F41) đọc câu `APPROVED` qua API của F41 (`/api/v1/share/**` nếu là khoá công khai, AD-5).
 
 ```json
 // GET /api/v1/topics/88/quiz
@@ -118,7 +143,7 @@ CREATE INDEX idx_quiz_topic ON quiz_questions(topic_id, position);
 
 - `entity/QuizQuestionEntity.java`, `repository/QuizQuestionRepository.java`, `controller/QuizController.java`.
 - `service/QuizExportService.java`: các hàm thuần `toGift(List<Q>)`, `toMoodleXml`, `toCsv`, có escape đúng chuẩn.
-- `service/QuizService.java`: gọi `python -m backend.ai.cli --generate-quiz --input ... --output ...` trong job F09, rồi nạp kết quả và trộn lựa chọn (FR-3).
+- `service/QuizService.java`: handler của job `QUIZ_GENERATE` (F09). Gọi `python -m backend.ai.cli --generate-quiz --input ... --output ...` qua job runner F10, rồi nạp kết quả và trộn lựa chọn (FR-3). Bỏ qua topic đã `DISCARDED`.
 
 ### 6.4 AI pipeline (Python)
 
@@ -129,7 +154,7 @@ CREATE INDEX idx_quiz_topic ON quiz_questions(topic_id, position);
   def verify_grounding(item: QuizItem, source_texts: list[str]) -> bool: ...
   ```
 - Prompt nhấn mạnh: "Chỉ hỏi về kiến thức có trong transcript. Mỗi câu phải dẫn ít nhất một mã câu nguồn. Phương án nhiễu phải hợp lý, cùng loại, không vô lý. Viết tiếng Việt có dấu."
-- Dùng `_generate_with_fallback` + JSON mode.
+- Dùng `_generate_with_fallback` (đã bật JSON mode). In `@@USAGE {json}` cho mỗi lần gọi để ghi `ai_usage` (F15), kể cả lần gọi kiểm tra bám nguồn.
 
 ### 6.5 Frontend (Next.js)
 
@@ -145,11 +170,16 @@ CREATE INDEX idx_quiz_topic ON quiz_questions(topic_id, position);
 - **AC-4** — Tệp GIFT xuất ra nhập vào Moodle 4.x không lỗi (kiểm tra thủ công trên Moodle sandbox), tiếng Việt hiển thị đúng.
 - **AC-5** — *Given* đã duyệt 3/5 câu. *When* sinh lại. *Then* 3 câu `APPROVED` giữ nguyên, 2 câu `DRAFT` được thay.
 - **AC-6** — Chất lượng: giảng viên chấm 50 câu từ 3 môn: ≥ 80% "dùng được, không sửa hoặc sửa nhẹ"; ≤ 2% câu có đáp án sai so với bài giảng.
+- **AC-7** — *Given* topic có 3 câu `APPROVED`. *When* người dùng đổi tiêu đề và kéo biên topic rồi Lưu 3 lần. *Then* 3 câu vẫn còn (F00).
+- **AC-8** — *Given* topic bị bỏ (`DISCARDED`). *Then* câu hỏi của topic không xuất hiện trong `GET` và tệp xuất; khôi phục topic thì câu hỏi hiện lại.
+- **AC-9** — *Given* 1 câu `MULTI` đáp án A và C. *When* xuất CSV. *Then* cột `correct` là `A|C`.
 
 ## 8. Kế hoạch kiểm thử (TDD)
 
 pytest (`tests/test_f29_quiz.py`):
-- `test_quiz_item_rejects_single_with_two_correct()`
+- `test_quiz_item_rejects_single_with_two_correct()` (dựa vào `model_validator`)
+- `test_quiz_item_rejects_true_false_with_four_options()`
+- `test_quiz_item_rejects_correct_index_out_of_range()`
 - `test_validate_structure_drops_out_of_topic_sources()`
 - `test_validate_structure_drops_duplicate_options()`
 - `test_validate_structure_drops_all_of_the_above()`
@@ -161,9 +191,14 @@ JUnit:
 - `QuizExportServiceTest.toGift_multiAnswer_usesPercentWeights()`
 - `QuizExportServiceTest.toMoodleXml_isWellFormed()`
 - `QuizExportServiceTest.toCsv_quotesCommasAndNewlines()`
+- `QuizExportServiceTest.toCsv_multiUsesPipeSeparatedLetters()` (AC-9)
+- `QuizExportServiceTest.toCsv_trueFalseLeavesCAndDEmpty()`
 - `QuizServiceTest.import_shufflesOptionsAndRemapsCorrect()`
 - `QuizServiceTest.regenerate_keepsApproved()`
-- `QuizControllerTest.student_seesOnlyApproved()` (phụ thuộc F02)
+- `QuizControllerTest.viewer_seesOnlyApproved()` (phụ thuộc F02)
+- `QuizControllerTest.withoutAccess_returns404()` (AD-2)
+- `QuizPersistenceTest.approvedQuestionsSurviveRepeatedSave()` (AC-7)
+- `QuizServiceTest.discardedTopic_hidesQuestions()` (AC-8)
 
 ## 9. Rủi ro & failure modes
 

@@ -1,6 +1,6 @@
-# Bộ đặc tả tính năng AutoCut (50 tính năng)
+# Bộ đặc tả tính năng AutoCut (F00–F50)
 
-Thư mục này chứa đặc tả (spec) cho 50 tính năng giúp AutoCut đủ điều kiện chạy thật.
+Thư mục này chứa đặc tả (spec) cho 51 tính năng (F00–F50) giúp AutoCut đủ điều kiện chạy thật. Đề xuất F51–F103 nằm ở [DE-XUAT-TINH-NANG-BO-SUNG.md](DE-XUAT-TINH-NANG-BO-SUNG.md) (chờ duyệt).
 Mỗi tính năng là một tệp riêng, viết theo cùng khuôn mẫu [_TEMPLATE.md](_TEMPLATE.md).
 
 ## Cách dùng
@@ -16,24 +16,51 @@ Mỗi tính năng là một tệp riêng, viết theo cùng khuôn mẫu [_TEMPL
 
 - **Người phụ trách gợi ý:** SV1 = Video Engine (FFmpeg) · SV2 = AI (Whisper & LLM) · SV3 = Core REST API & DB · SV4 = Web Studio & QA.
 - **Migration DB:** sau F13, mọi thay đổi bảng đi qua Flyway `backend/src/main/resources/db/migration/`. Tên tệp theo dấu thời gian `V<yyyyMMddHHmm>__<ten>.sql` (xem F13 §6.1). Số `V2`, `V5`… ghi trong từng spec chỉ để minh hoạ. Không sửa trực tiếp `database/schema.sql`.
-- **Bảng dùng chung, chỉ tạo một lần:** `edit_ranges` (F25 + F32), `jobs` (F09, dùng bởi F10/F23/F39/F45…), `ai_usage` (F15), `ai_provider_keys` (F07), `audit_logs` (F08), `share_links` (F40 + F41). Spec nào merge sau thì dùng lại bảng đã có, không tạo bảng thứ hai.
-- **Tiền đề bắt buộc:** F01 + F02 (danh tính, quyền), F09 (job), F13 (migration). Hầu hết spec khác đều giả định 4 spec này đã xong.
+- **Bảng dùng chung, chỉ tạo một lần:** `edit_ranges` (F25 + F32), `jobs` (F09, dùng bởi F10/F23/F39/F45…), `ai_usage` (F15), `provider_secrets` (F07 + F48), `audit_logs` (F08), `share_links` (F40 + F41 + F47), `auth_tickets` (F01; dùng bởi F10/F12/F36/F39), `video_access` (F02 + F36 + F49). Spec nào merge sau thì dùng lại bảng đã có, không tạo bảng thứ hai.
+- **Tiền đề bắt buộc:** F13 (migration), F00 (định danh ổn định), F01 + F02 (danh tính, quyền), F09 (job). Hầu hết spec khác đều giả định 5 spec này đã xong.
 - **API mới:** đặt dưới `/api/v1/...`, trả lỗi theo định dạng chung:
   `{ "error": { "code": "VIDEO_NOT_FOUND", "message": "Không tìm thấy video", "details": {} } }`.
 - **Xác thực:** sau F01, mọi API mới đều yêu cầu JWT, trừ khi spec ghi rõ là public.
 - **Tách controller:** không thêm endpoint mới vào `VideoController.java` (đã gần 1.900 dòng). Mỗi miền nghiệp vụ dùng controller riêng.
 - **Ước lượng:** S ≤ 2 ngày · M 3–5 ngày · L 1–2 tuần · XL > 2 tuần (1 người).
 
+## Quyết định kiến trúc chung (AD)
+
+Các quyết định dưới đây áp dụng cho **mọi spec**. Spec nào ghi khác thì làm theo mục này, và sửa lại spec đó.
+Các quyết định được chốt ngày 18/11/2026 theo kết quả [REVIEW-HIEN-TRANG.md](REVIEW-HIEN-TRANG.md). Trưởng nhóm có thể đổi; khi đổi thì cập nhật ở đây trước, sau đó mới sửa các spec liên quan.
+
+| Mã | Chủ đề | Quyết định |
+|---|---|---|
+| **AD-1** | Mô hình quyền | **Role hệ thống** (cột `users.role`): `ADMIN`, `INSTRUCTOR`, `EDITOR`, `VIEWER`; mặc định là `INSTRUCTOR`. **Quyền trên từng video** chỉ lưu ở **một bảng `video_access`** (F02), với role `OWNER`, `EDITOR`, `REVIEWER`, `VIEWER`. F36 dùng lại bảng này, không tạo `video_members`. **Tổ chức** (F49): bảng `organization_members` chỉ cấp quyền quản trị tổ chức và tính hạn mức; `ORG_ADMIN` có quyền ngầm như `OWNER` trên mọi video thuộc tổ chức. Kiểm tra quyền chỉ qua một chỗ: `AccessService.require(user, videoId, Permission)` |
+| **AD-2** | Mã lỗi quyền | Người **không có quyền xem** tài nguyên thì trả **404** (không để lộ tài nguyên có tồn tại hay không), áp dụng cho video, topic, part, job, upload, comment. Người **xem được nhưng không có quyền thao tác** (ví dụ VIEWER bấm sửa) thì trả **403** `FORBIDDEN_ACTION` |
+| **AD-3** | Lưu trữ R2 | Bucket R2 **private**. Mọi truy cập tệp đi qua **presigned URL** (GET hết hạn sau 15 phút; tải về dùng 302 tới URL có `response-content-disposition`). DB chỉ lưu `r2_key`; cột `cloud_url` bỏ dần, không dùng trong code mới. HLS (F39) phát qua proxy viết lại playlist. **Ngoại lệ thời hạn:** URL proxy HLS hết hạn sau `min(thời lượng × 1,5 + 30 phút, 6 giờ)` (F39); `og:image` dùng presign 7 ngày (F43) vì Zalo/Facebook lưu ảnh xem trước |
+| **AD-4** | Vé ngắn hạn | Thẻ `<video>`, `EventSource` và `<a download>` không gửi được header JWT, nên dùng chung **một** cơ chế do F01 định nghĩa: `POST /api/v1/auth/tickets { "purpose": "SSE" \| "STREAM" \| "DOWNLOAD", "resourceId": … }` trả về vé ngẫu nhiên 256 bit, lưu băm trong DB, gắn với user, purpose và resource. Vé `SSE` sống 60 giây và chỉ dùng **một lần**, để mở kết nối. Vé `STREAM` và `DOWNLOAD` sống **5 phút**, dùng nhiều lần trong hạn (Range request cần như vậy). Truyền vé qua `?ticket=`. Không đặt JWT vào cookie hay URL |
+| **AD-5** | Tiền tố API | `/api/v1/**`: API nội bộ, xác thực bằng JWT. `/api/v1/auth/**`: đăng nhập, refresh, vé. `/api/v1/share/**`: người xem ẩn danh qua link chia sẻ (F40, F41, F47 beacon). `/api/v1/hooks/{provider}`: callback từ bên thứ ba (VNPay, Stripe, Telegram, Zalo; F48, F49), xác thực bằng chữ ký riêng của từng bên. `/api/v1/playback/hls/**`: playlist HLS, xác thực bằng chữ ký HMAC trong URL, không cần JWT (F39). `/api/v1/lti/**`: luồng LTI 1.3 (F42). `/api/v1/share/courses/**`: khoá học công khai (F41). Endpoint dùng token đã ký sẵn trong link email (ví dụ huỷ đăng ký F48) đặt trong miền nghiệp vụ của nó, ghi rõ "không cần JWT". `/api/ext/v1/**`: Public API cho đối tác, xác thực bằng API key (F50). **Không dùng `/api/public/**`** |
+| **AD-6** | Định danh ổn định | Theo **F00**: `videos.id` có trong state frontend; topic có `client_id` (UUID) và `id` không bao giờ đổi; lưu bằng upsert, bỏ topic thì xoá mềm (`DISCARDED`); `video_parts` chỉ do job cắt ghi (`PENDING`, `RENDERING`, `COMPLETED`, `FAILED`, `STALE`). Bảng con gắn với topic dùng `ON DELETE CASCADE` cũng an toàn, vì topic không bao giờ bị xoá cứng khi lưu |
+| **AD-7** | Database cho dev/test | **Bỏ H2.** Dev và test đều dùng Postgres 16: dev qua Docker Compose (F14); test qua **Testcontainers** (thư viện cần duyệt) hoặc biến `TEST_DATABASE_URL`. **Không bao giờ** chạy test trên `DATABASE_URL` của production. Thiếu `DATABASE_URL` khi chạy profile `prod` thì ứng dụng **dừng ngay khi khởi động**. Không tự thêm `sslmode=require` khi host là `localhost`/`postgres` |
+| **AD-8** | Chống trùng | Chống trùng (idempotency, dedupe) bằng `INSERT … ON CONFLICT DO NOTHING/UPDATE … RETURNING`. **Không** bắt lỗi unique violation rồi bỏ qua, vì Postgres sẽ huỷ cả transaction. Khoá chống trùng có thời hạn thì đưa thời hạn vào khoá (ví dụ `…:2026-11-18`) hoặc dùng cột `expires_at` + job dọn |
+| **AD-9** | Hạn mức | Trước F49: hạn mức **theo user** (F16). Sau F49: **theo tổ chức**; mỗi user tự có một tổ chức cá nhân, tạo khi đăng ký, nên F16 không phải viết lại. Video trong thùng rác (F17) **vẫn tính** dung lượng cho tới khi bị xoá hẳn. Phút xử lý AI được **giữ chỗ (reserve) ngay khi tạo job**, trả lại nếu job lỗi |
+| **AD-10** | Job | Mọi việc chạy nền (analyze, cut, HLS, thumbnail, phụ đề, dịch, quiz, xuất dữ liệu…) đều là một dòng trong bảng `jobs` (F09), không tự tạo `ExecutorService` riêng. Tiến độ đẩy về qua SSE (F10) |
+| **AD-11** | Thư viện | Thư viện mới (Testcontainers, Flyway, Actuator, Vitest, hls.js, jjwt…) phải được ghi trong ô "Thư viện mới cần duyệt" của spec dùng nó đầu tiên. Script tải từ ngoài (ví dụ Google Picker) cũng tính là thư viện mới |
+| **AD-13** | Khoảng bị cắt (`edit_ranges`, F25 + F32) | Chỉ có **một** hàm thuần `video/KeepRanges.java`: `compute(start, end, List<EditRange> enabledRanges, double minKeep = 0.3)`. Với `SILENCE`, giữ lại `keep_seconds` (chia đều hai bên khoảng lặng). Mảnh giữ lại ngắn hơn `minKeep` thì **gộp vào khoảng bị cắt bên cạnh** (bỏ mảnh đó). Render bằng **một lệnh FFmpeg** `filter_complex` (`trim`/`atrim` + `concat`, có `afade` 10 ms ở mỗi mối nối) trong `VideoCutter`, không cắt nhiều tệp rồi ghép. Padding (`padding_start`/`padding_end`) áp vào **hai đầu topic** trước, sau đó mới trừ các khoảng bị cắt. API: `GET /api/v1/videos/{id}/edit-ranges`; `PUT …/edit-ranges` **chỉ thay các dòng `source='USER'`**; `PATCH …/edit-ranges` bật/tắt theo `ids` hoặc `kind`; các dòng `source='AUTO'` chỉ do job của F25 ghi |
+| **AD-14** | Điểm tin cậy điểm cắt (F18 + F26) | `confidence = rawScore / maxScore`, trong đó `maxScore` là tổng điểm tối đa **của các tín hiệu đang bật** (`cut_points.max_score` tự tính trong `CutPointService`). Bật thêm tín hiệu slide (F26) thì tử số và mẫu số cùng tăng, nên ngưỡng của F18 không bị lệch |
+| **AD-12** | Giao diện | Chỉ dùng token đang có trong `frontend/tailwind.config.ts` và các class Tailwind chuẩn. Không dùng token của dự án khác. Mọi chữ hiển thị cho người dùng phải là tiếng Việt có dấu |
+
 ## Lộ trình
 
 | Giai đoạn | Tính năng | Mục tiêu |
 |---|---|---|
-| Tuần 1–2 | F01, F02, F04, F05, F07, F09, F10, F12, F13 | Đủ an toàn để cho người thật dùng thử |
+| Tuần 1–2 | F13, F00, F01, F02, F04, F05, F07, F09, F10, F12 | Đủ an toàn để cho người thật dùng thử |
 | Tuần 3–4 | F11, F14, F15, F18, F21, F22, F23, F31, F34 | Dùng được hằng ngày |
 | Tháng 2 | F19, F25, F30, F32, F35, F39, F40, F41 | Cạnh tranh được |
 | Sau đó | Phần còn lại | Mở rộng, thương mại hoá |
 
 ## Mục lục
+
+### 0. Tiền đề — [00-tien-de/](00-tien-de/)
+| Mã | Tính năng | Ưu tiên |
+|---|---|---|
+| F00 | [Định danh ổn định & lưu dự án bằng upsert](00-tien-de/F00-dinh-danh-on-dinh-upsert.md) | P0 |
 
 ### 1. Bảo mật & tài khoản — [01-bao-mat/](01-bao-mat/)
 | Mã | Tính năng | Ưu tiên |

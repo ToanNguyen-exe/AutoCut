@@ -6,10 +6,12 @@
 | **Nhóm** | Biên tập |
 | **Ưu tiên** | P1 |
 | **Người phụ trách gợi ý** | SV4 (Web Studio) |
-| **Phụ thuộc** | F33 (API `PUT /segments` có `baseVersion` và `source=AUTOSAVE`), F31 (một nguồn state lịch sử duy nhất) |
+| **Phụ thuộc** | F00 (`videoId` trong state frontend, `PUT /segments`), F33 (`baseVersion`, `source=AUTOSAVE`, 409), F31 (một nguồn state lịch sử duy nhất, Vitest) |
 | **Ước lượng** | M (3–5 ngày) |
-| **Thư viện mới cần duyệt** | Không |
+| **Thư viện mới cần duyệt** | `fake-indexeddb` (chỉ devDependencies, để test `draftStore`; AD-11). Vitest do F31 xin duyệt |
 | **Tham khảo** | Google Docs, Notion, Descript ("Saved" / "Saving…" / "Offline") |
+
+> **Cập nhật 18/11/2026:** lấy `videoId` theo F00; ghi rõ phải export `openDB` và nâng `DB_VERSION` để tạo store `drafts` trong `videoStorage.ts`; thống nhất tên trường `editRanges`; ghi `fake-indexeddb` vào mục thư viện cần duyệt.
 
 ## 1. Bối cảnh & vấn đề
 
@@ -17,7 +19,9 @@
   1. **Lưu tạm vào trình duyệt.** Mỗi khi `data`, `transcript`, `activeSegmentId` hoặc `currentTime` thay đổi, toàn bộ phiên làm việc được ghi vào `localStorage["autocut_active_session"]` ([page.tsx:494-522](../../../frontend/src/app/page.tsx#L494-L522)). Vì phụ thuộc vào `currentTime`, khi video đang phát hiệu ứng này chạy **vài lần mỗi giây** và mỗi lần `JSON.stringify` cả transcript. Transcript dài làm trang giật, và có thể vượt giới hạn khoảng 5 MB của localStorage (lỗi chỉ được ghi `console.warn`).
   2. **Lưu lên máy chủ thủ công** bằng Ctrl+S hoặc nút Lưu ([page.tsx:651-694](../../../frontend/src/app/page.tsx#L651-L694)).
 - Người dùng không biết thay đổi đã lên máy chủ hay chưa. Không có cảnh báo khi đóng tab lúc còn thay đổi chưa lưu.
-- Lưu thất bại vẫn hiện toast "Đã lưu dự án vào bộ nhớ cục bộ" (xem F33 §1 mục 5).
+- Lưu thất bại vẫn hiện toast "Đã lưu dự án vào bộ nhớ cục bộ" (xem F33 §1 mục 3).
+- Frontend hiện **không có id số** của video. F00 FR-1 bổ sung `videoId` vào state; tự lưu chỉ chạy khi `videoId != null`.
+- [lib/videoStorage.ts](../../../frontend/src/lib/videoStorage.ts) đã dùng IndexedDB (`autocut_storage`, `DB_VERSION = 1`, một store `video_blobs`). Nhưng `openDB()` ở dòng 10 là hàm **nội bộ** (chưa `export`), và **chưa có** store cho bản tạm.
 
 ## 2. Mục tiêu
 - Tự lưu lên máy chủ sau khi người dùng ngừng thao tác 3 giây (debounce: chờ người dùng ngừng thao tác một lúc mới chạy).
@@ -40,7 +44,7 @@
 - **FR-4 Ctrl+S** gọi lưu ngay với `source="MANUAL"`, huỷ hẹn giờ debounce.
 - **FR-5 Thử lại.** Lỗi mạng hoặc 5xx thì thử lại sau 2, 4, 8, 16, 30 giây, tối đa 30 giây mỗi lần. Lỗi 4xx (khác 409) thì không thử lại, hiện lỗi.
 - **FR-6 Xung đột.** Nhận 409 thì dừng tự lưu, chuyển trạng thái "Xung đột" và mở `ConflictDialog` của F33.
-- **FR-7 Bản tạm cục bộ.** Mỗi lần dirty, ghi `{ videoId, baseVersion, present, savedAt }` vào **IndexedDB** (đã có [lib/videoStorage.ts](../../../frontend/src/lib/videoStorage.ts) dùng IndexedDB), key `draft:<videoId>`, debounce 1 giây. Lưu máy chủ thành công thì xoá bản tạm.
+- **FR-7 Bản tạm cục bộ.** Mỗi lần dirty, ghi `{ videoId, baseVersion, present: { segments, editRanges }, savedAt }` vào store IndexedDB **`drafts`**, key `<videoId>`, debounce 1 giây. Lưu máy chủ thành công thì xoá bản tạm.
 - **FR-8 Khôi phục bản tạm.** Khi mở video, nếu có bản tạm và `draft.savedAt` mới hơn `serverSavedAt` thì hiện banner "Có thay đổi chưa lưu từ 14:20 hôm qua — [Khôi phục] [Bỏ]". Nếu `draft.baseVersion` khác version trên máy chủ thì nút Khôi phục đưa vào luồng xung đột.
 - **FR-9 Đóng tab.** Còn dirty hoặc đang lưu thì gắn `beforeunload` để trình duyệt hỏi xác nhận.
 - **FR-10 Trạng thái phiên** (video đang mở, vị trí playhead, segment đang chọn) vẫn lưu vào `localStorage`, nhưng **chỉ** ghi khi tạm dừng video hoặc mỗi 5 giây, và **không** lưu `transcript` hay `segments` ở đây nữa.
@@ -55,7 +59,9 @@
 Không thay đổi. Dùng `project_versions` của F33.
 
 ### 6.2 API
-Dùng `PUT /api/v1/videos/{id}/segments` của F33 với `source: "AUTOSAVE"`. Thêm header tuỳ chọn `X-Client-Session: <uuid>` để F36 biết tab nào lưu.
+Dùng `PUT /api/v1/videos/{videoId}/segments` (F00 + F33) với `source: "AUTOSAVE"`. `videoId` lấy từ state dự án (F00 FR-1). Thêm header tuỳ chọn `X-Client-Session: <uuid>` để F36 biết tab nào lưu.
+
+Thay đổi `editRanges` được lưu bằng `PUT /api/v1/videos/{videoId}/edit-ranges` của F32, trong cùng một lượt tự lưu: gọi `segments` trước, `edit-ranges` sau. Chỉ gọi `edit-ranges` khi danh sách này thay đổi.
 
 ### 6.5 Frontend
 **Mới `frontend/src/hooks/useAutosave.ts`**
@@ -70,7 +76,7 @@ type SaveStatus =
 
 export function useAutosave(opts: {
   videoId: number | null;
-  present: EditorSnapshot;           // { segments, cutRanges } từ F31
+  present: EditorSnapshot;           // { segments, editRanges } từ F31/F32
   serverVersion: number;
   onSaved: (v: number) => void;
   enabled: boolean;
@@ -80,7 +86,11 @@ export function useAutosave(opts: {
 ```
 - Logic hẹn giờ viết thành **máy trạng thái thuần** trong `lib/autosaveMachine.ts`, gồm `next(state, event) → { state, effects }`. Hook chỉ thực thi các effect (đặt timer, gọi fetch), nhờ vậy test được mà không cần trình duyệt.
 
-**Mới `frontend/src/lib/draftStore.ts`** (dùng IndexedDB qua tiện ích sẵn có ở `videoStorage.ts`): `putDraft`, `getDraft`, `deleteDraft`.
+**Sửa `frontend/src/lib/videoStorage.ts`:**
+- `export` hàm `openDB`.
+- Tăng `DB_VERSION` từ 1 lên 2. Trong `onupgradeneeded`, tạo thêm store `drafts` nếu chưa có, giữ nguyên store `video_blobs`.
+
+**Mới `frontend/src/lib/draftStore.ts`** (dùng `openDB` ở trên): `putDraft`, `getDraft`, `deleteDraft`.
 
 **Mới `components/SaveStatusIndicator.tsx`**, gắn vào `StudioHeader.tsx` cạnh nút Lưu:
 
@@ -107,6 +117,8 @@ export function useAutosave(opts: {
 - **AC-4** — *Given* có bản tạm chưa lên máy chủ, *When* F5, *Then* banner khôi phục hiện ra. Bấm "Khôi phục" thì timeline giống trước F5.
 - **AC-5** — *Given* đang dirty, *When* đóng tab, *Then* trình duyệt hỏi xác nhận.
 - **AC-6** — *Given* video đang phát 60 giây và không sửa gì, *Then* không có request lưu nào và không ghi IndexedDB.
+- **AC-8** — *Given* trình duyệt đã có `autocut_storage` phiên bản 1 với video đã lưu, *When* mở bản mới (`DB_VERSION=2`), *Then* store `drafts` được tạo và video blob cũ vẫn đọc được.
+- **AC-9** — *Given* dự án chưa có `videoId` (ví dụ đang xem video demo), *Then* tự lưu không chạy, và header hiện "Chưa lưu được — video chưa có trên máy chủ".
 - **AC-7** — *Given* máy chủ trả 409, *Then* tự lưu dừng hẳn (không gửi thêm request) cho tới khi giải quyết xong xung đột.
 
 ## 8. Kế hoạch kiểm thử (TDD)
@@ -121,6 +133,11 @@ export function useAutosave(opts: {
 
 `draftStore.test.ts` (dùng `fake-indexeddb` nếu được duyệt, nếu không thì test thủ công):
 - `put_get_delete_roundtrip`
+- `upgradeFromV1_keepsVideoBlobs_createsDrafts`
+
+`autosaveMachine.test.ts` bổ sung:
+- `noVideoId_neverEmitsSave`
+- `editRangesChanged_emitsBothRequests_segmentsFirst`
 
 QA thủ công: chạy AC-3, AC-4, AC-5 trên Chrome, Safari và Firefox.
 
@@ -135,4 +152,4 @@ QA thủ công: chạy AC-3, AC-4, AC-5 trên Chrome, Safari và Firefox.
 ## 10. Câu hỏi mở
 - [ ] Debounce 3 giây và max wait 30 giây có hợp lý với tải máy chủ hiện tại (Neon gói free) không?
 - [ ] Có cho tắt tự lưu không, hay luôn bật? Đề xuất: cho tắt nhưng mặc định bật.
-- [ ] Có duyệt thêm `fake-indexeddb` (chỉ dùng trong devDependencies) để test không?
+- [ ] Có duyệt thêm `fake-indexeddb` (chỉ dùng trong devDependencies) để test không? (Bắt buộc phải chốt theo AD-11.)
