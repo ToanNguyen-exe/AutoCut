@@ -77,8 +77,6 @@ transcripts/*
 logs/
 *.dump
 *.dumpstream
-docs/conversations/
-session_summary.txt
 
 # 7. IDE & Operating System
 .idea/

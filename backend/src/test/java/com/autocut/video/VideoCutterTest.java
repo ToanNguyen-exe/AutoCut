@@ -261,49 +261,4 @@ class VideoCutterTest {
         assertEquals(89.7, range[0], 1e-6, "Moc start phai lui 0.3s");
         assertEquals(100.0, range[1], 1e-6, "Moc end phai duoc clamp ve totalDuration (100.0s)");
     }
-
-    // =========================================================================
-    // Ho tro Remote URL (Cloudflare R2 / HTTP)
-    // =========================================================================
-
-    @Test
-    @DisplayName("isRemoteUrl: Nhan dien chinh xac link HTTP/HTTPS")
-    void testIsRemoteUrl() {
-        assertTrue(VideoCutter.isRemoteUrl("https://pub-r2.dev/video.mp4"));
-        assertTrue(VideoCutter.isRemoteUrl("http://example.com/test.mp4"));
-        assertFalse(VideoCutter.isRemoteUrl("C:/videos/local.mp4"));
-        assertFalse(VideoCutter.isRemoteUrl("uploads/video.mp4"));
-        assertFalse(VideoCutter.isRemoteUrl(""));
-        assertFalse(VideoCutter.isRemoteUrl(null));
-    }
-
-    @Test
-    @DisplayName("buildCommand voi Remote URL: Giu nguyen URL lam input cho FFmpeg")
-    void testBuildCommand_RemoteUrl() {
-        String remoteUrl = "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4";
-        File output = tempDir.resolve("out_remote.mp4").toFile();
-
-        List<String> cmd = videoCutter.buildCommand(remoteUrl, output, "10.000", "25.000");
-
-        int idxInputFlag = cmd.indexOf("-i");
-        assertTrue(idxInputFlag >= 0, "Lenh phai co flag -i");
-        assertEquals(remoteUrl, cmd.get(idxInputFlag + 1), "Doi so sau -i phai la dung remote URL");
-        assertTrue(cmd.contains("libx264"));
-        assertTrue(cmd.contains("+faststart"));
-    }
-
-    @Test
-    @DisplayName("buildCommandFast: Su dung Stream Copy (-c copy) de cat sieu toc khong re-encode")
-    void testBuildCommandFast_UsesStreamCopy() {
-        File input = tempDir.resolve("in.mp4").toFile();
-        File output = tempDir.resolve("out.mp4").toFile();
-
-        List<String> cmd = videoCutter.buildCommandFast(input, output, "0.000", "15.000");
-
-        int idxC = cmd.indexOf("-c");
-        assertTrue(idxC >= 0, "Lenh phai co flag -c");
-        assertEquals("copy", cmd.get(idxC + 1), "Flag -c phai di kem gia tri copy de stream-copy");
-        assertTrue(cmd.contains("+faststart"), "Phai co +faststart de moov atom o dau");
-        assertTrue(cmd.contains("make_zero"), "Phai co make_zero de chong lech timestamp");
-    }
 }

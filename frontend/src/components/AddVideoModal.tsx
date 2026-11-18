@@ -11,12 +11,10 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  ListPlus,
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { uploadVideoFile, fetchBackendVideos, BackendVideoItem, API_BASE } from "@/lib/api";
 import { getLibraryVideos } from "@/lib/videoLibrary";
-import { saveVideoBlob } from "@/lib/videoStorage";
 import { TranscriptData, SegmentsData, VideoLibraryItem } from "@/types";
 
 export interface NewVideoData {
@@ -33,26 +31,15 @@ export interface NewVideoData {
 }
 
 // Danh sách URL video Cloudflare R2 chính thức của dự án
-const SAMPLE_VIDEOS: Array<{
-  name: string;
-  url: string;
-  durationSeconds: number;
-  durationText?: string;
-  sha256?: string;
-  fileName?: string;
-}> = [
+const SAMPLE_VIDEOS = [
   {
     name: "Bài giảng mẫu ngắn 2 Phút (vibe_short.mp4)",
-    fileName: "vibe_short.mp4",
-    sha256: "hash_short_2min_r2",
     url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
     durationSeconds: 120,
     durationText: "02:00",
   },
   {
     name: "Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)",
-    fileName: "Vibe-Coding-4.mp4",
-    sha256: "hash_full_2hours_r2",
     url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4",
     durationSeconds: 7200,
     durationText: "02:00:00 (~2 giờ)",
@@ -63,19 +50,16 @@ interface AddVideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddVideo: (video: NewVideoData) => void;
-  onAppendVideo?: (video: NewVideoData) => void;
 }
 
 export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   isOpen,
   onClose,
   onAddVideo,
-  onAppendVideo,
 }) => {
   const [tab, setTab] = useState<"url" | "file">("url");
   const [urlInput, setUrlInput] = useState("");
   const [titleInput, setTitleInput] = useState("");
-  const [selectedSha256, setSelectedSha256] = useState<string | null>(null);
   const [durationValue, setDurationValue] = useState<string>("");
   const [durationUnit, setDurationUnit] = useState<"seconds" | "minutes">("seconds");
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
@@ -98,7 +82,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [uploadPercent, setUploadPercent] = useState<number>(0);
   const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
   const [cloudVideos, setCloudVideos] = useState<BackendVideoItem[]>([]);
   const [localVideos, setLocalVideos] = useState<VideoLibraryItem[]>([]);
@@ -117,8 +100,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   }, [isOpen]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const probeCleanupRef = useRef<(() => void) | null>(null);
-  React.useEffect(() => () => probeCleanupRef.current?.(), [isOpen]);
 
   if (!isOpen) return null;
 
@@ -137,20 +118,10 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   };
 
   // Tự động nhận diện độ dài thật của video khi chọn link hoặc file (kể cả clip ngắn vài giây)
-  const probeDuration = (src: string, ownedUrl = false) => {
-    probeCleanupRef.current?.();
+  const probeDuration = (src: string) => {
     setIsProbing(true);
     try {
       const v = document.createElement("video");
-      const cleanup = () => {
-        v.onloadedmetadata = null;
-        v.onerror = null;
-        v.removeAttribute("src");
-        v.load();
-        if (ownedUrl) URL.revokeObjectURL(src);
-        if (probeCleanupRef.current === cleanup) probeCleanupRef.current = null;
-      };
-      probeCleanupRef.current = cleanup;
       v.preload = "metadata";
       v.onloadedmetadata = () => {
         setIsProbing(false);
@@ -165,15 +136,10 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             setDurationValue(String(Number((exactSecs / 60).toFixed(1))));
           }
         }
-        cleanup();
       };
-      v.onerror = () => {
-        setIsProbing(false);
-        cleanup();
-      };
+      v.onerror = () => setIsProbing(false);
       v.src = src;
     } catch {
-      probeCleanupRef.current?.();
       setIsProbing(false);
     }
   };
@@ -183,11 +149,9 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     url: string;
     durationSeconds: number;
     durationText?: string;
-    sha256?: string;
   }) => {
     setUrlInput(sample.url);
     setTitleInput(sample.name);
-    setSelectedSha256(sample.sha256 || null);
     setDetectedDuration(sample.durationSeconds);
     if (sample.durationSeconds < 60) {
       setDurationUnit("seconds");
@@ -201,7 +165,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
   const handleUrlChange = (val: string) => {
     setUrlInput(val);
-    setSelectedSha256(null);
     const lower = val.trim().toLowerCase();
     if (lower.includes("tiktok.com")) {
       setDetectedDuration(60);
@@ -228,21 +191,14 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       setError(null);
       setDetectedDuration(null);
 
-      // Lưu file vào IndexedDB ngay để bảo toàn qua F5
-      saveVideoBlob(file.name, file);
-
       const objectUrl = URL.createObjectURL(file);
-      probeDuration(objectUrl, true);
+      probeDuration(objectUrl);
     }
   };
 
-  const submitWithMode = async (isAppend: boolean) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
-
-    // Đảm bảo tệp đã chọn được lưu bền vững vào IndexedDB trước khi giao diện chuyển sang Studio
-    if (selectedFile) {
-      await saveVideoBlob(selectedFile.name, selectedFile);
-    }
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)
     let finalDurationSeconds = 60;
@@ -252,15 +208,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       const parsed = parseDuration(durationValue, durationUnit);
       if (parsed > 0) finalDurationSeconds = parsed;
     }
-
-    const deliverVideo = (videoData: NewVideoData) => {
-      if (isAppend && onAppendVideo) {
-        onAppendVideo(videoData);
-      } else {
-        onAddVideo(videoData);
-      }
-      onClose();
-    };
 
     if (tab === "url") {
       if (!urlInput.trim()) {
@@ -274,18 +221,15 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         return;
       }
 
-      const matchedSample = SAMPLE_VIDEOS.find((s) => s.url === urlInput.trim());
-      const effectiveHash = selectedSha256 || matchedSample?.sha256;
-
-      deliverVideo({
+      onAddVideo({
         url: urlInput.trim(),
         name: titleInput.trim() || "Video bài giảng mới",
         duration: finalDurationSeconds,
         isExternalUrl: true,
         topicTitle: titleInput.trim() || "Chủ đề bài giảng mới",
         sectionName: "01_NoiDungChinh",
-        sha256: effectiveHash || undefined,
       });
+      onClose();
     } else {
       if (!selectedFile) {
         setError("Vui lòng chọn 1 tệp video từ máy tính!");
@@ -293,57 +237,38 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       }
 
       setIsUploading(true);
-      setUploadPercent(10);
-      setUploadProgressMsg("Đang tải video lên hệ thống...");
-
-      const upStartTime = Date.now();
-      const upTimer = setInterval(() => {
-        const sec = (Date.now() - upStartTime) / 1000;
-        setUploadPercent(() => {
-          if (sec < 1.5) return Math.min(50, 10 + sec * 30);
-          if (sec < 4) return Math.min(85, 50 + (sec - 1.5) * 15);
-          return Math.min(95, 85 + (sec - 4) * 2);
-        });
-      }, 100);
+      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini) lưu vào thư mục transcripts/...");
 
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
         if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
-          clearInterval(upTimer);
-          setUploadPercent(100);
-          setUploadProgressMsg("Tải video lên thành công!");
-
-          // Kiểm tra xem transcript có lời thoại thật hay chỉ là bản ghi khởi tạo ban đầu
-          const hasRealTranscript = uploadRes.data.transcript &&
-            Array.isArray(uploadRes.data.transcript.sentences) &&
-            uploadRes.data.transcript.sentences.length > 1 &&
-            !uploadRes.data.transcript.sentences.some((s: { text?: string }) => s.text?.includes("Nội dung bóc băng của video"));
-
-          deliverVideo({
+          const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
+            ? uploadRes.data.transcript.duration
+            : finalDurationSeconds;
+          onAddVideo({
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: finalDurationSeconds,
+            duration: Number(cloudDur.toFixed(1)),
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
             sha256: uploadRes.data.sha256,
-            transcript: hasRealTranscript ? uploadRes.data.transcript : undefined,
-            segmentsData: undefined,
+            transcript: uploadRes.data.transcript,
+            segmentsData: uploadRes.data.segmentsData,
             transcriptFile: uploadRes.data.transcript_file,
           });
+          onClose();
           return;
         }
       } catch (uploadErr) {
         console.warn("Upload lên backend gặp sự cố, sử dụng chế độ phát tệp cục bộ:", uploadErr);
       } finally {
-        clearInterval(upTimer);
-        setUploadPercent(100);
         setIsUploading(false);
       }
 
       // Fallback nếu backend offline hoặc gặp lỗi
       const fileUrl = URL.createObjectURL(selectedFile);
-      deliverVideo({
+      onAddVideo({
         url: fileUrl,
         name: selectedFile.name,
         duration: finalDurationSeconds,
@@ -351,12 +276,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
         sectionName: "01_NoiDungChinh",
       });
+      onClose();
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitWithMode(false);
   };
 
   return (
@@ -503,7 +424,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                               url: vUrl,
                               durationSeconds: dur,
                               durationText: formatTime(dur),
-                              sha256: cv.sha256Hash || undefined,
                             });
                           }}
                           className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left transition group shadow-2xs ${
@@ -693,62 +613,38 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             </div>
           )}
 
-          {/* Upload Progress Status with % Bar */}
+          {/* Upload Progress Status */}
           {isUploading && (
-            <div className="space-y-1.5 p-3 rounded-xl bg-indigo-100/90 border border-indigo-300 text-indigo-900 text-xs font-semibold">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-700 shrink-0" />
-                  <span className="truncate max-w-[260px]">{uploadProgressMsg || "Đang xử lý tệp..."}</span>
-                </div>
-                <span className="font-mono font-black text-indigo-800">{Math.round(uploadPercent)}%</span>
-              </div>
-              <div className="w-full bg-indigo-200/80 rounded-full h-2 overflow-hidden border border-indigo-300/50">
-                <div
-                  className="bg-indigo-600 h-full rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${Math.min(100, Math.max(5, uploadPercent))}%` }}
-                />
-              </div>
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-medium">
+              <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
+              <span>{uploadProgressMsg || "Đang xử lý tệp..."}</span>
             </div>
           )}
 
           {/* Submit Actions */}
-          <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-200">
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isUploading}
-              className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition disabled:opacity-50"
             >
               Hủy bỏ
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => submitWithMode(true)}
-                disabled={isUploading}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                title="Nối tiếp video này ra đằng sau video đang phát trên Timeline"
-              >
-                <ListPlus className="w-4 h-4" />
-                <span>+ Nối tiếp vào sau</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => submitWithMode(false)}
-                disabled={isUploading}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Đang tải lên...</span>
-                  </>
-                ) : (
-                  "Mở dự án mới"
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition hover:scale-102 active:scale-98 disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang tải lên backend...</span>
+                </>
+              ) : (
+                "Thêm video & Dựng dự án mới"
+              )}
+            </button>
           </div>
         </form>
       </div>

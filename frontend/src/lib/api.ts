@@ -1,4 +1,4 @@
-import { SegmentsData, Segment, TranscriptData } from "@/types";
+import { SegmentsData, TranscriptData } from "@/types";
 
 const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
 export const API_BASE = rawBase.endsWith("/api/video")
@@ -400,8 +400,6 @@ export async function analyzeVideoBackend(payload: {
   lesson: string;
   hash?: string;
   duration: number;
-  force?: boolean;
-  url?: string;
 }): Promise<ApiResponse<AnalyzeResponse>> {
   try {
     const res = await fetch(`${API_BASE}/analyze`, {
@@ -477,75 +475,5 @@ export async function saveProjectToBackend(
       error: err instanceof Error ? err.message : "Không thể kết nối API lưu dự án",
       source: "fallback",
     };
-  }
-}
-
-export interface ConcatVideosPayload {
-  clips: string[];
-  output?: string;
-  forceReencode?: boolean;
-}
-
-export interface ConcatVideosResponse {
-  status: string;
-  message: string;
-  outputFile?: string;
-  outputSizeBytes?: number;
-  executionTimeMs?: number;
-  totalClips?: number;
-}
-
-/**
- * Ghép nối nhiều file clip thành 1 video tổng hợp qua FFmpeg Concat của SV1 (POST /api/video/concat)
- */
-export async function submitConcatVideos(
-  payload: ConcatVideosPayload
-): Promise<ApiResponse<ConcatVideosResponse>> {
-  try {
-    const res = await fetch(`${API_BASE}/concat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
-      try {
-        const errJson = await res.json();
-        if (errJson && errJson.error) {
-          errorMsg = errJson.error;
-        }
-      } catch {}
-      throw new Error(errorMsg);
-    }
-
-    const data: ConcatVideosResponse = await res.json();
-    return { data, source: "api" };
-  } catch (err) {
-    return {
-      error: err instanceof Error ? err.message : "Không thể kết nối API ghép nối video (Video Concat)",
-      source: "fallback",
-    };
-  }
-}
-
-/**
- * Gửi yêu cầu xóa một phân đoạn (segment) tới Backend API.
- */
-export async function deleteSegmentBackend(
-  videoId: string | number,
-  segmentId: string
-): Promise<ApiResponse<{ deleted: boolean; message: string; segments?: Segment[] }>> {
-  try {
-    const res = await fetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return { data, source: "api" };
-    }
-    return { error: `HTTP ${res.status}`, source: "fallback" };
-  } catch (err) {
-    return { error: String(err), source: "fallback" };
   }
 }

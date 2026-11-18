@@ -31,7 +31,6 @@ interface TranscriptScenesPanelProps {
   mode?: string;
   isDemo?: boolean;
   isAnalyzing?: boolean;
-  analysisProgress?: number;
   analysisStep?: string;
   onSelectSegment: (segmentId: string) => void;
   onSeek: (seconds: number) => void;
@@ -40,7 +39,6 @@ interface TranscriptScenesPanelProps {
   onRenameLesson: (newName: string) => void;
   onOpenAddVideo?: () => void;
   onAnalyzeAI?: () => void;
-  onReAnalyzeAI?: () => void;
 }
 
 // Helper tạo đồ họa xem trước sinh động tương ứng với nội dung chủ đề bài giảng hoặc âm nhạc (Light Pastel theme)
@@ -270,7 +268,6 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   mode = "guided",
   isDemo = false,
   isAnalyzing = false,
-  analysisProgress = 0,
   analysisStep = "",
   onSelectSegment,
   onSeek,
@@ -279,7 +276,6 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
   onRenameLesson,
   onOpenAddVideo,
   onAnalyzeAI,
-  onReAnalyzeAI,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(lessonName);
@@ -356,9 +352,9 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
               Demo Mẫu
             </span>
           ) : isAnalyzing ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 animate-pulse flex items-center gap-1 shrink-0 font-mono">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 animate-pulse flex items-center gap-1 shrink-0">
               <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-              Đang phân tích: {Math.round(analysisProgress)}%
+              Đang phân tích...
             </span>
           ) : isRaw ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0">
@@ -372,38 +368,33 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
           )}
         </div>
 
-        {/* Action Button: Phân Tích AI */}
+        {/* Action Button: Phân Tích AI / Chạy lại AI */}
         {isAnalyzing ? (
           <button
             disabled
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-300 shrink-0 font-mono shadow-2xs"
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed shrink-0 border border-slate-200"
           >
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-            <span>AI: {Math.round(analysisProgress)}%</span>
+            <span>Đang chạy...</span>
           </button>
-        ) : (onAnalyzeAI || onReAnalyzeAI) ? (
-          <div className="flex items-center gap-1.5 shrink-0">
-            {onReAnalyzeAI && (
-              <button
-                onClick={onReAnalyzeAI}
-                className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition hover:scale-102 active:scale-98 shadow-2xs cursor-pointer"
-                title="Bắt buộc bóc băng lại toàn bộ câu thoại (bỏ qua cache)"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Chạy lại AI</span>
-              </button>
-            )}
-            {onAnalyzeAI && (
-              <button
-                onClick={onAnalyzeAI}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 cursor-pointer"
-                title="Khởi chạy AI để phân tích và phân đoạn video"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Phân Tích AI</span>
-              </button>
-            )}
-          </div>
+        ) : isRaw && onAnalyzeAI ? (
+          <button
+            onClick={onAnalyzeAI}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition hover:scale-102 active:scale-98 shrink-0"
+            title="Khởi chạy Whisper & AI để phân tích video và phân đoạn"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Phân Tích AI</span>
+          </button>
+        ) : onAnalyzeAI ? (
+          <button
+            onClick={onAnalyzeAI}
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-indigo-700 border border-slate-200 transition shrink-0 shadow-2xs"
+            title="Chạy lại phân tích AI nếu nội dung chưa vừa ý"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Chạy lại AI</span>
+          </button>
         ) : (
           <button
             onClick={() => alert("Tính năng Auto-Segment LLM đang đồng bộ với transcript!")}
@@ -421,7 +412,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
         <div className="w-28 sm:w-32 bg-slate-50 border-r border-slate-200/90 p-2 overflow-y-auto space-y-2.5 shrink-0 select-none">
           {/* Header hint */}
           <div className="text-[10px] font-semibold text-slate-600 flex items-center justify-center gap-1 py-1 px-1 bg-white rounded-md border border-slate-200/80 text-center leading-tight shadow-2xs">
-            <span>{isAnalyzing ? `Đang xử lý ${Math.round(analysisProgress)}%` : "Kéo / Bấm phát"}</span>
+            <span>{isAnalyzing ? "Đang xử lý..." : "Kéo / Bấm phát"}</span>
           </div>
 
           {isAnalyzing ? (
@@ -538,42 +529,23 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
         {/* Right Sub-strip: Transcript Text or AI Processing State */}
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3 flex flex-col bg-slate-50">
           {isAnalyzing ? (
-            /* AI Processing View with Progress % */
+            /* AI Processing View */
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 my-auto">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-base font-black text-indigo-700 font-mono">
-                    {Math.round(analysisProgress)}%
-                  </span>
+                <div className="w-16 h-16 rounded-full border-3 border-indigo-200 border-t-indigo-600 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-indigo-600 animate-pulse" />
                 </div>
               </div>
-              <div className="space-y-1.5 max-w-sm">
-                <div className="flex items-center justify-center gap-1.5 text-sm font-bold text-slate-900">
-                  <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
-                  <span>Đang phân tích video bằng AI...</span>
-                </div>
-                <p className="text-xs text-indigo-700 font-mono font-semibold px-2 py-1 bg-indigo-50 rounded-lg border border-indigo-200">
-                  {analysisStep || "Đang xử lý Whisper & LLM..."}
-                </p>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">Đang phân tích video bằng AI...</h3>
+                <p className="text-xs text-indigo-700 font-mono font-semibold">{analysisStep || "Đang xử lý Whisper & LLM..."}</p>
               </div>
-
-              {/* Progress bar container */}
-              <div className="w-full max-w-xs space-y-1">
-                <div className="flex justify-between text-[11px] font-bold text-slate-600 font-mono">
-                  <span>Tiến độ hoàn thành</span>
-                  <span className="text-indigo-700 font-black">{Math.round(analysisProgress)}%</span>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden border border-slate-300 shadow-inner">
-                  <div
-                    className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 h-full rounded-full transition-all duration-300 ease-out shadow-xs"
-                    style={{ width: `${Math.min(100, Math.max(5, analysisProgress))}%` }}
-                  />
-                </div>
+              <div className="w-full max-w-xs bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300">
+                <div className="bg-indigo-600 h-full w-full animate-pulse" />
               </div>
-
-              <p className="text-[11px] text-slate-500 italic max-w-xs font-medium">
-                Hệ thống đang trích xuất âm thanh, nhận diện giọng nói và phân đoạn tự động.
+              <p className="text-[11px] text-slate-600 italic max-w-xs font-medium">
+                Hệ thống đang trích xuất waveform âm thanh, nhận diện lời bài hát/giọng nói và phân đoạn tự động.
               </p>
             </div>
           ) : isRaw ? (
@@ -876,7 +848,7 @@ export const TranscriptScenesPanel: React.FC<TranscriptScenesPanelProps> = ({
                         <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-amber-700 font-mono font-semibold">
                           <span>⚡ Vượt 7 phút: Tự tách thành {seg.parts.length} phần</span>
                           <span className="text-slate-500">
-                            {seg.parts.map((p) => p.file.split("/").pop()).join(", ")}
+                            {seg.parts.map((p) => p.file.split("/")[1]).join(", ")}
                           </span>
                         </div>
                       )}

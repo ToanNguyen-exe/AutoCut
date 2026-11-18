@@ -9,8 +9,10 @@ import {
   Search,
   CheckCircle2,
   Clock,
+  PlusCircle,
   Play,
   Sparkles,
+  Layers,
 } from "lucide-react";
 
 interface VideoLibraryDrawerProps {
@@ -19,8 +21,7 @@ interface VideoLibraryDrawerProps {
   videos: VideoLibraryItem[];
   onClose: () => void;
   onSelectVideo: (video: VideoLibraryItem) => void;
-  onAppendVideo?: (video: VideoLibraryItem) => void;
-  onOpenAddVideo?: () => void;
+  onOpenAddVideo: () => void;
 }
 
 export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
@@ -29,7 +30,7 @@ export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
   videos,
   onClose,
   onSelectVideo,
-  onAppendVideo,
+  onOpenAddVideo,
 }) => {
   const [filter, setFilter] = useState<"all" | "edited" | "pending" | "added">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,12 +79,22 @@ export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
           </button>
         </div>
 
-        {/* Drawer Banner */}
+        {/* Quick Add Video Bar */}
         <div className="p-3 bg-indigo-50/80 border-b border-indigo-100 flex items-center justify-between shrink-0">
           <span className="text-xs text-indigo-900 font-semibold flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Thư viện video (Nhấp mở riêng hoặc nối tiếp vào Timeline)</span>
+            <span>Thêm video ngoài từ URL hoặc máy</span>
           </span>
+          <button
+            onClick={() => {
+              onClose();
+              onOpenAddVideo();
+            }}
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>+ Thêm mới</span>
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -205,25 +216,18 @@ export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
 
                   {/* Card bottom info */}
                   <div className="flex items-center justify-between text-[11px] text-slate-600 pt-2 border-t border-slate-200 font-semibold">
-                    <span className="truncate max-w-[120px] font-sans">
+                    <span className="truncate max-w-[150px] font-sans">
                       {video.category}
                     </span>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-500" />
                         <span>{formatTime(video.duration)}</span>
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onAppendVideo) onAppendVideo(video);
-                          onClose();
-                        }}
-                        className="px-2 py-0.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold border border-indigo-200 transition"
-                        title="Nối tiếp video này ra sau video đang phát trên Timeline"
-                      >
-                        + Nối tiếp
-                      </button>
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-slate-500" />
+                        <span>{video.segmentsCount} đoạn</span>
+                      </span>
                     </div>
                   </div>
                 </div>

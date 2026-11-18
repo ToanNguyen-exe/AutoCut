@@ -19,31 +19,18 @@ import java.util.Optional;
 public class CacheService {
 
     private static final Logger log = LoggerFactory.getLogger(CacheService.class);
-    private final Path cacheDir;
+    private static final Path CACHE_DIR = Paths.get("cache");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CacheService() {
-        Path projectRoot = resolveProjectRoot();
-        this.cacheDir = projectRoot.resolve("cache");
         try {
-            if (!Files.exists(this.cacheDir)) {
-                Files.createDirectories(this.cacheDir);
+            if (!Files.exists(CACHE_DIR)) {
+                Files.createDirectories(CACHE_DIR);
             }
         } catch (IOException e) {
             log.error("Không thể khởi tạo thư mục cache: {}", e.getMessage(), e);
             throw new IllegalStateException("Không thể khởi tạo thư mục cache", e);
         }
-    }
-
-    private Path resolveProjectRoot() {
-        Path cur = Paths.get("").toAbsolutePath();
-        if (cur.getFileName() != null && cur.getFileName().toString().equalsIgnoreCase("backend")) {
-            return cur.getParent();
-        }
-        if (Files.exists(cur.resolve("backend"))) {
-            return cur;
-        }
-        return cur;
     }
 
     /**
@@ -78,7 +65,7 @@ public class CacheService {
      * Kiểm tra và nạp transcript cũ từ cache nếu đã từng xử lý.
      */
     public Optional<TranscriptDTO> getCachedTranscript(String videoHash) {
-        Path cacheFile = this.cacheDir.resolve(videoHash + "_transcript.json");
+        Path cacheFile = CACHE_DIR.resolve(videoHash + "_transcript.json");
         if (!Files.exists(cacheFile)) {
             return Optional.empty();
         }
@@ -93,13 +80,13 @@ public class CacheService {
     }
 
     /**
-     * Lưu kết quả bóc băng mới vào thư mục cache duy nhất của toàn hệ thống (AutoCut/cache).
+     * Lưu kết quả bóc băng mới vào thư mục cache.
      */
     public void saveTranscriptCache(String videoHash, TranscriptDTO transcript) {
-        Path cacheFile = this.cacheDir.resolve(videoHash + "_transcript.json");
+        Path cacheFile = CACHE_DIR.resolve(videoHash + "_transcript.json");
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(cacheFile.toFile(), transcript);
-            log.info("Đã lưu transcript vào cache duy nhất của hệ thống: {}", cacheFile);
+            log.info("Đã lưu transcript vào cache: {}", cacheFile);
         } catch (IOException e) {
             log.error("Không thể ghi cache transcript cho mã băm {}: {}", videoHash, e.getMessage(), e);
             throw new RuntimeException("Không thể lưu cache transcript", e);
