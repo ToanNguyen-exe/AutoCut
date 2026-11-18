@@ -1,5 +1,560 @@
 [
   {
+    "id": "lib_01",
+    "name": "Bai08_Ep_kieu_du_lieu.mp4",
+    "lesson": "Bài 08 - Ép kiểu dữ liệu trong lập trình Python",
+    "title": "Bài 08 - Ép kiểu dữ liệu",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "duration": 535.0,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình Python Cơ Bản",
+    "segmentsCount": 5,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "seg01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Khái niệm ép kiểu dữ liệu và kiểu ngầm định",
+        "slug": "khai-niem-ep-kieu",
+        "start_id": "S0001",
+        "end_id": "S0003",
+        "start": 0.0,
+        "end": 75.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 75.0,
+            "file": "01_LyThuyet/01_khai-niem-ep-kieu.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg02",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 2,
+        "topic": "Hàm ép kiểu rõ ràng: int(), float(), str()",
+        "slug": "ham-ep-kieu-ro-rang",
+        "start_id": "S0004",
+        "end_id": "S0006",
+        "start": 75.0,
+        "end": 242.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 75.0,
+            "end": 242.0,
+            "file": "01_LyThuyet/02_ham-ep-kieu-ro-rang.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg03",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 3,
+        "topic": "Khai báo biến và kiểm tra type() trước khi chuyển đổi",
+        "slug": "kiem-tra-type-bien",
+        "start_id": "S0007",
+        "end_id": "S0008",
+        "start": 242.0,
+        "end": 332.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 242.0,
+            "end": 332.0,
+            "file": "02_ThucHanh/03_kiem-tra-type-bien.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg04",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 4,
+        "topic": "Xử lý ngoại lệ ValueError khi ép chuỗi sai định dạng",
+        "slug": "xu-ly-ngoai-le-value-error",
+        "start_id": "S0009",
+        "end_id": "S0010",
+        "start": 332.0,
+        "end": 421.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 332.0,
+            "end": 421.0,
+            "file": "02_ThucHanh/04_xu-ly-ngoai-le-value-error.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg05",
+        "section_no": 3,
+        "section": "03_TongKet",
+        "topic_no": 5,
+        "topic": "Tổng kết các lưu ý quan trọng và bài tập thực hành",
+        "slug": "tong-ket-bai-tap",
+        "start_id": "S0011",
+        "end_id": "S0012",
+        "start": 421.0,
+        "end": 535.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 421.0,
+            "end": 535.0,
+            "file": "03_TongKet/05_tong-ket-bai-tap.mp4"
+          }
+        ]
+      }
+    ],
+    "transcript": {
+      "video": "Bai08_Ep_kieu_du_lieu.mp4",
+      "duration": 535.0,
+      "sentences": [
+        {
+          "id": "S0001",
+          "start": 0.0,
+          "end": 28.5,
+          "text": "Xin chào các bạn, hôm nay chúng ta sẽ cùng nhau tìm hiểu về bài số 8: Ép kiểu dữ liệu trong Python."
+        },
+        {
+          "id": "S0002",
+          "start": 28.5,
+          "end": 52.0,
+          "text": "Đầu tiên là khái niệm ép kiểu dữ liệu và tại sao chúng ta cần phải thực hiện ép kiểu trong các phép toán."
+        },
+        {
+          "id": "S0003",
+          "start": 52.0,
+          "end": 75.0,
+          "text": "Python hỗ trợ hai hình thức chuyển đổi kiểu dữ liệu chính: ép kiểu ngầm định và ép kiểu tường minh."
+        },
+        {
+          "id": "S0004",
+          "start": 75.0,
+          "end": 130.0,
+          "text": "Các hàm ép kiểu rõ ràng thông dụng nhất bao gồm int(), float(), str() và bool()."
+        },
+        {
+          "id": "S0005",
+          "start": 130.0,
+          "end": 190.0,
+          "text": "Nếu chúng ta thực hiện phép cộng giữa hai chuỗi, chương trình sẽ nối chuỗi thay vì cộng số học."
+        },
+        {
+          "id": "S0006",
+          "start": 190.0,
+          "end": 242.0,
+          "text": "Do đó ta phải thực hiện ép kiểu rõ ràng sang kiểu số nguyên int() hoặc số thực float()."
+        },
+        {
+          "id": "S0007",
+          "start": 242.0,
+          "end": 285.0,
+          "text": "Khi mà chúng ta gặp biến: Khai báo biến với nhiều định dạng dữ liệu khác nhau trong bộ nhớ."
+        },
+        {
+          "id": "S0008",
+          "start": 285.0,
+          "end": 332.0,
+          "text": "Cách kiểm tra kiểu dữ liệu của biến bằng hàm type() để tránh các xung đột ngầm."
+        },
+        {
+          "id": "S0009",
+          "start": 332.0,
+          "end": 375.0,
+          "text": "Gặp lỗi: Lỗi thường gặp nhất là ValueError khi ép chuỗi ký tự chữ cái sang số nguyên."
+        },
+        {
+          "id": "S0010",
+          "start": 375.0,
+          "end": 421.0,
+          "text": "Cách kiểm soát lỗi và kiểm tra dữ liệu trước khi thực hiện chuyển đổi kiểu."
+        },
+        {
+          "id": "S0011",
+          "start": 421.0,
+          "end": 475.0,
+          "text": "Bây giờ mình không ép kiểu thì chương trình sẽ chạy ra kết quả sai lệch như thế nào."
+        },
+        {
+          "id": "S0012",
+          "start": 475.0,
+          "end": 535.0,
+          "text": "Tổng kết toàn bộ bài học và bài tập thực hành ép kiểu dữ liệu trong Python."
+        }
+      ]
+    }
+  },
+  {
+    "id": "lib_02",
+    "name": "Bai07_Bien_va_hang.mp4",
+    "lesson": "Bài 07 - Biến và Hằng số trong Lập trình",
+    "title": "Bài 07 - Biến và hằng",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "duration": 760.0,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình Căn bản",
+    "segmentsCount": 4,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "seg_07_01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Khái niệm biến và cách cấp phát ô nhớ",
+        "slug": "khai-niem-bien",
+        "start_id": "S0001",
+        "end_id": "S0002",
+        "start": 0.0,
+        "end": 180.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 180.0,
+            "file": "01_LyThuyet/01_khai-niem-bien.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_02",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 2,
+        "topic": "Quy tắc đặt tên biến và kiểu dữ liệu nguyên thủy",
+        "slug": "quy-tac-dat-ten-bien",
+        "start_id": "S0003",
+        "end_id": "S0004",
+        "start": 180.0,
+        "end": 380.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 180.0,
+            "end": 380.0,
+            "file": "01_LyThuyet/02_quy-tac-dat-ten-bien.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_03",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 3,
+        "topic": "Khai báo hằng số const và vùng nhớ chỉ đọc",
+        "slug": "hang-so-const",
+        "start_id": "S0005",
+        "end_id": "S0006",
+        "start": 380.0,
+        "end": 560.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 380.0,
+            "end": 560.0,
+            "file": "02_ThucHanh/03_hang-so-const.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_04",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 4,
+        "topic": "Thực hành tính chu vi diện tích hình tròn dùng hằng số PI",
+        "slug": "thuc-hanh-hang-so-pi",
+        "start_id": "S0007",
+        "end_id": "S0008",
+        "start": 560.0,
+        "end": 760.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 560.0,
+            "end": 760.0,
+            "file": "03_BaiTap/04_thuc-hanh-hang-so-pi.mp4"
+          }
+        ]
+      }
+    ],
+    "transcript": {
+      "video": "Bai07_Bien_va_hang.mp4",
+      "duration": 760.0,
+      "sentences": [
+        {
+          "id": "S0001",
+          "start": 0.0,
+          "end": 90.0,
+          "text": "Chào các bạn, hôm nay chúng ta sẽ tìm hiểu về Biến và Hằng số."
+        },
+        {
+          "id": "S0002",
+          "start": 90.0,
+          "end": 180.0,
+          "text": "Biến là một định danh đại diện cho một vùng nhớ có thể thay đổi giá trị."
+        },
+        {
+          "id": "S0003",
+          "start": 180.0,
+          "end": 280.0,
+          "text": "Các quy tắc đặt tên biến không được bắt đầu bằng số và không chứa ký tự đặc biệt."
+        },
+        {
+          "id": "S0004",
+          "start": 280.0,
+          "end": 380.0,
+          "text": "Kiểu dữ liệu xác định kích thước vùng nhớ mà biến chiếm dụng."
+        },
+        {
+          "id": "S0005",
+          "start": 380.0,
+          "end": 470.0,
+          "text": "Hằng số là giá trị không thể thay đổi sau khi đã khởi tạo bằng từ khóa const."
+        },
+        {
+          "id": "S0006",
+          "start": 470.0,
+          "end": 560.0,
+          "text": "Sử dụng hằng số giúp tránh việc vô tình ghi đè giá trị nhạy cảm."
+        },
+        {
+          "id": "S0007",
+          "start": 560.0,
+          "end": 660.0,
+          "text": "Bây giờ chúng ta áp dụng hằng số PI = 3.14159 vào bài toán hình tròn."
+        },
+        {
+          "id": "S0008",
+          "start": 660.0,
+          "end": 760.0,
+          "text": "Chạy chương trình và tổng kết các lưu ý khi khai báo biến."
+        }
+      ]
+    }
+  },
+  {
+    "id": "lib_03",
+    "name": "Bai09_Chuoi_ky_tu.mp4",
+    "lesson": "Bài 09 - Chuỗi Ký Tự và Xử Lý Văn Bản String",
+    "title": "Bài 09 - Chuỗi ký tự",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "duration": 612.0,
+    "status": "edited",
+    "statusLabel": "Đã chỉnh sửa",
+    "category": "Lập trình Căn bản",
+    "segmentsCount": 6,
+    "updatedAt": "Hôm nay",
+    "segments": [
+      {
+        "id": "seg_09_01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Khái niệm chuỗi ký tự String và chỉ mục index",
+        "slug": "khai-niem-chuoi-string",
+        "start_id": "S0001",
+        "end_id": "S0002",
+        "start": 0.0,
+        "end": 95.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 95.0,
+            "file": "01_LyThuyet/01_khai-niem-chuoi-string.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_09_02",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 2,
+        "topic": "Truy cập ký tự và thao tác cắt chuỗi slicing [start:end]",
+        "slug": "cat-chuoi-slicing",
+        "start_id": "S0003",
+        "end_id": "S0004",
+        "start": 95.0,
+        "end": 210.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 95.0,
+            "end": 210.0,
+            "file": "01_LyThuyet/02_cat-chuoi-slicing.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_09_03",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 3,
+        "topic": "Các hàm xử lý chuỗi phổ biến: lower(), upper(), strip()",
+        "slug": "ham-xu-ly-chuoi",
+        "start_id": "S0005",
+        "end_id": "S0006",
+        "start": 210.0,
+        "end": 340.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 210.0,
+            "end": 340.0,
+            "file": "02_ThucHanh/03_ham-xu-ly-chuoi.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_09_04",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 4,
+        "topic": "Tách chuỗi split() và nối chuỗi join() theo phân tách",
+        "slug": "split-va-join",
+        "start_id": "S0007",
+        "end_id": "S0008",
+        "start": 340.0,
+        "end": 445.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 340.0,
+            "end": 445.0,
+            "file": "02_ThucHanh/04_split-va-join.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_09_05",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 5,
+        "topic": "Định dạng chuỗi chuyên nghiệp với f-string",
+        "slug": "dinh-dang-f-string",
+        "start_id": "S0009",
+        "end_id": "S0010",
+        "start": 445.0,
+        "end": 530.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 445.0,
+            "end": 530.0,
+            "file": "02_ThucHanh/05_dinh-dang-f-string.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_09_06",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 6,
+        "topic": "Bài tập thực tế: Kiểm tra chuỗi đối xứng Palindrome",
+        "slug": "kiem-tra-chuoi-palindrome",
+        "start_id": "S0011",
+        "end_id": "S0012",
+        "start": 530.0,
+        "end": 612.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 530.0,
+            "end": 612.0,
+            "file": "03_BaiTap/06_kiem-tra-chuoi-palindrome.mp4"
+          }
+        ]
+      }
+    ],
+    "transcript": {
+      "video": "Bai09_Chuoi_ky_tu.mp4",
+      "duration": 612.0,
+      "sentences": [
+        {
+          "id": "S0001",
+          "start": 0.0,
+          "end": 45.0,
+          "text": "Xin chào các bạn, bài học hôm nay sẽ chuyên sâu về Chuỗi ký tự String."
+        },
+        {
+          "id": "S0002",
+          "start": 45.0,
+          "end": 95.0,
+          "text": "Chuỗi trong Python là tập hợp các ký tự được đánh chỉ mục từ 0 đến N-1."
+        },
+        {
+          "id": "S0003",
+          "start": 95.0,
+          "end": 150.0,
+          "text": "Cú pháp cắt chuỗi slicing cho phép ta trích xuất một đoạn con tùy ý."
+        },
+        {
+          "id": "S0004",
+          "start": 150.0,
+          "end": 210.0,
+          "text": "Bước nhảy step âm giúp chúng ta đảo ngược chuỗi một cách nhanh chóng."
+        },
+        {
+          "id": "S0005",
+          "start": 210.0,
+          "end": 275.0,
+          "text": "Các phương thức lower(), upper() biến đổi chữ hoa chữ thường."
+        },
+        {
+          "id": "S0006",
+          "start": 275.0,
+          "end": 340.0,
+          "text": "Hàm strip() loại bỏ khoảng trắng thừa ở hai đầu chuỗi văn bản."
+        },
+        {
+          "id": "S0007",
+          "start": 340.0,
+          "end": 390.0,
+          "text": "Tách từ trong câu bằng hàm split() theo dấu phân tách mong muốn."
+        },
+        {
+          "id": "S0008",
+          "start": 390.0,
+          "end": 445.0,
+          "text": "Nối danh sách các từ lại thành chuỗi hoàn chỉnh bằng join()."
+        },
+        {
+          "id": "S0009",
+          "start": 445.0,
+          "end": 490.0,
+          "text": "Cú pháp f-string là cách định dạng chuỗi nhanh và trực quan nhất hiện nay."
+        },
+        {
+          "id": "S0010",
+          "start": 490.0,
+          "end": 530.0,
+          "text": "Chèn trực tiếp biến và biểu thức toán học vào trong chuỗi f-string."
+        },
+        {
+          "id": "S0011",
+          "start": 530.0,
+          "end": 570.0,
+          "text": "Thực hành viết thuật toán kiểm tra chuỗi đối xứng Palindrome."
+        },
+        {
+          "id": "S0012",
+          "start": 570.0,
+          "end": 612.0,
+          "text": "Tổng kết các kiến thức chuỗi cần nhớ và chuẩn bị cho bài học mảng."
+        }
+      ]
+    }
+  },
+  {
     "id": "r2_vid_01",
     "name": "vibe_short.mp4",
     "lesson": "vibe_short",
@@ -80,7 +635,107 @@
     "statusLabel": "Đã chỉnh sửa",
     "category": "Lập trình C/C++ Cơ Bản",
     "segmentsCount": 4,
-    "updatedAt": "28/10/2026 14:15"
+    "updatedAt": "28/10/2026 14:15",
+    "segments": [
+      {
+        "id": "seg01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Vòng lặp for",
+        "slug": "for",
+        "start_id": "S0001",
+        "end_id": "S0040",
+        "start": 0.0,
+        "end": 350.2,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 350.2,
+            "file": "01_LyThuyet/01_for.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg02",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 2,
+        "topic": "Vòng lặp while",
+        "slug": "while",
+        "start_id": "S0041",
+        "end_id": "S0078",
+        "start": 350.2,
+        "end": 620.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 350.2,
+            "end": 620.0,
+            "file": "01_LyThuyet/02_while.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg03",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 3,
+        "topic": "Thực hành ví dụ: tính tổng 1 đến n, in bảng cửu chương",
+        "slug": "tinh-tong-1-den-n",
+        "start_id": "S0079",
+        "end_id": "S0150",
+        "start": 620.0,
+        "end": 1850.5,
+        "parts": [
+          {
+            "part": 1,
+            "start": 620.0,
+            "end": 1030.1,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1030.1,
+            "end": 1440.3,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 1440.3,
+            "end": 1850.5,
+            "file": "02_ThucHanh/03_tinh-tong-1-den-n_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg04",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 4,
+        "topic": "Bài tập: kiểm tra số nguyên tố, đảo ngược số",
+        "slug": "so-nguyen-to",
+        "start_id": "S0151",
+        "end_id": "S0210",
+        "start": 1850.5,
+        "end": 5700.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1850.5,
+            "end": 2260.0,
+            "file": "03_BaiTap/04_so-nguyen-to_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 2260.0,
+            "end": 5700.0,
+            "file": "03_BaiTap/04_so-nguyen-to_Phan2.mp4"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "vid_02",
@@ -93,7 +748,87 @@
     "statusLabel": "Đã chỉnh sửa",
     "category": "Lập trình C/C++ Cơ Bản",
     "segmentsCount": 3,
-    "updatedAt": "28/10/2026 11:30"
+    "updatedAt": "28/10/2026 11:30",
+    "segments": [
+      {
+        "id": "seg_04_01",
+        "section_no": 1,
+        "section": "01_LyThuyet",
+        "topic_no": 1,
+        "topic": "Định nghĩa hàm và cú pháp khai báo",
+        "slug": "dinh-nghia-ham",
+        "start_id": "S0001",
+        "end_id": "S0035",
+        "start": 0.0,
+        "end": 750.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 420.0,
+            "file": "01_LyThuyet/01_dinh-nghia-ham_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 420.0,
+            "end": 750.0,
+            "file": "01_LyThuyet/01_dinh-nghia-ham_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_04_02",
+        "section_no": 2,
+        "section": "02_ThucHanh",
+        "topic_no": 2,
+        "topic": "Truyền tham trị và tham chiếu (&)",
+        "slug": "truyen-tham-tri",
+        "start_id": "S0036",
+        "end_id": "S0090",
+        "start": 750.0,
+        "end": 1800.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 750.0,
+            "end": 1200.0,
+            "file": "02_ThucHanh/02_truyen-tham-tri_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1200.0,
+            "end": 1800.0,
+            "file": "02_ThucHanh/02_truyen-tham-tri_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_04_03",
+        "section_no": 3,
+        "section": "03_BaiTap",
+        "topic_no": 3,
+        "topic": "Bài tập: Hoán vị hai số và tính giai thừa đệ quy",
+        "slug": "bai-tap-ham",
+        "start_id": "S0091",
+        "end_id": "S0140",
+        "start": 1800.0,
+        "end": 2700.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1800.0,
+            "end": 2250.0,
+            "file": "03_BaiTap/03_bai-tap-ham_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 2250.0,
+            "end": 2700.0,
+            "file": "03_BaiTap/03_bai-tap-ham_Phan2.mp4"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "vid_03",
@@ -106,7 +841,49 @@
     "statusLabel": "Chưa sửa",
     "category": "Cấu Trúc Dữ Liệu",
     "segmentsCount": 2,
-    "updatedAt": "27/10/2026 16:40"
+    "updatedAt": "27/10/2026 16:40",
+    "segments": [
+      {
+        "id": "seg_06_01",
+        "section_no": 1,
+        "section": "01_Raw_Record",
+        "topic_no": 1,
+        "topic": "Toàn bộ bài giảng Mảng một chiều (Chưa phân đoạn)",
+        "slug": "mang-mot-chieu",
+        "start_id": "s001",
+        "end_id": "s050",
+        "start": 0.0,
+        "end": 1800.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 1800.0,
+            "file": "01_Raw_Record/01_mang-mot-chieu.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_06_02",
+        "section_no": 2,
+        "section": "02_Raw_ConTro",
+        "topic_no": 2,
+        "topic": "Khái niệm con trỏ và địa chỉ bộ nhớ (Chưa phân đoạn)",
+        "slug": "con-tro",
+        "start_id": "s051",
+        "end_id": "s110",
+        "start": 1800.0,
+        "end": 3600.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1800.0,
+            "end": 3600.0,
+            "file": "02_Raw_ConTro/02_con-tro.mp4"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "vid_04",
@@ -119,7 +896,69 @@
     "statusLabel": "Chưa sửa",
     "category": "Giải Thuật & Thuật Toán",
     "segmentsCount": 3,
-    "updatedAt": "26/10/2026 09:15"
+    "updatedAt": "26/10/2026 09:15",
+    "segments": [
+      {
+        "id": "seg_07_01",
+        "section_no": 1,
+        "section": "01_SapXep_TongQuan",
+        "topic_no": 1,
+        "topic": "Khái niệm độ phức tạp O(n) và O(n^2)",
+        "slug": "do-phuc-tap",
+        "start_id": "s001",
+        "end_id": "s030",
+        "start": 0.0,
+        "end": 1200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 1200.0,
+            "file": "01_SapXep_TongQuan/01_do-phuc-tap.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_02",
+        "section_no": 2,
+        "section": "02_BubbleSort",
+        "topic_no": 2,
+        "topic": "Sắp xếp nổi bọt (Bubble Sort)",
+        "slug": "bubble-sort",
+        "start_id": "s031",
+        "end_id": "s075",
+        "start": 1200.0,
+        "end": 3000.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1200.0,
+            "end": 3000.0,
+            "file": "02_BubbleSort/02_bubble-sort.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_07_03",
+        "section_no": 3,
+        "section": "03_QuickSort",
+        "topic_no": 3,
+        "topic": "Sắp xếp nhanh (QuickSort) và chia để trị",
+        "slug": "quick-sort",
+        "start_id": "s076",
+        "end_id": "s120",
+        "start": 3000.0,
+        "end": 5100.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3000.0,
+            "end": 5100.0,
+            "file": "03_QuickSort/03_quick-sort.mp4"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "vid_05",
@@ -132,7 +971,125 @@
     "statusLabel": "Đã thêm",
     "category": "Trí Tuệ Nhân Tạo (AI)",
     "segmentsCount": 4,
-    "updatedAt": "28/10/2026 13:40"
+    "updatedAt": "28/10/2026 13:40",
+    "segments": [
+      {
+        "id": "seg_ai_01",
+        "section_no": 1,
+        "section": "01_GioiThieuAI",
+        "topic_no": 1,
+        "topic": "Giới thiệu lịch sử và định hướng AI hiện đại",
+        "slug": "gioi-thieu-ai",
+        "start_id": "s001",
+        "end_id": "s040",
+        "start": 0.0,
+        "end": 1035.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 517.5,
+            "file": "01_GioiThieuAI/01_gioi-thieu-ai_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 517.5,
+            "end": 1035.0,
+            "file": "01_GioiThieuAI/01_gioi-thieu-ai_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_02",
+        "section_no": 2,
+        "section": "02_HocCoGiamSat",
+        "topic_no": 2,
+        "topic": "Học có giám sát (Supervised Learning): Hồi quy tuyến tính",
+        "slug": "hoc-co-giam-sat",
+        "start_id": "s041",
+        "end_id": "s095",
+        "start": 1035.0,
+        "end": 3450.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1035.0,
+            "end": 1840.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1840.0,
+            "end": 2645.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 2645.0,
+            "end": 3450.0,
+            "file": "02_HocCoGiamSat/02_hoc-co-giam-sat_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_03",
+        "section_no": 3,
+        "section": "03_MangNeural",
+        "topic_no": 3,
+        "topic": "Mạng nơ-ron nhân tạo (ANN) và hàm kích hoạt",
+        "slug": "mang-neural",
+        "start_id": "s096",
+        "end_id": "s140",
+        "start": 3450.0,
+        "end": 5650.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3450.0,
+            "end": 4200.0,
+            "file": "03_MangNeural/03_mang-neural_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 4200.0,
+            "end": 4950.0,
+            "file": "03_MangNeural/03_mang-neural_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 4950.0,
+            "end": 5650.0,
+            "file": "03_MangNeural/03_mang-neural_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_ai_04",
+        "section_no": 4,
+        "section": "04_TongKetAI",
+        "topic_no": 4,
+        "topic": "Đạo đức AI và ứng dụng vào thực tiễn bài tập",
+        "slug": "tong-ket-ai",
+        "start_id": "s141",
+        "end_id": "s180",
+        "start": 5650.0,
+        "end": 6900.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 5650.0,
+            "end": 6275.0,
+            "file": "04_TongKetAI/04_tong-ket-ai_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 6275.0,
+            "end": 6900.0,
+            "file": "04_TongKetAI/04_tong-ket-ai_Phan2.mp4"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "vid_06",
@@ -145,6 +1102,124 @@
     "statusLabel": "Đã thêm",
     "category": "Lập Trình Web",
     "segmentsCount": 4,
-    "updatedAt": "28/10/2026 14:20"
+    "updatedAt": "28/10/2026 14:20",
+    "segments": [
+      {
+        "id": "seg_web_01",
+        "section_no": 1,
+        "section": "01_KienTrucWeb",
+        "topic_no": 1,
+        "topic": "Kiến trúc Client - Server và HTTP/HTTPS",
+        "slug": "kien-truc-web",
+        "start_id": "s001",
+        "end_id": "s035",
+        "start": 0.0,
+        "end": 1080.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 0.0,
+            "end": 540.0,
+            "file": "01_KienTrucWeb/01_kien-truc-web_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 540.0,
+            "end": 1080.0,
+            "file": "01_KienTrucWeb/01_kien-truc-web_Phan2.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_02",
+        "section_no": 2,
+        "section": "02_ReactCoBan",
+        "topic_no": 2,
+        "topic": "React Hooks: useState, useEffect và Component Lifecycle",
+        "slug": "react-co-ban",
+        "start_id": "s036",
+        "end_id": "s090",
+        "start": 1080.0,
+        "end": 3600.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 1080.0,
+            "end": 1920.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 1920.0,
+            "end": 2760.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 2760.0,
+            "end": 3600.0,
+            "file": "02_ReactCoBan/02_react-co-ban_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_03",
+        "section_no": 3,
+        "section": "03_NextJsRouter",
+        "topic_no": 3,
+        "topic": "App Router Next.js 14 và Server Components",
+        "slug": "nextjs-router",
+        "start_id": "s091",
+        "end_id": "s140",
+        "start": 3600.0,
+        "end": 5900.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 3600.0,
+            "end": 4366.6,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 4366.6,
+            "end": 5133.3,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan2.mp4"
+          },
+          {
+            "part": 3,
+            "start": 5133.3,
+            "end": 5900.0,
+            "file": "03_NextJsRouter/03_nextjs-router_Phan3.mp4"
+          }
+        ]
+      },
+      {
+        "id": "seg_web_04",
+        "section_no": 4,
+        "section": "04_DeployProduction",
+        "topic_no": 4,
+        "topic": "Tối ưu hóa và đóng gói triển khai Production",
+        "slug": "deploy-production",
+        "start_id": "s141",
+        "end_id": "s175",
+        "start": 5900.0,
+        "end": 7200.0,
+        "parts": [
+          {
+            "part": 1,
+            "start": 5900.0,
+            "end": 6550.0,
+            "file": "04_DeployProduction/04_deploy-production_Phan1.mp4"
+          },
+          {
+            "part": 2,
+            "start": 6550.0,
+            "end": 7200.0,
+            "file": "04_DeployProduction/04_deploy-production_Phan2.mp4"
+          }
+        ]
+      }
+    ]
   }
 ]
