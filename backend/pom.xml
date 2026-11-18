@@ -64,10 +64,29 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Flyway: một thẩm quyền duy nhất cho schema (F13).
+		     Spring Boot 4 tách autoconfiguration thành module riêng, nên cần
+		     CẢ spring-boot-flyway (autoconfig) lẫn flyway-core (engine).
+		     Thiếu spring-boot-flyway thì Flyway im lặng không chạy. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
+		<!-- H2 chỉ dùng cho profile test. Không có trong runtime sản phẩm:
+		     dự án không fallback in-memory khi thiếu DATABASE_URL (AD-7). -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -87,6 +106,23 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!-- Mọi test chạy dưới profile "test" — kể cả test không khai
+					     @ActiveProfiles. Kết hợp với @Profile("!test") trên
+					     DatabaseConfig, không test nào đọc được DATABASE_URL trong
+					     .env, nên không thể ghi vào Neon production.
+
+					     Đặt ở đây thay vì src/test/resources/application.properties
+					     vì file đó sẽ che mất application.properties chính (multipart,
+					     autocut.video.*), làm test khác đỏ vì thiếu cấu hình. -->
+					<systemPropertyVariables>
+						<spring.profiles.active>test</spring.profiles.active>
+					</systemPropertyVariables>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

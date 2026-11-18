@@ -135,15 +135,19 @@ public class DeepSystemVerificationTest {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Tạo video & section tạm
-            stmt.execute("INSERT INTO videos (file_name, file_size, sha256_hash, r2_key, cloud_url, status) " +
-                    "VALUES ('chk_test.mp4', 100, 'chk_hash_" + System.currentTimeMillis() + "', 'k', 'u', 'UPLOADED') RETURNING id;");
-            ResultSet rs = stmt.getResultSet();
+            // Tạo video & section tạm.
+            // Không dùng RETURNING: H2 (profile test) không hỗ trợ, và câu lệnh này
+            // phải chạy được trên cả H2 lẫn Postgres. Lấy id bằng kết quả insert.
+            stmt.executeUpdate("INSERT INTO videos (file_name, file_size, sha256_hash, r2_key, status) "
+                    + "VALUES ('chk_test.mp4', 100, 'chk_hash_" + System.currentTimeMillis() + "', 'k', 'UPLOADED')",
+                    Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = stmt.getGeneratedKeys();
             rs.next();
             long vidId = rs.getLong(1);
 
-            stmt.execute("INSERT INTO sections (video_id, section_no, label) VALUES (" + vidId + ", 1, 'Test Section') RETURNING id;");
-            rs = stmt.getResultSet();
+            stmt.executeUpdate("INSERT INTO sections (video_id, section_no, label) "
+                    + "VALUES (" + vidId + ", 1, 'Test Section')", Statement.RETURN_GENERATED_KEYS);
+            rs = stmt.getGeneratedKeys();
             rs.next();
             long secId = rs.getLong(1);
 

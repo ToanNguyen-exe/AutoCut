@@ -1,7 +1,7 @@
 package com.autocut.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "transcripts", indexes = {
@@ -37,7 +37,7 @@ public class TranscriptEntity {
     private String wordsJson;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     public TranscriptEntity() {}
 
@@ -75,6 +75,6 @@ public class TranscriptEntity {
     public String getWordsJson() { return wordsJson; }
     public void setWordsJson(String wordsJson) { this.wordsJson = wordsJson; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

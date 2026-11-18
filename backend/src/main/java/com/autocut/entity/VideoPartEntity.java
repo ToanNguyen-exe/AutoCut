@@ -1,7 +1,7 @@
 package com.autocut.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "video_parts", indexes = {
@@ -41,10 +41,10 @@ public class VideoPartEntity {
     private String status = "PENDING";
 
     @Column(name = "rendered_at")
-    private LocalDateTime renderedAt;
+    private Instant renderedAt;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     public VideoPartEntity() {}
 
@@ -86,9 +86,9 @@ public class VideoPartEntity {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public LocalDateTime getRenderedAt() { return renderedAt; }
-    public void setRenderedAt(LocalDateTime renderedAt) { this.renderedAt = renderedAt; }
+    public Instant getRenderedAt() { return renderedAt; }
+    public void setRenderedAt(Instant renderedAt) { this.renderedAt = renderedAt; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

@@ -1,7 +1,7 @@
 package com.autocut.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class SectionEntity {
     private String label;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TopicEntity> topics = new ArrayList<>();
@@ -58,8 +58,8 @@ public class SectionEntity {
     public String getLabel() { return label; }
     public void setLabel(String label) { this.label = label; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
     public List<TopicEntity> getTopics() { return topics; }
     public void setTopics(List<TopicEntity> topics) { this.topics = topics; }
