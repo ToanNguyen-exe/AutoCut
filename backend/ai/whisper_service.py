@@ -193,13 +193,15 @@ class WhisperTranscriber:
             getattr(default_ai_config, "whisper_api_key", None)
             or os.getenv("WHISPER_API_KEY")
         )
+        groq_err_msg: Optional[str] = None
         if groq_api_key and groq_api_key.startswith("gsk_"):
             try:
                 from .groq_service import transcribe_with_groq
                 logger.info(f"[*] Sử dụng Groq Whisper Cloud API cho {media_p.name}...")
                 return transcribe_with_groq(media_path, api_key=groq_api_key, output_file=output_file)
             except Exception as groq_err:
-                logger.warning(f"[!] Groq API gặp sự cố ({groq_err}), chuyển sang chạy offline Faster-Whisper...")
+                groq_err_msg = str(groq_err)
+                logger.warning(f"[!] Groq API gặp sự cố ({groq_err_msg}), chuyển sang chạy offline Faster-Whisper...")
 
         logger.info(f"Đang tính SHA-256 hash cho tệp {media_p.name}...")
         file_hash = compute_file_sha256(str(media_p))
@@ -222,7 +224,12 @@ class WhisperTranscriber:
         initial_prompt = build_initial_prompt(outline_text)
         logger.info(f"Đã tạo initial_prompt nâng cao: '{initial_prompt}'")
 
-        model = self._get_model()
+        try:
+            model = self._get_model()
+        except Exception as offline_err:
+            if groq_err_msg:
+                raise RuntimeError(f"Groq API lỗi ({groq_err_msg}) và Whisper cục bộ không khả dụng ({offline_err})") from offline_err
+            raise
         transcribe_kwargs = dict(
             language=self.language,
             vad_filter=True,

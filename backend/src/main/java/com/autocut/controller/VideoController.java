@@ -29,9 +29,13 @@ import com.autocut.dto.Models.CutPoint;
 import com.autocut.dto.Models.CutRequestDTO;
 import com.autocut.dto.Models.CutJobResponse;
 import java.io.File;
+import com.autocut.video.CutResult;
+import com.autocut.video.ErrorCode;
+import com.autocut.video.StreamUtil;
+import com.autocut.video.ValidationResult;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
-import com.autocut.video.CutResult;
+import com.autocut.video.VideoValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,6 +71,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -93,6 +98,7 @@ public class VideoController {
     private final BatchVideoCutService batchVideoCutService;
     private final com.autocut.video.VideoConcat videoConcat;
     private final SegmentPersistenceService segmentPersistenceService;
+    private final VideoValidator videoValidator = new VideoValidator(new VideoProps());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
@@ -429,6 +435,8 @@ public class VideoController {
 
             pb.environment().put("PYTHONIOENCODING", "utf-8");
 
+            injectAiKeysToEnvironment(pb);
+
             pb.redirectErrorStream(true);
 
 
@@ -764,75 +772,103 @@ public class VideoController {
 
 
 
-        // 1. Gọi trực tiếp module Python AI (backend.ai.cli --analyze-backend)
-
+        // 0. Tiền kiểm tra tệp video vật lý (nếu có trên đĩa): bắt lỗi không có âm thanh / file hỏng trước khi gọi AI
         Path projectRoot = resolveProjectRoot();
+        Optional<Path> localMediaOpt = findLocalMediaFile(projectRoot, videoName, hash);
+        if (localMediaOpt.isPresent()) {
+            ValidationResult mediaValidation = getVideoValidator().validate(localMediaOpt.get());
+            if (!mediaValidation.isValid()) {
+                ErrorCode code = mediaValidation.errorCode();
+                if (code == ErrorCode.NO_AUDIO_STREAM) {
+                    return buildAiErrorResponse(
+                            HttpStatus.BAD_REQUEST,
+                            "NO_AUDIO_STREAM",
+                            "Video không có tiếng (không tìm thấy luồng âm thanh) nên AI không thể bóc băng.",
+                            "Vui lòng kiểm tra lại tệp video gốc và chọn video có giọng nói hoặc âm thanh hợp lệ."
+                    );
+                }
+                if (code == ErrorCode.FILE_EMPTY || code == ErrorCode.CORRUPTED_FILE || code == ErrorCode.INVALID_DURATION) {
+                    return buildAiErrorResponse(
+                            HttpStatus.BAD_REQUEST,
+                            code.name(),
+                            "Tệp video nguồn không hợp lệ: " + mediaValidation.errorMessage(),
+                            "Vui lòng kiểm tra lại định dạng tệp video và thử tải lên lại."
+                    );
+                }
+                if (code != ErrorCode.PROCESS_EXECUTION_FAILED) {
+                    log.warn("Cảnh báo kiểm định video {}: {} - {}", videoName, code, mediaValidation.errorMessage());
+                }
+            }
+        }
 
+        // 1. Gọi trực tiếp module Python AI (backend.ai.cli --analyze-backend)
         Path tempOut = projectRoot.resolve("cache").resolve("ai_analyze_" + UUID.randomUUID() + ".json");
+        String pythonExec = resolvePythonExecutable();
 
         try {
-
             Files.createDirectories(tempOut.getParent());
 
             List<String> command = new ArrayList<>(List.of(
-
-                    resolvePythonExecutable(), "-m", "backend.ai.cli",
-
+                    pythonExec, "-m", "backend.ai.cli",
                     "--analyze-backend",
-
                     "--video-name", videoName,
-
                     "--lesson", lessonName,
-
                     "--duration", String.valueOf(duration),
-
                     "--output", tempOut.toAbsolutePath().toString()
-
             ));
 
             if (!hash.isBlank()) {
-
                 command.add("--hash");
-
                 command.add(hash);
-
             }
 
-
-
             log.info("Đang kích hoạt module Python AI cho video '{}' (lesson: '{}')...", videoName, lessonName);
-
             ProcessBuilder pb = new ProcessBuilder(command);
-
             pb.directory(projectRoot.toFile());
-
             pb.environment().put("PYTHONPATH", ".");
-
             pb.environment().put("PYTHONIOENCODING", "utf-8");
-
+            injectAiKeysToEnvironment(pb);
             pb.redirectErrorStream(true);
 
+            Process process;
+            try {
+                process = startAnalyzeProcess(pb);
+            } catch (IOException ioEx) {
+                log.error("Không thể khởi chạy Python ({}): {}", pythonExec, ioEx.getMessage());
+                return buildAiErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "PYTHON_ENV_MISSING",
+                        "Máy chủ thiếu Python hoặc không thể khởi chạy môi trường AI (" + pythonExec + ").",
+                        "Vui lòng cài đặt Python 3.10+ (thêm vào PATH hoặc PYTHON_EXE) và chạy: pip install -r backend/ai/requirements.txt"
+                );
+            }
 
+            CompletableFuture<String> logFuture = StreamUtil.readStreamAsync(process.getInputStream());
+            boolean finished = process.waitFor(getAnalyzeTimeoutMillis(), TimeUnit.MILLISECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("Module Python AI chạy quá thời gian chờ ({} ms) và đã bị hủy.", getAnalyzeTimeoutMillis());
+                return buildAiErrorResponse(
+                        HttpStatus.GATEWAY_TIMEOUT,
+                        "PROCESS_TIMEOUT",
+                        "Quá trình AI bóc băng & phân đoạn chạy quá lâu và đã bị ngắt (Timeout).",
+                        "Video quá dài hoặc mạng API bị gián đoạn. Vui lòng thử lại sau hoặc kiểm tra kết nối mạng."
+                );
+            }
 
-            Process process = pb.start();
+            String processLog = "";
+            try {
+                processLog = logFuture.get(5, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+                // Giữ rỗng nếu không đọc được thêm log sau khi process đã thoát
+            }
 
-            String processLog = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-            boolean finished = process.waitFor(10, TimeUnit.MINUTES);
-
-
-
-            if (finished && process.exitValue() == 0 && Files.exists(tempOut)) {
-
+            int exitCode = process.exitValue();
+            if (exitCode == 0 && Files.exists(tempOut)) {
                 String jsonContent = Files.readString(tempOut, StandardCharsets.UTF_8);
-
                 JsonNode rootNode = objectMapper.readTree(jsonContent);
-
                 SegmentsDTO segmentsDTO = objectMapper.treeToValue(rootNode.get("segmentsData"), SegmentsDTO.class);
-
                 TranscriptDTO transcriptDTO = objectMapper.treeToValue(rootNode.get("transcript"), TranscriptDTO.class);
-
-
 
                 if (!hash.isBlank() && transcriptDTO != null) {
                     cacheService.saveTranscriptCache(hash, transcriptDTO);
@@ -869,269 +905,34 @@ public class VideoController {
                 }
 
                 return ResponseEntity.ok(respMap);
-
-            } else {
-
-                log.warn("Module Python AI trả về mã lỗi {} (hoặc quá thời gian). Log: {}",
-
-                        finished ? process.exitValue() : "TIMEOUT", processLog);
-
             }
 
+            log.warn("Module Python AI kết thúc với mã lỗi {}. Log: {}", exitCode, processLog);
+            return classifyPythonFailureResponse(exitCode, processLog);
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return buildAiErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AI_PROCESS_INTERRUPTED",
+                    "Quá trình phân tích AI đã bị gián đoạn.",
+                    "Vui lòng thử bấm 'Phân tích AI' lại."
+            );
         } catch (Exception e) {
-
-            log.warn("Không thể thực thi module Python AI ({}), chuyển sang chế độ phân đoạn dự phòng.", e.getMessage());
-
+            log.error("Lỗi khi phân tích video qua Python AI: {}", e.getMessage(), e);
+            return buildAiErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AI_PROCESS_FAILED",
+                    "Lỗi hệ thống khi thực thi AI: " + e.getMessage(),
+                    "Vui lòng kiểm tra log backend, cấu hình Python và API Key trong .env."
+            );
         } finally {
-
             try {
-
                 Files.deleteIfExists(tempOut);
-
             } catch (IOException ignored) {
-
                 // Bỏ qua lỗi xóa file tạm
-
-            }
-
-        }
-
-
-
-        // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
-
-        String safeStem = sanitizeToSafeSlug(videoName);
-
-        String videoStem = stripExtension(videoName);
-
-        Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
-
-        Path candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
-
-        if (!Files.exists(candidateTranscript)) {
-
-            candidateTranscript = transcriptsDir.resolve(videoStem + "_transcript.json");
-
-        }
-
-        if (!Files.exists(candidateTranscript)) {
-
-            candidateTranscript = transcriptsDir.resolve(videoStem + " (1)_transcript.json");
-
-        }
-
-        if (!Files.exists(candidateTranscript)) {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
-            if (m.find()) {
-                String innerStem = stripExtension(m.group(1).trim());
-                Path innerP = transcriptsDir.resolve(innerStem + "_transcript.json");
-                if (Files.exists(innerP)) {
-                    candidateTranscript = innerP;
-                }
             }
         }
-
-        if (!Files.exists(candidateTranscript) && Files.exists(transcriptsDir)) {
-            String normKey = normalizeSearchKey(videoStem);
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^)]+)\\)").matcher(videoName);
-            String innerNorm = m.find() ? normalizeSearchKey(stripExtension(m.group(1).trim())) : "";
-
-            try (var stream = Files.list(transcriptsDir)) {
-                List<Path> files = stream.filter(p -> p.getFileName().toString().endsWith("_transcript.json")).toList();
-                for (Path p : files) {
-                    String base = p.getFileName().toString().replace("_transcript.json", "");
-                    String fileNorm = normalizeSearchKey(base);
-                    if (!fileNorm.isBlank() && (fileNorm.equals(normKey) || (!innerNorm.isBlank() && fileNorm.equals(innerNorm)))) {
-                        candidateTranscript = p;
-                        break;
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        if (Files.exists(candidateTranscript)) {
-            try {
-                TranscriptDTO existingDto = objectMapper.readValue(candidateTranscript.toFile(), TranscriptDTO.class);
-                if (existingDto != null && existingDto.sentences() != null && !existingDto.sentences().isEmpty()) {
-                    double transDur = existingDto.duration();
-                    // Chỉ sử dụng transcript nếu khớp chính xác tên video hoặc slug
-                    boolean matchesVideo = (existingDto.video() != null && (
-                            sanitizeToSafeSlug(existingDto.video()).equals(safeStem) ||
-                            existingDto.video().equalsIgnoreCase(videoName) ||
-                            existingDto.video().equalsIgnoreCase(videoStem)
-                    )) || candidateTranscript.getFileName().toString().replace("_transcript.json", "").equalsIgnoreCase(safeStem);
-
-                    if (matchesVideo) {
-                        List<Sentence> rawSents = existingDto.sentences();
-                        double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
-
-                        // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
-                        List<Sentence> filledSents = new ArrayList<>();
-                        if (rawSents.get(0).start() > 1.5) {
-                            filledSents.add(new Sentence(
-                                    "S0000",
-                                    0.0,
-                                    Math.round(rawSents.get(0).start() * 10.0) / 10.0,
-                                    "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
-                                    null
-                            ));
-                        }
-                        for (int s = 0; s < rawSents.size(); s++) {
-                            Sentence curr = rawSents.get(s);
-                            filledSents.add(curr);
-                            if (s < rawSents.size() - 1) {
-                                Sentence next = rawSents.get(s + 1);
-                                double gap = next.start() - curr.end();
-                                if (gap >= 8.0) {
-                                    filledSents.add(new Sentence(
-                                            "S_gap_" + s,
-                                            Math.round(curr.end() * 10.0) / 10.0,
-                                            Math.round(next.start() * 10.0) / 10.0,
-                                            "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
-                                            null
-                                    ));
-                                }
-                            }
-                        }
-                        if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
-                            filledSents.add(new Sentence(
-                                    "S_outro",
-                                    Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
-                                    Math.round(totalDur * 10.0) / 10.0,
-                                    "Giai điệu kết thúc (Outro Fade)",
-                                    null
-                            ));
-                        }
-
-                        // Đánh số lại thứ tự câu S0001, S0002...
-                        List<Sentence> sents = new ArrayList<>();
-                        for (int s = 0; s < filledSents.size(); s++) {
-                            Sentence item = filledSents.get(s);
-                            sents.add(new Sentence(
-                                    String.format("S%04d", s + 1),
-                                    item.start(),
-                                    item.end(),
-                                    item.text(),
-                                    item.words()
-                            ));
-                        }
-
-                        // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps)
-                        int segCount = Math.min(5, Math.max(2, (int) Math.ceil(sents.size() / 3.0)));
-                        int chunkSize = (int) Math.ceil((double) sents.size() / segCount);
-                        List<Segment> segList = new ArrayList<>();
-                        double currentStart = 0.0;
-
-                        for (int i = 0; i < segCount; i++) {
-                            int sIdx = i * chunkSize;
-                            if (sIdx >= sents.size()) break;
-                            int eIdx = Math.min((i + 1) * chunkSize - 1, sents.size() - 1);
-                            Sentence fSent = sents.get(sIdx);
-                            Sentence lSent = sents.get(eIdx);
-
-                            double sStart = currentStart;
-                            double sEnd;
-                            if (i == segCount - 1 || eIdx == sents.size() - 1) {
-                                sEnd = totalDur;
-                            } else {
-                                int nextSIdx = (i + 1) * chunkSize;
-                                Sentence nextSent = sents.get(Math.min(nextSIdx, sents.size() - 1));
-                                sEnd = Math.round(((lSent.end() + nextSent.start()) / 2.0) * 10.0) / 10.0;
-                                if (sEnd <= sStart) {
-                                    sEnd = Math.round(lSent.end() * 10.0) / 10.0;
-                                }
-                            }
-                            currentStart = sEnd;
-
-                            String secFolder = String.format("%02d_Doan_%d", i + 1, i + 1);
-                            String topName = fSent.text().length() > 35 ? fSent.text().substring(0, 35) + "..." : fSent.text();
-
-                            segList.add(new Segment(
-                                    "seg_ai_" + (i + 1),
-                                    i + 1,
-                                    secFolder,
-                                    i + 1,
-                                    topName,
-                                    "doan-" + (i + 1),
-                                    fSent.id(),
-                                    lSent.id(),
-                                    Math.round(sStart * 10.0) / 10.0,
-                                    Math.round(sEnd * 10.0) / 10.0,
-                                    List.of(new VideoPart(1, sStart, sEnd, secFolder + "/part-1.mp4"))
-                            ));
-                        }
-
-                        TranscriptDTO normalizedDto = new TranscriptDTO(existingDto.video(), totalDur, sents);
-                        SegmentsDTO segsDto = new SegmentsDTO(videoName, lessonName, "analyzed", false, segList);
-                        if (!hash.isBlank()) {
-                            cacheService.saveTranscriptCache(hash, normalizedDto);
-                        }
-
-                        return ResponseEntity.ok(Map.of(
-                                "status", "SUCCESS",
-                                "mode", "analyzed",
-                                "segmentsData", segsDto,
-                                "transcript", normalizedDto
-                        ));
-                    } else {
-                        log.info("Transcript {} (thời lượng: {}s) không khớp với video {} (thời lượng: {}s), tạo phân đoạn chuẩn theo đúng độ dài video.",
-                                candidateTranscript.getFileName(), transDur, videoName, duration);
-                    }
-                }
-            } catch (Exception ex) {
-                log.warn("Không thể parse transcript {}: {}", candidateTranscript, ex.getMessage());
-            }
-        }
-
-
-
-        // 3. Chế độ dự phòng (Fallback) nếu chưa có transcript thật
-
-        double cut1 = Math.round(duration * 0.16 * 10.0) / 10.0;
-        double cut2 = Math.round(duration * 0.48 * 10.0) / 10.0;
-        double cut3 = Math.round(duration * 0.82 * 10.0) / 10.0;
-        double cut4 = Math.round(duration * 10.0) / 10.0;
-
-        List<Segment> segments = List.of(
-                new Segment("seg_ai_01", 1, "01_Doan1", 1, "Phân đoạn 1", "doan-1", "S0001", "S0001", 0.0, cut1,
-                        List.of(new VideoPart(1, 0.0, cut1, "01_Doan1/01_doan-1.mp4"))),
-                new Segment("seg_ai_02", 2, "02_Doan2", 2, "Phân đoạn 2", "doan-2", "S0002", "S0002", cut1, cut2,
-                        List.of(new VideoPart(1, cut1, cut2, "02_Doan2/02_doan-2.mp4"))),
-                new Segment("seg_ai_03", 3, "03_Doan3", 3, "Phân đoạn 3", "doan-3", "S0003", "S0003", cut2, cut3,
-                        List.of(new VideoPart(1, cut2, cut3, "03_Doan3/03_doan-3.mp4"))),
-                new Segment("seg_ai_04", 4, "04_Doan4", 4, "Phân đoạn 4", "doan-4", "S0004", "S0004", cut3, cut4,
-                        List.of(new VideoPart(1, cut3, cut4, "04_Doan4/04_doan-4.mp4")))
-        );
-
-        List<Sentence> sentences = List.of(
-                new Sentence("S0001", 0.0, cut1, "Nội dung phần 1 của " + videoName, null),
-                new Sentence("S0002", cut1, cut2, "Nội dung phần 2 của " + videoName, null),
-                new Sentence("S0003", cut2, cut3, "Nội dung phần 3 của " + videoName, null),
-                new Sentence("S0004", cut3, cut4, "Nội dung phần 4 của " + videoName, null)
-        );
-
-
-
-        TranscriptDTO transcriptDTO = new TranscriptDTO(videoName, cut4, sentences);
-
-        // Không lưu vào cache nếu là dữ liệu mẫu dự phòng (để lần sau có file thật sẽ phân tích lại)
-
-        SegmentsDTO segmentsDTO = new SegmentsDTO(videoName, lessonName, "analyzed", false, segments);
-
-
-
-        return ResponseEntity.ok(Map.of(
-
-                "status", "SUCCESS",
-
-                "mode", "analyzed",
-
-                "segmentsData", segmentsDTO,
-
-                "transcript", transcriptDTO
-
-        ));
-
     }
 
 
@@ -1801,7 +1602,179 @@ public class VideoController {
 
 
 
-    private String resolvePythonExecutable() {
+    protected VideoValidator getVideoValidator() {
+        return videoValidator;
+    }
+
+    protected long getAnalyzeTimeoutMillis() {
+        return TimeUnit.MINUTES.toMillis(10);
+    }
+
+    protected Process startAnalyzeProcess(ProcessBuilder pb) throws IOException {
+        return pb.start();
+    }
+
+    protected Optional<Path> findLocalMediaFile(Path projectRoot, String videoName, String hash) {
+        if (projectRoot == null) return Optional.empty();
+        List<Path> searchDirs = List.of(
+                projectRoot.resolve("uploads"),
+                projectRoot.resolve("backend").resolve("uploads"),
+                projectRoot.resolve("input"),
+                projectRoot.resolve("backend").resolve("input")
+        );
+        Set<String> mediaExts = Set.of(".mp4", ".mkv", ".wav", ".webm", ".m4a", ".mp3", ".avi", ".mov");
+        String cleanName = videoName != null ? videoName.replaceAll("^[0-9a-fA-F]{64}_", "") : "";
+
+        for (Path dir : searchDirs) {
+            if (!Files.exists(dir) || !Files.isDirectory(dir)) continue;
+            try (var stream = Files.list(dir)) {
+                List<Path> candidates = stream
+                        .filter(Files::isRegularFile)
+                        .filter(p -> {
+                            String fname = p.getFileName().toString().toLowerCase();
+                            int dot = fname.lastIndexOf('.');
+                            return dot > 0 && mediaExts.contains(fname.substring(dot));
+                        })
+                        .toList();
+
+                for (Path p : candidates) {
+                    String fname = p.getFileName().toString();
+                    String strippedFname = fname.replaceAll("^[0-9a-fA-F]{64}_", "");
+                    if (hash != null && !hash.isBlank() && fname.startsWith(hash)) {
+                        return Optional.of(p);
+                    }
+                    if (!cleanName.isBlank() && (fname.equalsIgnoreCase(cleanName) || strippedFname.equalsIgnoreCase(cleanName))) {
+                        return Optional.of(p);
+                    }
+                }
+            } catch (IOException ignored) {
+                // Bỏ qua nếu không thể liệt kê thư mục
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void injectAiKeysToEnvironment(ProcessBuilder pb) {
+        if (configService == null) return;
+        String geminiKey = configService.getLlmApiKey();
+        if (geminiKey != null && !geminiKey.isBlank()) {
+            pb.environment().put("GEMINI_API_KEY", geminiKey);
+            pb.environment().put("LLM_API_KEY", geminiKey);
+        }
+        String whisperKey = configService.getWhisperApiKey();
+        if (whisperKey != null && !whisperKey.isBlank()) {
+            pb.environment().put("WHISPER_API_KEY", whisperKey);
+            pb.environment().put("GROQ_API_KEY", whisperKey);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> buildAiErrorResponse(
+            HttpStatus status, String code, String message, String suggestion) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", "ERROR");
+        body.put("code", code);
+        body.put("error", message);
+        body.put("message", message);
+        body.put("suggestion", suggestion);
+        return ResponseEntity.status(status).body(body);
+    }
+
+    private ResponseEntity<Map<String, Object>> classifyPythonFailureResponse(int exitCode, String processLog) {
+        String safeLog = processLog != null ? processLog : "";
+
+        // 1. Ưu tiên đọc dòng mã lỗi có cấu trúc @@ERROR {...} do Python CLI phát ra
+        String[] lines = safeLog.split("\\R");
+        for (int i = lines.length - 1; i >= 0; i--) {
+            String line = lines[i].trim();
+            if (line.startsWith("@@ERROR ")) {
+                try {
+                    JsonNode errNode = objectMapper.readTree(line.substring("@@ERROR ".length()));
+                    String code = errNode.path("code").asText("AI_PROCESS_FAILED");
+                    String msg = errNode.path("message").asText("Quá trình phân tích AI thất bại.");
+                    String suggestion = errNode.path("suggestion").asText("Vui lòng kiểm tra cấu hình và thử lại.");
+                    HttpStatus status = switch (code) {
+                        case "NO_AUDIO_STREAM", "NO_SPEECH_DETECTED" -> HttpStatus.BAD_REQUEST;
+                        case "AI_QUOTA_EXHAUSTED" -> HttpStatus.TOO_MANY_REQUESTS;
+                        case "PROCESS_TIMEOUT" -> HttpStatus.GATEWAY_TIMEOUT;
+                        default -> HttpStatus.INTERNAL_SERVER_ERROR;
+                    };
+                    return buildAiErrorResponse(status, code, msg, suggestion);
+                } catch (Exception ignored) {
+                    // Fallback xuống phân tích chuỗi log thô bên dưới
+                }
+            }
+        }
+
+        // 2. Phân loại theo exit code và chuỗi log hệ thống
+        String lowerLog = safeLog.toLowerCase();
+        if (exitCode == 9009 || exitCode == 127
+                || lowerLog.contains("python was not found")
+                || lowerLog.contains("no module named")
+                || lowerLog.contains("modulenotfounderror")
+                || lowerLog.contains("is not recognized")) {
+            return buildAiErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "PYTHON_ENV_MISSING",
+                    "Máy chủ thiếu Python hoặc thiếu thư viện AI (backend.ai).",
+                    "Vui lòng cài đặt Python 3.10+ (thêm vào PATH) và chạy: pip install -r backend/ai/requirements.txt"
+            );
+        }
+
+        if (exitCode == 3
+                || lowerLog.contains("token_or_quota_exhausted")
+                || lowerLog.contains("resource_exhausted")
+                || lowerLog.contains("rate_limit")
+                || lowerLog.contains("429")
+                || lowerLog.contains("entity too large")) {
+            String provider = lowerLog.contains("groq") || lowerLog.contains("whisper") ? "Groq" : "Gemini";
+            return buildAiErrorResponse(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "AI_QUOTA_EXHAUSTED",
+                    "Dịch vụ AI (" + provider + ") đã hết hạn mức sử dụng (Quota/Rate Limit).",
+                    "Vui lòng đợi 1-2 phút rồi thử lại, hoặc cập nhật API Key mới trong tệp .env."
+            );
+        }
+
+        if (exitCode == 2
+                || lowerLog.contains("no_audio_stream")
+                || lowerLog.contains("no_speech_detected")
+                || lowerLog.contains("does not contain any stream")) {
+            return buildAiErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "NO_AUDIO_STREAM",
+                    "Video không có tiếng (không tìm thấy âm thanh hoặc lời nói) để bóc băng.",
+                    "Vui lòng kiểm tra lại tệp video gốc và chọn video có giọng nói rõ ràng."
+            );
+        }
+
+        if (lowerLog.contains("timeout") || lowerLog.contains("deadline_exceeded")) {
+            return buildAiErrorResponse(
+                    HttpStatus.GATEWAY_TIMEOUT,
+                    "PROCESS_TIMEOUT",
+                    "Quá trình xử lý AI bị quá thời gian phản hồi (Timeout).",
+                    "Vui lòng kiểm tra kết nối mạng và thử bấm 'Phân tích AI' lại."
+            );
+        }
+
+        String tail = "";
+        for (int i = lines.length - 1; i >= 0; i--) {
+            if (!lines[i].isBlank()) {
+                tail = lines[i].trim();
+                break;
+            }
+        }
+        String detailMsg = tail.isBlank()
+                ? "Module Python AI trả về mã lỗi " + exitCode + "."
+                : "Phân tích AI thất bại (mã " + exitCode + "): " + tail;
+        return buildAiErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "AI_PROCESS_FAILED",
+                detailMsg,
+                "Vui lòng kiểm tra log máy chủ, cấu hình .env và tệp video đầu vào."
+        );
+    }
+
+    protected String resolvePythonExecutable() {
         String envPython = System.getenv("PYTHON_EXE");
         if (envPython != null && Files.exists(Paths.get(envPython))) {
             return envPython;

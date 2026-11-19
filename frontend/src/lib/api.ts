@@ -8,6 +8,9 @@ export const API_BASE = rawBase.endsWith("/api/video")
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+  errorCode?: string;
+  suggestion?: string;
+  httpStatus?: number;
   source: "api" | "fallback";
 }
 
@@ -410,16 +413,31 @@ export async function analyzeVideoBackend(payload: {
 
     if (!res.ok) {
       let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      let errorCode: string | undefined;
+      let suggestion: string | undefined;
       try {
-        const errJson = (await res.json()) as { error?: string };
-        if (errJson && typeof errJson.error === "string") {
-          errorMsg = errJson.error;
+        const errJson = (await res.json()) as {
+          code?: string;
+          error?: string;
+          message?: string;
+          suggestion?: string;
+        };
+        if (errJson) {
+          errorCode = errJson.code;
+          suggestion = errJson.suggestion;
+          errorMsg = errJson.message || errJson.error || errorMsg;
         }
       } catch {
         const errText = await res.text().catch(() => "");
         if (errText) errorMsg = errText;
       }
-      throw new Error(errorMsg);
+      return {
+        source: "api",
+        httpStatus: res.status,
+        errorCode,
+        error: errorMsg,
+        suggestion,
+      };
     }
 
     const data: AnalyzeResponse = await res.json();

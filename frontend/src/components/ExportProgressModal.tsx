@@ -12,6 +12,7 @@ import {
   Archive,
   FileJson,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { RenderedClipItem, getDownloadClipUrl, getDownloadZipUrl } from "@/lib/api";
 
@@ -34,11 +35,14 @@ interface ExportProgressModalProps {
   currentActionText: string;
   steps: ProgressStep[];
   error?: string | null;
+  errorCode?: string | null;
   renderedClips?: RenderedClipItem[];
   outputDirectory?: string;
   totalRendered?: number;
   onClose: () => void;
   onExportJson?: () => void;
+  onRetry?: () => void;
+  onSelectAnotherVideo?: () => void;
   onCancel?: () => void;
 }
 
@@ -52,11 +56,14 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
   currentActionText,
   steps,
   error,
+  errorCode,
   renderedClips = [],
   outputDirectory,
   totalRendered,
   onClose,
   onExportJson,
+  onRetry,
+  onSelectAnotherVideo,
 }) => {
   const [copiedPath, setCopiedPath] = useState(false);
 
@@ -71,6 +78,14 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
 
   const isCompleted = !isRunning && !error && progressPercent >= 100;
   const isFailed = !isRunning && !!error;
+  const isWarningError =
+    errorCode === "AI_QUOTA_EXHAUSTED" || errorCode === "PROCESS_TIMEOUT";
+  const isMediaInputError =
+    errorCode === "NO_AUDIO_STREAM" ||
+    errorCode === "NO_SPEECH_DETECTED" ||
+    errorCode === "FILE_EMPTY" ||
+    errorCode === "CORRUPTED_FILE" ||
+    errorCode === "INVALID_DURATION";
 
   const handleCopyDir = () => {
     if (outputDirectory) {
@@ -199,11 +214,42 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
 
           {/* Error Banner */}
           {error && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-bold">Xử lý thất bại</h4>
-                <p className="text-xs text-rose-600 mt-0.5 leading-relaxed">{error}</p>
+            <div
+              className={`p-4 rounded-2xl border text-sm flex items-start gap-3 ${
+                isWarningError
+                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                  : "bg-rose-50 border-rose-200 text-rose-700"
+              }`}
+            >
+              <AlertCircle
+                className={`w-5 h-5 shrink-0 mt-0.5 ${
+                  isWarningError ? "text-amber-600" : "text-rose-500"
+                }`}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-bold">
+                    {isWarningError ? "Tạm thời chưa thể xử lý" : "Xử lý thất bại"}
+                  </h4>
+                  {errorCode && (
+                    <span
+                      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${
+                        isWarningError
+                          ? "bg-amber-100/80 border-amber-300 text-amber-800"
+                          : "bg-rose-100/80 border-rose-300 text-rose-700"
+                      }`}
+                    >
+                      {errorCode}
+                    </span>
+                  )}
+                </div>
+                <p
+                  className={`text-xs mt-1 leading-relaxed whitespace-pre-line ${
+                    isWarningError ? "text-amber-700" : "text-rose-600"
+                  }`}
+                >
+                  {error}
+                </p>
               </div>
             </div>
           )}
@@ -220,7 +266,9 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                   <div
                     key={st.id || i}
                     className={`flex items-start gap-3 p-3 rounded-xl transition ${
-                      st.status === "running"
+                      st.status === "error"
+                        ? "bg-rose-50/70 border border-rose-200/80"
+                        : st.status === "running"
                         ? "bg-indigo-50/70 border border-indigo-200/80"
                         : st.status === "completed"
                         ? "bg-slate-50/80 border border-slate-100"
@@ -230,6 +278,8 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                     <div className="mt-0.5 shrink-0">
                       {st.status === "completed" ? (
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      ) : st.status === "error" ? (
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
                       ) : st.status === "running" ? (
                         <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
                       ) : (
@@ -243,7 +293,9 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                       <div className="flex items-center justify-between">
                         <span
                           className={`text-sm font-bold ${
-                            st.status === "running"
+                            st.status === "error"
+                              ? "text-rose-900"
+                              : st.status === "running"
                               ? "text-indigo-900"
                               : st.status === "completed"
                               ? "text-slate-800"
@@ -255,6 +307,11 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                         {st.status === "running" && (
                           <span className="text-[11px] font-bold text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">
                             Đang chạy...
+                          </span>
+                        )}
+                        {st.status === "error" && (
+                          <span className="text-[11px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+                            Thất bại
                           </span>
                         )}
                       </div>
@@ -382,6 +439,26 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Tải tất cả clip (.zip)</span>
+              </button>
+            )}
+
+            {isFailed && isMediaInputError && onSelectAnotherVideo && (
+              <button
+                onClick={onSelectAnotherVideo}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <FileVideo className="w-3.5 h-3.5" />
+                <span>Chọn video khác</span>
+              </button>
+            )}
+
+            {isFailed && !isMediaInputError && onRetry && (
+              <button
+                onClick={onRetry}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Thử lại ngay</span>
               </button>
             )}
 

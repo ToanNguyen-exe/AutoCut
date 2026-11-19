@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     let audioBuffer: Buffer | null = null;
     let tempAudioPath: string | null = null;
+    let audioExtractError = false;
 
     // 1. Chuẩn bị file âm thanh (MP3 64k mono < 25MB)
     if (file && file.size > 0) {
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
         cp.execSync(`ffmpeg -y -i "${tempVideo}" -vn -ar 16000 -ac 1 -b:a 64k "${tempAudioPath}"`);
         audioBuffer = fs.readFileSync(tempAudioPath);
       } catch (err) {
+        audioExtractError = true;
         console.warn("FFmpeg extract warning for uploaded file:", err);
       } finally {
         try { if (fs.existsSync(tempVideo)) fs.unlinkSync(tempVideo); } catch { }
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Nếu không có file tải lên trong form, quét tìm video trong thư mục uploads
-    if (!audioBuffer) {
+    if (!audioBuffer && !audioExtractError) {
       const searchDirs = [
         path.join(projectRoot, "uploads"),
         path.join(projectRoot, "backend", "uploads"),
@@ -88,52 +90,99 @@ export async function POST(req: NextRequest) {
           cp.execSync(`ffmpeg -y -i "${foundVideoPath}" -vn -ar 16000 -ac 1 -b:a 64k "${tempAudioPath}"`);
           audioBuffer = fs.readFileSync(tempAudioPath);
         } catch (err) {
+          audioExtractError = true;
           console.warn("FFmpeg extract warning for existing file:", err);
         }
       }
     }
 
+    if (audioExtractError || !audioBuffer || audioBuffer.length === 0) {
+      return NextResponse.json(
+        {
+          status: "ERROR",
+          code: "NO_AUDIO_STREAM",
+          error: "Video không có kênh âm thanh (không có tiếng) hoặc không tìm thấy tệp video nguồn.",
+          suggestion: "Vui lòng kiểm tra lại tệp video có âm thanh hay không hoặc khởi động Backend Spring Boot để xử lý đầy đủ.",
+        },
+        { status: 400 }
+      );
+    }
+
     let rawSegments: Array<{ id: number; start: number; end: number; text: string; no_speech_prob?: number }> = [];
     let totalDuration = 180.0;
 
-    // 2. Gọi Groq Whisper API nếu có âm thanh
-    if (audioBuffer && audioBuffer.length > 0) {
-      const groqFormData = new FormData();
-      const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" });
-      groqFormData.append("file", blob, `${videoStem}.mp3`);
-      groqFormData.append("model", "whisper-large-v3");
-      groqFormData.append("response_format", "verbose_json");
-      groqFormData.append("language", "vi");
+    // 2. Gọi Groq Whisper API
+    const groqFormData = new FormData();
+    const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" });
+    groqFormData.append("file", blob, `${videoStem}.mp3`);
+    groqFormData.append("model", "whisper-large-v3");
+    groqFormData.append("response_format", "verbose_json");
+    groqFormData.append("language", "vi");
 
-      try {
-        const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    try {
+      const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+        body: groqFormData,
+      });
+
+      if (groqRes.ok) {
+        const groqData = await groqRes.json();
+        if (groqData.duration && groqData.duration > 0) {
+          totalDuration = Number(groqData.duration.toFixed(1));
+        }
+        if (Array.isArray(groqData.segments)) {
+          rawSegments = groqData.segments;
+        }
+      } else {
+        const errText = await groqRes.text().catch(() => "");
+        console.error(`Groq API returned ${groqRes.status}:`, errText);
+        if (groqRes.status === 429 || groqRes.status === 413) {
+          return NextResponse.json(
+            {
+              status: "ERROR",
+              code: "AI_QUOTA_EXHAUSTED",
+              error: groqRes.status === 429
+                ? "Groq Whisper API đã hết hạn mức sử dụng (Quota/Rate Limit)."
+                : "Tệp âm thanh vượt quá giới hạn 25MB của Groq API.",
+              suggestion: groqRes.status === 429
+                ? "Vui lòng đợi 1-2 phút rồi thử lại, hoặc cập nhật GROQ_API_KEY mới trong .env."
+                : "Vui lòng sử dụng Backend Spring Boot để nén và xử lý video dài.",
+            },
+            { status: groqRes.status }
+          );
+        }
+        return NextResponse.json(
+          {
+            status: "ERROR",
+            code: "AI_PROCESS_FAILED",
+            error: `Groq Whisper API trả về lỗi (${groqRes.status}).`,
+            suggestion: "Vui lòng kiểm tra lại GROQ_API_KEY trong tệp .env và kết nối mạng.",
           },
-          body: groqFormData,
-        });
-
-        if (groqRes.ok) {
-          const groqData = await groqRes.json();
-          if (groqData.duration && groqData.duration > 0) {
-            totalDuration = Number(groqData.duration.toFixed(1));
-          }
-          if (Array.isArray(groqData.segments)) {
-            rawSegments = groqData.segments;
-          }
-        } else {
-          const errText = await groqRes.text();
-          console.error(`Groq API returned ${groqRes.status}:`, errText);
-        }
-      } catch (err) {
-        console.error("Groq Whisper API fetch error:", err);
-      } finally {
-        if (tempAudioPath && fs.existsSync(tempAudioPath)) {
-          try { fs.unlinkSync(tempAudioPath); } catch { }
-        }
+          { status: groqRes.status }
+        );
+      }
+    } catch (err) {
+      console.error("Groq Whisper API fetch error:", err);
+      const isTimeout = err instanceof Error && /timeout|abort/i.test(err.message);
+      return NextResponse.json(
+        {
+          status: "ERROR",
+          code: isTimeout ? "PROCESS_TIMEOUT" : "AI_PROCESS_FAILED",
+          error: isTimeout
+            ? "Gọi Groq Whisper API bị quá thời gian chờ (Timeout)."
+            : "Không thể kết nối tới máy chủ Groq Whisper API.",
+          suggestion: "Vui lòng kiểm tra kết nối mạng và thử lại.",
+        },
+        { status: isTimeout ? 504 : 502 }
+      );
+    } finally {
+      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+        try { fs.unlinkSync(tempAudioPath); } catch { }
       }
     }
 
@@ -195,14 +244,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Nếu là video nhạc hoàn toàn không có lời thoại
+    // Nếu hoàn toàn không nhận diện được lời thoại nào (video câm / không có tiếng nói)
     if (filledSentences.length === 0) {
-      filledSentences.push({
-        id: "S0001",
-        start: 0.0,
-        end: totalDuration,
-        text: `Âm thanh nhạc nền / Giọng điệu (Video ${cleanName})`,
-      });
+      return NextResponse.json(
+        {
+          status: "ERROR",
+          code: "NO_SPEECH_DETECTED",
+          error: "Không phát hiện lời nói trong video (video câm hoặc chỉ có tiếng ồn nền).",
+          suggestion: "Vui lòng kiểm tra lại âm thanh/micro của video gốc hoặc chọn video bài giảng có lời thoại rõ ràng.",
+        },
+        { status: 400 }
+      );
     }
 
     // Đánh số lại thứ tự S0001, S0002... chuẩn xác

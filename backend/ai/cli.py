@@ -140,7 +140,7 @@ def _find_matching_transcript_or_video(
     backend_uploads_dir = PROJECT_ROOT / "backend" / "uploads"
     clean_vname = clean_video_filename(video_name or "video.mp4")
 
-    # 1. Ưu tiên kiểm tra trong thư mục transcripts/<tên_video>_transcript.json
+    # 1. Ưu tiên kiểm tra trong thư mục transcripts/<tên_video>_transcript.json (bỏ qua file placeholder khởi tạo lúc upload)
     for candidate_name in [clean_vname, lesson]:
         if candidate_name:
             dedicated_file = get_dedicated_transcript_path(candidate_name)
@@ -148,6 +148,8 @@ def _find_matching_transcript_or_video(
                 with open(dedicated_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 t_obj = TranscriptOutput.model_validate(data)
+                if len(t_obj.sentences) == 1 and "Nội dung bóc băng của video" in (t_obj.sentences[0].text or ""):
+                    continue
                 processed = post_process_transcript(t_obj)
                 processed.video = clean_vname
                 return processed
@@ -321,6 +323,65 @@ def _find_matching_transcript_or_video(
     return synth_output
 
 
+def emit_backend_error(code: str, message: str, suggestion: str, provider: Optional[str] = None) -> None:
+    """In mã lỗi chuẩn @@ERROR JSON ra stdout để backend Java phân loại chính xác thay vì fallback mù."""
+    payload = {"code": code, "message": message, "suggestion": suggestion}
+    if provider:
+        payload["provider"] = provider
+    print(f"@@ERROR {json.dumps(payload, ensure_ascii=False)}", flush=True)
+
+
+def _classify_backend_exception(exc: Exception) -> tuple:
+    """Phân loại lỗi Python AI pipeline thành (code, message, suggestion, exit_code, provider)."""
+    msg = str(exc)
+    msg_lower = msg.lower()
+
+    if any(tok in msg_lower for tok in ("no_speech_detected", "không có tiếng", "không phát hiện lời thoại")):
+        return (
+            "NO_SPEECH_DETECTED",
+            "Video không có tiếng nói hoặc không phát hiện được lời thoại để phân đoạn.",
+            "Vui lòng kiểm tra lại âm thanh/giọng nói trong video hoặc chọn tệp video khác.",
+            2,
+            None,
+        )
+
+    if any(tok in msg_lower for tok in ("no_audio_stream", "does not contain any stream", "no audio stream", "audio stream = 0")):
+        return (
+            "NO_AUDIO_STREAM",
+            "Video không có kênh âm thanh (audio stream) để AI bóc băng.",
+            "Vui lòng kiểm tra lại tệp video gốc và đảm bảo video có kênh âm thanh.",
+            2,
+            None,
+        )
+
+    if any(tok in msg_lower for tok in ("429", "rate_limit", "rate limit", "quota", "resource_exhausted", "413", "entity too large")):
+        provider = "Groq" if ("groq" in msg_lower or "whisper" in msg_lower or "413" in msg_lower) else "Gemini"
+        return (
+            "AI_QUOTA_EXHAUSTED",
+            f"Dịch vụ AI ({provider}) đã hết hạn mức sử dụng (Quota/Rate Limit) hoặc vượt kích thước tối đa.",
+            "Vui lòng đợi 1-2 phút rồi thử lại, hoặc cập nhật GROQ_API_KEY / GEMINI_API_KEY mới trong .env.",
+            3,
+            provider,
+        )
+
+    if any(tok in msg_lower for tok in ("timeout", "timed out", "deadline_exceeded")):
+        return (
+            "PROCESS_TIMEOUT",
+            "Quá trình gọi AI bị quá thời gian phản hồi (Timeout).",
+            "Vui lòng kiểm tra kết nối mạng và thử lại sau ít phút.",
+            3,
+            None,
+        )
+
+    return (
+        "AI_PROCESS_FAILED",
+        f"Quá trình phân tích AI gặp sự cố: {msg}",
+        "Vui lòng kiểm tra lại API Key trong .env, kết nối mạng và định dạng tệp video.",
+        1,
+        None,
+    )
+
+
 def run_backend_analysis(
     video_name: str,
     lesson: str,
@@ -335,6 +396,9 @@ def run_backend_analysis(
         file_hash=file_hash,
         duration=duration
     )
+
+    if not transcript or not transcript.sentences:
+        raise ValueError("NO_SPEECH_DETECTED: Video không có tiếng nói hoặc không nhận diện được lời thoại.")
 
     from .transcript_refiner import TranscriptRefiner
     try:
@@ -384,14 +448,19 @@ def main():
     args = parser.parse_args()
 
     if args.analyze_backend:
-        run_backend_analysis(
-            video_name=args.video_name,
-            lesson=args.lesson,
-            file_hash=args.hash if args.hash else None,
-            duration=args.duration,
-            output_path=args.output or str(PROJECT_ROOT / "cache" / "analyze_result.json")
-        )
-        return
+        try:
+            run_backend_analysis(
+                video_name=args.video_name,
+                lesson=args.lesson,
+                file_hash=args.hash if args.hash else None,
+                duration=args.duration,
+                output_path=args.output or str(PROJECT_ROOT / "cache" / "analyze_result.json")
+            )
+            return
+        except Exception as exc:
+            code, msg, suggestion, exit_code, provider = _classify_backend_exception(exc)
+            emit_backend_error(code=code, message=msg, suggestion=suggestion, provider=provider)
+            sys.exit(exit_code)
 
     if args.clear_cache:
         from .whisper_service import clear_all_cache

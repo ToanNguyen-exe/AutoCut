@@ -7,6 +7,9 @@ import com.autocut.repository.VideoRepository;
 import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
+import com.autocut.video.ErrorCode;
+import com.autocut.video.ValidationResult;
+import com.autocut.video.VideoValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,12 +18,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 class VideoControllerTest {
 
@@ -176,5 +183,131 @@ class VideoControllerTest {
                 transcript.sentences().size() > 10,
                 "Transcript thực tế từ module AI phải chứa đầy đủ các câu đã tách (> 10 câu)"
         );
+    }
+
+    @Test
+    void testAnalyzeVideo_MissingPython_ReturnsClearErrorAndNoFakeSegments() {
+        VideoController controllerWithoutPython = new VideoController(cacheService, configService, r2Service, videoRepository) {
+            @Override
+            protected String resolvePythonExecutable() {
+                return "non_existent_python_binary_xyz_999";
+            }
+        };
+
+        ResponseEntity<?> response = controllerWithoutPython.analyzeVideo(Map.of(
+                "videoName", "any_video.mp4",
+                "lesson", "any_lesson",
+                "duration", 120.0
+        ));
+
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertNotNull(body);
+        Assertions.assertEquals("ERROR", body.get("status"));
+        Assertions.assertEquals("PYTHON_ENV_MISSING", body.get("code"));
+        Assertions.assertNull(body.get("segmentsData"), "Thiếu Python tuyệt đối không được sinh phân đoạn giả");
+        Assertions.assertTrue(String.valueOf(body.get("message")).contains("Python"));
+        Assertions.assertNotNull(body.get("suggestion"));
+    }
+
+    @Test
+    void testAnalyzeVideo_NoAudioStream_Returns400AndNoFakeSegments() throws Exception {
+        Path tempVideo = Files.createTempFile("silent_video_", ".mp4");
+        try {
+            VideoValidator mockValidator = Mockito.mock(VideoValidator.class);
+            Mockito.when(mockValidator.validate(Mockito.any(Path.class)))
+                    .thenReturn(ValidationResult.invalid(tempVideo.toString(), tempVideo.getFileName().toString(),
+                            ErrorCode.NO_AUDIO_STREAM, ErrorCode.NO_AUDIO_STREAM.getDescription()));
+
+            VideoController controllerWithValidator = new VideoController(cacheService, configService, r2Service, videoRepository) {
+                @Override
+                protected VideoValidator getVideoValidator() {
+                    return mockValidator;
+                }
+
+                @Override
+                protected Optional<Path> findLocalMediaFile(Path projectRoot, String videoName, String hash) {
+                    return Optional.of(tempVideo);
+                }
+            };
+
+            ResponseEntity<?> response = controllerWithValidator.analyzeVideo(Map.of(
+                    "videoName", "silent.mp4",
+                    "lesson", "silent",
+                    "duration", 60.0
+            ));
+
+            Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            Map<?, ?> body = (Map<?, ?>) response.getBody();
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("ERROR", body.get("status"));
+            Assertions.assertEquals("NO_AUDIO_STREAM", body.get("code"));
+            Assertions.assertNull(body.get("segmentsData"));
+            Assertions.assertNotNull(body.get("suggestion"));
+        } finally {
+            Files.deleteIfExists(tempVideo);
+        }
+    }
+
+    @Test
+    void testAnalyzeVideo_GroqQuotaExhausted_Returns429AndNoFakeSegments() throws Exception {
+        Process mockProcess = Mockito.mock(Process.class);
+        String errOut = "@@ERROR {\"code\":\"AI_QUOTA_EXHAUSTED\",\"provider\":\"Groq\",\"message\":\"Groq Whisper API đã hết hạn mức (Quota/Rate Limit).\",\"suggestion\":\"Vui lòng đợi 1-2 phút rồi thử lại hoặc cập nhật GROQ_API_KEY mới.\"}\n";
+        Mockito.when(mockProcess.getInputStream())
+                .thenReturn(new ByteArrayInputStream(errOut.getBytes(StandardCharsets.UTF_8)));
+        Mockito.when(mockProcess.waitFor(Mockito.anyLong(), Mockito.any(TimeUnit.class))).thenReturn(true);
+        Mockito.when(mockProcess.exitValue()).thenReturn(3);
+
+        VideoController controllerMockProc = new VideoController(cacheService, configService, r2Service, videoRepository) {
+            @Override
+            protected Process startAnalyzeProcess(ProcessBuilder pb) {
+                return mockProcess;
+            }
+        };
+
+        ResponseEntity<?> response = controllerMockProc.analyzeVideo(Map.of(
+                "videoName", "lecture.mp4",
+                "lesson", "lecture",
+                "duration", 300.0
+        ));
+
+        Assertions.assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertNotNull(body);
+        Assertions.assertEquals("ERROR", body.get("status"));
+        Assertions.assertEquals("AI_QUOTA_EXHAUSTED", body.get("code"));
+        Assertions.assertNull(body.get("segmentsData"));
+        Assertions.assertNotNull(body.get("suggestion"));
+    }
+
+    @Test
+    void testAnalyzeVideo_Timeout_Returns504AndDestroysProcess() throws Exception {
+        Process mockProcess = Mockito.mock(Process.class);
+        Mockito.when(mockProcess.getInputStream())
+                .thenReturn(new ByteArrayInputStream(new byte[0]));
+        Mockito.when(mockProcess.waitFor(Mockito.anyLong(), Mockito.any(TimeUnit.class))).thenReturn(false);
+        Mockito.when(mockProcess.destroyForcibly()).thenReturn(mockProcess);
+
+        VideoController controllerMockProc = new VideoController(cacheService, configService, r2Service, videoRepository) {
+            @Override
+            protected Process startAnalyzeProcess(ProcessBuilder pb) {
+                return mockProcess;
+            }
+        };
+
+        ResponseEntity<?> response = controllerMockProc.analyzeVideo(Map.of(
+                "videoName", "huge_video.mp4",
+                "lesson", "huge",
+                "duration", 7200.0
+        ));
+
+        Mockito.verify(mockProcess).destroyForcibly();
+        Assertions.assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertNotNull(body);
+        Assertions.assertEquals("ERROR", body.get("status"));
+        Assertions.assertEquals("PROCESS_TIMEOUT", body.get("code"));
+        Assertions.assertNull(body.get("segmentsData"));
+        Assertions.assertNotNull(body.get("suggestion"));
     }
 }
