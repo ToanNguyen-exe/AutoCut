@@ -7,11 +7,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import java.net.URI;
 
+/**
+ * Cấu hình DataSource cho Postgres (Neon).
+ *
+ * <p>Profile "test" KHÔNG nạp class này — bean DataSource không tồn tại, nên
+ * không có đường nào để test chạm vào DATABASE_URL thật. Đây là "xoá đường đi"
+ * chứ không phải "chặn đường đi": kể cả .env có đúng chuỗi kết nối production
+ * thì test cũng không đọc được nó.
+ *
+ * <p>Test tự cấp DataSource riêng (Testcontainers hoặc H2 ở chế độ PostgreSQL)
+ * qua cấu hình của chính nó.
+ */
 @Configuration
+@Profile("!test")
 public class DatabaseConfig {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
@@ -27,63 +40,119 @@ public class DatabaseConfig {
         Dotenv dotenv = configService.getDotenv();
         String databaseUrl = dotenv.get("DATABASE_URL");
 
+        // Thà chết lúc khởi động hơn chạy bằng RAM rồi mất dữ liệu âm thầm (AD-7).
         if (databaseUrl == null || databaseUrl.isBlank() || databaseUrl.contains("ep-xyz")) {
-            log.warn("Chưa cấu hình DATABASE_URL Neon trong .env, sử dụng H2 in-memory tạm thời!");
-            return DataSourceBuilder.create()
-                    .driverClassName("org.h2.Driver")
-                    .url("jdbc:h2:mem:autocut_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL")
-                    .username("sa")
-                    .password("")
-                    .build();
+            throw new IllegalStateException("""
+                    Thiếu DATABASE_URL.
+
+                    Đặt trong backend/.env dòng:
+                        DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+
+                    Lấy chuỗi kết nối ở Neon Console > Connect. Không dùng H2 thay thế:
+                    dự án không có fallback in-memory (quyết định AD-7).
+                    """);
         }
 
         try {
-            // Chuẩn hóa URL từ postgres:// sang jdbc:postgresql://
-            String cleanUrl = databaseUrl;
-            if (cleanUrl.startsWith("postgres://") || cleanUrl.startsWith("postgresql://")) {
-                URI uri = URI.create(cleanUrl);
+            String jdbcUrl = toJdbcUrl(databaseUrl);
+            String username = "";
+            String password = "";
+
+            if (jdbcUrl.startsWith("jdbc:postgresql://")) {
+                // jdbc:postgresql://user:pass@host:5432/db -> parse phần user info
+                URI uri = URI.create(databaseUrl);
                 String userInfo = uri.getUserInfo();
-                String username = "";
-                String password = "";
                 if (userInfo != null && userInfo.contains(":")) {
                     String[] parts = userInfo.split(":", 2);
                     username = parts[0];
                     password = parts[1];
                 }
-
-                String host = uri.getHost();
-                int port = uri.getPort() != -1 ? uri.getPort() : 5432;
-                String path = uri.getPath(); // /neondb
-                String query = uri.getQuery();
-
-                String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
-                if (query != null && !query.isBlank()) {
-                    jdbcUrl += "?" + query;
-                    if (!query.contains("sslmode")) {
-                        jdbcUrl += "&sslmode=require";
-                    }
-                } else {
-                    jdbcUrl += "?sslmode=require";
-                }
-
-                log.info("Kết nối Neon Lakebase Postgres thành công tại host: {}", host);
-
-                return DataSourceBuilder.create()
-                        .driverClassName("org.postgresql.Driver")
-                        .url(jdbcUrl)
-                        .username(username)
-                        .password(password)
-                        .build();
             }
+
+            log.info("DataSource Postgres: {}", maskUrl(jdbcUrl));
 
             return DataSourceBuilder.create()
                     .driverClassName("org.postgresql.Driver")
-                    .url(databaseUrl)
+                    .url(jdbcUrl)
+                    .username(username)
+                    .password(password)
                     .build();
 
         } catch (Exception e) {
-            log.error("Lỗi phân tích DATABASE_URL: {}", e.getMessage(), e);
-            throw new IllegalStateException("Không thể khởi tạo DataSource Neon: " + e.getMessage());
+            log.error("Lỗi phân tích DATABASE_URL: {}", e.getMessage());
+            throw new IllegalStateException("Không thể khởi tạo DataSource: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Chuẩn hoá chuỗi kết nối Postgres thành JDBC URL.
+     *
+     * <p>Hàm thuần (không đọc biến môi trường, không I/O) để test được 4 trường hợp
+     * mà không cần database thật.
+     *
+     * <p>SSL theo đích đến, không phải hằng số: Neon bắt buộc TLS, Postgres chạy
+     * trong Docker/localhost thì không có chứng chỉ nên phải bỏ sslmode, nếu không
+     * kết nối sẽ hỏng với lỗi "server does not support SSL".
+     *
+     * @param databaseUrl chuỗi postgres:// hoặc postgresql:// hoặc jdbc:postgresql://
+     * @return JDBC URL hợp lệ cho driver Postgres
+     */
+    static String toJdbcUrl(String databaseUrl) {
+        if (databaseUrl == null || databaseUrl.isBlank()) {
+            throw new IllegalArgumentException("DATABASE_URL rỗng");
+        }
+
+        String url = databaseUrl.trim();
+
+        // Đã là JDBC URL: chỉ cần bổ sung sslmode nếu đích đến cần
+        if (url.startsWith("jdbc:postgresql://")) {
+            return applySslMode(url);
+        }
+
+        if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
+            URI uri = URI.create(url);
+
+            String host = uri.getHost();
+            if (host == null) {
+                throw new IllegalArgumentException("DATABASE_URL thiếu host: " + maskUrl(url));
+            }
+            int port = uri.getPort() != -1 ? uri.getPort() : 5432;
+            String path = uri.getPath() == null ? "" : uri.getPath();
+            String query = uri.getQuery();
+
+            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
+            if (query != null && !query.isBlank()) {
+                jdbcUrl += "?" + query;
+            }
+            return applySslMode(jdbcUrl);
+        }
+
+        throw new IllegalArgumentException(
+                "DATABASE_URL phải bắt đầu bằng postgresql:// hoặc postgres://, nhận được: " + maskUrl(url));
+    }
+
+    /** Thêm sslmode=require chỉ khi đích đến không phải máy cục bộ/Docker. */
+    private static String applySslMode(String jdbcUrl) {
+        String lower = jdbcUrl.toLowerCase();
+
+        boolean isLocal = lower.contains("//localhost")
+                || lower.contains("//127.0.0.1")
+                || lower.contains("//postgres:")   // tên service trong docker-compose
+                || lower.contains("//postgres/");
+
+        if (isLocal) {
+            return jdbcUrl; // Postgres local thường không bật TLS
+        }
+
+        if (lower.contains("sslmode=")) {
+            return jdbcUrl; // đã khai báo tường minh, tôn trọng người viết
+        }
+
+        return jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "sslmode=require";
+    }
+
+    /** Che mật khẩu khi ghi log. */
+    private static String maskUrl(String url) {
+        return url.replaceAll("://[^:/@]+:[^@]+@", "://***:***@");
     }
 }
