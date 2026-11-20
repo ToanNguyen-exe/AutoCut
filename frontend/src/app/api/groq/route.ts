@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import cp from "child_process";
-import { Sentence, TranscriptData, Segment, SegmentsData } from "@/types";
-import { recalculateParts } from "@/lib/utils";
+import { Sentence, TranscriptData, SegmentsData } from "@/types";
+import { generateSegmentsFromSentences } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -62,11 +62,21 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
       }
     }
 
-    // 3. Khớp tương đối / chuỗi con
+    // 3. Khớp tương đối / chuỗi con an toàn (không lẫn lộn giữa Download 1, 2, 3, 4)
+    const targetDigits = (targetNorm.match(/\d+$/) || [""])[0];
     for (const f of files) {
       if (!f.endsWith(".json")) continue;
       const fStem = f.replace(/_transcript\.json$/, "").replace(/\.json$/, "").toLowerCase();
       const fNorm = norm(fStem);
+      const fDigits = (fNorm.match(/\d+$/) || [""])[0];
+
+      if (targetDigits && fDigits && targetDigits !== fDigits) {
+        continue;
+      }
+      if (!targetDigits && fDigits && fNorm.startsWith(targetNorm)) {
+        continue;
+      }
+
       if (fNorm.includes(targetNorm) || targetNorm.includes(fNorm)) {
         try {
           const content = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
@@ -79,83 +89,6 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
   }
 
   return null;
-}
-
-function generateSegmentsFromSentences(
-  sentences: Sentence[],
-  totalDuration: number,
-  videoName: string,
-  lesson: string
-): Segment[] {
-  if (!sentences || sentences.length === 0) {
-    return [
-      {
-        id: `seg_${Date.now()}_01`,
-        section_no: 1,
-        section: "01_NoiDung",
-        topic_no: 1,
-        topic: lesson || videoName,
-        slug: "noi-dung",
-        start_id: "S0001",
-        end_id: "S0001",
-        start: 0,
-        end: totalDuration,
-        parts: recalculateParts(0, totalDuration, "01_NoiDung", 1, "noi-dung"),
-      },
-    ];
-  }
-
-  const segments: Segment[] = [];
-  const numSections = Math.min(5, Math.max(2, Math.ceil(sentences.length / 3)));
-  const sentencesPerSection = Math.ceil(sentences.length / numSections);
-  let currentStart = 0.0;
-
-  for (let i = 0; i < numSections; i++) {
-    const startIdx = i * sentencesPerSection;
-    const endIdx = Math.min(sentences.length, (i + 1) * sentencesPerSection);
-    if (startIdx >= sentences.length) break;
-
-    const group = sentences.slice(startIdx, endIdx);
-    const segStart = currentStart;
-    let segEnd: number;
-
-    if (i === numSections - 1 || endIdx >= sentences.length) {
-      segEnd = totalDuration;
-    } else {
-      const nextGroupFirstSent = sentences[endIdx];
-      segEnd = Number(((group[group.length - 1].end + nextGroupFirstSent.start) / 2).toFixed(1));
-      if (segEnd <= segStart) {
-        segEnd = group[group.length - 1].end;
-      }
-    }
-    currentStart = segEnd;
-    const secNo = i + 1;
-    const secName = `0${secNo}_Doan_${secNo}`;
-
-    const topicText = group[0]?.text
-      ? group[0].text.length > 55
-        ? `${group[0].text.slice(0, 52).trim()}...`
-        : group[0].text.trim()
-      : `Phân đoạn ${secNo}`;
-
-    const slug = `doan-${secNo}`;
-
-    segments.push({
-      id: `seg_${Date.now()}_0${secNo}`,
-      section_no: secNo,
-      section: secName,
-      topic_no: secNo,
-      topic: topicText,
-      slug: slug,
-      start_id: group[0].id,
-      end_id: group[group.length - 1].id,
-      start: segStart,
-      end: segEnd,
-      parts: recalculateParts(segStart, segEnd, secName, secNo, slug),
-    });
-  }
-
-  return segments;
 }
 
 async function processTranscription(

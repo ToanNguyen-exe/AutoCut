@@ -55,7 +55,14 @@ export async function GET(request: NextRequest) {
         // 2b. Khớp normalized đối với file upload có tiền tố hash: <sha256>_<tên file>
         const targetNorm = norm(cleanFile);
         if (targetNorm) {
-          const foundNorm = files.find((f) => norm(f).endsWith(targetNorm));
+          const targetDigits = (targetNorm.match(/\d+$/) || [""])[0];
+          const foundNorm = files.find((f) => {
+            const fNorm = norm(f);
+            const fDigits = (fNorm.match(/\d+$/) || [""])[0];
+            if (targetDigits && fDigits && targetDigits !== fDigits) return false;
+            if (!targetDigits && fDigits && fNorm.endsWith(targetNorm + fDigits)) return false;
+            return fNorm.endsWith(targetNorm);
+          });
           if (foundNorm) {
             resolvedPath = path.join(dir, foundNorm);
             break;

@@ -156,7 +156,11 @@ export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
             </div>
           ) : (
             filteredVideos.map((video) => {
-              const isActive = activeVideoName === video.name;
+              const cleanStem = (s: string) =>
+                (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
+              const isActive =
+                activeVideoName === video.name ||
+                cleanStem(activeVideoName || "") === cleanStem(video.name || "");
 
               return (
                 <div

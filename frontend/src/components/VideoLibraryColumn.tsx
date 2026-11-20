@@ -189,10 +189,13 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
         ) : (
           // Hiển thị danh sách các video trong thư viện gốc
           videos.map((item) => {
+            const cleanStem = (s: string) =>
+              (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
             const isActive =
               item.fileName.toLowerCase() === currentVideoName.toLowerCase() ||
               item.title.toLowerCase() === currentVideoName.toLowerCase() ||
-              currentVideoName.toLowerCase().includes(item.title.toLowerCase());
+              cleanStem(item.fileName) === cleanStem(currentVideoName) ||
+              cleanStem(item.title) === cleanStem(currentVideoName);
 
             return (
               <div

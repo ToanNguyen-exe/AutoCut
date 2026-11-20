@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Segment, JoinedVideoClip } from "@/types";
 import { formatTime } from "@/lib/utils";
 import { resolvePlayableVideoUrl } from "@/lib/videoLibrary";
+import { getVideoBlob } from "@/lib/videoStorage";
 import {
   Maximize2,
   Play,
@@ -111,7 +112,6 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
     // 1. Kiểm tra trong IndexedDB xem có blob của file đã lưu không
     try {
-      const { getVideoBlob } = await import("@/lib/videoStorage");
       const blob = await getVideoBlob(fileName);
       if (blob) {
         const freshBlobUrl = URL.createObjectURL(blob);

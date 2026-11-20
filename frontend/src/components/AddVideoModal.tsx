@@ -198,6 +198,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
       // Lưu file vào IndexedDB ngay để bảo toàn qua F5
       saveVideoBlob(file.name, file);
+      saveVideoBlob(file.name.replace(/\.[^/.]+$/, ""), file);
 
       const objectUrl = URL.createObjectURL(file);
       probeDuration(objectUrl);
@@ -210,6 +211,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     // Đảm bảo tệp đã chọn được lưu bền vững vào IndexedDB trước khi giao diện chuyển sang Studio
     if (selectedFile) {
       await saveVideoBlob(selectedFile.name, selectedFile);
+      await saveVideoBlob(selectedFile.name.replace(/\.[^/.]+$/, ""), selectedFile);
     }
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)

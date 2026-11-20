@@ -43,7 +43,7 @@ import {
   resolvePlayableVideoUrl,
 } from "@/lib/videoLibrary";
 import { getVideoBlob } from "@/lib/videoStorage";
-import { recalculateParts, slugify, formatTime } from "@/lib/utils";
+import { recalculateParts, slugify, formatTime, generateSegmentsFromSentences } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 // Dữ liệu chuẩn theo Bài 08 - Ép kiểu dữ liệu Python matching reference image
@@ -186,6 +186,15 @@ const REAL_DOWNLOAD_LYRICS: Sentence[] = [
   { id: "S0013", start: 258.5, end: 266.0, text: "Đến lúc em có tất cả quay lại lại chẳng có anh" },
   { id: "S0014", start: 266.0, end: 356.3, text: "Giai điệu kết thúc (Outro Fade)" },
 ];
+
+const isExactDownloadMusicVideo = (name?: string, title?: string): boolean => {
+  if (!name && !title) return false;
+  const clean = (s: string) =>
+    (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
+  const sName = clean(name || "");
+  const sTitle = clean(title || "");
+  return sName === "download" || sTitle === "download";
+};
 
 function normalizeContiguousSegments(segments: Segment[], totalDuration: number): Segment[] {
   if (!segments || segments.length === 0) return segments;
@@ -512,14 +521,28 @@ export default function Home() {
         const loadedLib = getLibraryVideos();
         const refreshedLib = await Promise.all(
           loadedLib.map(async (item) => {
-            if (item.url && item.url.startsWith("blob:")) {
+            let itemUrl = item.url;
+            if (itemUrl && itemUrl.startsWith("blob:")) {
               const b = await getVideoBlob(item.name);
               if (b) {
-                return { ...item, url: URL.createObjectURL(b) };
+                itemUrl = URL.createObjectURL(b);
+              } else {
+                itemUrl = resolvePlayableVideoUrl(undefined, item.name);
               }
-              return { ...item, url: resolvePlayableVideoUrl(undefined, item.name) };
             }
-            return item;
+            // Khử nhiễm nếu video không phải download.mp4 mà bị dính lời bài hát REAL_DOWNLOAD_LYRICS
+            const isMusicDemo = isExactDownloadMusicVideo(item.name, item.title);
+            const isCorrupted = Boolean(
+              item.transcript?.sentences?.some(
+                (s) => s.text?.includes("Anh đừng lặng im nếu anh giận lòng em")
+              ) && !isMusicDemo
+            );
+
+            return {
+              ...item,
+              url: itemUrl,
+              transcript: isCorrupted ? undefined : item.transcript,
+            };
           })
         );
         setVideoLibrary(refreshedLib);
@@ -1042,19 +1065,40 @@ export default function Home() {
     // Nạp transcript nếu AI đã bóc băng khi upload hoặc nhận diện video âm nhạc/download
     if (newVideo.transcript) {
       setTranscript(newVideo.transcript);
+    } else if (isExactDownloadMusicVideo(newVideo.name, lessonTitle)) {
+      setTranscript({
+        video: newVideo.name,
+        duration: totalSecs > 0 ? totalSecs : 356.3,
+        sentences: REAL_DOWNLOAD_LYRICS,
+      });
     } else {
-      const isMusicOrDownload = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-        `${newVideo.name} ${lessonTitle}`
-      );
-      if (isMusicOrDownload) {
-        setTranscript({
-          video: newVideo.name,
-          duration: totalSecs > 0 ? totalSecs : 356.3,
-          sentences: REAL_DOWNLOAD_LYRICS,
-        });
-      } else {
-        setTranscript(undefined);
-      }
+      setTranscript(undefined);
+      // Tự động tìm transcript đã có sẵn trên backend/local qua /api/groq
+      fetch("/api/groq", {
+        method: "POST",
+        body: (() => {
+          const fd = new FormData();
+          fd.append("videoName", newVideo.name);
+          fd.append("lesson", lessonTitle);
+          return fd;
+        })(),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json?.transcript?.sentences && json.transcript.sentences.length > 0) {
+            setTranscript(json.transcript);
+            if (json.segmentsData?.segments && json.segmentsData.segments.length > 1) {
+              setData((prev) => ({
+                ...prev,
+                mode: "analyzed",
+                segments: json.segmentsData.segments,
+              }));
+              setActiveSegmentId(json.segmentsData.segments[0].id);
+              updateVideoSegmentsInLibrary(newVideo.name, json.segmentsData.segments);
+            }
+          }
+        })
+        .catch(() => {});
     }
 
     // Lưu video mới vào thư viện video
@@ -1313,7 +1357,7 @@ export default function Home() {
         const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
           `${clip.fileName} ${clip.title}`
         );
-        if (isMusic && clip.fileName.toLowerCase().includes("download")) {
+        if (isExactDownloadMusicVideo(clip.fileName, clip.title)) {
           clipSentences = REAL_DOWNLOAD_LYRICS;
         } else if (isMusic) {
           clipSentences = [
@@ -1667,10 +1711,7 @@ export default function Home() {
       }
 
       if (!appendTranscript?.sentences || appendTranscript.sentences.length === 0) {
-        const isMusic = /download|remix|tiktok|nhạc|nhac|song|music|audio|beat|mp3|thiếu em|thieu em|chill|lofi/i.test(
-          `${vName} ${vTitle}`
-        );
-        if (isMusic && vName.toLowerCase().includes("download")) {
+        if (isExactDownloadMusicVideo(vName, vTitle)) {
           appendTranscript = {
             video: vName,
             duration: appendDuration,
@@ -1780,141 +1821,146 @@ export default function Home() {
     [data, totalDuration, transcript, joinedVideos, handleSeek, showToast]
   );
 
-  // Mở riêng hoặc chuyển tới một video từ cột Thư viện video
+  // Mở riêng hoặc chuyển tới một video từ cột Thư viện video hoặc Drawer
   const handleSelectLibraryCard = useCallback(
-    (card: LibraryVideoCard) => {
-      const validUrl = resolvePlayableVideoUrl(card.url, card.fileName);
-      setExternalVideoUrl(validUrl);
+    async (card: LibraryVideoCard) => {
+      // 1. Tìm nguồn video phát được chính xác cho card.fileName (ưu tiên blob trong IndexedDB)
+      let playableUrl: string | null = null;
+      try {
+        const blob = await getVideoBlob(card.fileName);
+        if (blob) {
+          playableUrl = URL.createObjectURL(blob);
+        }
+      } catch {}
 
-      const cleanStem = (s: string) =>
-        (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
+      if (!playableUrl) {
+        playableUrl = resolvePlayableVideoUrl(card.url, card.fileName);
+      }
 
-      const isMatchingVideo = (name1?: string, name2?: string) => {
-        if (!name1 || !name2) return false;
-        const n1 = name1.toLowerCase().trim();
-        const n2 = name2.toLowerCase().trim();
-        if (n1 === n2) return true;
-        const s1 = cleanStem(n1);
-        const s2 = cleanStem(n2);
-        return s1 === s2;
-      };
+      setExternalVideoUrl(playableUrl);
 
-      // 1. Kiểm tra xem video này đã có trong danh sách nối tiếp (joinedVideos) chưa
-      const existingClipIndex = joinedVideos.findIndex(
-        (v) =>
-          isMatchingVideo(v.fileName, card.fileName) ||
-          isMatchingVideo(v.title, card.title) ||
-          isMatchingVideo(v.fileName, card.title) ||
-          isMatchingVideo(v.title, card.fileName)
+      // 2. Tải transcript và segments riêng biệt cho video này
+      let activeTranscript: TranscriptData | undefined = card.transcript;
+      const isMusicDemo = isExactDownloadMusicVideo(card.fileName, card.title);
+
+      // Nếu transcript của card bị gán nhầm REAL_DOWNLOAD_LYRICS (do lỗi phiên trước) hoặc chưa có transcript
+      const hasCorruptedLyrics = Boolean(
+        activeTranscript?.sentences?.some(
+          (s) => s.text?.includes("Anh đừng lặng im nếu anh giận lòng em")
+        ) && !isMusicDemo
       );
 
-      if (existingClipIndex >= 0) {
-        // Video này đã nằm trong timeline nối tiếp -> Tua thẳng đến vị trí bắt đầu của video đó!
-        const targetClip = joinedVideos[existingClipIndex];
-        const segInClip = data.segments.find(
-          (s) => s.start >= targetClip.startOffset && s.start < targetClip.endOffset
-        );
-        const seekTime = segInClip ? segInClip.start : targetClip.startOffset;
-        handleSeek(seekTime);
-        if (segInClip) {
-          setActiveSegmentId(segInClip.id);
-        }
-        setIsPlaying(true);
-        showToast("success", `Đang chuyển tới Video ${existingClipIndex + 1}: "${targetClip.title}"`);
-        return;
-      }
+      let fetchedSegments: Segment[] | undefined = undefined;
 
-      if (card.fileName === data.video) {
-        // Đang ở video này -> Bật phát video ngay lập tức và đảm bảo đường dẫn nguồn video chuẩn
-        setJoinedVideos((prev) => {
-          if (prev.length > 0 && prev[0].fileName === card.fileName) {
-            return [{ ...prev[0], url: validUrl }, ...prev.slice(1)];
+      if (!activeTranscript || hasCorruptedLyrics || !activeTranscript.sentences || activeTranscript.sentences.length === 0) {
+        try {
+          const formData = new FormData();
+          formData.append("videoName", card.fileName);
+          formData.append("lesson", card.title);
+          const res = await fetch("/api/groq", { method: "POST", body: formData });
+          if (res.ok) {
+            const groqData = await res.json();
+            if (groqData.transcript?.sentences && groqData.transcript.sentences.length > 0) {
+              activeTranscript = groqData.transcript;
+              if (groqData.segmentsData?.segments && groqData.segmentsData.segments.length > 0) {
+                fetchedSegments = groqData.segmentsData.segments;
+              }
+            }
           }
-          return [
-            {
-              id: card.id,
-              title: card.title,
-              fileName: card.fileName,
-              url: validUrl,
-              duration: card.durationSeconds || 535,
-              startOffset: 0,
-              endOffset: card.durationSeconds || 535,
-            },
-          ];
-        });
-        setCurrentTime(0);
-        setIsPlaying(true);
-        showToast("success", `Đang phát video: "${card.title}"`);
-      } else {
-        // Chuyển sang dự án video mới
-        const rawSegments = card.segments && card.segments.length > 0 ? card.segments : [];
-        const dur = card.durationSeconds > 0 ? card.durationSeconds : 120;
-
-        let targetSegments: Segment[] = [];
-        if (rawSegments.length > 0) {
-          targetSegments = rawSegments;
-        } else {
-          targetSegments = [
-            {
-              id: `seg_${Date.now()}_raw`,
-              section_no: 1,
-              section: "01_VideoGoc",
-              topic_no: 1,
-              topic: card.title,
-              slug: slugify(card.title),
-              start_id: "s001",
-              end_id: "s001",
-              start: 0,
-              end: dur,
-              parts: [
-                {
-                  part: 1,
-                  start: 0,
-                  end: dur,
-                  file: `01_VideoGoc/01_${slugify(card.title)}.mp4`,
-                },
-              ],
-            },
-          ];
+        } catch (e) {
+          console.warn("Không thể tải transcript từ /api/groq cho card:", e);
         }
-
-        setUndoStack((prev) => [...prev.slice(-30), data.segments]);
-        setRedoStack([]);
-
-        setData({
-          video: card.fileName,
-          lesson: card.title,
-          mode: card.segments && card.segments.length > 1 ? "analyzed" : "raw",
-          reviewed: false,
-          segments: targetSegments,
-        });
-
-        setJoinedVideos([
-          {
-            id: card.id || `clip_${Date.now()}`,
-            title: card.title,
-            fileName: card.fileName,
-            url: validUrl,
-            duration: dur,
-            startOffset: 0,
-            endOffset: dur,
-          },
-        ]);
-
-        if (card.transcript) {
-          setTranscript(card.transcript);
-        } else {
-          setTranscript(undefined);
-        }
-
-        setActiveSegmentId(targetSegments[0].id);
-        setCurrentTime(0);
-        setIsPlaying(true);
-
-        showToast("success", `Đang mở và phát: ${card.title} (${card.durationStr})`);
       }
+
+      const dur = card.durationSeconds > 0 ? card.durationSeconds : (activeTranscript?.duration || 120);
+
+      // 3. Chuẩn bị phân đoạn
+      let targetSegments: Segment[] = [];
+      if (fetchedSegments && fetchedSegments.length > 0) {
+        targetSegments = fetchedSegments;
+      } else if (card.segments && card.segments.length > 0 && !hasCorruptedLyrics) {
+        targetSegments = card.segments;
+      } else if (activeTranscript?.sentences && activeTranscript.sentences.length > 0) {
+        targetSegments = generateSegmentsFromSentences(
+          activeTranscript.sentences,
+          dur,
+          card.fileName,
+          card.title
+        );
+      } else {
+        targetSegments = [
+          {
+            id: `seg_${Date.now()}_raw`,
+            section_no: 1,
+            section: "01_VideoGoc",
+            topic_no: 1,
+            topic: card.title,
+            slug: slugify(card.title),
+            start_id: "s001",
+            end_id: "s001",
+            start: 0,
+            end: dur,
+            parts: [
+              {
+                part: 1,
+                start: 0,
+                end: dur,
+                file: `01_VideoGoc/01_${slugify(card.title)}.mp4`,
+              },
+            ],
+          },
+        ];
+      }
+
+      setUndoStack((prev) => [...prev.slice(-30), data.segments]);
+      setRedoStack([]);
+
+      setData({
+        video: card.fileName,
+        lesson: card.title,
+        mode: targetSegments.length > 1 ? "analyzed" : "raw",
+        reviewed: false,
+        segments: targetSegments,
+      });
+
+      setJoinedVideos([
+        {
+          id: card.id || `clip_${Date.now()}`,
+          title: card.title,
+          fileName: card.fileName,
+          url: playableUrl,
+          duration: dur,
+          startOffset: 0,
+          endOffset: dur,
+        },
+      ]);
+
+      setTranscript(activeTranscript);
+      setActiveSegmentId(targetSegments[0]?.id || "seg_01");
+      setCurrentTime(0);
+      setIsPlaying(true);
+
+      // Cập nhật lại thư viện video với transcript & segments chuẩn đã sửa lỗi
+      updateVideoSegmentsInLibrary(card.fileName, targetSegments);
+      saveVideoToLibrary({
+        id: card.id,
+        name: card.fileName,
+        lesson: card.title,
+        title: card.title,
+        url: playableUrl,
+        duration: dur,
+        status: targetSegments.length > 1 ? "edited" : "added",
+        statusLabel: targetSegments.length > 1 ? "Đã phân tích AI" : "Chưa phân tích",
+        category: "Video thư viện",
+        segmentsCount: targetSegments.length,
+        segments: targetSegments,
+        transcript: activeTranscript,
+        updatedAt: new Date().toLocaleTimeString("vi-VN"),
+      });
+
+      showToast("success", `Đang mở và phát: ${card.title} (${formatTime(dur)})`);
     },
-    [data.video, data.segments, joinedVideos, handleSeek, showToast]
+    [data.segments, showToast]
   );
 
   // Xử lý khi người dùng chọn một video trong Thư viện Video Drawer

@@ -63,6 +63,21 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
     },
   ]);
 
+  const prevVideoTitleRef = useRef(videoTitle);
+  useEffect(() => {
+    if (videoTitle && videoTitle !== prevVideoTitleRef.current) {
+      prevVideoTitleRef.current = videoTitle;
+      setMessages([
+        {
+          id: `msg_${Date.now()}`,
+          sender: "bot",
+          text: `Xin chào! Mình là Trợ lý AI AutoCut. Đã nạp video "${videoTitle}" (${segments.length} phân đoạn). Bạn muốn chỉnh sửa, tóm tắt hay gộp phân đoạn nào?`,
+          provider: "Groq Llama",
+        },
+      ]);
+    }
+  }, [videoTitle, segments.length]);
+
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

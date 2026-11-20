@@ -1,4 +1,4 @@
-import { VideoPart } from "@/types";
+import { VideoPart, Sentence, Segment } from "@/types";
 
 /**
  * Định dạng số giây sang chuỗi mm:ss hoặc hh:mm:ss
@@ -122,4 +122,85 @@ export function recalculateParts(
   });
 
   return parts;
+}
+
+/**
+ * Tự động tạo danh sách phân đoạn (Segment[]) từ danh sách câu thoại (Sentence[])
+ */
+export function generateSegmentsFromSentences(
+  sentences: Sentence[],
+  totalDuration: number,
+  videoName: string,
+  lesson: string
+): Segment[] {
+  if (!sentences || sentences.length === 0) {
+    const dur = totalDuration > 0 ? totalDuration : 60;
+    return [
+      {
+        id: `seg_${Date.now()}_01`,
+        section_no: 1,
+        section: "01_NoiDung",
+        topic_no: 1,
+        topic: lesson || videoName,
+        slug: slugify(lesson || videoName),
+        start_id: "S0001",
+        end_id: "S0001",
+        start: 0,
+        end: dur,
+        parts: recalculateParts(0, dur, "01_NoiDung", 1, slugify(lesson || videoName)),
+      },
+    ];
+  }
+
+  const segments: Segment[] = [];
+  const numSections = Math.min(5, Math.max(2, Math.ceil(sentences.length / 3)));
+  const sentencesPerSection = Math.ceil(sentences.length / numSections);
+  let currentStart = 0.0;
+
+  for (let i = 0; i < numSections; i++) {
+    const startIdx = i * sentencesPerSection;
+    const endIdx = Math.min(sentences.length, (i + 1) * sentencesPerSection);
+    if (startIdx >= sentences.length) break;
+
+    const group = sentences.slice(startIdx, endIdx);
+    const segStart = currentStart;
+    let segEnd: number;
+
+    if (i === numSections - 1 || endIdx >= sentences.length) {
+      segEnd = totalDuration > segStart ? totalDuration : group[group.length - 1].end;
+    } else {
+      const nextGroupFirstSent = sentences[endIdx];
+      segEnd = Number(((group[group.length - 1].end + nextGroupFirstSent.start) / 2).toFixed(1));
+      if (segEnd <= segStart) {
+        segEnd = group[group.length - 1].end;
+      }
+    }
+    currentStart = segEnd;
+    const secNo = i + 1;
+    const secName = `0${secNo}_Doan_${secNo}`;
+
+    const topicText = group[0]?.text
+      ? group[0].text.length > 55
+        ? `${group[0].text.slice(0, 52).trim()}...`
+        : group[0].text.trim()
+      : `Phân đoạn ${secNo}`;
+
+    const slug = `doan-${secNo}`;
+
+    segments.push({
+      id: `seg_${Date.now()}_0${secNo}`,
+      section_no: secNo,
+      section: secName,
+      topic_no: secNo,
+      topic: topicText,
+      slug: slug,
+      start_id: group[0].id || `S${secNo}01`,
+      end_id: group[group.length - 1].id || `S${secNo}99`,
+      start: segStart,
+      end: segEnd,
+      parts: recalculateParts(segStart, segEnd, secName, secNo, slug),
+    });
+  }
+
+  return segments;
 }
