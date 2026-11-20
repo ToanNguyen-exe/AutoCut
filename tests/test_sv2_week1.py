@@ -25,6 +25,7 @@ from backend.ai.prompt_builder import extract_terms_from_outline, build_initial_
 from backend.ai.gemini_transcriber import compute_file_sha256, GeminiTranscriber
 from backend.ai.config_loader import default_ai_config
 from backend.ai.post_processor import merge_fragmented_segments, ensure_sentence_casing_and_punctuation
+import pytest
 
 
 def test_models_and_sentence_id():
@@ -161,6 +162,7 @@ def test_sentence_casing_and_punctuation():
     print("PASS: Đầu câu luôn viết hoa, cuối câu luôn kết thúc chuẩn xác bằng 1 dấu chấm.")
 
 
+@pytest.mark.external
 def test_gemini_api_connection():
     """Kiểm tra kết nối Gemini API với model gemini-3.5-flash."""
     print("\n--- [TEST 6] Kiểm tra kết nối Gemini API (Sẵn sàng Tuần 2) ---")

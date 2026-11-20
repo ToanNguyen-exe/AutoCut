@@ -31,19 +31,35 @@ public class CloudflareR2Service {
     private final String publicUrl;
     private S3Client s3Client;
 
-    public CloudflareR2Service(ConfigService configService) {
+    public CloudflareR2Service(ConfigService configService, org.springframework.core.env.Environment springEnv) {
         Dotenv dotenv = configService.getDotenv();
-        this.endpoint = dotenv.get("R2_ENDPOINT", "https://7b8d9e6bf945add2f99f39d0746a42f3.r2.cloudflarestorage.com");
-        this.bucketName = dotenv.get("R2_BUCKET_NAME", "autocut");
-        this.accessKeyId = dotenv.get("R2_ACCESS_KEY_ID", "");
-        this.secretAccessKey = dotenv.get("R2_SECRET_ACCESS_KEY", "");
-        this.publicUrl = dotenv.get("R2_PUBLIC_URL", "");
+        // Thứ tự ưu tiên: Spring Environment (cho phép test trỏ vào MinIO cục bộ
+        // bằng @DynamicPropertySource) → .env (runtime thật) → giá trị mặc định.
+        // Trước đây chỉ đọc .env nên test buộc phải dùng credential thật trên
+        // Cloudflare, và đỏ ngay trên CI vì không có secret production (FR-10).
+        this.endpoint = resolve(springEnv, dotenv, "R2_ENDPOINT",
+                "https://7b8d9e6bf945add2f99f39d0746a42f3.r2.cloudflarestorage.com");
+        this.bucketName = resolve(springEnv, dotenv, "R2_BUCKET_NAME", "autocut");
+        this.accessKeyId = resolve(springEnv, dotenv, "R2_ACCESS_KEY_ID", "");
+        this.secretAccessKey = resolve(springEnv, dotenv, "R2_SECRET_ACCESS_KEY", "");
+        this.publicUrl = resolve(springEnv, dotenv, "R2_PUBLIC_URL", "");
 
         if (!accessKeyId.isBlank() && !secretAccessKey.isBlank()) {
             initClient();
         } else {
             log.warn("Cloudflare R2 chưa cấu hình R2_ACCESS_KEY_ID hoặc R2_SECRET_ACCESS_KEY trong .env");
         }
+    }
+
+    /** Lấy giá trị theo thứ tự: Spring Environment → .env → mặc định. */
+    private static String resolve(org.springframework.core.env.Environment env,
+                                  Dotenv dotenv, String key, String fallback) {
+        String fromSpring = env.getProperty(key);
+        if (fromSpring != null && !fromSpring.isBlank()) {
+            return fromSpring;
+        }
+        String fromDotenv = dotenv.get(key);
+        return (fromDotenv != null && !fromDotenv.isBlank()) ? fromDotenv : fallback;
     }
 
     private void initClient() {

@@ -28,6 +28,11 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<!-- Testcontainers cần Docker. Mặc định loại các test gắn @Tag("docker")
+		     để `mvn test` vẫn xanh trên máy không có Docker. CI bật lại bằng
+		     profile docker-tests. -->
+		<test.excludedGroups>docker</test.excludedGroups>
+		<testcontainers.version>1.20.4</testcontainers.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -99,6 +104,20 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- F14 FR-12: test tích hợp chạy trên hạ tầng thật dựng bằng Docker,
+		     không phải H2/MinIO giả. Chỉ chạy khi có Docker (tag "docker"). -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -119,6 +138,7 @@
 					     Đặt ở đây thay vì src/test/resources/application.properties
 					     vì file đó sẽ che mất application.properties chính (multipart,
 					     autocut.video.*), làm test khác đỏ vì thiếu cấu hình. -->
+					<excludedGroups>${test.excludedGroups}</excludedGroups>
 					<systemPropertyVariables>
 						<spring.profiles.active>test</spring.profiles.active>
 					</systemPropertyVariables>
@@ -163,4 +183,14 @@
 		</plugins>
 	</build>
 
+	<profiles>
+		<!-- Bật lại các test cần Docker (mặc định bị loại bởi test.excludedGroups).
+		     CI dùng profile này; máy không có Docker không cần quan tâm. -->
+		<profile>
+			<id>docker-tests</id>
+			<properties>
+				<test.excludedGroups>__khong_loai_tru_gi__</test.excludedGroups>
+			</properties>
+		</profile>
+	</profiles>
 </project>
