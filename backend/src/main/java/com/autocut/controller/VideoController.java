@@ -22,6 +22,7 @@ import com.autocut.service.CloudflareR2Service;
 
 import com.autocut.service.ConfigService;
 import com.autocut.service.CutPointService;
+import com.autocut.service.PythonRuntime;
 import com.autocut.service.BatchVideoCutService;
 import com.autocut.service.SegmentPersistenceService;
 import com.autocut.dto.Models.CutPointsDTO;
@@ -1802,44 +1803,14 @@ public class VideoController {
 
 
     private String resolvePythonExecutable() {
-        String envPython = System.getenv("PYTHON_EXE");
-        if (envPython != null && Files.exists(Paths.get(envPython))) {
-            return envPython;
-        }
-
-        Path venvPython = Paths.get(System.getProperty("user.home"), "AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe");
-        if (Files.exists(venvPython)) {
-            return venvPython.toAbsolutePath().toString();
-        }
-
-        Path userPython = Paths.get(System.getProperty("user.home"), "AppData/Local/Programs/Python/Python312/python.exe");
-        if (Files.exists(userPython)) {
-            return userPython.toAbsolutePath().toString();
-        }
-
-        return "python";
+        // F14 FR-4: uỷ quyền cho PythonRuntime — không còn đường dẫn tuyệt đối
+        // gắn với thư mục người dùng, không còn khái niệm "máy của tác giả".
+        return PythonRuntime.resolvePythonExecutable();
     }
 
-
-
     private Path resolveProjectRoot() {
-
-        Path current = Paths.get("").toAbsolutePath().normalize();
-
-        if (Files.exists(current.resolve("backend/ai/cli.py"))) {
-
-            return current;
-
-        }
-
-        if (current.getParent() != null && Files.exists(current.getParent().resolve("backend/ai/cli.py"))) {
-
-            return current.getParent();
-
-        }
-
-        return current;
-
+        // F14 FR-5: AUTOCUT_HOME được ưu tiên (container), sau đó dò ngược.
+        return PythonRuntime.resolveProjectRoot();
     }
 
 

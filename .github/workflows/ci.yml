@@ -1,0 +1,226 @@
+name: CI
+
+# F14 — Cổng kiểm soát chất lượng.
+#
+# Mục tiêu không phải "chạy test cho có", mà là: một thay đổi làm hỏng build,
+# hỏng test, sai kiểu TypeScript hoặc vi phạm lint thì KHÔNG merge được.
+# Vì vậy workflow chạy trên cả pull_request (chặn merge) và push vào hai nhánh
+# tích hợp (phát hiện sớm khi merge nhầm).
+#
+# Ba job chạy song song, độc lập: backend (Java), ai (Python), frontend (Next).
+# Không job nào cần secret production — xem FR-10.
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+# Push liên tiếp lên cùng nhánh: huỷ lần chạy cũ, chỉ giữ lần mới nhất.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Tắt telemetry và banner cho log gọn, dễ đọc khi lỗi.
+  MAVEN_OPTS: -Dorg.slf4j.simpleLogger.showDateTime=true
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  # ===========================================================================
+  # Backend Java: biên dịch, chạy 119 test H2, rồi chạy các test cần Docker
+  # (Postgres thật cho Flyway, MinIO cho R2).
+  # ===========================================================================
+  backend:
+    name: Backend (Java 17 + Maven)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    # Docker Engine trên runner mới hơn client mặc định của docker-java (1.32),
+    # nên Testcontainers báo "client version 1.32 is too old. Minimum supported
+    # API version is 1.40" và bỏ qua toàn bộ test cần container. Ghim API version
+    # để docker-java nói chuyện được với engine của runner.
+    env:
+      DOCKER_API_VERSION: "1.44"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # ffmpeg cần cho VideoValidator / cắt video trong test.
+      - name: Cài ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Cấp quyền thực thi cho maven wrapper
+        working-directory: backend
+        run: chmod +x mvnw
+
+      # Dùng `mvn` của runner thay vì ./mvnw.
+      #
+      # Vì sao: ./mvnw ở repo này là loại "only-script" — mỗi lần chạy phải tải
+      # Apache Maven 3.9.9 từ Maven Central. Trên runner bước tải đó đã hỏng
+      # (wget: Failed to fetch), trong khi mạng tới Maven Central vẫn tốt. Không
+      # đáng để một bước tải không liên quan gì tới code làm đỏ cả job.
+      # ubuntu-latest đã có Maven; in phiên bản ra để sau này khỏi đoán.
+      - name: Kiểm tra Maven
+        run: mvn -v
+
+      # -Pdocker-tests bật lại các test bị loại mặc định (tag "docker").
+      # Runner GitHub có Docker sẵn nên Testcontainers dựng được Postgres/MinIO.
+      - name: Build và chạy toàn bộ test
+        working-directory: backend
+        run: mvn -B -V verify -Pdocker-tests
+
+      - name: Lưu báo cáo test khi thất bại
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  # ===========================================================================
+  # AI Python: pytest, bỏ các test gọi API thật (marker "external").
+  # ===========================================================================
+  ai:
+    name: AI (Python 3.12 + pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # ffmpeg là phụ thuộc thật của module AI (tách audio, cắt video).
+      - name: Cài ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Cài thư viện Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      # -m "not external": bỏ test gọi Gemini/Groq thật (không có key trên CI).
+      # Marker được khai báo trong pytest.ini, nếu thiếu pytest sẽ báo lỗi.
+      - name: Chạy pytest
+        run: pytest -v -m "not external"
+
+  # ===========================================================================
+  # Image backend: chứng minh Dockerfile build được và container chạy đúng
+  # người dùng, đúng Python, đúng ffmpeg. Không push — push là việc của
+  # workflow docker.yml khi merge vào main.
+  #
+  # Job này là lý do Dockerfile không thể "hỏng âm thầm": máy dev không có
+  # Docker nên đây là nơi duy nhất kiểm chứng FR-1/FR-2/AC-5.
+  # ===========================================================================
+  docker-image:
+    name: Image backend (build, không push)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: autocut-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Kiểm tra bên trong image, không chỉ tin là build xong:
+      #   AC-5  chạy bằng user không phải root
+      #   FR-1  có Python 3.12 và ffmpeg
+      #   FR-4  PYTHON_EXE trỏ đúng venv và chạy được
+      - name: Kiểm tra bên trong image
+        run: |
+          echo "--- user ---"
+          docker run --rm --entrypoint whoami autocut-backend:ci
+          # '-u' phải đứng SAU tên image, nếu không docker hiểu nó là --user
+          # và ăn luôn tên image, báo "requires at least 1 argument".
+          UID_IMAGE=$(docker run --rm --entrypoint id autocut-backend:ci -u)
+          echo "uid=$UID_IMAGE"
+          test "$UID_IMAGE" = "10001"
+
+          echo "--- python ---"
+          docker run --rm --entrypoint /opt/venv/bin/python autocut-backend:ci --version
+
+          echo "--- ffmpeg ---"
+          docker run --rm --entrypoint ffmpeg autocut-backend:ci -version | head -1
+
+          echo "--- module AI import được ---"
+          docker run --rm --entrypoint /opt/venv/bin/python autocut-backend:ci \
+            -c "import importlib.util as u; print('cli.py:', u.find_spec('backend.ai.cli') is not None)"
+
+          echo "--- ghi được /opt/models và /app/work ---"
+          docker run --rm --entrypoint sh autocut-backend:ci -c \
+            "touch /opt/models/.probe /app/work/.probe && echo ghi-duoc"
+
+  # ===========================================================================
+  # Frontend: lint, kiểm tra kiểu, build. Không chạy test vì hiện chưa có.
+  # ===========================================================================
+  frontend:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci cần package-lock.json khớp package.json; thiếu lock là đỏ ngay —
+      # đúng ý đồ: build phải tái lập được từ lock file đã commit.
+      - name: Cài thư viện
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      # tsc --noEmit: sai kiểu phải chặn merge, không đợi tới lúc build.
+      - name: Kiểm tra kiểu
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
