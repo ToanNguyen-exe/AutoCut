@@ -27,25 +27,64 @@ class SafePathsTest {
 
     // ---------------------------------------------------------- phải bị chặn
 
-    @ParameterizedTest(name = "từ chối: {0}")
-    @ValueSource(strings = {
-            "../x",
-            "../../.env",
-            "a/../../x",
-            "..\\..\\.env",
-            "/etc/passwd",
-            "C:\\Windows\\win.ini",
-            "C:/Windows/win.ini",
-            "\\\\server\\share\\file",
-            "..",
-            ".",
-            "   "
-    })
+    /**
+     * Những chuỗi chắc chắn thoát ra ngoài trên mọi hệ điều hành.
+     *
+     * <p>Dựng bằng {@code File.separator} để Windows dùng {@code \} còn Linux
+     * dùng {@code /} — nếu hard-code một kiểu thì test xanh trên máy dev mà đỏ
+     * trên CI.
+     */
+    private static String[] escapeVectors() {
+        String sep = java.io.File.separator;
+        return new String[] {
+                ".." + sep + "x",
+                ".." + sep + ".." + sep + ".env",
+                "a" + sep + ".." + sep + ".." + sep + "x",
+                "/etc/passwd",
+                "\\\\server\\share\\file",
+                "..",
+                ".",
+                "   "
+        };
+    }
+
+    @Test
     @DisplayName("Chuỗi thoát ra ngoài thư mục gốc đều bị từ chối")
-    void rejectsEscapingPaths(String input, @TempDir Path root) {
-        Assertions.assertThrows(PathOutsideRootException.class,
-                () -> SafePaths.resolveWithin(root, input),
-                "Phải từ chối: " + input);
+    void rejectsEscapingPaths(@TempDir Path root) {
+        for (String input : escapeVectors()) {
+            Assertions.assertThrows(PathOutsideRootException.class,
+                    () -> SafePaths.resolveWithin(root, input),
+                    "Phải từ chối: " + input);
+        }
+    }
+
+    /**
+     * Chuỗi mang dấu phân cách của hệ điều hành khác.
+     *
+     * <p>Trên Linux, {@code C:/Windows/win.ini} chỉ là một tên tệp tương đối;
+     * trên Windows, {@code ../.env} vẫn là đường dẫn thoát. Bất biến bảo mật
+     * không phải "luôn ném lỗi" mà là <b>không bao giờ trả về đường dẫn nằm
+     * ngoài thư mục gốc</b>.
+     */
+    @Test
+    @DisplayName("Chuỗi của hệ điều hành khác không bao giờ thoát ra ngoài gốc")
+    void foreignSeparatorVectorsNeverEscapeRoot(@TempDir Path root) throws IOException {
+        Path rootReal = root.toRealPath();
+
+        for (String input : new String[] {
+                "C:\\Windows\\win.ini",
+                "C:/Windows/win.ini",
+                "..\\..\\.env",
+                "../.env"}) {
+            try {
+                Path resolved = SafePaths.resolveWithin(root, input);
+                Assertions.assertTrue(resolved.startsWith(rootReal),
+                        "Không được trả về đường dẫn ngoài gốc với input: " + input
+                                + " -> " + resolved);
+            } catch (PathOutsideRootException expected) {
+                // Bị chặn thẳng cũng là kết quả đúng.
+            }
+        }
     }
 
     @Test

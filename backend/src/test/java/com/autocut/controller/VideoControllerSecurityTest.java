@@ -79,19 +79,20 @@ class VideoControllerSecurityTest {
 
     // ------------------------------------------------ 1. download-clip (đọc tuỳ ý)
 
-    @ParameterizedTest(name = "download-clip chặn: {0}")
-    @ValueSource(strings = {
-            "../.env",
-            "../../.env",
-            "..\\..\\.env",
-            "/etc/passwd",
-            "C:/Windows/win.ini",
-            "\\\\server\\share\\key.txt"
-    })
+    @Test
     @DisplayName("download-clip từ chối mọi đường dẫn thoát khỏi thư mục output")
-    void downloadClipRejectsEscapingPaths(String path) throws Exception {
-        mvc.perform(get("/api/video/download-clip").param("path", path))
-                .andExpect(status().isBadRequest());
+    void downloadClipRejectsEscapingPaths() throws Exception {
+        String sep = java.io.File.separator;
+        String[] vectors = {
+                ".." + sep + ".env",
+                ".." + sep + ".." + sep + ".env",
+                "/etc/passwd",
+                "\\\\server\\share\\key.txt"
+        };
+        for (String path : vectors) {
+            mvc.perform(get("/api/video/download-clip").param("path", path))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Test

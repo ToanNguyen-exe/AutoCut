@@ -928,17 +928,6 @@ public class VideoController {
 
         }
 
-        if (pythonFailure != null) {
-            log.error("AI pipeline thất bại, trả lỗi thay vì SUCCESS giả: {}", pythonFailure);
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(
-                    "status", "ERROR",
-                    "mode", "analyzed",
-                    "error", "AI_PIPELINE_FAILED",
-                    "message", "Module AI không chạy được nên không có phân đoạn nào được tạo. "
-                            + "Kiểm tra PYTHON_EXE hoặc thư mục backend/.venv.",
-                    "detail", abbreviate(pythonFailure)));
-        }
-
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
         String safeStem = sanitizeToSafeSlug(videoName);
@@ -1125,6 +1114,20 @@ public class VideoController {
         }
 
 
+
+        // Module AI chết VÀ cũng không có transcript thật nào dùng được: đến đây
+        // mới là lúc không có dữ liệu. Trả lỗi thay vì bịa phân đoạn rồi báo
+        // SUCCESS — giao diện sẽ hiện "thành công" mà màn hình không đổi gì.
+        if (pythonFailure != null) {
+            log.error("AI pipeline thất bại và không có transcript dự phòng: {}", pythonFailure);
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(
+                    "status", "ERROR",
+                    "mode", "analyzed",
+                    "error", "AI_PIPELINE_FAILED",
+                    "message", "Module AI không chạy được và không tìm thấy transcript nào cho video này. "
+                            + "Kiểm tra PYTHON_EXE hoặc thư mục backend/.venv.",
+                    "detail", abbreviate(pythonFailure)));
+        }
 
         // 3. Chế độ dự phòng (Fallback) nếu chưa có transcript thật
 
