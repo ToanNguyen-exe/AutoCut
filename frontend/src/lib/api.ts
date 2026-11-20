@@ -1,6 +1,8 @@
 import { SegmentsData, Segment, TranscriptData } from "@/types";
 
-const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
+const rawBase =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" ? "/api/video" : "http://localhost:8080/api/video");
 export const API_BASE = rawBase.endsWith("/api/video")
   ? rawBase
   : `${rawBase.replace(/\/+$/, "")}/api/video`;
@@ -225,16 +227,53 @@ export interface RenderResponse {
 /**
  * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
  */
-export function getDownloadClipUrl(filePath: string): string {
-  return `${API_BASE}/download-clip?path=${encodeURIComponent(filePath)}`;
+export function getDownloadClipUrl(filePath: string, lesson?: string): string {
+  if (!filePath) return "";
+  // Chuẩn hóa đường dẫn: đổi tất cả \ thành /
+  let clean = filePath.replace(/\\/g, "/");
+
+  // Nếu là đường dẫn tuyệt đối chứa output/, chỉ lấy phần sau output/
+  const outputIdx = clean.toLowerCase().indexOf("/output/");
+  if (outputIdx !== -1) {
+    clean = clean.substring(outputIdx + "/output/".length);
+  } else if (clean.toLowerCase().startsWith("output/")) {
+    clean = clean.substring("output/".length);
+  } else if (lesson && !clean.includes("/") && !clean.startsWith(lesson)) {
+    // Nếu chỉ có tên file đơn thuần (e.g. 01_intro.mp4), ghép thêm lesson
+    clean = `${lesson}/${clean}`;
+  }
+
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(clean)}`;
 }
 
 /**
  * Lấy URL tải về toàn bộ các clip đã cắt dưới dạng file nén ZIP
  */
 export function getDownloadZipUrl(lesson: string, user?: string): string {
+  const cleanLesson = (lesson || "clips").trim();
   const userParam = user ? `&user=${encodeURIComponent(user)}` : "";
-  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(lesson)}${userParam}`;
+  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(cleanLesson)}${userParam}`;
+}
+
+/**
+ * Kích hoạt tải tệp trực tiếp an toàn trên trình duyệt chuẩn HTML5 (tránh bị popup blocker chặn)
+ */
+export function triggerBrowserDownload(url: string, filename?: string): void {
+  if (typeof window === "undefined" || !url) return;
+  const link = document.createElement("a");
+  link.href = url;
+  if (filename) {
+    link.download = filename;
+  }
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+  }, 300);
 }
 
 /**

@@ -13,7 +13,7 @@ import {
   FileJson,
   Loader2,
 } from "lucide-react";
-import { RenderedClipItem, getDownloadClipUrl, getDownloadZipUrl } from "@/lib/api";
+import { RenderedClipItem, getDownloadClipUrl, getDownloadZipUrl, triggerBrowserDownload } from "@/lib/api";
 
 export type ProgressModalMode = "render" | "analyze";
 
@@ -80,8 +80,10 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
   };
 
   const handleDownloadZip = () => {
-    const url = getDownloadZipUrl(lessonTitle || videoTitle);
-    window.open(url, "_blank");
+    const lName = lessonTitle || videoTitle || "clips";
+    const url = getDownloadZipUrl(lName);
+    const cleanName = lName.replace(/[^a-zA-Z0-9_.-]/g, "_");
+    triggerBrowserDownload(url, `${cleanName}_exported_clips.zip`);
   };
 
   const formatFileSize = (bytes?: number) => {
@@ -322,9 +324,16 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                       </div>
 
                       <a
-                        href={getDownloadClipUrl(clip.path || clip.file)}
-                        download
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold border border-slate-200 hover:border-indigo-300 shadow-2xs transition shrink-0"
+                        href={getDownloadClipUrl(clip.path || clip.file, lessonTitle || videoTitle)}
+                        download={clip.file || "clip.mp4"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const downloadUrl = getDownloadClipUrl(clip.path || clip.file, lessonTitle || videoTitle);
+                          triggerBrowserDownload(downloadUrl, clip.file || "clip.mp4");
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold border border-slate-200 hover:border-indigo-300 shadow-2xs transition shrink-0 cursor-pointer"
                         title="Tải file clip này về máy tính"
                       >
                         <Download className="w-3.5 h-3.5" />

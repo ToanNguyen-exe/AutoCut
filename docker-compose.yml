@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api/video
+    container_name: autocut-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - INTERNAL_BACKEND_URL=http://host.docker.internal:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Ghi chú: Khi triển khai đầy đủ hạ tầng Backend + DB theo đặc tả F14,
+  # có thể bổ sung các service postgres, backend, minio tại đây.
