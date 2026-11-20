@@ -40,7 +40,11 @@ class PythonRuntimeTest {
      * Không chuẩn hoá thì test sẽ đỏ trên Windows dù logic đúng.
      */
     private static String normalize(Path p) {
-        return p.toString().replace('\\', '/');
+        // Gộp các dấu chéo liên tiếp: trên Linux, Paths.get("C:\\Python312\\")
+        // là một tên tệp hợp lệ, rồi .resolve("python3.exe") nối thêm "/" nên
+        // sinh "C:\Python312\/python3.exe". Trên Windows thì không có dấu chéo
+        // kép. Không gộp thì test giả lập Windows sẽ đỏ khi chạy trên Linux.
+        return p.toString().replace('\\', '/').replaceAll("/{2,}", "/");
     }
 
     /** Predicate giả lập: các đường dẫn này được coi là tồn tại. */
