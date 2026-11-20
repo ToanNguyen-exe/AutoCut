@@ -9,10 +9,12 @@ Nhiệm vụ trong Pipeline:
 
 import json
 import logging
+import os
 import re
 import sys
 import time
 import unicodedata
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 from google import genai
@@ -411,7 +413,7 @@ DANH SÁCH CÂU TRANSCRIPT:
             # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
             if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
                 try:
-                    llm_raw_path = Path("cache") / "llm_raw.json"
+                    llm_raw_path = Path(os.getenv("CACHE_DIR") or default_ai_config.cache_dir) / "llm_raw.json"
                     llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
                     with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
                         json.dump(parsed, f_raw, ensure_ascii=False, indent=2)

@@ -1,0 +1,31 @@
+# Git & IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Secrets & local environment
+.env
+.env.*
+!.env.example
+
+# Build artifacts & dependencies
+backend/target
+**/node_modules
+**/.next
+.venv
+venv
+**/__pycache__
+*.pyc
+.pytest_cache
+
+# Runtime media / temporary files
+uploads
+output
+cache
+temp
+backend/uploads
+backend/output
+backend/cache
+backend/temp
+*.log

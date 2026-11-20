@@ -15,12 +15,12 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 from .models import TranscriptOutput, Sentence
-from .config_loader import default_ai_config
+from .config_loader import default_ai_config, get_project_root
 
 logger = logging.getLogger("AutoCut.AI.Groq")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-CACHE_DIR = PROJECT_ROOT / "cache"
+PROJECT_ROOT = get_project_root()
+CACHE_DIR = Path(os.getenv("CACHE_DIR") or (PROJECT_ROOT / "cache"))
 TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
 
 
@@ -29,8 +29,9 @@ def extract_audio_mp3(video_path: str, output_mp3_path: str) -> bool:
     Trích xuất âm thanh từ video sang định dạng mp3 mono 64kbps bằng ffmpeg
     để giảm dung lượng tối đa (file 5 phút chỉ khoảng 2.5MB), đảm bảo giới hạn 25MB của Groq.
     """
+    ffmpeg_bin = os.getenv("FFMPEG_PATH", "").strip() or "ffmpeg"
     cmd = [
-        "ffmpeg",
+        ffmpeg_bin,
         "-y",
         "-i", str(video_path),
         "-vn",

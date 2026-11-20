@@ -9,6 +9,7 @@ Hỗ trợ:
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -16,15 +17,18 @@ from pathlib import Path
 from typing import Optional
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+from .config_loader import get_project_root
 from .gemini_transcriber import GeminiTranscriber
 from .post_processor import post_process_transcript
 from .models import Sentence, TranscriptOutput
 from .whisper_service import format_duration
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = get_project_root()
 TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
 SHA256_PREFIX_RE = re.compile(r"^[0-9a-fA-F]{64}_")
 
@@ -135,7 +139,7 @@ def _find_matching_transcript_or_video(
     duration: float
 ) -> TranscriptOutput:
     """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video vật lý."""
-    cache_dir = PROJECT_ROOT / "cache"
+    cache_dir = Path(os.getenv("CACHE_DIR") or (PROJECT_ROOT / "cache"))
     uploads_dir = PROJECT_ROOT / "uploads"
     backend_uploads_dir = PROJECT_ROOT / "backend" / "uploads"
     clean_vname = clean_video_filename(video_name or "video.mp4")

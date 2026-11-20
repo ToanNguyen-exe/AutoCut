@@ -1,23 +1,34 @@
 """Cấu hình cho AI Module từ config.yaml và .env
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 import yaml
 from dotenv import load_dotenv
 
-# Tải biến môi trường từ .env
+# Tải biến môi trường từ .env (không ghi đè env var đã được Docker / Spring Boot truyền sẵn)
 load_dotenv()
+
+_logger = logging.getLogger("AutoCut.AI.Config")
+
+
+def get_project_root() -> Path:
+    """Xác định thư mục gốc dự án, ưu tiên biến AUTOCUT_HOME trong môi trường Docker/Linux."""
+    autocut_home = os.getenv("AUTOCUT_HOME", "").strip()
+    if autocut_home:
+        return Path(autocut_home).resolve()
+    return Path(__file__).resolve().parent.parent.parent
 
 
 def load_yaml_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """Tải file config.yaml của dự án."""
     if not config_path:
-        # Tìm config.yaml từ thư mục gốc dự án
+        candidates = [get_project_root() / "config.yaml"]
         current_dir = Path(__file__).resolve().parent
-        for parent in [current_dir, current_dir.parent, current_dir.parent.parent]:
-            candidate = parent / "config.yaml"
+        candidates.extend(parent / "config.yaml" for parent in [current_dir, current_dir.parent, current_dir.parent.parent])
+        for candidate in candidates:
             if candidate.exists():
                 config_path = str(candidate)
                 break
@@ -77,13 +88,22 @@ class AIConfig:
         )
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
-        # Thư mục cache và output
-        self.cache_dir: str = os.getenv("CACHE_DIR", "./cache")
-        self.output_dir: str = os.getenv("OUTPUT_DIR", "./output")
+        # Thư mục cache và output (ưu tiên AUTOCUT_HOME nếu chạy trong container)
+        has_autocut_home = bool(os.getenv("AUTOCUT_HOME", "").strip())
+        base_root = get_project_root()
+        self.cache_dir: str = os.getenv("CACHE_DIR") or (
+            str(base_root / "cache") if has_autocut_home else "./cache"
+        )
+        self.output_dir: str = os.getenv("OUTPUT_DIR") or (
+            str(base_root / "output") if has_autocut_home else "./output"
+        )
 
-        # Đảm bảo các thư mục tồn tại
-        os.makedirs(self.cache_dir, exist_ok=True)
-        os.makedirs(self.output_dir, exist_ok=True)
+        # Đảm bảo các thư mục tồn tại (an toàn khi import trong lúc build Docker read-only)
+        for target_dir in (self.cache_dir, self.output_dir):
+            try:
+                os.makedirs(target_dir, exist_ok=True)
+            except OSError as exc:
+                _logger.warning("Khong the tao thu muc %s: %s", target_dir, exc)
 
 
 # Singleton config instance
