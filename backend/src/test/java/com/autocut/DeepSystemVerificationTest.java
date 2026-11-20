@@ -46,11 +46,22 @@ public class DeepSystemVerificationTest {
 
     @Test
     @DisplayName("1. Kiểm tra cấu hình config.yaml và .env nạp đầy đủ")
-    void testConfigIntegrity() {
+    void testConfigIntegrity() throws Exception {
         Assertions.assertNotNull(configService.getRawConfig(), "Config Map không được null");
         Assertions.assertTrue(configService.getMaxDuration() >= 0, "Max duration phải >= 0");
         Assertions.assertNotNull(configService.getDotenv(), "Dotenv không được null");
-        Assertions.assertFalse(configService.getDotenv().get("DATABASE_URL", "").isBlank(), "DATABASE_URL phải tồn tại");
+
+        // Trước đây chỗ này khẳng định .env có DATABASE_URL. Như vậy là test
+        // khẳng định "máy đang chạy đã được cấu hình", không phải khẳng định
+        // code đúng — và nó chỉ xanh trên máy có .env, đỏ ngay trên CI.
+        //
+        // Thay bằng một bất biến thật của profile test (F13): test phải chạy
+        // trên H2 trong bộ nhớ, không được lấy DATABASE_URL từ .env.
+        try (java.sql.Connection conn = dataSource.getConnection()) {
+            String url = conn.getMetaData().getURL();
+            Assertions.assertTrue(url.startsWith("jdbc:h2:"),
+                    "Profile test phải chạy trên H2, nhưng datasource là: " + url);
+        }
     }
 
     @Test

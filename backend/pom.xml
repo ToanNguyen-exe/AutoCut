@@ -32,7 +32,7 @@
 		     để `mvn test` vẫn xanh trên máy không có Docker. CI bật lại bằng
 		     profile docker-tests. -->
 		<test.excludedGroups>docker</test.excludedGroups>
-		<testcontainers.version>1.20.4</testcontainers.version>
+		<testcontainers.version>1.21.4</testcontainers.version>
 	</properties>
 	<dependencies>
 		<dependency>
