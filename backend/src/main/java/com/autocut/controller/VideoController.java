@@ -1720,7 +1720,10 @@ public class VideoController {
 
     /**
      * API ghép nối các video thành 1 video tổng hợp (Mục 4 SV1).
-     * Hỗ trợ tự động fallback sang Concat Filter khi ghép các video khác nguồn/chuẩn thông số.
+     * Đã vá lỗ hổng Path Traversal:
+     * - Mọi đường dẫn clip đầu vào bắt buộc phải nằm trong thư mục output/
+     * - Bỏ tham số output từ client gửi lên (máy chủ tự động đặt tên file)
+     * - Chặn tuyệt đối các đường dẫn chứa traversal như ../../.env
      */
     @PostMapping("/concat")
     public ResponseEntity<?> concatVideos(@RequestBody Map<String, Object> payload) {
@@ -1732,21 +1735,44 @@ public class VideoController {
             ));
         }
 
-        String rawOutput = (String) payload.get("output");
-        if (rawOutput == null || rawOutput.isBlank()) {
-            rawOutput = "output/combined_" + System.currentTimeMillis() + ".mp4";
+        Path projectRoot = resolveProjectRoot();
+        Path outputDir = projectRoot.resolve("output").toAbsolutePath().normalize();
+        if (!Files.exists(outputDir)) {
+            try {
+                Files.createDirectories(outputDir);
+            } catch (IOException e) {
+                log.error("Không thể tạo thư mục output: {}", e.getMessage());
+            }
         }
+
+        // Bỏ tham số output do client truyền — máy chủ tự đặt tên file an toàn
+        String serverGeneratedFilename = "concat_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + ".mp4";
+        File outFile = outputDir.resolve(serverGeneratedFilename).toFile();
 
         boolean forceReencode = Boolean.TRUE.equals(payload.get("forceReencode"));
 
         List<File> clipFiles = new ArrayList<>();
         for (Object item : rawClips) {
             String pathStr = String.valueOf(item);
-            File f = findFilePath(pathStr).toFile();
-            clipFiles.add(f);
+            try {
+                Path safeClipPath = com.autocut.util.PathValidator.resolveSafeOutputPath(projectRoot, pathStr);
+                if (!Files.exists(safeClipPath) || !Files.isRegularFile(safeClipPath)) {
+                    log.warn("Tệp clip không tồn tại trong thư mục output: {}", pathStr);
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "status", "ERROR",
+                        "error", "Tệp clip không tồn tại trong thư mục output: " + pathStr
+                    ));
+                }
+                clipFiles.add(safeClipPath.toFile());
+            } catch (SecurityException | IllegalArgumentException e) {
+                log.warn("Chặn truy cập đường dẫn vi phạm traversal: {}", pathStr);
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Đường dẫn không hợp lệ hoặc nằm ngoài thư mục output: " + pathStr
+                ));
+            }
         }
 
-        File outFile = Paths.get(rawOutput).toFile();
         com.autocut.video.ConcatResult result = videoConcat.concat(clipFiles, outFile, forceReencode);
 
         if (result.success()) {

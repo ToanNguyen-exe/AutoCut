@@ -76,12 +76,29 @@ class VideoControllerTest {
     }
 
     @Test
-    void testConcatVideos_MissingClips() {
+    void testConcatVideos_BlockPathTraversal_DotDotEnv() {
+        // Tiêu chí 3: Thử gửi ../../.env phải bị chặn
         ResponseEntity<?> response = controller.concatVideos(Map.of(
-            "clips", List.of("missing_clip1.mp4", "missing_clip2.mp4"),
-            "output", "output/merged_test.mp4"
+            "clips", List.of("../../.env")
         ));
-        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertEquals("ERROR", body.get("status"));
+        Assertions.assertTrue(String.valueOf(body.get("error")).contains("output"));
+    }
+
+    @Test
+    void testConcatVideos_MissingClipsInOutput() {
+        // Tiêu chí 1: Mọi đường dẫn phải kiểm tra nằm trong thư mục output/ và tồn tại
+        ResponseEntity<?> response = controller.concatVideos(Map.of(
+            "clips", List.of("missing_clip1.mp4", "missing_clip2.mp4")
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        Assertions.assertEquals("ERROR", body.get("status"));
+        Assertions.assertTrue(String.valueOf(body.get("error")).contains("output"));
     }
 
     @Test
