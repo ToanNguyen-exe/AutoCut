@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Cài JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -61,11 +61,21 @@ jobs:
         working-directory: backend
         run: chmod +x mvnw
 
+      # Dùng `mvn` của runner thay vì ./mvnw.
+      #
+      # Vì sao: ./mvnw ở repo này là loại "only-script" — mỗi lần chạy phải tải
+      # Apache Maven 3.9.9 từ Maven Central. Trên runner bước tải đó đã hỏng
+      # (wget: Failed to fetch), trong khi mạng tới Maven Central vẫn tốt. Không
+      # đáng để một bước tải không liên quan gì tới code làm đỏ cả job.
+      # ubuntu-latest đã có Maven; in phiên bản ra để sau này khỏi đoán.
+      - name: Kiểm tra Maven
+        run: mvn -v
+
       # -Pdocker-tests bật lại các test bị loại mặc định (tag "docker").
       # Runner GitHub có Docker sẵn nên Testcontainers dựng được Postgres/MinIO.
       - name: Build và chạy toàn bộ test
         working-directory: backend
-        run: ./mvnw -B verify -Pdocker-tests
+        run: mvn -B -V verify -Pdocker-tests
 
       - name: Lưu báo cáo test khi thất bại
         if: failure()

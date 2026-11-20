@@ -103,16 +103,30 @@ class GeminiTranscriber:
         cache_dir: Optional[str] = None
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
-        if not self.api_key:
-            raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
         self.model_name = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.cache_dir = cache_dir or default_ai_config.cache_dir
-        # Lưu ý quan trọng: Trong SDK google-genai, HttpOptions.timeout được tính bằng MILI-GIÂY (ms)!
-        # Đặt timeout 600_000 ms (tương đương 600 giây = 10 phút).
-        self.client = genai.Client(
-            api_key=self.api_key,
-            http_options={"timeout": 600000.0}
-        )
+        # Client được dựng muộn (xem thuộc tính client bên dưới).
+        #
+        # Vì sao: constructor cũ vừa đòi API key vừa mở client ngay, nên không
+        # thể dùng đối tượng này cho một lần đọc cache — dù nhánh cache hit
+        # không hề gọi mạng. Hệ quả là test kiểm tra cache SHA-256 (một hàm
+        # thuần, không liên quan Google) lại đỏ trên CI vì thiếu GEMINI_API_KEY.
+        # Dựng muộn giữ nguyên hành vi thật: có gọi API thì vẫn bắt buộc có key.
+        self._client = None
+
+    @property
+    def client(self):
+        """Client Gemini, chỉ dựng khi thực sự cần gọi API."""
+        if self._client is None:
+            if not self.api_key:
+                raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
+            # Lưu ý quan trọng: Trong SDK google-genai, HttpOptions.timeout được tính bằng MILI-GIÂY (ms)!
+            # Đặt timeout 600_000 ms (tương đương 600 giây = 10 phút).
+            self._client = genai.Client(
+                api_key=self.api_key,
+                http_options={"timeout": 600000.0}
+            )
+        return self._client
 
     def get_cache_path(self, file_hash: str) -> Path:
         """Đường dẫn tệp cache theo mã hash SHA-256."""
