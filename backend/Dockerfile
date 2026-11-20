@@ -104,6 +104,11 @@ ENV PYTHON_EXE=/opt/venv/bin/python \
     PYTHONPATH=/app \
     PYTHONUNBUFFERED=1
 
+# F05: image là môi trường production. Thiếu AUTOCUT_CORS_ALLOWED_ORIGINS thì
+# ứng dụng cố tình không khởi động — đó là hành vi mong muốn, không phải lỗi.
+# Truyền khi chạy: -e AUTOCUT_CORS_ALLOWED_ORIGINS=https://autocut.vn
+ENV SPRING_PROFILES_ACTIVE=prod
+
 EXPOSE 8080
 
 # Healthcheck dùng GET / có sẵn ở HomeController.

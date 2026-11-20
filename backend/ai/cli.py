@@ -185,7 +185,11 @@ def _find_matching_transcript_or_video(
         PROJECT_ROOT / "input",
         PROJECT_ROOT / "backend" / "input",
         cache_dir,
-        PROJECT_ROOT / "backend" / "cache"
+        PROJECT_ROOT / "backend" / "cache",
+        # Clip kết quả cắt nằm ở output/ — người dùng hay chọn chính clip này
+        # để bóc băng lại, nên phải tìm ở đây.
+        PROJECT_ROOT / "output",
+        PROJECT_ROOT / "backend" / "output"
     ]
 
     for s_dir in search_dirs:
@@ -335,6 +339,17 @@ def run_backend_analysis(
         file_hash=file_hash,
         duration=duration
     )
+
+    # Không có lời thoại thì KHÔNG được báo SUCCESS: giao diện sẽ hiện thông báo
+    # thành công mà màn hình không đổi gì, người dùng tưởng AI bị treo.
+    if transcript is None or not getattr(transcript, "sentences", None):
+        message = (
+            "Không nhận được lời thoại từ video "
+            f"'{video_name}'. Video có thể không có tiếng, hoặc tệp không nằm trong "
+            "input/, uploads/, output/."
+        )
+        print(f"[AI] ERROR EMPTY_TRANSCRIPT: {message}", file=sys.stderr, flush=True)
+        sys.exit(2)
 
     from .transcript_refiner import TranscriptRefiner
     try:

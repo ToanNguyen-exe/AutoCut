@@ -71,7 +71,25 @@ public final class PythonRuntime {
             log.warn("{} trỏ tới tệp không tồn tại: {} — sẽ dò tiếp", ENV_PYTHON_EXE, configured);
         }
 
-        // 2, 3. Dò trong PATH. Không cần chạy thử: chỉ cần tệp tồn tại.
+        // 2. Venv riêng của dự án (backend/.venv).
+        //    Cần bước này vì trên Windows, `python3` trong PATH thường trúng
+        //    stub Microsoft Store — tệp tồn tại nhưng không có thư viện AI,
+        //    khiến mọi lần bóc băng đều chết với "No module named 'google'".
+        try {
+            Path projectRoot = resolveProjectRoot(
+                    env, Paths.get("").toAbsolutePath().normalize(), fileExists);
+            for (String relative : List.of(".venv/Scripts/python.exe", ".venv/bin/python")) {
+                Path venvPython = projectRoot.resolve("backend").resolve(relative);
+                if (fileExists.test(venvPython)) {
+                    log.info("Dùng Python của venv dự án: {}", venvPython);
+                    return venvPython.toString();
+                }
+            }
+        } catch (RuntimeException e) {
+            log.warn("Không xác định được venv dự án: {}", e.getMessage());
+        }
+
+        // 3, 4. Dò trong PATH. Không cần chạy thử: chỉ cần tệp tồn tại.
         boolean windows = isWindows(env);
         for (String candidate : List.of("python3", "python")) {
             if (isOnPath(candidate, env, fileExists, windows)) {

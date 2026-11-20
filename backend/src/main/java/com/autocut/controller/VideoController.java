@@ -30,9 +30,15 @@ import com.autocut.dto.Models.CutPoint;
 import com.autocut.dto.Models.CutRequestDTO;
 import com.autocut.dto.Models.CutJobResponse;
 import java.io.File;
+import java.util.Locale;
+import java.util.Set;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import com.autocut.video.VideoCutter;
 import com.autocut.video.VideoProps;
 import com.autocut.video.CutResult;
+import com.autocut.video.SafePaths;
+import com.autocut.video.PathOutsideRootException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -533,13 +539,26 @@ public class VideoController {
 
     public ResponseEntity<Resource> streamVideo(@PathVariable String hash) {
 
+        // F04: trước đây dùng startsWith(hash) nên hash rỗng hoặc một ký tự
+        // khớp với video đầu tiên tìm được — trả video của người khác.
+        if (!SafePaths.isSha256(hash)) {
+            log.warn("Từ chối stream: mã hash không hợp lệ (độ dài={}), ip={}",
+                    hash == null ? -1 : hash.length(), currentRequestIp());
+            return ResponseEntity.badRequest().build();
+        }
+
         for (Path uploadDir : List.of(Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
 
             if (Files.exists(uploadDir)) {
 
                 try (var stream = Files.list(uploadDir)) {
 
-                    Optional<Path> found = stream.filter(p -> p.getFileName().toString().startsWith(hash)).findFirst();
+                    Optional<Path> found = stream
+                            .filter(p -> {
+                                String name = p.getFileName().toString();
+                                return name.equals(hash) || name.equals(hash + ".mp4");
+                            })
+                            .findFirst();
 
                     if (found.isPresent()) {
 
@@ -771,6 +790,10 @@ public class VideoController {
 
         Path tempOut = projectRoot.resolve("cache").resolve("ai_analyze_" + UUID.randomUUID() + ".json");
 
+        // Không được lặng lẽ trả SUCCESS khi AI chưa chạy: giao diện sẽ báo
+        // "thành công" mà màn hình không đổi gì, người dùng tưởng ứng dụng treo.
+        String pythonFailure = null;
+
         try {
 
             Files.createDirectories(tempOut.getParent());
@@ -873,6 +896,12 @@ public class VideoController {
 
             } else {
 
+                String tail = processLog == null ? ""
+                        : (processLog.length() <= 400 ? processLog
+                        : processLog.substring(processLog.length() - 400));
+                pythonFailure = (finished ? "exit=" + process.exitValue() : "TIMEOUT")
+                        + " | " + tail.strip();
+
                 log.warn("Module Python AI trả về mã lỗi {} (hoặc quá thời gian). Log: {}",
 
                         finished ? process.exitValue() : "TIMEOUT", processLog);
@@ -880,6 +909,8 @@ public class VideoController {
             }
 
         } catch (Exception e) {
+
+            pythonFailure = e.getMessage();
 
             log.warn("Không thể thực thi module Python AI ({}), chuyển sang chế độ phân đoạn dự phòng.", e.getMessage());
 
@@ -897,7 +928,16 @@ public class VideoController {
 
         }
 
-
+        if (pythonFailure != null) {
+            log.error("AI pipeline thất bại, trả lỗi thay vì SUCCESS giả: {}", pythonFailure);
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(
+                    "status", "ERROR",
+                    "mode", "analyzed",
+                    "error", "AI_PIPELINE_FAILED",
+                    "message", "Module AI không chạy được nên không có phân đoạn nào được tạo. "
+                            + "Kiểm tra PYTHON_EXE hoặc thư mục backend/.venv.",
+                    "detail", abbreviate(pythonFailure)));
+        }
 
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
@@ -1420,14 +1460,24 @@ public class VideoController {
         String user = (String) payload.get("user");
         log.info("Tiếp nhận yêu cầu cắt video: user={}, lesson={}, video={}, số phân đoạn={}", user, lesson, videoName, rawSegments.size());
 
+        // F04: lesson từng được ghép thẳng vào đường dẫn ghi (cả Files.createDirectories
+        // lẫn tệp segments_*.json) nên lesson="../.." ghi được ra ngoài output.
+        if (!SafePaths.isSafeSlug(lesson)) {
+            log.warn("Chặn cắt video: lesson không hợp lệ ('{}'), ip={}",
+                    abbreviate(lesson), currentRequestIp());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Tên bài học không hợp lệ"));
+        }
+
         try {
-            Path outputDir;
+            Path root = outputRoot();
+            Path scope = root;
             if (user != null && !user.isBlank()) {
                 String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
-                outputDir = Paths.get("output", "users", safeUser, lesson);
-            } else {
-                outputDir = Paths.get("output", lesson);
+                scope = root.resolve("users").resolve(safeUser);
             }
+            Path outputDir = SafePaths.resolveWithin(scope, lesson);
 
             if (!Files.exists(outputDir)) {
                 Files.createDirectories(outputDir);
@@ -1557,29 +1607,34 @@ public class VideoController {
      */
     @GetMapping("/download-clip")
     public ResponseEntity<Resource> downloadClip(@RequestParam("path") String filePath) {
-        try {
-            Path target = Paths.get(filePath);
-            if (!Files.exists(target) || !Files.isRegularFile(target)) {
-                target = Paths.get("output").resolve(filePath);
-            }
-            if (!Files.exists(target) || !Files.isRegularFile(target)) {
-                target = resolveProjectRoot().resolve("output").resolve(filePath);
-            }
-            if (!Files.exists(target) || !Files.isRegularFile(target)) {
-                log.warn("Không tìm thấy tệp clip để tải về: {}", filePath);
-                return ResponseEntity.notFound().build();
-            }
+        Path root = outputRoot();
 
-            Resource resource = new FileSystemResource(target);
-            String fileName = target.getFileName().toString();
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
-                .body(resource);
-        } catch (Exception e) {
-            log.error("Lỗi khi tải file clip: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        // F04: trước đây `Paths.get(filePath)` được dùng trước tiên nên
+        // ?path=.env trả về nguyên nội dung tệp — lộ toàn bộ key.
+        Path target;
+        try {
+            target = SafePaths.resolveWithin(root, filePath);
+        } catch (PathOutsideRootException e) {
+            log.warn("Chặn tải clip ngoài thư mục cho phép: input='{}', gốc='{}', ip={}",
+                    abbreviate(filePath), root, currentRequestIp());
+            return ResponseEntity.badRequest().build();
         }
+
+        if (!Files.isRegularFile(target)) {
+            log.warn("Không tìm thấy tệp clip để tải về: {}", abbreviate(filePath));
+            return ResponseEntity.notFound().build();
+        }
+        if (!hasAllowedClipExtension(target)) {
+            log.warn("Chặn tải tệp có đuôi không cho phép: {}", target.getFileName());
+            return ResponseEntity.badRequest().build();
+        }
+
+        Resource resource = new FileSystemResource(target);
+        String fileName = target.getFileName().toString();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+            .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
+            .body(resource);
     }
 
     /**
@@ -1602,22 +1657,22 @@ public class VideoController {
     public ResponseEntity<byte[]> downloadZip(
             @RequestParam("lesson") String lesson,
             @RequestParam(value = "user", required = false) String user) {
+        // F04: lesson do client đặt và từng được ghép thẳng vào đường dẫn,
+        // nên ?lesson=../.. nén cả thư mục dự án kể cả .env.
+        if (!SafePaths.isSafeSlug(lesson)) {
+            log.warn("Chặn nén ZIP: lesson không hợp lệ ('{}'), ip={}",
+                    abbreviate(lesson), currentRequestIp());
+            return ResponseEntity.badRequest().build();
+        }
         try {
-            Path outputDir;
+            Path scope = outputRoot();
             if (user != null && !user.isBlank()) {
                 String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
-                outputDir = Paths.get("output", "users", safeUser, lesson);
-                if (!Files.exists(outputDir)) {
-                    outputDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(lesson);
-                }
-            } else {
-                outputDir = Paths.get("output", lesson);
-                if (!Files.exists(outputDir)) {
-                    outputDir = resolveProjectRoot().resolve("output").resolve(lesson);
-                }
+                scope = scope.resolve("users").resolve(safeUser);
             }
+            Path outputDir = SafePaths.resolveWithin(scope, lesson);
 
-            if (!Files.exists(outputDir) || !Files.isDirectory(outputDir)) {
+            if (!Files.isDirectory(outputDir)) {
                 log.warn("Không tìm thấy thư mục xuất bản để nén ZIP: {}", outputDir.toAbsolutePath());
                 return ResponseEntity.notFound().build();
             }
@@ -1734,20 +1789,47 @@ public class VideoController {
         }
 
         String rawOutput = (String) payload.get("output");
-        if (rawOutput == null || rawOutput.isBlank()) {
-            rawOutput = "output/combined_" + System.currentTimeMillis() + ".mp4";
+        if (rawOutput != null && !rawOutput.isBlank()) {
+            // F04: trước đây `output` do client gửi được dùng thẳng làm đích ghi,
+            // cho phép ghi đè bất kỳ tệp nào trên máy chủ. Tên tệp giờ do server
+            // sinh; giá trị client gửi chỉ được ghi log để không phá client cũ.
+            log.info("Bỏ qua 'output' do client gửi khi ghép video: {}", abbreviate(rawOutput));
         }
 
         boolean forceReencode = Boolean.TRUE.equals(payload.get("forceReencode"));
 
+        Path root = outputRoot();
+        Path combinedDir;
+        Path outputFile;
+        try {
+            combinedDir = SafePaths.resolveWithin(root, "combined");
+            Files.createDirectories(combinedDir);
+            outputFile = SafePaths.resolveWithin(
+                    combinedDir, "combined_" + System.currentTimeMillis() + ".mp4");
+        } catch (IOException e) {
+            log.error("Không tạo được thư mục ghép video: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "ERROR",
+                    "error", "Không tạo được thư mục đầu ra"));
+        }
+
         List<File> clipFiles = new ArrayList<>();
         for (Object item : rawClips) {
             String pathStr = String.valueOf(item);
-            File f = findFilePath(pathStr).toFile();
-            clipFiles.add(f);
+            Path clip;
+            try {
+                clip = SafePaths.resolveWithin(root, pathStr);
+            } catch (PathOutsideRootException e) {
+                log.warn("Chặn ghép video: clip nằm ngoài thư mục cho phép ('{}'), ip={}",
+                        abbreviate(pathStr), currentRequestIp());
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "ERROR",
+                        "error", "Đường dẫn clip không hợp lệ"));
+            }
+            clipFiles.add(clip.toFile());
         }
 
-        File outFile = Paths.get(rawOutput).toFile();
+        File outFile = outputFile.toFile();
         com.autocut.video.ConcatResult result = videoConcat.concat(clipFiles, outFile, forceReencode);
 
         if (result.success()) {
@@ -1783,16 +1865,16 @@ public class VideoController {
         }
 
         if (videoName != null && !videoName.isBlank()) {
-            List<Path> candidates = List.of(
-                Paths.get("input", videoName),
-                Paths.get("uploads", videoName),
-                Paths.get("..", "input", videoName),
-                Paths.get("..", "uploads", videoName),
-                Paths.get(videoName)
-            );
-            for (Path p : candidates) {
-                if (Files.exists(p) && Files.isRegularFile(p)) {
-                    return p.toAbsolutePath().toString();
+            // F04: danh sách cũ có Paths.get(videoName) nên client gửi đường dẫn
+            // tuyệt đối bất kỳ là ffmpeg đọc được tệp đó.
+            for (Path base : List.of(rootFor("input"), rootFor("uploads"), outputRoot())) {
+                try {
+                    Path p = SafePaths.resolveWithin(base, videoName);
+                    if (Files.isRegularFile(p)) {
+                        return p.toString();
+                    }
+                } catch (PathOutsideRootException ignored) {
+                    // Không nằm trong thư mục này thì thử thư mục kế tiếp.
                 }
             }
         }
@@ -1827,6 +1909,68 @@ public class VideoController {
 
         return Paths.get(relativePath);
 
+    }
+
+    /** F04 — chỉ cho tải về các đuôi tệp mà Studio sinh ra. */
+    private static final Set<String> ALLOWED_CLIP_EXTENSIONS =
+            Set.of(".mp4", ".txt", ".vtt", ".srt", ".json");
+
+    /**
+     * Thư mục gốc chứa kết quả cắt. Đọc từ {@code STORAGE_OUTPUT_DIR};
+     * nếu là đường dẫn tương đối thì ưu tiên thư mục tồn tại thật.
+     */
+    private Path outputRoot() {
+        return rootFor("output");
+    }
+
+    private Path rootFor(String defaultName) {
+        String envKey = "STORAGE_" + defaultName.toUpperCase(Locale.ROOT) + "_DIR";
+        String configured = configService.getEnv(envKey, defaultName);
+        if (configured == null || configured.isBlank()) {
+            configured = defaultName;
+        }
+        Path candidate = Paths.get(configured);
+        if (candidate.isAbsolute()) {
+            return candidate.normalize();
+        }
+
+        // F04: ưu tiên thư mục gốc dự án. Trước đây endpoint dò "output" theo thư
+        // mục làm việc trước, nên khi chạy từ backend/ thì đọc nhầm
+        // backend/output (rỗng) thay vì output thật ở gốc repo.
+        Path fromProjectRoot = resolveProjectRoot().resolve(configured).toAbsolutePath().normalize();
+        if (Files.isDirectory(fromProjectRoot)) {
+            return fromProjectRoot;
+        }
+
+        Path fromCwd = candidate.toAbsolutePath().normalize();
+        if (Files.isDirectory(fromCwd)) {
+            return fromCwd;
+        }
+        return fromProjectRoot;
+    }
+
+    private static boolean hasAllowedClipExtension(Path path) {
+        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        return ALLOWED_CLIP_EXTENSIONS.stream().anyMatch(name::endsWith);
+    }
+
+    /** Cắt ngắn giá trị client gửi trước khi ghi log để không phình log. */
+    private static String abbreviate(String value) {
+        if (value == null) {
+            return "null";
+        }
+        String oneLine = value.replace('\n', ' ').replace('\r', ' ');
+        return oneLine.length() <= 200 ? oneLine : oneLine.substring(0, 200) + "...";
+    }
+
+    /** IP người gọi, dùng cho log khi chặn đường dẫn. */
+    private static String currentRequestIp() {
+        try {
+            var attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            return attributes == null ? "unknown" : attributes.getRequest().getRemoteAddr();
+        } catch (RuntimeException e) {
+            return "unknown";
+        }
     }
 
     public static String sanitizeToSafeSlug(String raw) {
