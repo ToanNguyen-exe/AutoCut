@@ -9,6 +9,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -29,6 +30,12 @@ public class CloudflareR2Service {
     private final String accessKeyId;
     private final String secretAccessKey;
     private final String publicUrl;
+    /**
+     * Địa chỉ dạng {@code endpoint/bucket/key} thay vì {@code bucket.endpoint/key}.
+     * Cloudflare R2 hiểu cả hai; S3 tự dựng (MinIO, s3mock, Ceph) thường chỉ
+     * hiểu path-style. Mặc định tắt để không đổi hành vi trên production.
+     */
+    private final boolean pathStyle;
     private S3Client s3Client;
 
     public CloudflareR2Service(ConfigService configService, org.springframework.core.env.Environment springEnv) {
@@ -43,6 +50,8 @@ public class CloudflareR2Service {
         this.accessKeyId = resolve(springEnv, dotenv, "R2_ACCESS_KEY_ID", "");
         this.secretAccessKey = resolve(springEnv, dotenv, "R2_SECRET_ACCESS_KEY", "");
         this.publicUrl = resolve(springEnv, dotenv, "R2_PUBLIC_URL", "");
+        this.pathStyle = Boolean.parseBoolean(
+                resolve(springEnv, dotenv, "R2_PATH_STYLE", "false"));
 
         if (!accessKeyId.isBlank() && !secretAccessKey.isBlank()) {
             initClient();
@@ -70,6 +79,9 @@ public class CloudflareR2Service {
                             AwsBasicCredentials.create(accessKeyId, secretAccessKey)
                     ))
                     .region(Region.of("auto"))
+                    .serviceConfiguration(S3Configuration.builder()
+                            .pathStyleAccessEnabled(pathStyle)
+                            .build())
                     .build();
             log.info("Khởi tạo Cloudflare R2 S3Client thành công cho bucket: {}", bucketName);
         } catch (Exception e) {
