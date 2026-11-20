@@ -166,7 +166,11 @@ jobs:
         run: |
           echo "--- user ---"
           docker run --rm --entrypoint whoami autocut-backend:ci
-          test "$(docker run --rm --entrypoint id -u autocut-backend:ci)" = "10001"
+          # '-u' phải đứng SAU tên image, nếu không docker hiểu nó là --user
+          # và ăn luôn tên image, báo "requires at least 1 argument".
+          UID_IMAGE=$(docker run --rm --entrypoint id autocut-backend:ci -u)
+          echo "uid=$UID_IMAGE"
+          test "$UID_IMAGE" = "10001"
 
           echo "--- python ---"
           docker run --rm --entrypoint /opt/venv/bin/python autocut-backend:ci --version
