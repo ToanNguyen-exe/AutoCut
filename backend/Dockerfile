@@ -25,15 +25,19 @@ WORKDIR /build
 # thì Docker mới tải lại toàn bộ thư viện.
 # Không copy .mvn vì tầng này dùng lệnh `mvn` của image, không dùng ./mvnw.
 COPY backend/pom.xml ./pom.xml
-# `dependency:go-offline` hay hỏng vì plugin phụ thuộc vòng tròn; cho phép lỗi
-# để chỉ mất phần cache, không làm chết build.
-RUN mvn -B -q dependency:go-offline || echo "go-offline lỗi — bỏ qua, sẽ tải khi package"
+
+# Cache mount cho ~/.m2: giữ lại thư viện đã tải giữa các lần build, kể cả khi
+# build hỏng giữa đường. Không có nó thì mỗi lần build lại phải tải toàn bộ
+# Spring Boot từ Maven Central — và Maven Central giới hạn tần suất theo IP,
+# nên trên runner dùng chung sẽ có lần nhận 429 Too Many Requests.
+#
+# Mỗi lệnh mvn thử lại 3 lần: 429 là lỗi tạm thời, chờ vài giây là qua.
+RUN --mount=type=cache,target=/root/.m2 bash -c 'ok=0; for i in 1 2 3; do if mvn -B -q dependency:go-offline; then ok=1; break; fi; echo "go-offline lỗi lần $i, thử lại sau 15s"; sleep 15; done; [ "$ok" = "1" ] || echo "bỏ qua go-offline, sẽ tải ở bước package"'
 
 # Copy mã nguồn sau cùng — sửa code không làm mất cache dependency ở trên.
 COPY backend/src ./src
-# Test chạy ở CI (F14 FR-7), không chạy trong lúc build image.
-RUN mvn -B -q -DskipTests package && \
-    cp target/backend-*.jar /build/app.jar
+
+RUN --mount=type=cache,target=/root/.m2 bash -c 'ok=0; for i in 1 2 3; do if mvn -B -q -DskipTests package; then ok=1; break; fi; echo "package lỗi lần $i, thử lại sau 15s"; sleep 15; done; [ "$ok" = "1" ] || exit 1; cp target/backend-*.jar /build/app.jar'
 
 # ---------------------------------------------------------------- tầng runtime
 # -noble = Ubuntu 24.04, có python3.12 trong kho chính thức.
