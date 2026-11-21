@@ -17,7 +17,8 @@ from .post_processor import (
     merge_fragmented_segments,
     post_process_transcript,
     post_process_sentence,
-    ensure_sentence_casing_and_punctuation
+    ensure_sentence_casing_and_punctuation,
+    sanitize_transcript_stem
 )
 
 __all__ = [
@@ -35,5 +36,6 @@ __all__ = [
     "merge_fragmented_segments",
     "post_process_transcript",
     "post_process_sentence",
-    "ensure_sentence_casing_and_punctuation"
+    "ensure_sentence_casing_and_punctuation",
+    "sanitize_transcript_stem"
 ]
