@@ -48,18 +48,26 @@ class SaveProjectTest {
                 .thenReturn("https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/users/test/project.json");
     }
 
+    private Path resolveUserDir(String user, String lesson) {
+        Path direct = Paths.get("output", "users", user, lesson);
+        if (Files.exists(direct)) return direct;
+        Path root = Paths.get("..", "output", "users", user, lesson);
+        if (Files.exists(root)) return root;
+        return direct;
+    }
+
     @AfterEach
     void tearDown() throws IOException {
-        Path testOutputDir = Paths.get("output", "users");
-        if (Files.exists(testOutputDir)) {
-            // Dọn dẹp các thư mục test sinh ra trong ca kiểm thử
-            for (String testUser : List.of("test_u01", "test_u02", "____test_hack___")) {
-                Path uDir = testOutputDir.resolve(testUser);
-                if (Files.exists(uDir)) {
-                    Files.walk(uDir)
-                            .sorted(Comparator.reverseOrder())
-                            .map(Path::toFile)
-                            .forEach(File::delete);
+        for (Path base : List.of(Paths.get("output", "users"), Paths.get("..", "output", "users"))) {
+            if (Files.exists(base)) {
+                for (String testUser : List.of("test_u01", "test_u02", "____test_hack___")) {
+                    Path uDir = base.resolve(testUser);
+                    if (Files.exists(uDir)) {
+                        Files.walk(uDir)
+                                .sorted(Comparator.reverseOrder())
+                                .map(Path::toFile)
+                                .forEach(File::delete);
+                    }
                 }
             }
         }
@@ -88,8 +96,9 @@ class SaveProjectTest {
         Assertions.assertEquals("SAVED", body.get("status"));
         Assertions.assertTrue(body.containsKey("cloudUrl"));
 
-        Path projectFile = Paths.get("output", "users", "test_u01", "Bai05_VongLap", "project.json");
-        Path segmentsFile = Paths.get("output", "users", "test_u01", "Bai05_VongLap", "segments.json");
+        Path userDir = resolveUserDir("test_u01", "Bai05_VongLap");
+        Path projectFile = userDir.resolve("project.json");
+        Path segmentsFile = userDir.resolve("segments.json");
 
         Assertions.assertTrue(Files.exists(projectFile), "Tệp project.json phải được tạo trên đĩa");
         Assertions.assertTrue(Files.exists(segmentsFile), "Tệp segments.json phải được tạo trên đĩa");
@@ -120,8 +129,8 @@ class SaveProjectTest {
         controller.saveProject(payload1);
         controller.saveProject(payload2);
 
-        Path p1 = Paths.get("output", "users", "test_u01", "ChungTenBai", "project.json");
-        Path p2 = Paths.get("output", "users", "test_u02", "ChungTenBai", "project.json");
+        Path p1 = resolveUserDir("test_u01", "ChungTenBai").resolve("project.json");
+        Path p2 = resolveUserDir("test_u02", "ChungTenBai").resolve("project.json");
 
         Assertions.assertTrue(Files.exists(p1));
         Assertions.assertTrue(Files.exists(p2));
