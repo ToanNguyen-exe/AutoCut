@@ -286,7 +286,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         isExternalUrl: true,
         topicTitle: titleInput.trim() || "Chủ đề bài giảng mới",
         sectionName: "01_NoiDungChinh",
-        sha256: effectiveHash || undefined,
+        sha256: selectedSha256 || undefined,
       });
     } else {
       if (!selectedFile) {
@@ -316,11 +316,15 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
             ? uploadRes.data.transcript.duration
             : finalDurationSeconds;
+          const hasRealTranscript = Boolean(
+            uploadRes.data.transcript?.sentences &&
+            uploadRes.data.transcript.sentences.length > 0
+          );
           deliverVideo({
             videoId: uploadRes.data.videoId ?? uploadRes.data.video_id ?? selectedVideoId,
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: finalDurationSeconds,
+            duration: cloudDur,
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
