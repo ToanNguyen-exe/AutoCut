@@ -9,18 +9,24 @@ Nhiệm vụ trong Pipeline:
 
 import json
 import logging
+from pathlib import Path
 import re
 import sys
 import time
 import unicodedata
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Set
 
 from google import genai
 from google.genai import types
 
 from .models import Sentence, TranscriptOutput
 from .prompt_builder import extract_terms_from_outline
-from .config_loader import default_ai_config
+from .config_loader import (
+    classify_ai_api_error,
+    default_ai_config,
+    log_ai_api_error,
+    summarize_error,
+)
 from .post_processor import (
     ensure_sentence_casing_and_punctuation,
     split_segment_into_timed_sentences,
@@ -28,12 +34,13 @@ from .post_processor import (
 from .whisper_service import format_duration, build_progress_bar
 
 logger = logging.getLogger("AutoCut.AI.Refiner")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FALLBACK_MODELS = [
     "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
-    "gemini-2.5-flash",
     "gemini-flash-latest",
+    "gemini-pro-latest",
 ]
 
 
@@ -48,29 +55,59 @@ def slugify_vi(text: str) -> str:
     return s[:48].strip("-") or "chu-de"
 
 
+def _parse_json_response(response: Any, model_name: str) -> Dict[str, Any]:
+    """Kiểm tra giới hạn token đầu ra và parse JSON từ phản hồi Gemini."""
+    candidates = getattr(response, "candidates", None)
+    if candidates:
+        finish_reason = str(getattr(candidates[0], "finish_reason", "") or "")
+        if "MAX_TOKENS" in finish_reason.upper():
+            logger.warning(f"[GEMINI-TOKEN_OR_QUOTA_EXHAUSTED] {model_name}: cham MAX_TOKENS, JSON co the bi cat")
+    raw_text = response.text.strip()
+    if raw_text.startswith("```json"):
+        raw_text = raw_text[7:]
+    if raw_text.startswith("```"):
+        raw_text = raw_text[3:]
+    if raw_text.endswith("```"):
+        raw_text = raw_text[:-3]
+    return json.loads(raw_text.strip())
+
+
 class TranscriptRefiner:
     """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề bằng Gemini LLM."""
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: Optional[str] = None
+        model_name: Optional[str] = None,
+        exhausted_models: Optional[Set[str]] = None
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
+            logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
+        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash-lite")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
+        self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
         self.client = genai.Client(
             api_key=self.api_key,
-            http_options={"timeout": 90000.0}
+            http_options={"timeout": 15000.0}
         )
 
     def _generate_with_fallback(self, prompt: str):
-        """Gọi Gemini API với cơ chế tự động chuyển sang model dự phòng nếu gặp lỗi 429 Quota hoặc 503."""
+        """Gọi Gemini API: tự động loại bỏ model hết quota trong phiên và chuyển sang model còn quota."""
+        exhausted = getattr(self, "exhausted_models", None)
+        if exhausted is None:
+            exhausted = set()
+            self.exhausted_models = exhausted
+
+        candidates = [m for m in self.models_to_try if m not in exhausted]
+        if not candidates:
+            exhausted.clear()
+            candidates = list(self.models_to_try)
+
         last_err = None
-        for model_candidate in self.models_to_try:
+        for model_candidate in candidates:
             for attempt in range(1, 3):
                 try:
                     response = self.client.models.generate_content(
@@ -82,22 +119,32 @@ class TranscriptRefiner:
                         )
                     )
                     self.model_name = model_candidate
+                    logger.info(f"[GEMINI] Model: {model_candidate}")
                     return response
                 except Exception as err:
                     last_err = err
                     err_str = str(err)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    code, _ = classify_ai_api_error(err)
+                    is_key_err = code == "API_KEY_ERROR"
+                    log_ai_api_error(logger, "GEMINI", model_candidate, err, is_fatal=is_key_err)
+                    if is_key_err:
+                        raise err
+                    if code == "TOKEN_OR_QUOTA_EXHAUSTED":
+                        exhausted.add(model_candidate)
                         break
                     if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
                         time.sleep(2)
                         continue
                     break
+        if last_err is not None:
+            target_label = candidates[0] if len(candidates) == 1 else ",".join(candidates)
+            log_ai_api_error(logger, "GEMINI", target_label, last_err, is_fatal=True)
         # pyrefly: ignore[bad-raise]
         raise last_err
 
     @staticmethod
-    def _build_char_batches(sentences: List[Sentence], max_chars: int = 6000, max_items: int = 25) -> List[List[Sentence]]:
-        """Gom các câu thành từng lô dựa theo tổng số ký tự để tối ưu số lượt gọi API Gemini."""
+    def _build_char_batches(sentences: List[Sentence], max_chars: int = 4000, max_items: int = 15) -> List[List[Sentence]]:
+        """Gom các câu thành từng lô dựa theo tổng số ký tự để tối ưu số lượt gọi API Gemini, giữ kích thước vừa phải để tinh chỉnh chi tiết từng câu."""
         batches: List[List[Sentence]] = []
         current_batch: List[Sentence] = []
         current_chars = 0
@@ -181,12 +228,24 @@ class TranscriptRefiner:
                 resuming = False
                 target_sentences.append(s)
 
-        batches = self._build_char_batches(target_sentences, max_chars=6000, max_items=25)
+        batch_max_items = 60 if len(target_sentences) > 200 else 25
+        batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
+        batches = self._build_char_batches(target_sentences, max_chars=batch_max_chars, max_items=batch_max_items)
         total_batches = len(batches)
         refined_items: List[dict] = list(prefix_items)
         refine_start_wall = time.perf_counter()
+        consecutive_failures = 0
 
         for b_idx, batch in enumerate(batches, start=1):
+            ex_models = getattr(self, "exhausted_models", None)
+            try_models = getattr(self, "models_to_try", [])
+            if consecutive_failures >= 2 or (ex_models and len(ex_models) >= len(try_models)):
+                for orig_s in batch:
+                    refined_items.extend(
+                        split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
+                    )
+                continue
+
             batch_data = [{"id": s.id, "text": s.text} for s in batch]
 
             elapsed_ref = time.perf_counter() - refine_start_wall
@@ -208,70 +267,117 @@ class TranscriptRefiner:
             sys.stdout.flush()
 
             prompt = f"""
-Bạn là chuyên gia biên tập ngữ liệu bài giảng lập trình tiếng Việt.
-Dưới đây là các đoạn văn bản được bóc băng từ giọng nói (Speech-to-Text).
+Bạn là chuyên gia biên tập ngữ liệu bóc băng giọng nói bài giảng video tiếng Việt chuyên nghiệp.
+Dưới đây là danh sách các câu/mẩu câu bóc băng thô từ giọng nói của giảng viên trong video.
 
-NHIỆM VỤ:
-1. Sửa lỗi chính tả tiếng Việt và chuẩn hóa các thuật ngữ lập trình/công nghệ thông tin (ví dụ: JavaScript, Node.js, HTML, CSS, VS Code, document.write, console.log, String, Number, Boolean, Object, Array, Function, DOM, Literal, Primitive...).
-2. {terms_hint}
-3. TÁCH CÂU ĐƠN RÕ RÀNG: Nếu một mục đầu vào chứa nhiều câu ghép lại thành đoạn dài, hãy tách chúng thành danh sách các câu đơn độc lập trong mảng "sentences". Mỗi phần tử trong "sentences" chỉ là 1 câu hoàn chỉnh (bắt đầu bằng chữ hoa, kết thúc bằng dấu chấm '.', dấu hỏi '?' hoặc dấu chấm than '!').
+NGUYÊN TẮC CỐT LÕI (BẢO TOÀN NGUYÊN VĂN & TÁCH CÂU CHI TIẾT):
+1. ƯU TIÊN TÁCH CÂU CỤ THỂ ĐỂ PHÂN ĐOẠN CHÍNH XÁC:
+   - Hãy cố gắng giữ và tách riêng từng câu đơn cụ thể theo từng phát ngôn hoặc vế câu có nghĩa độc lập.
+   - CÂU ĐƠN ĐỘC LẬP: Nếu một mẩu câu đã diễn đạt xong một ý hoặc đã có cấu trúc câu tương đối hoàn chỉnh (dù ngắn), BẮT BUỘC giữ nguyên là một câu độc lập riêng biệt (chỉ định "start_id" và "end_id" GIỐNG NHAU).
+   - CHỈ GỘP KHI BỊ VỠ CÂU DO NGẮT NGHỈ LẤY HƠI: Chỉ gộp khi một câu thực sự bị đứt gãy lửng lơ giữa chừng (ví dụ: bị ngắt giữa cụm danh từ hoặc vị ngữ: 'Anh em có thể viết app từ desktop' và 'cho đến mobile.'). TUYỆT ĐỐI KHÔNG gộp 2 câu đơn độc lập hoàn chỉnh liên tiếp vào một khối lớn.
+   - Việc tách câu chi tiết và cụ thể là tối quan trọng để hệ thống phân đoạn (video segmentation) xác định chính xác các điểm mốc thời gian bắt đầu và kết thúc của từng chủ đề bài giảng!
 
-QUY TẮC BẮT BUỘC:
-- GIỮ NGUYÊN mã 'id' của từng mục đầu vào để đối chiếu.
-- KHÔNG tóm tắt, KHÔNG lược bỏ bất kỳ nội dung nào của người nói.
-- Chỉ trả về JSON thuần túy theo đúng định dạng bên dưới.
+2. BẢO TOÀN TỐI ĐA CÂU TỪ (VERBATIM FIDELITY - TUYỆT ĐỐI KHÔNG GỌT TỪ):
+   - Giữ nguyên vẹn 100% tất cả các từ ngữ mà người nói đã phát âm, bao gồm cả từ nối, từ đệm tự nhiên ('thế nhưng mà', 'nói gì đi nữa', 'tuy nhiên', 'cá nhân tôi', 'đấy nhé', 'ạ'...), số liệu, tên riêng, thuật ngữ.
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG LƯỢC BỎ TỪ, KHÔNG TỰ Ý VIẾT LẠI VĂN PHONG (NO PARAPHRASING).
+   - Chỉ sửa các lỗi chính tả hiển nhiên do nhận diện âm thanh nhầm, chuẩn hóa viết hoa danh từ riêng/thuật ngữ kỹ thuật, và đảm bảo câu có dấu kết thúc (. ? !).
+3. {terms_hint}
+4. BẢO TOÀN TOÀN BỘ MÃ ID:
+   - Toàn bộ các mẩu id từ {batch[0].id} đến {batch[-1].id} phải được bao phủ liên tục theo thứ tự thời gian tăng dần, không được bỏ rơi bất kỳ mẩu id nào.
 
 DANH SÁCH ĐẦU VÀO:
 {json.dumps(batch_data, ensure_ascii=False, indent=2)}
 
 ĐỊNH DẠNG JSON ĐẦU RA BẮT BUỘC:
 {{
-  "items": [
+  "sentences": [
     {{
-      "id": "S0001",
-      "sentences": [
-        "Câu đơn thứ nhất đã sửa chính tả.",
-        "Câu đơn thứ hai được tách ra từ đoạn gốc."
-      ]
+      "start_id": "{batch[0].id}",
+      "end_id": "{batch[0].id}",
+      "text": "Câu đơn thứ nhất giữ nguyên văn câu từ gốc."
+    }},
+    {{
+      "start_id": "S0002",
+      "end_id": "S0003",
+      "text": "Câu sau khi ghép 2 mẩu bị vỡ câu lửng lơ do lấy hơi."
     }}
   ]
 }}
 """
             try:
                 response = self._generate_with_fallback(prompt)
-                raw_text = response.text.strip()
-                if raw_text.startswith("```json"):
-                    raw_text = raw_text[7:]
-                if raw_text.startswith("```"):
-                    raw_text = raw_text[3:]
-                if raw_text.endswith("```"):
-                    raw_text = raw_text[:-3]
-                raw_text = raw_text.strip()
+                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
+                batch_map = {s.id: s for s in batch}
+                merged_sentences = parsed.get("sentences") or parsed.get("items") or []
 
-                parsed = json.loads(raw_text)
-                items_list = parsed.get("items", [])
-                by_id: Dict[str, List[str]] = {}
-                for it in items_list:
-                    it_id = it.get("id")
-                    sents = it.get("sentences")
-                    if it_id and isinstance(sents, list) and sents:
-                        by_id[it_id] = [str(x).strip() for x in sents if str(x).strip()]
+                extracted_batch_items: List[dict] = []
+                covered_ids = set()
 
-                for orig_s in batch:
-                    if orig_s.id in by_id:
-                        refined_items.extend(
-                            self._interpolate_sentences(orig_s.start, orig_s.end, by_id[orig_s.id])
-                        )
-                    else:
+                if isinstance(merged_sentences, list) and merged_sentences:
+                    for it in merged_sentences:
+                        if not isinstance(it, dict):
+                            continue
+                        start_id = it.get("start_id") or it.get("id")
+                        end_id = it.get("end_id") or start_id
+                        txt = str(it.get("text") or "").strip()
+
+                        # Định dạng tương thích nếu Gemini trả về mảng con sentences
+                        if not txt and "sentences" in it and isinstance(it["sentences"], list):
+                            multi_sents = [str(x).strip() for x in it["sentences"] if str(x).strip()]
+                            if start_id in batch_map:
+                                orig_s = batch_map[start_id]
+                                extracted_batch_items.extend(
+                                    self._interpolate_sentences(orig_s.start, orig_s.end, multi_sents)
+                                )
+                                covered_ids.add(start_id)
+                            continue
+
+                        if not txt:
+                            continue
+
+                        s_obj = batch_map.get(start_id)
+                        e_obj = batch_map.get(end_id)
+                        if s_obj is not None and e_obj is not None:
+                            s_start = s_obj.start
+                            s_end = e_obj.end
+                            if s_end <= s_start:
+                                s_end = round(s_start + 1.0, 2)
+                            extracted_batch_items.append({
+                                "start": round(float(s_start), 2),
+                                "end": round(float(s_end), 2),
+                                "text": ensure_sentence_casing_and_punctuation(txt)
+                            })
+                            in_range = False
+                            for s in batch:
+                                if s.id == start_id:
+                                    in_range = True
+                                if in_range:
+                                    covered_ids.add(s.id)
+                                if s.id == end_id:
+                                    break
+
+                # Nếu Gemini xử lý tốt và bao phủ ít nhất 70% số mẩu trong batch
+                if extracted_batch_items and len(covered_ids) >= max(1, int(len(batch) * 0.7)):
+                    missing_batch = [s for s in batch if s.id not in covered_ids]
+                    if missing_batch:
+                        for ms in missing_batch:
+                            extracted_batch_items.append({
+                                "start": round(float(ms.start), 2),
+                                "end": round(float(ms.end), 2),
+                                "text": ensure_sentence_casing_and_punctuation(ms.text)
+                            })
+                        extracted_batch_items.sort(key=lambda x: x["start"])
+                    refined_items.extend(extracted_batch_items)
+                    consecutive_failures = 0
+                else:
+                    for orig_s in batch:
                         refined_items.extend(
                             split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
                         )
 
             except Exception as e:
-                logger.warning(
-                    f"[REFINER] Lỗi khi gọi Gemini ở lô {b_idx} ({e}). "
-                    f"Sử dụng bộ tách câu cục bộ cho lô này."
-                )
+                consecutive_failures += 1
+                log_ai_api_error(logger, f"REFINER lo {b_idx}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
                 for orig_s in batch:
                     refined_items.extend(
                         split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
@@ -306,9 +412,13 @@ DANH SÁCH ĐẦU VÀO:
         self,
         transcript: TranscriptOutput,
         lesson_name: str,
-        max_part_duration: float = 720.0
+        max_part_duration: float = 420.0,
+        force_ai: bool = True,
+        max_retries: Optional[int] = 2
     ) -> Dict[str, Any]:
-        """Phân tích ngữ nghĩa danh sách câu S0001..Sxxxx và chia thành các phân đoạn chủ đề (SegmentsDTO)."""
+        """Phân tích ngữ nghĩa danh sách câu S0001..Sxxxx và chia thành các phân đoạn chủ đề (SegmentsDTO).
+        Bắt buộc phân đoạn bằng AI: nếu gặp lỗi sẽ kiên trì thử lại (retry loop) cho đến khi AI thành công.
+        """
         sentences = transcript.sentences
         total_duration = round(float(transcript.duration or (sentences[-1].end if sentences else 180.0)), 2)
 
@@ -324,17 +434,19 @@ DANH SÁCH ĐẦU VÀO:
         sentence_map = {s.id: s for s in sentences}
         raw_topics: List[Dict[str, Any]] = []
 
-        # 1. Thử phân đoạn ngữ nghĩa bằng Gemini LLM
-        try:
-            # Đọc toàn bộ 100% câu transcript chi tiết để Gemini phân đoạn chính xác nhất
-            formatted_sentences = [
-                f"{s.id} [{s.start:.1f}s-{s.end:.1f}s]: {s.text}"
-                for s in sentences
-            ]
-            first_id = sentences[0].id
-            last_id = sentences[-1].id
+        # Tự động chuyển force_ai = False nếu refiner là mock offline (không có models_to_try)
+        if not getattr(self, "models_to_try", None):
+            force_ai = False
 
-            prompt = f"""
+        # Đọc toàn bộ 100% câu transcript chi tiết để Gemini phân đoạn chính xác nhất
+        formatted_sentences = [
+            f"{s.id} [{s.start:.1f}s-{s.end:.1f}s]: {s.text}"
+            for s in sentences
+        ]
+        first_id = sentences[0].id
+        last_id = sentences[-1].id
+
+        prompt = f"""
 Bạn là chuyên gia phân tích cấu trúc bài giảng video tự động (Semantic Video Segmentation).
 Dưới đây là bản bóc băng (transcript) của video "{transcript.video}" (Chủ đề: "{lesson_name}", thời lượng: {total_duration}s), gồm các câu từ {first_id} đến {last_id}.
 
@@ -349,7 +461,9 @@ QUY TẮC BẮT BUỘC:
 3. Các topics phải nối tiếp nhau liên tục theo thứ tự thời gian tăng dần (end_id của topic trước liền kề với start_id của topic sau).
 4. CẢNH BÁO QUAN TRỌNG VỀ MÃ CÂU: "start_id" và "end_id" BẮT BUỘC phải là mã câu ID thực tế có trong danh sách bên dưới (chỉ từ {first_id} đến {last_id}). TUYỆT ĐỐI KHÔNG lấy số giây thời gian (như 828s hay 1330s) để ghép thành mã câu giả (như S0828 hay S1330)!
 5. "slug" phải là chuỗi không dấu, cách nhau bằng dấu gạch ngang (ví dụ: "bien-va-khoi-tao", "cau-truc-if-else").
-6. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
+6. QUY TẮC THỜI LƯỢNG (TỐI ĐA 7 PHÚT / 420 GIÂY MỖI ĐOẠN VIDEO):
+   Mỗi bài học / chủ đề (topic) KHÔNG ĐƯỢC dài quá 7 phút (420 giây). Nếu một chủ đề kiến thức có nội dung dài hơn 7 phút, BẮT BUỘC phải chia chủ đề đó thành nhiều đoạn nhỏ nối tiếp nhau trong cùng section với tiêu đề kèm '(Phần 1)', '(Phần 2)' (ví dụ: 'Khai báo biến (Phần 1)', 'Khai báo biến (Phần 2)'), sao cho mỗi đoạn đều có thời lượng không vượt quá 7 phút (<= 420s).
+7. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
 
 {{
   "sections": [
@@ -398,50 +512,76 @@ QUY TẮC BẮT BUỘC:
 DANH SÁCH CÂU TRANSCRIPT:
 {chr(10).join(formatted_sentences)}
 """
-            response = self._generate_with_fallback(prompt)
-            raw_text = response.text.strip()
-            if raw_text.startswith("```json"):
-                raw_text = raw_text[7:]
-            if raw_text.startswith("```"):
-                raw_text = raw_text[3:]
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
-            parsed = json.loads(raw_text.strip())
 
-            # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
-            if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
-                try:
-                    llm_raw_path = Path("cache") / "llm_raw.json"
-                    llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
-                        json.dump(parsed, f_raw, ensure_ascii=False, indent=2)
-                except Exception:
-                    pass
+        # Vòng lặp kiên trì gọi AI phân đoạn (Retry loop cho đến khi AI thành công)
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                logger.info(f"[SEGMENTER] Goi AI lan #{attempt}")
+                response = self._generate_with_fallback(prompt)
+                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
 
-                raw_topics = []
-                for sec_idx, sec in enumerate(parsed["sections"], start=1):
-                    sec_label = str(sec.get("label", f"Phần {sec_idx}")).strip()
-                    sec_slug = slugify_vi(sec_label)
-                    for top_idx, top in enumerate(sec.get("topics", []), start=1):
-                        raw_topics.append({
-                            "section_no": sec_idx,
-                            "section": f"{sec_idx:02d}_{sec_slug}",
-                            "topic_no": top_idx,
-                            "topic": str(top.get("title", f"Chủ đề {top_idx}")).strip(),
-                            "slug": str(top.get("slug") or slugify_vi(top.get("title", ""))).strip(),
-                            "start_id": str(top.get("start_id", "")),
-                            "end_id": str(top.get("end_id", ""))
-                        })
-                logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(parsed['sections'])} phần lớn với {len(raw_topics)} bài học cụ thể.")
-            else:
-                candidate_segs = parsed.get("segments", [])
-                if isinstance(candidate_segs, list) and len(candidate_segs) >= 2:
-                    raw_topics = candidate_segs
-                    logger.info(f"[SEGMENTER] Gemini đã chia thành công {len(raw_topics)} phân đoạn ngữ nghĩa.")
-        except Exception as e:
-            logger.warning(f"[SEGMENTER] Không thể gọi Gemini để chia đoạn ({e}). Chuyển sang chia đoạn thông minh từ câu transcript.")
+                # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
+                used_model = getattr(self, "model_name", None) or (
+                    self.models_to_try[0] if getattr(self, "models_to_try", None) else "unknown"
+                )
+                if isinstance(parsed, dict) and "sections" in parsed and isinstance(parsed["sections"], list):
+                    try:
+                        llm_raw_path = PROJECT_ROOT / "cache" / "llm_raw.json"
+                        llm_raw_path.parent.mkdir(parents=True, exist_ok=True)
+                        llm_raw_payload = {"model": used_model, **parsed}
+                        with open(llm_raw_path, "w", encoding="utf-8") as f_raw:
+                            json.dump(llm_raw_payload, f_raw, ensure_ascii=False, indent=2)
+                    except Exception as raw_err:
+                        logger.warning(f"[SEGMENTER] Loi ghi llm_raw.json: {summarize_error(raw_err)}")
 
-        # 2. Nếu Gemini không khả dụng hoặc hết hạn mức: Chia đoạn thông minh trực tiếp từ danh sách câu thật S0001..Sxxxx
+                    raw_topics = []
+                    for sec_idx, sec in enumerate(parsed["sections"], start=1):
+                        sec_label = str(sec.get("label", f"Phần {sec_idx}")).strip()
+                        sec_slug = slugify_vi(sec_label)
+                        for top_idx, top in enumerate(sec.get("topics", []), start=1):
+                            raw_topics.append({
+                                "section_no": sec_idx,
+                                "section": f"{sec_idx:02d}_{sec_slug}",
+                                "topic_no": top_idx,
+                                "topic": str(top.get("title", f"Chủ đề {top_idx}")).strip(),
+                                "slug": str(top.get("slug") or slugify_vi(top.get("title", ""))).strip(),
+                                "start_id": str(top.get("start_id", "")),
+                                "end_id": str(top.get("end_id", ""))
+                            })
+                    if raw_topics:
+                        logger.info(f"[SEGMENTER] {used_model}: {len(parsed['sections'])} phan, {len(raw_topics)} muc (lan #{attempt})")
+                        break
+                    else:
+                        raise ValueError("AI trả về danh sách sections/topics rỗng.")
+                else:
+                    candidate_segs = parsed.get("segments", [])
+                    if isinstance(candidate_segs, list) and len(candidate_segs) >= 2:
+                        raw_topics = candidate_segs
+                        logger.info(f"[SEGMENTER] {used_model}: {len(raw_topics)} phan doan (lan #{attempt})")
+                        break
+                    else:
+                        raise ValueError("AI không trả về cấu trúc sections hoặc segments hợp lệ.")
+
+            except Exception as e:
+                log_ai_api_error(logger, f"SEGMENTER #{attempt}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
+                if not force_ai:
+                    logger.warning("[SEGMENTER] Fallback cuc bo (force_ai=False)")
+                    break
+                if max_retries is not None and attempt >= max_retries:
+                    logger.error(f"[SEGMENTER] That bai sau {attempt} lan: {summarize_error(e)}")
+                    raise RuntimeError(f"Bắt buộc phân đoạn bằng AI nhưng AI gặp lỗi sau {attempt} lần thử: {e}")
+
+                wait_sec = 0.05 if "pytest" in sys.modules else min(30, 2 + attempt * 2)
+                err_str = str(e)
+                if ("429" in err_str or "RESOURCE_EXHAUSTED" in err_str) and "pytest" not in sys.modules:
+                    wait_sec = min(60, max(5, 5 * attempt))
+
+                print(f"\n[AI Segmenter] Loi ({summarize_error(e)}). Doi {wait_sec}s thu lai lan {attempt + 1}...")
+                time.sleep(wait_sec)
+
+        # 2. Nếu force_ai=False và Gemini không khả dụng: mới dùng fallback chia đều từ câu thật
         if not raw_topics:
             raw_topics = self._fallback_segment_from_sentences(sentences, lesson_name)
 
@@ -483,17 +623,23 @@ DANH SÁCH CÂU TRANSCRIPT:
             if idx == len(raw_topics):
                 seg_end = total_duration
             else:
-                raw_end = float(e_obj.end)
+                next_item = raw_topics[idx]
+                next_s_obj = resolve_sentence(str(next_item.get("start_id", "")), e_obj)
+                # Khoảng chết giữa 2 phân đoạn mặc định nối trọn vẹn vào cuối phân đoạn trước
+                target_end = float(next_s_obj.start) if next_s_obj.start > e_obj.end else float(e_obj.end)
+                raw_end = target_end
                 if raw_end >= total_duration or raw_end <= seg_start:
                     remaining_count = max(1, len(raw_topics) - idx + 1)
                     raw_end = seg_start + (total_duration - seg_start) / remaining_count
                 max_allowed = total_duration - (len(raw_topics) - idx)
-                seg_end = round(max(seg_start + 1.0, min(max_allowed, raw_end)), 2)
+                min_step = 5.0 if total_duration > 30.0 else 1.0
+                seg_end = round(max(seg_start + min_step, min(max_allowed, raw_end)), 2)
 
             if seg_end > total_duration:
                 seg_end = total_duration
             if seg_end <= seg_start:
-                seg_end = round(seg_start + 1.0, 2)
+                min_step = 5.0 if total_duration > 30.0 else 1.0
+                seg_end = round(min(total_duration, seg_start + min_step), 2)
             running_start = seg_end
 
             section_no = int(item.get("section_no") or idx)
@@ -502,50 +648,137 @@ DANH SÁCH CÂU TRANSCRIPT:
             topic_title = str(item.get("topic") or f"Phần {idx}: {lesson_name}").strip()
             slug = slugify_vi(str(item.get("slug") or topic_title))
 
-            # Chia parts nếu đoạn dài hơn max_part_duration
-            parts: List[Dict[str, Any]] = []
+            # Chia nhỏ chủ đề nếu thời lượng dài hơn max_part_duration (tối đa 7 phút = 420 giây)
             seg_dur = seg_end - seg_start
             if seg_dur <= max_part_duration or max_part_duration <= 0:
-                parts.append({
-                    "part": 1,
+                seg_idx = len(segments_out) + 1
+                segments_out.append({
+                    "id": f"seg_ai_{seg_idx:02d}",
+                    "section_no": section_no,
+                    "section": section_name,
+                    "topic_no": topic_no,
+                    "topic": topic_title,
+                    "slug": slug,
+                    "start_id": s_obj.id,
+                    "end_id": e_obj.id,
                     "start": seg_start,
                     "end": seg_end,
-                    "file": f"{section_name}/{topic_no:02d}_{slug}.mp4"
+                    "parts": [{
+                        "part": 1,
+                        "start": seg_start,
+                        "end": seg_end,
+                        "file": f"{topic_no:02d}_{slug}.mp4"
+                    }]
                 })
             else:
-                num_parts = int((seg_dur + max_part_duration - 0.01) // max_part_duration)
-                part_len = seg_dur / num_parts
                 p_start = seg_start
-                for p_idx in range(1, num_parts + 1):
-                    p_end = seg_end if p_idx == num_parts else round(p_start + part_len, 2)
-                    parts.append({
-                        "part": p_idx,
+                p_idx = 1
+                topic_folder = f"{topic_no:02d}_{slug}"
+
+                # Danh sách câu trong phạm vi của topic này để map mốc câu chuẩn xác
+                seg_sentences = [
+                    s for s in sentences
+                    if s.start >= seg_start - 0.5 and s.end <= seg_end + 0.5
+                ]
+
+                while p_start < seg_end - 0.05:
+                    remaining_time = seg_end - p_start
+                    if remaining_time <= max_part_duration:
+                        p_end = seg_end
+                        sub_e_obj = e_obj
+                    else:
+                        rem_parts = max(2, int((remaining_time + max_part_duration - 0.01) // max_part_duration))
+                        target_len = remaining_time / rem_parts
+                        target_end = p_start + target_len
+                        max_allowed_rem = (rem_parts - 1) * max_part_duration
+
+                        # Tìm câu kết thúc trong khoảng hợp lệ:
+                        # vừa đảm bảo phần này <= max_part_duration,
+                        # vừa đảm bảo thời gian còn lại không bắt các phần sau phải vượt quá max_part_duration
+                        valid_candidates = [
+                            s for s in seg_sentences
+                            if (p_start + 1.0) <= s.end <= (p_start + max_part_duration)
+                            and (seg_end - s.end) <= max_allowed_rem
+                        ]
+                        if valid_candidates:
+                            best_sent = min(valid_candidates, key=lambda s: abs(s.end - target_end))
+                            p_end = round(best_sent.end, 2)
+                            sub_e_obj = best_sent
+                        else:
+                            p_end = round(min(seg_end, target_end), 2)
+                            sub_e_obj = min(sentences, key=lambda s: abs(s.end - p_end))
+
+                    # Đảm bảo p_end luôn tiến về phía trước và không vượt quá seg_end
+                    if p_end <= p_start:
+                        p_end = round(min(seg_end, p_start + max_part_duration), 2)
+                    if p_end > seg_end:
+                        p_end = seg_end
+
+                    if p_idx == 1:
+                        sub_s_obj = s_obj
+                    else:
+                        candidates_start = [s for s in seg_sentences if s.start >= p_start - 0.5]
+                        sub_s_obj = candidates_start[0] if candidates_start else min(sentences, key=lambda s: abs(s.start - p_start))
+
+                    sub_title = f"{topic_title} (Phần {p_idx})"
+                    sub_slug = f"{slug}-phan-{p_idx}"
+                    sub_file = f"{topic_folder}/{topic_no:02d}_{slug}_Phan{p_idx}.mp4"
+                    seg_idx = len(segments_out) + 1
+
+                    segments_out.append({
+                        "id": f"seg_ai_{seg_idx:02d}",
+                        "section_no": section_no,
+                        "section": section_name,
+                        "topic_no": topic_no,
+                        "topic": sub_title,
+                        "slug": sub_slug,
+                        "start_id": sub_s_obj.id,
+                        "end_id": sub_e_obj.id,
                         "start": round(p_start, 2),
-                        "end": p_end,
-                        "file": f"{section_name}/{topic_no:02d}_{slug}_Phan{p_idx}.mp4"
+                        "end": round(p_end, 2),
+                        "parts": [{
+                            "part": 1,
+                            "start": round(p_start, 2),
+                            "end": round(p_end, 2),
+                            "file": sub_file
+                        }]
                     })
                     p_start = p_end
+                    p_idx += 1
 
-            segments_out.append({
-                "id": f"seg_ai_{idx:02d}",
-                "section_no": section_no,
-                "section": section_name,
-                "topic_no": topic_no,
-                "topic": topic_title,
-                "slug": slug,
-                "start_id": s_obj.id,
-                "end_id": e_obj.id,
-                "start": seg_start,
-                "end": seg_end,
-                "parts": parts
-            })
+        # Loại bỏ triệt để các phân đoạn ngắn vô nghĩa (< 5s hoặc 1s gây chật chỗ trên timeline)
+        clean_segments: List[Dict[str, Any]] = []
+        for s in segments_out:
+            dur = s["end"] - s["start"]
+            if dur < 5.0 and clean_segments and total_duration > 15.0:
+                prev = clean_segments[-1]
+                prev["end"] = s["end"]
+                prev["end_id"] = s["end_id"]
+                if prev.get("parts"):
+                    prev["parts"][-1]["end"] = s["end"]
+            else:
+                clean_segments.append(s)
+
+        if len(clean_segments) > 1 and (clean_segments[0]["end"] - clean_segments[0]["start"]) < 5.0 and total_duration > 15.0:
+            first = clean_segments.pop(0)
+            clean_segments[0]["start"] = first["start"]
+            clean_segments[0]["start_id"] = first["start_id"]
+            if clean_segments[0].get("parts"):
+                clean_segments[0]["parts"][0]["start"] = first["start"]
+
+        for idx, seg in enumerate(clean_segments, start=1):
+            seg["id"] = f"seg_ai_{idx:02d}"
+            seg["topic_no"] = idx
+            if seg.get("parts") and len(seg["parts"]) == 1:
+                seg["parts"][0]["start"] = seg["start"]
+                seg["parts"][0]["end"] = seg["end"]
 
         return {
             "video": transcript.video,
             "lesson": lesson_name,
             "mode": "analyzed",
             "reviewed": False,
-            "segments": segments_out
+            "segments": clean_segments
         }
 
     @staticmethod
@@ -562,16 +795,18 @@ DANH SÁCH CÂU TRANSCRIPT:
                 "end_id": sentences[-1].id
             }]
 
-        # Chia thành 5 phân đoạn cân đối theo số câu và ranh giới tự nhiên
-        num_segs = min(6, max(4, n // 80 + 4))
+        # Chia thành các phân đoạn cân đối theo thời lượng (mỗi đoạn không quá 7 phút = 420s) và ranh giới câu tự nhiên
+        total_dur = sentences[-1].end - sentences[0].start if sentences else 0.0
+        min_segs_by_dur = max(1, int((total_dur + 419.99) // 420.0))
+        num_segs = max(min_segs_by_dur, min(24, max(4, n // 80 + 4)))
         chunk_size = max(1, n // num_segs)
-        section_labels = [
-            "01_GioiThieu",
-            "02_KhaiNiemCoBan",
-            "03_NoiDungTrongTam",
-            "04_PhanTichChiTiet",
-            "05_ThucHanhUngDung",
-            "06_TongKetBaiGiang",
+        base_section_labels = [
+            "GioiThieu",
+            "KhaiNiemCoBan",
+            "NoiDungTrongTam",
+            "PhanTichChiTiet",
+            "ThucHanhUngDung",
+            "TongKetBaiGiang",
         ]
 
         topics: List[Dict[str, Any]] = []
@@ -586,7 +821,8 @@ DANH SÁCH CÂU TRANSCRIPT:
             if len(first_sent_text) > 68:
                 first_sent_text = first_sent_text[:65].rsplit(" ", 1)[0] + "..."
 
-            sec_label = section_labels[min(i, len(section_labels) - 1)]
+            base_label = base_section_labels[min(i, len(base_section_labels) - 1)]
+            sec_label = f"{i + 1:02d}_{base_label}"
             topics.append({
                 "section_no": i + 1,
                 "section": sec_label,

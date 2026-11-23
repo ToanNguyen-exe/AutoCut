@@ -1,0 +1,88 @@
+{
+  "video": "BaiGiang_Test_Output.mp4",
+  "lesson": "Bài Học 01: Giới Thiệu Khóa Học",
+  "mode": "analyzed",
+  "reviewed": false,
+  "segments": [
+    {
+      "id": "seg_ai_01",
+      "section_no": 1,
+      "section": "01_GioiThieu",
+      "topic_no": 1,
+      "topic": "Chào mừng các bạn đến với nội dung Bài Học 01: Giới Thiệu Khóa Học",
+      "slug": "chao-mung-cac-ban-den-voi-noi-dung-bai-hoc-01-gi",
+      "start_id": "S0001",
+      "end_id": "S0002",
+      "start": 0.0,
+      "end": 75.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 0.0,
+          "end": 75.0,
+          "file": "01_chao-mung-cac-ban-den-voi-noi-dung-bai-hoc-01-gi.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_02",
+      "section_no": 2,
+      "section": "02_KhaiNiemCoBan",
+      "topic_no": 2,
+      "topic": "Tiếp theo, chúng ta đi sâu vào các nội dung trọng tâm và cú pháp...",
+      "slug": "tiep-theo-chung-ta-di-sau-vao-cac-noi-dung-trong",
+      "start_id": "S0003",
+      "end_id": "S0004",
+      "start": 75.0,
+      "end": 150.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 75.0,
+          "end": 150.0,
+          "file": "02_tiep-theo-chung-ta-di-sau-vao-cac-noi-dung-trong.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_03",
+      "section_no": 3,
+      "section": "03_NoiDungTrongTam",
+      "topic_no": 3,
+      "topic": "Bây giờ, chúng ta sẽ bắt đầu phần thực hành từng bước trên hệ thống",
+      "slug": "bay-gio-chung-ta-se-bat-dau-phan-thuc-hanh-tung",
+      "start_id": "S0005",
+      "end_id": "S0006",
+      "start": 150.0,
+      "end": 225.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 150.0,
+          "end": 225.0,
+          "file": "03_bay-gio-chung-ta-se-bat-dau-phan-thuc-hanh-tung.mp4"
+        }
+      ]
+    },
+    {
+      "id": "seg_ai_04",
+      "section_no": 4,
+      "section": "04_PhanTichChiTiet",
+      "topic_no": 4,
+      "topic": "Tóm tắt lại các điểm mấu chốt cần ghi nhớ sau bài học này",
+      "slug": "tom-tat-lai-cac-diem-mau-chot-can-ghi-nho-sau-ba",
+      "start_id": "S0007",
+      "end_id": "S0008",
+      "start": 225.0,
+      "end": 300.0,
+      "parts": [
+        {
+          "part": 1,
+          "start": 225.0,
+          "end": 300.0,
+          "file": "04_tom-tat-lai-cac-diem-mau-chot-can-ghi-nho-sau-ba.mp4"
+        }
+      ]
+    }
+  ]
+}

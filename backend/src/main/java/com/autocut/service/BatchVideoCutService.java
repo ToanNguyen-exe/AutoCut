@@ -172,7 +172,7 @@ public class BatchVideoCutService {
             String safeUser = sanitizeToSafeSlug(state.user);
             String safeLesson = sanitizeToSafeSlug(state.lesson);
 
-            Path outputDir = Paths.get("output", "users", safeUser, safeLesson, "cuts");
+            Path outputDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(safeLesson).resolve("cuts");
             Files.createDirectories(outputDir);
 
             File sourceFile = resolveSourceVideoFile(state.videoName);
@@ -242,7 +242,7 @@ public class BatchVideoCutService {
 
             // Sinh 2 tệp hồ sơ xuất xưởng (Mục 4 SV1 & Chuẩn B10)
             state.message = "Đang tổng hợp tệp chapters.txt và report.json...";
-            Path userLessonDir = Paths.get("output", "users", safeUser, safeLesson);
+            Path userLessonDir = resolveProjectRoot().resolve("output").resolve("users").resolve(safeUser).resolve(safeLesson);
 
             // 1. chapters.txt
             String chaptersContent = generateChaptersContent(state.segments);
@@ -406,6 +406,17 @@ public class BatchVideoCutService {
         }
 
         return null;
+    }
+
+    private Path resolveProjectRoot() {
+        Path cur = Paths.get("").toAbsolutePath();
+        if (cur.getFileName() != null && cur.getFileName().toString().equalsIgnoreCase("backend")) {
+            return cur.getParent();
+        }
+        if (Files.exists(cur.resolve("backend"))) {
+            return cur;
+        }
+        return cur;
     }
 
     /**

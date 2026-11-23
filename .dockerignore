@@ -1,0 +1,67 @@
+# =============================================================================
+# .dockerignore — build context là GỐC repo (backend/Dockerfile cần pom.xml,
+# backend/ai/, config.yaml), nên phải chặn mọi thứ nặng không liên quan.
+#
+# Không có tệp này, `docker build` sẽ gửi toàn bộ node_modules và .next của
+# frontend vào Docker daemon ở mỗi lần build — chậm và có thể vượt giới hạn.
+# =============================================================================
+
+# --- Bí mật: TUYỆT ĐỐI không đưa vào image ---
+.env
+.env.*
+!.env.example
+
+# --- Phụ thuộc và đầu ra của frontend ---
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.turbo
+
+# --- Phụ thuộc và đầu ra của backend ---
+backend/target
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# --- Node ở gốc repo ---
+node_modules
+
+# --- Dữ liệu sinh ra khi chạy, không phải mã nguồn ---
+uploads
+output
+cache
+transcripts
+transcript.json
+cut_points.json
+segments
+input
+mock-data
+
+# --- Kiểm thử và tài liệu (không cần trong image production) ---
+backend/src/test
+tests
+docs
+*.md
+!README.md
+
+# --- Hệ điều hành và IDE ---
+.git
+.github
+.gitignore
+.gradle
+.idea
+.vscode
+*.iml
+Thumbs.db
+.DS_Store
+
+# --- Python ---
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.pytest_cache
+
+# --- Python bản địa (không chép venv của máy dev vào image) ---
+
+# Ghi chú: image CỐ Ý không chép .env. Biến môi trường được truyền lúc chạy
+# (docker compose env_file) để không nhúng bí mật vào tầng image.
