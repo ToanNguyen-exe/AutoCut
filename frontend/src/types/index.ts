@@ -44,6 +44,7 @@ export interface Segment {
 
 export interface JoinedVideoClip {
   id: string;
+  videoId?: number;
   title: string;
   fileName: string;
   url: string;
@@ -54,6 +55,7 @@ export interface JoinedVideoClip {
 }
 
 export interface SegmentsData {
+  videoId?: number;
   video: string;
   lesson: string;
   mode: string;
@@ -74,6 +76,7 @@ export interface User {
 
 export interface VideoLibraryItem {
   id: string;
+  videoId?: number;
   name: string;
   lesson: string;
   title: string;

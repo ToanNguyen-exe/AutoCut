@@ -7,6 +7,7 @@ import { formatTime } from "@/lib/utils";
 
 export interface LibraryVideoCard {
   id: string;
+  videoId?: number;
   title: string;
   fileName: string;
   durationStr: string;

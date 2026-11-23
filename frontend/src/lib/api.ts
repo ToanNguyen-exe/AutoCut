@@ -335,6 +335,8 @@ export async function submitRenderSegments(
 
 export interface UploadVideoResponse {
   status: string;
+  videoId?: number;
+  video_id?: number;
   file_name: string;
   file_size: number;
   sha256: string;
@@ -584,5 +586,69 @@ export async function deleteSegmentBackend(
     return { error: `HTTP ${res.status}`, source: "fallback" };
   } catch (err) {
     return { error: String(err), source: "fallback" };
+  }
+}
+
+export interface SaveSegmentsResponse {
+  status: string;
+  videoId: number;
+  totalTopics: number;
+  message: string;
+}
+
+/**
+ * Lấy cấu trúc phân đoạn từ Database theo Video ID (GET /api/video/{id}/segments)
+ */
+export async function getSegments(
+  videoId: number
+): Promise<ApiResponse<SegmentsData>> {
+  try {
+    const res = await fetch(`${API_BASE}/${videoId}/segments`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SegmentsData = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Không thể lấy danh sách phân đoạn từ Database";
+    return {
+      error: message,
+      source: "fallback",
+    };
+  }
+}
+
+/**
+ * Lưu trực tiếp cấu trúc phân đoạn vào Database theo Video ID (POST /api/video/{id}/segments)
+ */
+export async function saveSegments(
+  videoId: number,
+  segs: Segment[]
+): Promise<ApiResponse<SaveSegmentsResponse>> {
+  try {
+    const res = await fetch(`${API_BASE}/${videoId}/segments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(segs),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SaveSegmentsResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Không thể lưu phân đoạn vào Database";
+    return {
+      error: message,
+      source: "fallback",
+    };
   }
 }

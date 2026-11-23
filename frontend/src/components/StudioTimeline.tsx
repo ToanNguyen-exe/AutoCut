@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Segment, TranscriptData, JoinedVideoClip } from "@/types";
-import { formatTime, recalculateParts, slugify } from "@/lib/utils";
+import { formatTime, slugify, splitSegment } from "@/lib/utils";
 import {
   Play,
   Pause,
@@ -230,36 +230,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     }
 
     const orig = segments[targetIdx];
-    const seg1: Segment = {
-      ...orig,
-      id: `${orig.id}_a`,
-      end: splitTime,
-      topic: `${orig.topic} (Phần 1)`,
-      slug: slugify(`${orig.topic} p1`),
-      parts: recalculateParts(
-        orig.start,
-        splitTime,
-        `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
-        orig.topic_no,
-        slugify(`${orig.topic} p1`)
-      ),
-    };
-
-    const seg2: Segment = {
-      ...orig,
-      id: `${orig.id}_b`,
-      start: splitTime,
-      topic: `${orig.topic} (Phần 2)`,
-      slug: slugify(`${orig.topic} p2`),
-      topic_no: orig.topic_no + 1,
-      parts: recalculateParts(
-        splitTime,
-        orig.end,
-        `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
-        orig.topic_no + 1,
-        slugify(`${orig.topic} p2`)
-      ),
-    };
+    const [seg1, seg2] = splitSegment(orig, splitTime);
 
     const newSegments = [...segments];
     newSegments.splice(targetIdx, 1, seg1, seg2);

@@ -204,3 +204,48 @@ export function generateSegmentsFromSentences(
 
   return segments;
 }
+
+/**
+ * Tách một phân đoạn thành 2 phần tại thời điểm splitTime:
+ * - Nửa đầu: giữ nguyên id cũ (F00: định danh ổn định)
+ * - Nửa sau: cấp id mới bằng crypto.randomUUID()
+ */
+export function splitSegment(orig: Segment, splitTime: number): [Segment, Segment] {
+  const seg1: Segment = {
+    ...orig,
+    id: orig.id, // Nửa đầu giữ id cũ
+    end: splitTime,
+    topic: `${orig.topic} (Phần 1)`,
+    slug: slugify(`${orig.topic} p1`),
+    parts: recalculateParts(
+      orig.start,
+      splitTime,
+      `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
+      orig.topic_no,
+      slugify(`${orig.topic} p1`)
+    ),
+  };
+
+  const newId =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `seg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const seg2: Segment = {
+    ...orig,
+    id: newId, // Nửa sau dùng crypto.randomUUID()
+    start: splitTime,
+    topic: `${orig.topic} (Phần 2)`,
+    slug: slugify(`${orig.topic} p2`),
+    topic_no: orig.topic_no + 1,
+    parts: recalculateParts(
+      splitTime,
+      orig.end,
+      `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
+      orig.topic_no + 1,
+      slugify(`${orig.topic} p2`)
+    ),
+  };
+
+  return [seg1, seg2];
+}

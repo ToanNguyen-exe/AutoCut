@@ -20,6 +20,7 @@ import { saveVideoBlob } from "@/lib/videoStorage";
 import { TranscriptData, SegmentsData, VideoLibraryItem } from "@/types";
 
 export interface NewVideoData {
+  videoId?: number;
   url: string;
   name: string;
   duration: number; // in seconds
@@ -84,6 +85,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     return unit === "minutes" ? Math.round(num * 60) : Math.round(num);
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadPercent, setUploadPercent] = useState<number>(0);
@@ -154,9 +156,11 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     url: string;
     durationSeconds: number;
     durationText?: string;
+    videoId?: number;
   }) => {
     setUrlInput(sample.url);
     setTitleInput(sample.name);
+    setSelectedVideoId(sample.videoId);
     setDetectedDuration(sample.durationSeconds);
     if (sample.durationSeconds < 60) {
       setDurationUnit("seconds");
@@ -245,6 +249,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       }
 
       deliverVideo({
+        videoId: selectedVideoId,
         url: urlInput.trim(),
         name: titleInput.trim() || "Video bài giảng mới",
         duration: finalDurationSeconds,
@@ -281,6 +286,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             ? uploadRes.data.transcript.duration
             : finalDurationSeconds;
           deliverVideo({
+            videoId: uploadRes.data.videoId ?? uploadRes.data.video_id ?? selectedVideoId,
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
             duration: Number(cloudDur.toFixed(1)),
@@ -464,6 +470,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                               url: vUrl,
                               durationSeconds: dur,
                               durationText: formatTime(dur),
+                              videoId: cv.id,
                             });
                           }}
                           className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left transition group shadow-2xs ${
