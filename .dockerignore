@@ -1,53 +1,83 @@
-# Git & VCS
-.git
-.gitignore
+# =============================================================================
+# .dockerignore — build context là GỐC repo (backend/Dockerfile cần pom.xml,
+# backend/ai/, config.yaml), nên phải chặn mọi thứ nặng không liên quan.
+#
+# Không có tệp này, `docker build` sẽ gửi toàn bộ node_modules và .next của
+# frontend vào Docker daemon ở mỗi lần build — chậm và có thể vượt giới hạn.
+# =============================================================================
 
-# Maven & Java build artifacts
-backend/target/
-**/target/
-.mvn/wrapper/maven-wrapper.jar
+# --- Bí mật: TUYỆT ĐỐI không đưa vào image ---
+.env
+.env.*
+!.env.example
 
-# Frontend & Node.js
-node_modules/
-frontend/node_modules/
-frontend/.next/
-frontend/out/
+# --- Phụ thuộc và đầu ra của frontend ---
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.turbo
 
-# Python cache & virtual environments
-__pycache__/
-**/*.pyc
-**/*.pyo
-**/*.pyd
-.pytest_cache/
-venv/
-.venv/
-env/
+# --- Phụ thuộc và đầu ra của backend ---
+backend/target
+backend/.mvn/wrapper/maven-wrapper.jar
 
-# AI Whisper & HuggingFace Models (~1.5GB) - KHÔNG đóng gói vào image
+# --- Node ở gốc repo ---
+node_modules
+
+# --- Dữ liệu sinh ra khi chạy, không phải mã nguồn ---
+uploads
+backend/uploads
+output
+backend/output
+cache
+backend/cache
+transcripts
+transcript.json
+cut_points.json
+segments
+input
+mock-data
+temp
+backend/temp
+
+# --- AI Whisper & HuggingFace Models (~1.5GB) - KHÔNG đóng gói vào image ---
 models/
 **/models/
 backend/models/
 backend/ai/cache/
 .cache/
-cache/
-backend/cache/
 *.bin
 *.pt
 *.safetensors
 *.onnx
 
-# Runtime media & working directories
-output/
-backend/output/
-uploads/
-backend/uploads/
-temp/
-backend/temp/
-mock-data/
-transcripts/
+# --- Kiểm thử và tài liệu (không cần trong image production) ---
+backend/src/test
+tests
+docs
+*.md
+!README.md
 
-# Environment files & logs
-.env
-.env.*
-!.env.example
-*.log
+# --- Hệ điều hành và IDE ---
+.git
+.github
+.gitignore
+.gradle
+.idea
+.vscode
+*.iml
+Thumbs.db
+.DS_Store
+
+# --- Python ---
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.pytest_cache
+
+# --- Python bản địa (không chép venv của máy dev vào image) ---
+
+# Ghi chú: image CỐ Ý không chép .env. Biến môi trường được truyền lúc chạy
+# (docker compose env_file) để không nhúng bí mật vào tầng image.

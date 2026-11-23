@@ -38,6 +38,9 @@ public class VideoProps {
     }
 
     public String getFfprobePath() {
+        // F14 AC-4: không còn đường dẫn tuyệt đối của riêng một máy.
+        // Trỏ tới "ffprobe" thì hệ điều hành tự tìm trong PATH; trong container
+        // giá trị này được đặt qua FFPROBE_PATH=/usr/bin/ffprobe.
         return ffprobePath;
     }
 
