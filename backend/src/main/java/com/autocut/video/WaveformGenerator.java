@@ -1,15 +1,21 @@
 package com.autocut.video;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -286,5 +292,87 @@ public class WaveformGenerator {
         }
 
         return result;
+    }
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Lưu kết quả trích xuất biên độ âm thanh thật vào file peaks.json.
+     *
+     * @param result Kết quả trích xuất WaveformResult
+     * @param lesson Tên bài học
+     * @param targetFile Đường dẫn tệp peaks.json cần ghi
+     * @return Đường dẫn file đã lưu
+     * @throws IOException nếu ghi file thất bại
+     */
+    public Path savePeaksToFile(WaveformResult result, String lesson, Path targetFile) throws IOException {
+        if (targetFile == null) {
+            throw new IllegalArgumentException("targetFile không được null");
+        }
+        if (targetFile.getParent() != null && !Files.exists(targetFile.getParent())) {
+            Files.createDirectories(targetFile.getParent());
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("lesson", lesson != null ? lesson : "default");
+        data.put("hasAudio", result != null && result.hasAudio());
+        data.put("duration", result != null ? result.durationSec() : 0.0);
+        data.put("samplesPerSec", result != null ? result.samplesPerSec() : DEFAULT_SAMPLES_PER_SEC);
+        data.put("peaks", result != null && result.peaks() != null ? result.peaks() : new int[0]);
+        data.put("generatedAt", System.currentTimeMillis());
+
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(targetFile.toFile(), data);
+        log.info("Đã lưu file peaks.json thành công tại: {}", targetFile.toAbsolutePath());
+        return targetFile;
+    }
+
+    /**
+     * Lưu file peaks.json nằm cạnh file segments.json.
+     *
+     * @param result Kết quả trích xuất WaveformResult
+     * @param lesson Tên bài học
+     * @param segmentsFile Đường dẫn tới file segments.json
+     * @return Đường dẫn file peaks.json đã lưu
+     * @throws IOException nếu ghi file thất bại
+     */
+    public Path savePeaksNextToSegments(WaveformResult result, String lesson, Path segmentsFile) throws IOException {
+        if (segmentsFile == null) {
+            throw new IllegalArgumentException("segmentsFile không được null");
+        }
+        Path parentDir = segmentsFile.getParent();
+        if (parentDir == null) {
+            parentDir = Paths.get(".");
+        }
+        Path peaksFile = parentDir.resolve("peaks.json");
+        return savePeaksToFile(result, lesson, peaksFile);
+    }
+
+    /**
+     * Đọc và phục hồi WaveformResult từ file peaks.json đã lưu.
+     *
+     * @param peaksFile Đường dẫn file peaks.json
+     * @return WaveformResult
+     * @throws IOException nếu đọc hoặc parse file thất bại
+     */
+    public WaveformResult readPeaksFromFile(Path peaksFile) throws IOException {
+        if (peaksFile == null || !Files.exists(peaksFile)) {
+            return WaveformResult.empty();
+        }
+
+        JsonNode root = objectMapper.readTree(peaksFile.toFile());
+        boolean hasAudio = root.path("hasAudio").asBoolean(true);
+        double duration = root.path("duration").asDouble(0.0);
+        int samplesPerSec = root.path("samplesPerSec").asInt(DEFAULT_SAMPLES_PER_SEC);
+
+        JsonNode peaksNode = root.path("peaks");
+        int[] peaks = new int[0];
+        if (peaksNode.isArray()) {
+            peaks = new int[peaksNode.size()];
+            for (int i = 0; i < peaksNode.size(); i++) {
+                peaks[i] = peaksNode.get(i).asInt();
+            }
+        }
+
+        return new WaveformResult(hasAudio, duration, samplesPerSec, peaks, new byte[0]);
     }
 }

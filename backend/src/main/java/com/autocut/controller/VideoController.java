@@ -39,6 +39,8 @@ import com.autocut.video.VideoProps;
 import com.autocut.video.CutResult;
 import com.autocut.video.SafePaths;
 import com.autocut.video.PathOutsideRootException;
+import com.autocut.video.WaveformGenerator;
+import com.autocut.video.WaveformResult;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -102,30 +104,44 @@ public class VideoController {
     private final BatchVideoCutService batchVideoCutService;
     private final com.autocut.video.VideoConcat videoConcat;
     private final SegmentPersistenceService segmentPersistenceService;
+    private final WaveformGenerator waveformGenerator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, com.autocut.video.VideoConcat videoConcat) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService, com.autocut.video.VideoConcat videoConcat) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null, new WaveformGenerator());
+    }
+
+    public VideoController(
+            CacheService cacheService,
+            ConfigService configService,
+            CloudflareR2Service r2Service,
+            VideoRepository videoRepository,
+            VideoCutter videoCutter,
+            CutPointService cutPointService,
+            BatchVideoCutService batchVideoCutService,
+            com.autocut.video.VideoConcat videoConcat,
+            SegmentPersistenceService segmentPersistenceService) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, segmentPersistenceService, new WaveformGenerator());
     }
 
     @Autowired
@@ -138,7 +154,8 @@ public class VideoController {
             CutPointService cutPointService,
             BatchVideoCutService batchVideoCutService,
             com.autocut.video.VideoConcat videoConcat,
-            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService) {
+            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService,
+            @Autowired(required = false) WaveformGenerator waveformGenerator) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
@@ -148,6 +165,7 @@ public class VideoController {
         this.batchVideoCutService = batchVideoCutService != null ? batchVideoCutService : new BatchVideoCutService(this.videoCutter, r2Service, configService, objectMapper);
         this.videoConcat = videoConcat != null ? videoConcat : new com.autocut.video.VideoConcat(new VideoProps());
         this.segmentPersistenceService = segmentPersistenceService;
+        this.waveformGenerator = waveformGenerator != null ? waveformGenerator : new WaveformGenerator();
     }
 
 
@@ -1182,6 +1200,19 @@ public class VideoController {
                 objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsData);
             }
 
+            // 1b. Ghi file peaks.json cạnh file segments.json
+            Path peaksFile = userDir.resolve("peaks.json");
+            Object peaksPayload = payload.get("peaks");
+            if (peaksPayload != null) {
+                Map<String, Object> peaksJson = new LinkedHashMap<>();
+                peaksJson.put("lesson", safeLesson);
+                peaksJson.put("hasAudio", true);
+                peaksJson.put("peaks", peaksPayload);
+                peaksJson.put("generatedAt", System.currentTimeMillis());
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(peaksFile.toFile(), peaksJson);
+                log.info("Đã lưu file peaks.json cạnh segments.json tại: {}", peaksFile.toAbsolutePath());
+            }
+
             // 2. Ghi file project.json
             Path projectFile = userDir.resolve("project.json");
             Map<String, Object> projectMeta = new HashMap<>(payload);
@@ -1404,6 +1435,12 @@ public class VideoController {
                 responseData.put("segments", segmentsNode);
             }
 
+            Path peaksFile = foundDir.resolve("peaks.json");
+            if (Files.exists(peaksFile)) {
+                JsonNode peaksNode = objectMapper.readTree(peaksFile.toFile());
+                responseData.put("peaks", peaksNode);
+            }
+
             // Tìm transcript tương ứng nếu có
             String videoName = rawVideo;
             if ((videoName == null || videoName.isBlank()) && responseData.containsKey("project")) {
@@ -1433,6 +1470,79 @@ public class VideoController {
                 "error", "Lỗi đọc tệp dự án: " + e.getMessage()
             ));
         }
+    }
+
+    /**
+     * API Đọc dữ liệu sóng âm thật (peaks.json) cho Frontend (SV4) vẽ Timeline.
+     * Đọc file peaks.json nằm cạnh file segments.json hoặc trích xuất bằng ffmpeg nếu chưa có.
+     */
+    @GetMapping("/peaks")
+    public ResponseEntity<?> getPeaks(
+            @RequestParam(value = "lesson", defaultValue = "BaiGiang") String rawLesson,
+            @RequestParam(value = "user", defaultValue = "admin") String rawUser,
+            @RequestParam(value = "video", required = false) String rawVideo) {
+
+        if (rawLesson != null && !SafePaths.isSafeSlug(rawLesson)) {
+            log.warn("Chặn getPeaks: lesson không hợp lệ ('{}')", rawLesson);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "BAD_REQUEST",
+                    "error", "Tên bài học không hợp lệ"));
+        }
+        if (rawUser != null && !SafePaths.isSafeSlug(rawUser)) {
+            log.warn("Chặn getPeaks: user không hợp lệ ('{}')", rawUser);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "BAD_REQUEST",
+                    "error", "Tên user không hợp lệ"));
+        }
+
+        String safeUser = rawUser != null ? rawUser.replaceAll("[^a-zA-Z0-9._-]", "_") : "admin";
+        String safeLesson = rawLesson != null ? rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_") : "BaiGiang";
+        if (safeUser.isBlank()) safeUser = "admin";
+        if (safeLesson.isBlank()) safeLesson = "BaiGiang";
+
+        Path projectRoot = resolveProjectRoot();
+        Path userDir = projectRoot.resolve("output").resolve("users").resolve(safeUser).resolve(safeLesson);
+        Path peaksFile = userDir.resolve("peaks.json");
+
+        // 1. Kiểm tra nếu file peaks.json đã tồn tại cạnh segments.json
+        if (Files.exists(peaksFile)) {
+            try {
+                JsonNode node = objectMapper.readTree(peaksFile.toFile());
+                return ResponseEntity.ok(node);
+            } catch (Exception e) {
+                log.warn("Không thể đọc file peaks.json tại {}: {}", peaksFile, e.getMessage());
+            }
+        }
+
+        // 2. Nếu chưa có peaks.json, tìm video nguồn trong uploads để trích xuất và lưu vào peaks.json
+        Path videoPath = null;
+        if (rawVideo != null && !rawVideo.isBlank() && !rawVideo.contains("..")) {
+            Path candidate = projectRoot.resolve("uploads").resolve(rawVideo);
+            if (Files.exists(candidate)) {
+                videoPath = candidate;
+            } else {
+                Path candidate2 = Paths.get("uploads", rawVideo);
+                if (Files.exists(candidate2)) {
+                    videoPath = candidate2;
+                }
+            }
+        }
+
+        if (videoPath != null && Files.exists(videoPath)) {
+            WaveformResult result = waveformGenerator.extractPeaks(videoPath, 10);
+            try {
+                waveformGenerator.savePeaksToFile(result, safeLesson, peaksFile);
+                JsonNode node = objectMapper.readTree(peaksFile.toFile());
+                return ResponseEntity.ok(node);
+            } catch (Exception e) {
+                log.error("Lỗi khi lưu peaks.json cạnh segments.json: {}", e.getMessage(), e);
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "status", "NOT_FOUND",
+                "message", "Chưa có dữ liệu sóng âm peaks.json cho bài học " + safeLesson
+        ));
     }
 
     public ResponseEntity<?> renderSegments(SegmentsDTO segments) {

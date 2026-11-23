@@ -121,4 +121,41 @@ class WaveformGeneratorTest {
         assertFalse(result.hasAudio());
         assertEquals(0, result.peaks().length);
     }
+
+    @Test
+    @DisplayName("savePeaksToFile and readPeaksFromFile should serialize and deserialize peaks.json correctly")
+    void testSaveAndReadPeaksFile(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+        WaveformGenerator generator = new WaveformGenerator();
+        WaveformResult sampleResult = new WaveformResult(true, 12.5, 10, new int[]{10, 20, 50, 80, 40}, new byte[]{-10, 20, -30, 40});
+
+        Path peaksFile = tempDir.resolve("peaks.json");
+        Path savedPath = generator.savePeaksToFile(sampleResult, "TestLesson", peaksFile);
+
+        assertTrue(java.nio.file.Files.exists(savedPath));
+        assertEquals(peaksFile.toAbsolutePath(), savedPath.toAbsolutePath());
+
+        WaveformResult loaded = generator.readPeaksFromFile(savedPath);
+        assertNotNull(loaded);
+        assertTrue(loaded.hasAudio());
+        assertEquals(12.5, loaded.durationSec(), 1e-4);
+        assertEquals(10, loaded.samplesPerSec());
+        assertArrayEquals(new int[]{10, 20, 50, 80, 40}, loaded.peaks());
+    }
+
+    @Test
+    @DisplayName("savePeaksNextToSegments should create peaks.json in the same directory as segments.json")
+    void testSavePeaksNextToSegments(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+        WaveformGenerator generator = new WaveformGenerator();
+        WaveformResult sampleResult = new WaveformResult(true, 5.0, 10, new int[]{0, 25, 75, 100, 30}, new byte[]{});
+
+        Path segmentsFile = tempDir.resolve("segments.json");
+        java.nio.file.Files.writeString(segmentsFile, "[]");
+
+        Path peaksFile = generator.savePeaksNextToSegments(sampleResult, "SampleLesson", segmentsFile);
+
+        assertNotNull(peaksFile);
+        assertTrue(java.nio.file.Files.exists(peaksFile));
+        assertEquals("peaks.json", peaksFile.getFileName().toString());
+        assertEquals(segmentsFile.getParent(), peaksFile.getParent());
+    }
 }
