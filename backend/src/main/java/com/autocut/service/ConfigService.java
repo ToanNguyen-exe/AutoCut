@@ -28,14 +28,21 @@ public class ConfigService {
         Dotenv loaded = null;
         try {
             loaded = Dotenv.configure().ignoreIfMissing().load();
-            if (loaded.get("R2_ACCESS_KEY_ID") == null && loaded.get("LLM_API_KEY") == null) {
-                loaded = Dotenv.configure().directory("../").ignoreIfMissing().load();
+            if (loaded == null || (loaded.get("DATABASE_URL") == null && loaded.get("R2_ACCESS_KEY_ID") == null && loaded.get("LLM_API_KEY") == null)) {
+                Dotenv parent = Dotenv.configure().directory("../").ignoreIfMissing().load();
+                if (parent != null && (parent.get("DATABASE_URL") != null || parent.get("LLM_API_KEY") != null)) {
+                    loaded = parent;
+                }
             }
         } catch (Exception e) {
             log.warn("Dotenv load bị gián đoạn ({}), chuyển sang đọc dự phòng file .env...", e.getMessage());
-            loadManualEnv(Paths.get(".env"));
-            loadManualEnv(Paths.get("../.env"));
         }
+
+        // Luôn quét dự phòng file .env từ cả thư mục hiện tại và các thư mục liên quan
+        loadManualEnv(Paths.get(".env"));
+        loadManualEnv(Paths.get("../.env"));
+        loadManualEnv(Paths.get("backend/.env"));
+
         this.dotenv = loaded;
         loadYamlConfig();
     }

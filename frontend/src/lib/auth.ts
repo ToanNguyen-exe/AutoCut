@@ -1,43 +1,35 @@
 import { User } from "@/types";
-import mockUsers from "@/mock-data/users.json";
+import { loginWithDatabase } from "./api";
 
 const STORAGE_KEY = "autocut_user";
-
-export function getAllUsers(): User[] {
-  return mockUsers as User[];
-}
 
 export function getCurrentUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as User;
-    // Tự động gán tài khoản mặc định Toàn Nguyễn (Admin)
-    const defaultUser = (mockUsers as User[])[0];
-    if (defaultUser) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultUser));
-      return defaultUser;
-    }
     return null;
   } catch {
-    return (mockUsers as User[])[0] || null;
+    return null;
   }
 }
 
-export function loginUser(username: string, password: string): { success: boolean; user?: User; message?: string } {
-  const users = getAllUsers();
-  const matched = users.find(
-    (u) => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password.trim()
-  );
-
-  if (matched) {
+export async function loginUser(
+  username: string,
+  password: string
+): Promise<{ success: boolean; user?: User; message?: string }> {
+  const result = await loginWithDatabase(username, password);
+  if (result.success && result.user) {
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(matched));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
     }
-    return { success: true, user: matched };
+    return { success: true, user: result.user };
   }
 
-  return { success: false, message: "Tên đăng nhập hoặc mật khẩu không chính xác!" };
+  return {
+    success: false,
+    message: result.message || "Tên đăng nhập hoặc mật khẩu không chính xác!",
+  };
 }
 
 export function logoutUser(): void {

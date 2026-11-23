@@ -1,4 +1,4 @@
-import { SegmentsData, Segment, TranscriptData } from "@/types";
+import { SegmentsData, Segment, TranscriptData, User } from "@/types";
 
 const rawBase =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -649,6 +649,59 @@ export async function saveSegments(
     return {
       error: message,
       source: "fallback",
+    };
+  }
+}
+
+export interface DatabaseLoginResponse {
+  status: "SUCCESS" | "ERROR";
+  message?: string;
+  user?: User;
+}
+
+/**
+ * Đăng nhập người dùng thực tế qua Database (POST /api/video/auth/login hoặc /api/auth/login)
+ */
+export async function loginWithDatabase(
+  usernameOrEmail: string,
+  password: string
+): Promise<{ success: boolean; user?: User; message?: string }> {
+  try {
+    const url = `${API_BASE}/auth/login`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: usernameOrEmail.trim(),
+        password: password.trim(),
+      }),
+    });
+
+    const json: DatabaseLoginResponse = await res.json().catch(() => ({
+      status: "ERROR",
+      message: `Lỗi kết nối máy chủ (${res.status})`,
+    }));
+
+    if (res.ok && json.status === "SUCCESS" && json.user) {
+      const userObj: User = {
+        ...json.user,
+        id: String(json.user.id),
+      };
+      return { success: true, user: userObj };
+    }
+
+    return {
+      success: false,
+      message: json.message || "Email/Tài khoản hoặc mật khẩu không chính xác!",
+    };
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Không thể kết nối đến máy chủ xác thực cơ sở dữ liệu";
+    return {
+      success: false,
+      message: `Lỗi kết nối backend: ${message}`,
     };
   }
 }

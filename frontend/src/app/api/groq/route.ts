@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import cp from "child_process";
+import * as fs from "fs";
+import * as path from "path";
+import * as cp from "child_process";
 import { Sentence, TranscriptData, SegmentsData } from "@/types";
 import { generateSegmentsFromSentences } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+interface GroqWhisperSegment {
+  id: number;
+  start: number;
+  end: number;
+  text: string;
+  no_speech_prob?: number;
+}
+
+interface GroqWhisperResponse {
+  duration?: number;
+  segments?: GroqWhisperSegment[];
+}
 
 function findExistingTranscript(projectRoot: string, videoName: string): TranscriptData | null {
   const clean = videoName.replace(/^[0-9a-fA-F]{64}_/, "");
@@ -34,7 +47,7 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
             return content as TranscriptData;
           }
-        } catch {}
+        } catch { }
       }
     }
 
@@ -47,7 +60,7 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
             return content as TranscriptData;
           }
-        } catch {}
+        } catch { }
       }
     }
     if (targetNorm.includes("bai07") || targetNorm.includes("bien")) {
@@ -58,7 +71,7 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
             return content as TranscriptData;
           }
-        } catch {}
+        } catch { }
       }
     }
 
@@ -83,7 +96,7 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
           if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
             return content as TranscriptData;
           }
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -154,7 +167,7 @@ async function processTranscription(
     } finally {
       try {
         if (fs.existsSync(tempVideo)) fs.unlinkSync(tempVideo);
-      } catch {}
+      } catch { }
     }
   }
 
@@ -194,7 +207,7 @@ async function processTranscription(
   }
 
   const apiKey = process.env.GROQ_API_KEY;
-  let rawSegments: Array<{ id: number; start: number; end: number; text: string; no_speech_prob?: number }> = [];
+  let rawSegments: GroqWhisperSegment[] = [];
   let totalDuration = 180.0;
 
   // 3. Gọi Groq Whisper API nếu có âm thanh
@@ -218,7 +231,7 @@ async function processTranscription(
       });
 
       if (groqRes.ok) {
-        const groqData = await groqRes.json();
+        const groqData = (await groqRes.json()) as GroqWhisperResponse;
         if (groqData.duration && groqData.duration > 0) {
           totalDuration = Number(groqData.duration.toFixed(1));
         }
@@ -235,7 +248,7 @@ async function processTranscription(
       if (tempAudioPath && fs.existsSync(tempAudioPath)) {
         try {
           fs.unlinkSync(tempAudioPath);
-        } catch {}
+        } catch { }
       }
     }
   }
