@@ -158,4 +158,22 @@ class WaveformGeneratorTest {
         assertEquals("peaks.json", peaksFile.getFileName().toString());
         assertEquals(segmentsFile.getParent(), peaksFile.getParent());
     }
+
+    @Test
+    @DisplayName("extractPeaksWithCache should return cached result without calling ffmpeg if peaks.json already exists")
+    void testExtractPeaksWithCache_ReadsFromExistingPeaksFile(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+        WaveformGenerator generator = new WaveformGenerator();
+        Path peaksFile = tempDir.resolve("peaks.json");
+        WaveformResult expectedResult = new WaveformResult(true, 10.0, 10, new int[]{99, 88, 77}, new byte[]{});
+        generator.savePeaksToFile(expectedResult, "LessonCached", peaksFile);
+
+        // Gọi extractPeaksWithCache trỏ tới file video không tồn tại nhưng file cache đích peaksFile ĐÃ TỒN TẠI
+        Path nonExistentVideo = tempDir.resolve("does_not_exist.mp4");
+        WaveformResult cachedResult = generator.extractPeaksWithCache(nonExistentVideo, 10, peaksFile, null, "LessonCached");
+
+        assertNotNull(cachedResult);
+        assertTrue(cachedResult.hasAudio());
+        assertEquals(10.0, cachedResult.durationSec());
+        assertArrayEquals(new int[]{99, 88, 77}, cachedResult.peaks());
+    }
 }

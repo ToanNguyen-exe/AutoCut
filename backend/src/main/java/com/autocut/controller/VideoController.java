@@ -1529,14 +1529,14 @@ public class VideoController {
         }
 
         if (videoPath != null && Files.exists(videoPath)) {
-            WaveformResult result = waveformGenerator.extractPeaks(videoPath, 10);
-            try {
-                waveformGenerator.savePeaksToFile(result, safeLesson, peaksFile);
-                JsonNode node = objectMapper.readTree(peaksFile.toFile());
-                return ResponseEntity.ok(node);
-            } catch (Exception e) {
-                log.error("Lỗi khi lưu peaks.json cạnh segments.json: {}", e.getMessage(), e);
+            WaveformResult result = waveformGenerator.extractPeaksWithCache(videoPath, 10, peaksFile, cacheService, safeLesson);
+            if (Files.exists(peaksFile)) {
+                try {
+                    JsonNode node = objectMapper.readTree(peaksFile.toFile());
+                    return ResponseEntity.ok(node);
+                } catch (Exception ignored) {}
             }
+            return ResponseEntity.ok(result);
         }
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(

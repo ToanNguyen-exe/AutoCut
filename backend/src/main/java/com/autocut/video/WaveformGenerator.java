@@ -1,5 +1,6 @@
 package com.autocut.video;
 
+import com.autocut.service.CacheService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -181,6 +183,67 @@ public class WaveformGenerator {
                 process.destroyForcibly();
             }
         }
+    }
+
+    /**
+     * Trích xuất biên độ âm thanh có hỗ trợ đa tầng cache:
+     * 1. Kiểm tra destinationPeaksFile (peaks.json cạnh segments): Nếu đã có -> trả về ngay.
+     * 2. Kiểm tra cache toàn cục theo SHA-256 (cacheService): Nếu đã từng phân tích video này -> trả về ngay.
+     * 3. Cache MISS: Chạy ffmpeg trích xuất thật và lưu đồng thời vào cache SHA-256 lẫn destinationPeaksFile.
+     */
+    public WaveformResult extractPeaksWithCache(Path sourceVideo, int samplesPerSec, Path destinationPeaksFile, CacheService cacheService, String lesson) {
+        // Tầng 1: Đọc từ file cache đích (ví dụ peaks.json cạnh segments.json)
+        if (destinationPeaksFile != null && Files.exists(destinationPeaksFile)) {
+            try {
+                WaveformResult cached = readPeaksFromFile(destinationPeaksFile);
+                if (cached != null && cached.peaks() != null && cached.peaks().length > 0) {
+                    log.info("Waveform Destination Cache HIT tại: {}", destinationPeaksFile);
+                    return cached;
+                }
+            } catch (Exception e) {
+                log.warn("Lỗi đọc cache đích: {}", e.getMessage());
+            }
+        }
+
+        // Tầng 2: Kiểm tra cache toàn cục theo SHA-256
+        String videoHash = null;
+        if (cacheService != null && sourceVideo != null && Files.exists(sourceVideo)) {
+            try {
+                videoHash = cacheService.computeSha256(sourceVideo);
+                Optional<WaveformResult> globalCached = cacheService.getCachedWaveform(videoHash);
+                if (globalCached.isPresent()) {
+                    log.info("Waveform Global SHA-256 Cache HIT cho {}", sourceVideo.getFileName());
+                    WaveformResult res = globalCached.get();
+                    if (destinationPeaksFile != null) {
+                        try {
+                            savePeaksToFile(res, lesson, destinationPeaksFile);
+                        } catch (Exception ignored) {}
+                    }
+                    return res;
+                }
+            } catch (Exception e) {
+                log.warn("Không thể tính hash hoặc đọc cache toàn cục: {}", e.getMessage());
+            }
+        }
+
+        // Tầng 3: Cache MISS - Chạy ffmpeg trích xuất thật
+        WaveformResult result = extractPeaks(sourceVideo, samplesPerSec);
+
+        // Lưu vào cache toàn cục
+        if (cacheService != null && videoHash != null && result.hasAudio()) {
+            cacheService.saveWaveformCache(videoHash, result);
+        }
+
+        // Lưu vào file peaks.json cạnh segments.json
+        if (destinationPeaksFile != null && result.hasAudio()) {
+            try {
+                savePeaksToFile(result, lesson, destinationPeaksFile);
+            } catch (Exception e) {
+                log.warn("Lỗi lưu file peaks.json đích: {}", e.getMessage());
+            }
+        }
+
+        return result;
     }
 
     private static void addBucket(List<Byte> minMaxList, List<Integer> normalizedPeaksList, short min, short max) {
