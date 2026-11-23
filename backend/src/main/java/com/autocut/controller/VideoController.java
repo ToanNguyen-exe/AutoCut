@@ -1456,7 +1456,9 @@ public class VideoController {
 
         // F04: lesson từng được ghép thẳng vào đường dẫn ghi (cả Files.createDirectories
         // lẫn tệp segments_*.json) nên lesson="../.." ghi được ra ngoài output.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        // Dùng isSafeSegment (cho phép tiếng Việt, cấm dấu phân cách) để không
+        // chặn nhầm tiêu đề bài học thật.
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn cắt video: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().body(Map.of(
@@ -1650,7 +1652,11 @@ public class VideoController {
             @RequestParam(value = "user", required = false) String user) {
         // F04: lesson do client đặt và từng được ghép thẳng vào đường dẫn,
         // nên ?lesson=../.. nén cả thư mục dự án kể cả .env.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        //
+        // Không dùng isSafeSlug: tên bài học thật là tiêu đề tự do, có dấu tiếng
+        // Việt và khoảng trắng, nên lọc theo bộ ký tự ASCII sẽ chặn nhầm mọi bài
+        // học thật (lỗi phát hiện khi chạy thử: HTTP 400 với tên "Bài giảng ...").
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn nén ZIP: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().build();

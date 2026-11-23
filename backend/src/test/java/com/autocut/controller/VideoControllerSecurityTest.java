@@ -153,6 +153,42 @@ class VideoControllerSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("download-zip nén được bài học có tên tiếng Việt, khoảng trắng, ngoặc")
+    void downloadZipAcceptsVietnameseLessonName() throws Exception {
+        String lesson = "Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)";
+        Path lessonDir = Files.createDirectories(
+                outputRoot.resolve("users").resolve("toan").resolve(lesson));
+        Files.write(lessonDir.resolve("clip_01.mp4"), new byte[]{1, 2, 3});
+
+        mvc.perform(get("/api/video/download-zip")
+                        .param("lesson", lesson)
+                        .param("user", "toan"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("render nhận tên bài học tiếng Việt thay vì chặn 400")
+    void renderAcceptsVietnameseLessonName() throws Exception {
+        String body = "{\"video\":\"v.mp4\",\"lesson\":\"Bài giảng Lập trình Web (2 Giờ)\",\"segments\":[]}";
+
+        mvc.perform(post("/api/video/render")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("render vẫn chặn lesson thoát khỏi thư mục output")
+    void renderStillRejectsTraversalLesson() throws Exception {
+        String body = "{\"video\":\"v.mp4\",\"lesson\":\"../..\",\"segments\":[]}";
+
+        mvc.perform(post("/api/video/render")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
     // ------------------------------------------------ 3+4. ghép video (đọc & ghi)
 
     @Test
