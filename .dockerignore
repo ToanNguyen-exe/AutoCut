@@ -1,0 +1,53 @@
+# Git & VCS
+.git
+.gitignore
+
+# Maven & Java build artifacts
+backend/target/
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Frontend & Node.js
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python cache & virtual environments
+__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# AI Whisper & HuggingFace Models (~1.5GB) - KHÔNG đóng gói vào image
+models/
+**/models/
+backend/models/
+backend/ai/cache/
+.cache/
+cache/
+backend/cache/
+*.bin
+*.pt
+*.safetensors
+*.onnx
+
+# Runtime media & working directories
+output/
+backend/output/
+uploads/
+backend/uploads/
+temp/
+backend/temp/
+mock-data/
+transcripts/
+
+# Environment files & logs
+.env
+.env.*
+!.env.example
+*.log

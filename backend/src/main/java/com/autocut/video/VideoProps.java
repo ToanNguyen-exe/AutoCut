@@ -3,10 +3,6 @@ package com.autocut.video;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /**
  * Cấu hình tham số cho phân hệ Video của SV1.
  * Tự động ánh xạ từ prefix "autocut.video" trong application.properties.
@@ -42,13 +38,6 @@ public class VideoProps {
     }
 
     public String getFfprobePath() {
-        if ("ffprobe".equalsIgnoreCase(ffprobePath)) {
-            Path wingetFfprobe = Paths.get(System.getProperty("user.home"),
-                    "AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffprobe.exe");
-            if (Files.exists(wingetFfprobe)) {
-                return wingetFfprobe.toAbsolutePath().toString();
-            }
-        }
         return ffprobePath;
     }
 
@@ -57,13 +46,6 @@ public class VideoProps {
     }
 
     public String getFfmpegPath() {
-        if ("ffmpeg".equalsIgnoreCase(ffmpegPath)) {
-            Path wingetFfmpeg = Paths.get(System.getProperty("user.home"),
-                    "AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffmpeg.exe");
-            if (Files.exists(wingetFfmpeg)) {
-                return wingetFfmpeg.toAbsolutePath().toString();
-            }
-        }
         return ffmpegPath;
     }
 

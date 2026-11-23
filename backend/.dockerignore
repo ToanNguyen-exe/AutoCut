@@ -1,0 +1,15 @@
+target/
+**/target/
+__pycache__/
+**/*.pyc
+models/
+ai/cache/
+cache/
+*.bin
+*.pt
+*.safetensors
+*.onnx
+output/
+uploads/
+temp/
+*.log
