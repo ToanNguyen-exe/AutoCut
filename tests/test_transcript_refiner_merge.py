@@ -110,3 +110,106 @@ def test_refine_transcript_preserves_independent_sentences_and_verbatim_words():
     assert result.sentences[1].id == "S0002"
     assert "Thế nhưng mà" in result.sentences[1].text
     assert result.sentences[1].end == 9.0
+
+
+def test_refiner_client_uses_at_least_60s_timeout(monkeypatch):
+    """Kiểm tra (#3): Client Gemini Refiner phải dùng timeout >= 60000ms (60s) để tránh 504 DEADLINE_EXCEEDED."""
+    import backend.ai.transcript_refiner as refiner_mod
+
+    captured_kwargs = {}
+
+    def fake_client(**kwargs):
+        captured_kwargs.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(refiner_mod.genai, "Client", fake_client)
+    TranscriptRefiner(api_key="fake-test-key")
+
+    timeout_ms = captured_kwargs.get("http_options", {}).get("timeout", 0)
+    assert timeout_ms >= 60000.0, f"Timeout phải >= 60000ms, thực tế: {timeout_ms}"
+
+
+def test_refine_transcript_continues_after_two_transient_503_failures():
+    """Kiểm tra (#4): Sau 2 lô gặp 503 tạm thời, Refiner vẫn tiếp tục hiệu đính các lô còn lại."""
+    sentences = [
+        Sentence(id=f"S{i:04d}", start=float(i * 2), end=float(i * 2 + 2), text=f"cau tho {i}")
+        for i in range(1, 5)
+    ]
+    transcript = TranscriptOutput(video="demo.mp4", duration=10.0, sentences=sentences)
+
+    def mock_generate(prompt: str):
+        if "cau tho 1" in prompt or "cau tho 2" in prompt:
+            raise RuntimeError("503 UNAVAILABLE: Model overloaded")
+        for idx, sid in ((3, "S0003"), (4, "S0004")):
+            if f"cau tho {idx}" in prompt:
+                class Resp:
+                    text = json.dumps({
+                        "sentences": [{"start_id": sid, "end_id": sid, "text": f"Da hieu dinh {sid}."}]
+                    })
+                return Resp()
+        raise AssertionError(f"Unexpected prompt: {prompt}")
+
+    refiner = object.__new__(TranscriptRefiner)
+    refiner.models_to_try = ["gemini-3.5-flash-lite"]
+    refiner.model_name = "gemini-3.5-flash-lite"
+    refiner.exhausted_models = set()
+    refiner._build_char_batches = lambda sents, **kw: [[s] for s in sents]
+    refiner._generate_with_fallback = mock_generate
+
+    result = TranscriptRefiner.refine_transcript(refiner, transcript, max_workers=1)
+
+    assert [s.id for s in result.sentences] == ["S0001", "S0002", "S0003", "S0004"]
+    assert result.sentences[2].text == "Da hieu dinh S0003."
+    assert result.sentences[3].text == "Da hieu dinh S0004."
+
+
+def test_refine_transcript_processes_batches_concurrently_preserving_order():
+    """Kiểm tra (#4): Refiner xử lý song song có giới hạn nhiều lô và giữ nguyên thứ tự câu."""
+    import threading
+    import time
+
+    sentences = [
+        Sentence(id=f"S{i:04d}", start=float(i * 2), end=float(i * 2 + 2), text=f"cau goc {i}")
+        for i in range(1, 5)
+    ]
+    transcript = TranscriptOutput(video="long_lecture.mp4", duration=10.0, sentences=sentences)
+
+    lock = threading.Lock()
+    active = 0
+    max_active = 0
+
+    def slow_mock_generate(prompt: str):
+        nonlocal active, max_active
+        with lock:
+            active += 1
+            max_active = max(max_active, active)
+        time.sleep(0.12)
+        with lock:
+            active -= 1
+        for i in range(1, 5):
+            sid = f"S{i:04d}"
+            if f"cau goc {i}" in prompt:
+                class Resp:
+                    text = json.dumps({
+                        "sentences": [{"start_id": sid, "end_id": sid, "text": f"Chuan hoa {sid}."}]
+                    })
+                return Resp()
+        raise AssertionError("Unexpected prompt")
+
+    refiner = object.__new__(TranscriptRefiner)
+    refiner.models_to_try = ["gemini-3.5-flash-lite"]
+    refiner.model_name = "gemini-3.5-flash-lite"
+    refiner.exhausted_models = set()
+    refiner._build_char_batches = lambda sents, **kw: [[s] for s in sents]
+    refiner._generate_with_fallback = slow_mock_generate
+
+    result = TranscriptRefiner.refine_transcript(refiner, transcript)
+
+    assert max_active >= 2, f"Các lô phải chạy song song (max_active >= 2), thực tế: {max_active}"
+    assert [s.id for s in result.sentences] == ["S0001", "S0002", "S0003", "S0004"]
+    assert [s.text for s in result.sentences] == [
+        "Chuan hoa S0001.",
+        "Chuan hoa S0002.",
+        "Chuan hoa S0003.",
+        "Chuan hoa S0004.",
+    ]
