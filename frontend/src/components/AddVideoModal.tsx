@@ -34,15 +34,26 @@ export interface NewVideoData {
 }
 
 // Danh sách URL video Cloudflare R2 chính thức của dự án
-const SAMPLE_VIDEOS = [
+const SAMPLE_VIDEOS: Array<{
+  name: string;
+  url: string;
+  durationSeconds: number;
+  durationText?: string;
+  sha256?: string;
+  fileName?: string;
+}> = [
   {
     name: "Bài giảng mẫu ngắn 2 Phút (vibe_short.mp4)",
+    fileName: "vibe_short.mp4",
+    sha256: "hash_short_2min_r2",
     url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/vibe_short.mp4",
     durationSeconds: 120,
     durationText: "02:00",
   },
   {
     name: "Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)",
+    fileName: "Vibe-Coding-4.mp4",
+    sha256: "hash_full_2hours_r2",
     url: "https://pub-603b1f9629e046de80cf86f3f046ca84.r2.dev/autocut/sample_videos/Vibe-Coding-4.mp4",
     durationSeconds: 7200,
     durationText: "02:00:00 (~2 giờ)",
@@ -65,6 +76,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   const [tab, setTab] = useState<"url" | "file">("url");
   const [urlInput, setUrlInput] = useState("");
   const [titleInput, setTitleInput] = useState("");
+  const [selectedSha256, setSelectedSha256] = useState<string | null>(null);
   const [durationValue, setDurationValue] = useState<string>("");
   const [durationUnit, setDurationUnit] = useState<"seconds" | "minutes">("seconds");
   const [detectedDuration, setDetectedDuration] = useState<number | null>(null);
@@ -107,6 +119,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   }, [isOpen]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const probeCleanupRef = useRef<(() => void) | null>(null);
+  React.useEffect(() => () => probeCleanupRef.current?.(), [isOpen]);
 
   if (!isOpen) return null;
 
@@ -125,10 +139,20 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   };
 
   // Tự động nhận diện độ dài thật của video khi chọn link hoặc file (kể cả clip ngắn vài giây)
-  const probeDuration = (src: string) => {
+  const probeDuration = (src: string, ownedUrl = false) => {
+    probeCleanupRef.current?.();
     setIsProbing(true);
     try {
       const v = document.createElement("video");
+      const cleanup = () => {
+        v.onloadedmetadata = null;
+        v.onerror = null;
+        v.removeAttribute("src");
+        v.load();
+        if (ownedUrl) URL.revokeObjectURL(src);
+        if (probeCleanupRef.current === cleanup) probeCleanupRef.current = null;
+      };
+      probeCleanupRef.current = cleanup;
       v.preload = "metadata";
       v.onloadedmetadata = () => {
         setIsProbing(false);
@@ -143,10 +167,15 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             setDurationValue(String(Number((exactSecs / 60).toFixed(1))));
           }
         }
+        cleanup();
       };
-      v.onerror = () => setIsProbing(false);
+      v.onerror = () => {
+        setIsProbing(false);
+        cleanup();
+      };
       v.src = src;
     } catch {
+      probeCleanupRef.current?.();
       setIsProbing(false);
     }
   };
@@ -174,6 +203,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
   const handleUrlChange = (val: string) => {
     setUrlInput(val);
+    setSelectedSha256(null);
     const lower = val.trim().toLowerCase();
     if (lower.includes("tiktok.com")) {
       setDetectedDuration(60);
@@ -205,7 +235,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       saveVideoBlob(file.name.replace(/\.[^/.]+$/, ""), file);
 
       const objectUrl = URL.createObjectURL(file);
-      probeDuration(objectUrl);
+      probeDuration(objectUrl, true);
     }
   };
 
@@ -256,6 +286,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         isExternalUrl: true,
         topicTitle: titleInput.trim() || "Chủ đề bài giảng mới",
         sectionName: "01_NoiDungChinh",
+        sha256: effectiveHash || undefined,
       });
     } else {
       if (!selectedFile) {
@@ -289,13 +320,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             videoId: uploadRes.data.videoId ?? uploadRes.data.video_id ?? selectedVideoId,
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: Number(cloudDur.toFixed(1)),
+            duration: finalDurationSeconds,
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
             sha256: uploadRes.data.sha256,
-            transcript: uploadRes.data.transcript,
-            segmentsData: uploadRes.data.segmentsData,
+            transcript: hasRealTranscript ? uploadRes.data.transcript : undefined,
+            segmentsData: undefined,
             transcriptFile: uploadRes.data.transcript_file,
           });
           return;

@@ -244,6 +244,33 @@ public class SegmentPersistenceService {
     }
 
     /**
+     * Xóa một phân đoạn (topic) khỏi video trong Database theo segmentId.
+     */
+    @Transactional
+    public boolean deleteSegment(Long videoId, String segmentId) {
+        if (videoId == null || segmentId == null) {
+            return false;
+        }
+        List<SectionEntity> sections = sectionRepository.findByVideoIdOrderByPositionAsc(videoId);
+        for (SectionEntity sec : sections) {
+            List<TopicEntity> topics = topicRepository.findBySectionIdOrderByPositionAsc(sec.getId());
+            for (TopicEntity t : topics) {
+                String candidateId1 = "seg_db_" + t.getId();
+                String candidateId2 = String.valueOf(t.getId());
+                if (segmentId.equalsIgnoreCase(candidateId1) || segmentId.equalsIgnoreCase(candidateId2) || segmentId.equalsIgnoreCase(t.getSlug())) {
+                    topicRepository.delete(t);
+                    log.info("P11: Đã xóa Topic id={} (segmentId={}) của videoId={}", t.getId(), segmentId, videoId);
+                    if (topics.size() <= 1) {
+                        sectionRepository.delete(sec);
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Nạp lại transcript từ bảng transcripts trong Database theo videoId.
      */
     @Transactional(readOnly = true)

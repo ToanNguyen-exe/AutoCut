@@ -441,6 +441,8 @@ export async function analyzeVideoBackend(payload: {
   lesson: string;
   hash?: string;
   duration: number;
+  force?: boolean;
+  url?: string;
 }): Promise<ApiResponse<AnalyzeResponse>> {
   try {
     const res = await fetch(`${API_BASE}/analyze`, {

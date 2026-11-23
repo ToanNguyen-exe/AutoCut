@@ -37,6 +37,7 @@ interface StudioHeaderProps {
   onRender: () => void;
   onOpenAddVideo: () => void;
   onAnalyzeAI?: () => void;
+  onReAnalyzeAI?: () => void;
   onUserUpdate?: (user: User) => void;
 }
 
@@ -54,6 +55,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   onSave,
   onRender,
   onAnalyzeAI,
+  onReAnalyzeAI,
   onUserUpdate,
 }) => {
   const router = useRouter();
@@ -118,15 +120,19 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Nút Phân Tích AI / Chạy Lại AI */}
-          {onAnalyzeAI && (
+          {(onAnalyzeAI || onReAnalyzeAI) && (
             <button
-              onClick={onAnalyzeAI}
+              onClick={data.mode === "raw" ? onAnalyzeAI : (onReAnalyzeAI || onAnalyzeAI)}
               disabled={isAnalyzing}
-              title="Phân tích nội dung video, trích xuất âm thanh và bóc băng lời thoại bằng AI"
+              title={
+                data.mode === "raw"
+                  ? "Phân tích AI để phân đoạn video"
+                  : "Chạy lại AI (bỏ qua cache, yêu cầu bóc băng và phân đoạn thật)"
+              }
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition shadow-2xs cursor-pointer ${
                 data.mode === "raw"
                   ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-200"
-                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80"
+                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isAnalyzing ? (
@@ -142,7 +148,11 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 </div>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-200" />
+                  {data.mode === "raw" ? (
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  )}
                   <span>{data.mode === "raw" ? "Phân tích AI" : "Chạy lại AI"}</span>
                 </>
               )}
