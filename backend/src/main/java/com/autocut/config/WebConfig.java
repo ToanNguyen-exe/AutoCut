@@ -38,14 +38,17 @@ public class WebConfig implements WebMvcConfigurer {
      */
     static boolean isDevLike(String[] activeProfiles) {
         if (activeProfiles == null || activeProfiles.length == 0) {
-            return false;
+            return true;
         }
         for (String profile : activeProfiles) {
-            if ("dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile)) {
+            if ("dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile) || "default".equalsIgnoreCase(profile)) {
                 return true;
             }
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                return false;
+            }
         }
-        return false;
+        return true;
     }
 
     @Override
