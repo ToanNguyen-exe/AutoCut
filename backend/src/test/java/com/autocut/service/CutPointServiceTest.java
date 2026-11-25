@@ -155,4 +155,48 @@ class CutPointServiceTest {
         assertTrue(content.contains("\"score\""));
         assertTrue(content.contains("\"reasons\""));
     }
+
+    @Test
+    @DisplayName("P11: Sau khi snap và gộp phân đoạn < 30s, mốc start/end của parts phải đồng bộ với segment")
+    void testSnapAndFilterSegments_SynchronizesPartsWithFinalRange() {
+        TranscriptDTO transcript = new TranscriptDTO("test.mp4", 120.0, List.of(
+                new Sentence("S0001", 0.0, 20.0, "Mở đầu bài học.", null),
+                new Sentence("S0002", 20.5, 50.0, "Nội dung chính phần 1.", null),
+                new Sentence("S0003", 50.5, 65.0, "Đoạn ngắn 14.5s cần gộp.", null),
+                new Sentence("S0004", 65.5, 120.0, "Nội dung phần 2 chi tiết.", null)
+        ));
+
+        CutPointsDTO cutPoints = cutPointService.calculateCutPoints(transcript);
+
+        List<Segment> rawList = List.of(
+                new Segment(
+                        "seg_1", 1, "01_MoDau", 1, "Giới thiệu", "gioi-thieu",
+                        "S0001", "S0002", 0.0, 50.0,
+                        List.of(new VideoPart(1, 0.0, 50.0, "01_gioi-thieu.mp4"))
+                ),
+                new Segment(
+                        "seg_2", 1, "01_MoDau", 2, "Phần ngắn", "phan-ngan",
+                        "S0003", "S0003", 50.0, 65.0,
+                        List.of(new VideoPart(1, 50.0, 65.0, "02_phan-ngan.mp4"))
+                ),
+                new Segment(
+                        "seg_3", 2, "02_ThucHanh", 1, "Thực hành", "thuc-hanh",
+                        "S0004", "S0004", 65.0, 120.0,
+                        List.of(new VideoPart(1, 65.0, 120.0, "03_thuc-hanh.mp4"))
+                )
+        );
+
+        SegmentsDTO filtered = cutPointService.snapAndFilterSegments(
+                new SegmentsDTO("test.mp4", "BaiGiang", "analyzed", false, rawList),
+                transcript,
+                cutPoints
+        );
+
+        assertEquals(2, filtered.segments().size(), "Đoạn ngắn 15s phải được gộp vào đoạn trước");
+        for (Segment seg : filtered.segments()) {
+            assertFalse(seg.parts().isEmpty());
+            assertEquals(seg.start(), seg.parts().get(0).start(), 0.01, "part.start phải khớp segment.start");
+            assertEquals(seg.end(), seg.parts().get(seg.parts().size() - 1).end(), 0.01, "part.end phải khớp segment.end");
+        }
+    }
 }

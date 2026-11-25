@@ -230,7 +230,7 @@ public class VideoController {
 
             String hash = cacheService.computeSha256(tempFile);
 
-            String safeSlug = sanitizeToSafeSlug(originalFilename);
+            String safeSlug = sanitizeStem(originalFilename);
             String ext = "";
             int dot = originalFilename.lastIndexOf('.');
             if (dot > 0) ext = originalFilename.substring(dot).toLowerCase();
@@ -374,7 +374,7 @@ public class VideoController {
     private String generateTranscriptForUploadedVideo(Path localVideoFile, String originalFilename, String hash) {
         Path projectRoot = resolveProjectRoot();
         Path transcriptsDir = projectRoot.resolve("transcripts");
-        String videoStem = sanitizeToSafeSlug(originalFilename);
+        String videoStem = sanitizeStem(originalFilename);
         String fileName = videoStem + "_transcript.json";
         Path transcriptPath = transcriptsDir.resolve(fileName);
 
@@ -410,29 +410,35 @@ public class VideoController {
         return "transcripts/" + fileName;
     }
 
-    private String stripExtension(String filename) {
+    private static final Set<String> KNOWN_MEDIA_EXTENSIONS = Set.of(
+            ".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".ts",
+            ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
+            ".json", ".srt", ".vtt", ".txt"
+    );
 
+    private static String stripExtension(String filename) {
         if (filename == null || filename.isBlank()) {
-
             return "video";
-
         }
-
         int dotIdx = filename.lastIndexOf('.');
-
-        return (dotIdx > 0) ? filename.substring(0, dotIdx) : filename;
-
+        if (dotIdx > 0) {
+            String ext = filename.substring(dotIdx).toLowerCase(Locale.ROOT);
+            if (KNOWN_MEDIA_EXTENSIONS.contains(ext)) {
+                return filename.substring(0, dotIdx);
+            }
+        }
+        return filename;
     }
 
-    private String sanitizeStem(String name) {
+    static String sanitizeStem(String name) {
         if (name == null || name.isBlank()) return "video";
-        String raw = name.contains(".") ? stripExtension(name) : name;
+        String raw = stripExtension(name);
         String s = raw.replace("đ", "d").replace("Đ", "D");
         s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         s = s.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        s = s.replaceAll("[\\s()\\[\\]{}]+", "-");
-        s = s.replaceAll("[^a-zA-Z0-9_-]", "-");
-        s = s.replaceAll("-+", "-").replaceAll("^-+|-+$", "").toLowerCase();
+        s = s.replaceAll("[\\s.()\\[\\]{}]+", "-");
+        s = s.replaceAll("[^a-zA-Z0-9_-]+", "");
+        s = s.replaceAll("-+", "-").replaceAll("_+", "_").replaceAll("^[-_]+|[-_]+$", "").toLowerCase(Locale.ROOT);
         return s.isEmpty() ? "video" : s;
     }
 
@@ -491,16 +497,20 @@ public class VideoController {
             return ResponseEntity.badRequest().build();
         }
 
-        for (Path uploadDir : List.of(Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
+        String lowerHash = hash.toLowerCase(Locale.ROOT);
+        for (Path uploadDir : List.of(rootFor("uploads"), Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
 
             if (Files.exists(uploadDir)) {
 
                 try (var stream = Files.list(uploadDir)) {
 
                     Optional<Path> found = stream
+                            .filter(Files::isRegularFile)
                             .filter(p -> {
-                                String name = p.getFileName().toString();
-                                return name.equals(hash) || name.equals(hash + ".mp4");
+                                String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                                return name.equals(lowerHash)
+                                        || name.equals(lowerHash + ".mp4")
+                                        || name.startsWith(lowerHash + "_");
                             })
                             .findFirst();
 
@@ -909,13 +919,21 @@ public class VideoController {
 
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
+        String canonicalStem = sanitizeStem(videoName);
+
         String safeStem = sanitizeToSafeSlug(videoName);
 
         String videoStem = stripExtension(videoName);
 
         Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
 
-        Path candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+        Path candidateTranscript = transcriptsDir.resolve(canonicalStem + "_transcript.json");
+
+        if (!Files.exists(candidateTranscript)) {
+
+            candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+
+        }
 
         if (!Files.exists(candidateTranscript)) {
 
@@ -978,56 +996,8 @@ public class VideoController {
                         List<Sentence> rawSents = existingDto.sentences();
                         double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
 
-                        // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
-                        List<Sentence> filledSents = new ArrayList<>();
-                        if (rawSents.get(0).start() > 1.5) {
-                            filledSents.add(new Sentence(
-                                    "S0000",
-                                    0.0,
-                                    Math.round(rawSents.get(0).start() * 10.0) / 10.0,
-                                    "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
-                                    null
-                            ));
-                        }
-                        for (int s = 0; s < rawSents.size(); s++) {
-                            Sentence curr = rawSents.get(s);
-                            filledSents.add(curr);
-                            if (s < rawSents.size() - 1) {
-                                Sentence next = rawSents.get(s + 1);
-                                double gap = next.start() - curr.end();
-                                if (gap >= 8.0) {
-                                    filledSents.add(new Sentence(
-                                            "S_gap_" + s,
-                                            Math.round(curr.end() * 10.0) / 10.0,
-                                            Math.round(next.start() * 10.0) / 10.0,
-                                            "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
-                                            null
-                                    ));
-                                }
-                            }
-                        }
-                        if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
-                            filledSents.add(new Sentence(
-                                    "S_outro",
-                                    Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
-                                    Math.round(totalDur * 10.0) / 10.0,
-                                    "Giai điệu kết thúc (Outro Fade)",
-                                    null
-                            ));
-                        }
-
-                        // Đánh số lại thứ tự câu S0001, S0002...
-                        List<Sentence> sents = new ArrayList<>();
-                        for (int s = 0; s < filledSents.size(); s++) {
-                            Sentence item = filledSents.get(s);
-                            sents.add(new Sentence(
-                                    String.format("S%04d", s + 1),
-                                    item.start(),
-                                    item.end(),
-                                    item.text(),
-                                    item.words()
-                            ));
-                        }
+                        // 1. Giữ nguyên các câu thoại thực tế và đánh lại mã câu S0001..Sxxxx (không chèn chữ nhạc nền giả)
+                        List<Sentence> sents = normalizeFallbackSentences(rawSents);
 
                         // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps) và ràng buộc cứng <= 7 phút (420.0s)
                         int minSegs = (int) Math.ceil(totalDur / 420.0);
@@ -1566,7 +1536,9 @@ public class VideoController {
 
         // F04: lesson từng được ghép thẳng vào đường dẫn ghi (cả Files.createDirectories
         // lẫn tệp segments_*.json) nên lesson="../.." ghi được ra ngoài output.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        // Dùng isSafeSegment (cho phép tiếng Việt, cấm dấu phân cách) để không
+        // chặn nhầm tiêu đề bài học thật.
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn cắt video: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().body(Map.of(
@@ -1760,7 +1732,11 @@ public class VideoController {
             @RequestParam(value = "user", required = false) String user) {
         // F04: lesson do client đặt và từng được ghép thẳng vào đường dẫn,
         // nên ?lesson=../.. nén cả thư mục dự án kể cả .env.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        //
+        // Không dùng isSafeSlug: tên bài học thật là tiêu đề tự do, có dấu tiếng
+        // Việt và khoảng trắng, nên lọc theo bộ ký tự ASCII sẽ chặn nhầm mọi bài
+        // học thật (lỗi phát hiện khi chạy thử: HTTP 400 với tên "Bài giảng ...").
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn nén ZIP: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().build();
@@ -2087,6 +2063,24 @@ public class VideoController {
         }
     }
 
+    static List<Sentence> normalizeFallbackSentences(List<Sentence> rawSents) {
+        if (rawSents == null || rawSents.isEmpty()) {
+            return List.of();
+        }
+        List<Sentence> sents = new ArrayList<>(rawSents.size());
+        for (int i = 0; i < rawSents.size(); i++) {
+            Sentence item = rawSents.get(i);
+            sents.add(new Sentence(
+                    String.format("S%04d", i + 1),
+                    item.start(),
+                    item.end(),
+                    item.text(),
+                    item.words()
+            ));
+        }
+        return sents;
+    }
+
     public static String sanitizeToSafeSlug(String raw) {
         if (raw == null || raw.isBlank()) return "video";
         String name = raw;
@@ -2097,16 +2091,13 @@ public class VideoController {
                 name = inner;
             }
         }
-        int dotIdx = name.lastIndexOf('.');
-        if (dotIdx > 0) {
-            name = name.substring(0, dotIdx);
-        }
+        name = stripExtension(name);
         String nfd = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD);
         String ascii = nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                           .replace('đ', 'd').replace('Đ', 'D');
         String slug = ascii.replaceAll("[^a-zA-Z0-9]+", "_")
                            .replaceAll("^_+|_+$", "")
-                           .toLowerCase();
+                           .toLowerCase(Locale.ROOT);
         return slug.isBlank() ? "video" : slug;
     }
 

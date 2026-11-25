@@ -27,6 +27,10 @@ public final class SafePaths {
     /** Slug dùng cho tên bài/thư mục — không cho dấu chấm đứng một mình. */
     private static final Pattern SLUG = Pattern.compile("^[a-zA-Z0-9_.-]{1,100}$");
 
+    /** Ký tự Windows không cho phép trong tên tệp, cộng ký tự điều khiển. */
+    private static final Pattern UNSAFE_NAME_CHARS =
+            Pattern.compile("[<>:\"|?*\\x00-\\x1f]");
+
     /** SHA-256 biểu diễn chữ thường, đúng 64 ký tự hex. */
     private static final Pattern SHA256 = Pattern.compile("^[0-9a-f]{64}$");
 
@@ -91,6 +95,31 @@ public final class SafePaths {
             return false;
         }
         return !".".equals(value) && !"..".equals(value);
+    }
+
+    /**
+     * Một tên thư mục đơn do người dùng đặt: cho phép tiếng Việt có dấu, khoảng
+     * trắng, ngoặc — nhưng tuyệt đối không có dấu phân cách đường dẫn.
+     *
+     * <p>Vì sao cần: tiêu đề bài học thật là chuỗi tự do
+     * ("Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)"), nên lọc
+     * bằng {@link #isSafeSlug} sẽ chặn nhầm mọi bài học có dấu. Nhưng nếu chỉ
+     * kiểm tra theo phạm vi thì client gửi {@code users/<người khác>/<bài>} vẫn
+     * nằm trong {@code output/} và đọc được dữ liệu của người khác — nên phải
+     * cấm dấu phân cách ở đây.
+     */
+    public static boolean isSafeSegment(String value) {
+        if (value == null || value.isBlank() || value.length() > 200) {
+            return false;
+        }
+        if (".".equals(value) || "..".equals(value)) {
+            return false;
+        }
+        if (value.indexOf('/') >= 0 || value.indexOf('\\') >= 0) {
+            return false;
+        }
+        // Ký tự Windows không cho phép trong tên tệp, cộng ký tự điều khiển.
+        return !UNSAFE_NAME_CHARS.matcher(value).find();
     }
 
     /** Mã video phải đúng 64 ký tự hex, chữ thường. */

@@ -7,11 +7,14 @@ Nhiệm vụ trong Pipeline:
 4. Phân tích ngữ nghĩa toàn bộ các câu S0001..Sxxxx để chia bài giảng thành các chương/chủ đề (SegmentsDTO) phục vụ Backend Spring Boot & Frontend Studio.
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
 import json
 import logging
 from pathlib import Path
 import re
 import sys
+import threading
 import time
 import unicodedata
 from typing import Optional, List, Dict, Any, Set
@@ -37,11 +40,18 @@ logger = logging.getLogger("AutoCut.AI.Refiner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FALLBACK_MODELS = [
-    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
     "gemini-3.5-flash",
     "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
     "gemini-pro-latest",
 ]
+
+# Timeout 60.000 ms (60 giây) tránh lỗi 504 DEADLINE_EXCEEDED trên các lô lớn / bước segment
+REFINER_HTTP_TIMEOUT_MS = 60000.0
+DEFAULT_REFINE_MAX_WORKERS = 2
+EXHAUSTED_MODEL_COOLDOWN_SEC = 60.0
 
 
 def slugify_vi(text: str) -> str:
@@ -72,6 +82,11 @@ def _parse_json_response(response: Any, model_name: str) -> Dict[str, Any]:
     return json.loads(raw_text.strip())
 
 
+def _is_model_not_found_error(err: Exception) -> bool:
+    """Nhận diện lỗi 404 NOT_FOUND (model không tồn tại trên endpoint/API key hiện tại)."""
+    return bool(re.search(r"(?<![\w.])404(?![\w.])|not_found|not found", str(err).lower()))
+
+
 class TranscriptRefiner:
     """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề bằng Gemini LLM."""
 
@@ -79,34 +94,48 @@ class TranscriptRefiner:
         self,
         api_key: Optional[str] = None,
         model_name: Optional[str] = None,
-        exhausted_models: Optional[Set[str]] = None
+        exhausted_models: Optional[Set[str]] = None,
+        unavailable_models: Optional[Set[str]] = None,
     ):
         self.api_key = api_key or default_ai_config.gemini_api_key
         if not self.api_key:
             logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash-lite")
+        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
         self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
         self.model_name = self.models_to_try[0]
         self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
+        self._unavailable_models: Set[str] = unavailable_models if unavailable_models is not None else set()
+        self._exhausted_at: Dict[str, float] = {}
+        self._lock = threading.Lock()
         self.client = genai.Client(
             api_key=self.api_key,
-            http_options={"timeout": 15000.0}
+            http_options={"timeout": REFINER_HTTP_TIMEOUT_MS}
         )
 
-    def _generate_with_fallback(self, prompt: str):
-        """Gọi Gemini API: tự động loại bỏ model hết quota trong phiên và chuyển sang model còn quota."""
-        exhausted = getattr(self, "exhausted_models", None)
-        if exhausted is None:
-            exhausted = set()
-            self.exhausted_models = exhausted
+    def _evict_cooled_down_models_locked(self, exhausted: Set[str], exhausted_at: Dict[str, float]) -> None:
+        """Gỡ các model từng báo 429 nếu đã qua cửa sổ hồi quota (60s)."""
+        now = time.monotonic()
+        expired = [
+            m for m, marked_at in list(exhausted_at.items())
+            if (now - marked_at) >= EXHAUSTED_MODEL_COOLDOWN_SEC
+        ]
+        for m in expired:
+            exhausted.discard(m)
+            exhausted_at.pop(m, None)
 
-        candidates = [m for m in self.models_to_try if m not in exhausted]
-        if not candidates:
-            exhausted.clear()
-            candidates = list(self.models_to_try)
-
+    def _try_candidate_models(
+        self,
+        candidates: List[str],
+        prompt: str,
+        lock: Any,
+        exhausted: Set[str],
+        exhausted_at: Dict[str, float],
+        unavailable: Set[str],
+    ):
+        """Thử lần lượt danh sách model ứng viên; trả về (response, last_err, had_non_quota_err)."""
         last_err = None
+        had_non_quota_err = False
         for model_candidate in candidates:
             for attempt in range(1, 3):
                 try:
@@ -118,9 +147,12 @@ class TranscriptRefiner:
                             temperature=0.1
                         )
                     )
-                    self.model_name = model_candidate
+                    with lock:
+                        self.model_name = model_candidate
+                        exhausted.discard(model_candidate)
+                        exhausted_at.pop(model_candidate, None)
                     logger.info(f"[GEMINI] Model: {model_candidate}")
-                    return response
+                    return response, None, had_non_quota_err
                 except Exception as err:
                     last_err = err
                     err_str = str(err)
@@ -129,15 +161,74 @@ class TranscriptRefiner:
                     log_ai_api_error(logger, "GEMINI", model_candidate, err, is_fatal=is_key_err)
                     if is_key_err:
                         raise err
-                    if code == "TOKEN_OR_QUOTA_EXHAUSTED":
-                        exhausted.add(model_candidate)
+                    if _is_model_not_found_error(err):
+                        with lock:
+                            unavailable.add(model_candidate)
                         break
+                    if code == "TOKEN_OR_QUOTA_EXHAUSTED":
+                        with lock:
+                            exhausted.add(model_candidate)
+                            exhausted_at[model_candidate] = time.monotonic()
+                        break
+                    had_non_quota_err = True
                     if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
                         time.sleep(2)
                         continue
                     break
+        return None, last_err, had_non_quota_err
+
+    def _generate_with_fallback(self, prompt: str):
+        """Gọi Gemini API: tự động bỏ qua model 404 suốt phiên, bỏ qua model 429 tạm thời rồi mở lại sau 60s hoặc khi model còn lại gặp 503/504."""
+        lock = getattr(self, "_lock", None) or nullcontext()
+        with lock:
+            exhausted = getattr(self, "exhausted_models", None)
+            if exhausted is None:
+                exhausted = set()
+                self.exhausted_models = exhausted
+            unavailable = getattr(self, "_unavailable_models", None)
+            if unavailable is None:
+                unavailable = set()
+                self._unavailable_models = unavailable
+            exhausted_at = getattr(self, "_exhausted_at", None)
+            if exhausted_at is None:
+                exhausted_at = {}
+                self._exhausted_at = exhausted_at
+
+            self._evict_cooled_down_models_locked(exhausted, exhausted_at)
+
+            available_models = [m for m in self.models_to_try if m not in unavailable]
+            candidates = [m for m in available_models if m not in exhausted]
+            skipped_exhausted = [m for m in available_models if m in exhausted]
+            if not candidates and available_models:
+                exhausted.clear()
+                exhausted_at.clear()
+                candidates = list(available_models)
+                skipped_exhausted = []
+
+        if not candidates:
+            raise RuntimeError("Không có model Gemini khả dụng trong danh sách fallback.")
+
+        response, last_err, had_non_quota_err = self._try_candidate_models(
+            candidates, prompt, lock, exhausted, exhausted_at, unavailable
+        )
+        if response is not None:
+            return response
+
+        # Nếu các model chưa hết quota đều chết vì 503/504 (không phải 429/404),
+        # thử cứu vớt bằng các model từng 429 trước đó thay vì kẹt chết ở 1 model 503.
+        tried_models = list(candidates)
+        if had_non_quota_err and skipped_exhausted:
+            recovery_resp, recovery_err, _ = self._try_candidate_models(
+                skipped_exhausted, prompt, lock, exhausted, exhausted_at, unavailable
+            )
+            if recovery_resp is not None:
+                return recovery_resp
+            tried_models.extend(skipped_exhausted)
+            if recovery_err is not None:
+                last_err = recovery_err
+
         if last_err is not None:
-            target_label = candidates[0] if len(candidates) == 1 else ",".join(candidates)
+            target_label = tried_models[0] if len(tried_models) == 1 else ",".join(tried_models)
             log_ai_api_error(logger, "GEMINI", target_label, last_err, is_fatal=True)
         # pyrefly: ignore[bad-raise]
         raise last_err
@@ -204,69 +295,33 @@ class TranscriptRefiner:
 
         return timed_items
 
-    def refine_transcript(
+    @staticmethod
+    def _fallback_batch_items(batch: List[Sentence]) -> List[dict]:
+        items: List[dict] = []
+        for orig_s in batch:
+            items.extend(split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text))
+        return items
+
+    def _all_models_exhausted(self) -> bool:
+        lock = getattr(self, "_lock", None) or nullcontext()
+        with lock:
+            try_models = getattr(self, "models_to_try", None) or []
+            ex_models = getattr(self, "exhausted_models", None) or set()
+            return bool(try_models) and len(ex_models) >= len(try_models)
+
+    def _refine_single_batch(
         self,
-        transcript: TranscriptOutput,
-        outline_text: Optional[str] = None,
-        start_from_id: Optional[str] = None
-    ) -> TranscriptOutput:
-        """Hiệu đính chính tả và tách từng câu đơn trên toàn bộ transcript, sau đó đánh lại mã S0001, S0002..."""
-        if not transcript.sentences:
-            return transcript
+        b_idx: int,
+        batch: List[Sentence],
+        terms_hint: str,
+        abort_event: threading.Event,
+    ) -> List[dict]:
+        """Hiệu đính 1 lô câu bằng Gemini; fallback cục bộ chỉ cho lô lỗi nếu gặp lỗi tạm thời."""
+        if abort_event.is_set() or self._all_models_exhausted():
+            return self._fallback_batch_items(batch)
 
-        terms = extract_terms_from_outline(outline_text) if outline_text else []
-        terms_hint = f"Thuật ngữ bài giảng cần đối chiếu: {', '.join(terms)}" if terms else ""
-
-        prefix_items: List[dict] = []
-        target_sentences: List[Sentence] = []
-        resuming = bool(start_from_id)
-
-        for s in transcript.sentences:
-            if resuming and s.id != start_from_id:
-                prefix_items.extend(split_segment_into_timed_sentences(s.start, s.end, s.text))
-            else:
-                resuming = False
-                target_sentences.append(s)
-
-        batch_max_items = 60 if len(target_sentences) > 200 else 25
-        batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
-        batches = self._build_char_batches(target_sentences, max_chars=batch_max_chars, max_items=batch_max_items)
-        total_batches = len(batches)
-        refined_items: List[dict] = list(prefix_items)
-        refine_start_wall = time.perf_counter()
-        consecutive_failures = 0
-
-        for b_idx, batch in enumerate(batches, start=1):
-            ex_models = getattr(self, "exhausted_models", None)
-            try_models = getattr(self, "models_to_try", [])
-            if consecutive_failures >= 2 or (ex_models and len(ex_models) >= len(try_models)):
-                for orig_s in batch:
-                    refined_items.extend(
-                        split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
-                    )
-                continue
-
-            batch_data = [{"id": s.id, "text": s.text} for s in batch]
-
-            elapsed_ref = time.perf_counter() - refine_start_wall
-            completed_batches = b_idx - 1
-            percent_ref = (completed_batches / total_batches) * 100.0 if total_batches > 0 else 100.0
-            if completed_batches > 0:
-                avg_per_batch = elapsed_ref / completed_batches
-                eta_ref = avg_per_batch * (total_batches - completed_batches)
-                eta_str = f"~{format_duration(eta_ref)}"
-            else:
-                eta_str = "đang tính..."
-
-            bar = build_progress_bar(percent_ref)
-            sys.stdout.write(
-                f"\r[Gemini Refiner] [{bar}] {percent_ref:5.1f}% | "
-                f"Lô {b_idx}/{total_batches} ({batch[0].id}->{batch[-1].id}) | "
-                f"Đã chạy: {format_duration(elapsed_ref)} | Còn lại (ETA): {eta_str}   "
-            )
-            sys.stdout.flush()
-
-            prompt = f"""
+        batch_data = [{"id": s.id, "text": s.text} for s in batch]
+        prompt = f"""
 Bạn là chuyên gia biên tập ngữ liệu bóc băng giọng nói bài giảng video tiếng Việt chuyên nghiệp.
 Dưới đây là danh sách các câu/mẩu câu bóc băng thô từ giọng nói của giảng viên trong video.
 
@@ -304,84 +359,162 @@ DANH SÁCH ĐẦU VÀO:
   ]
 }}
 """
-            try:
-                response = self._generate_with_fallback(prompt)
-                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
-                batch_map = {s.id: s for s in batch}
-                merged_sentences = parsed.get("sentences") or parsed.get("items") or []
+        try:
+            response = self._generate_with_fallback(prompt)
+            parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
+            batch_map = {s.id: s for s in batch}
+            merged_sentences = parsed.get("sentences") or parsed.get("items") or []
 
-                extracted_batch_items: List[dict] = []
-                covered_ids = set()
+            extracted_batch_items: List[dict] = []
+            covered_ids = set()
 
-                if isinstance(merged_sentences, list) and merged_sentences:
-                    for it in merged_sentences:
-                        if not isinstance(it, dict):
-                            continue
-                        start_id = it.get("start_id") or it.get("id")
-                        end_id = it.get("end_id") or start_id
-                        txt = str(it.get("text") or "").strip()
+            if isinstance(merged_sentences, list) and merged_sentences:
+                for it in merged_sentences:
+                    if not isinstance(it, dict):
+                        continue
+                    start_id = it.get("start_id") or it.get("id")
+                    end_id = it.get("end_id") or start_id
+                    txt = str(it.get("text") or "").strip()
 
-                        # Định dạng tương thích nếu Gemini trả về mảng con sentences
-                        if not txt and "sentences" in it and isinstance(it["sentences"], list):
-                            multi_sents = [str(x).strip() for x in it["sentences"] if str(x).strip()]
-                            if start_id in batch_map:
-                                orig_s = batch_map[start_id]
-                                extracted_batch_items.extend(
-                                    self._interpolate_sentences(orig_s.start, orig_s.end, multi_sents)
-                                )
-                                covered_ids.add(start_id)
-                            continue
+                    # Định dạng tương thích nếu Gemini trả về mảng con sentences
+                    if not txt and "sentences" in it and isinstance(it["sentences"], list):
+                        multi_sents = [str(x).strip() for x in it["sentences"] if str(x).strip()]
+                        if start_id in batch_map:
+                            orig_s = batch_map[start_id]
+                            extracted_batch_items.extend(
+                                self._interpolate_sentences(orig_s.start, orig_s.end, multi_sents)
+                            )
+                            covered_ids.add(start_id)
+                        continue
 
-                        if not txt:
-                            continue
+                    if not txt:
+                        continue
 
-                        s_obj = batch_map.get(start_id)
-                        e_obj = batch_map.get(end_id)
-                        if s_obj is not None and e_obj is not None:
-                            s_start = s_obj.start
-                            s_end = e_obj.end
-                            if s_end <= s_start:
-                                s_end = round(s_start + 1.0, 2)
+                    s_obj = batch_map.get(start_id)
+                    e_obj = batch_map.get(end_id)
+                    if s_obj is not None and e_obj is not None:
+                        s_start = s_obj.start
+                        s_end = e_obj.end
+                        if s_end <= s_start:
+                            s_end = round(s_start + 1.0, 2)
+                        split_items = split_segment_into_timed_sentences(s_start, s_end, txt)
+                        if split_items:
+                            extracted_batch_items.extend(split_items)
+                        else:
                             extracted_batch_items.append({
                                 "start": round(float(s_start), 2),
                                 "end": round(float(s_end), 2),
                                 "text": ensure_sentence_casing_and_punctuation(txt)
                             })
-                            in_range = False
-                            for s in batch:
-                                if s.id == start_id:
-                                    in_range = True
-                                if in_range:
-                                    covered_ids.add(s.id)
-                                if s.id == end_id:
-                                    break
+                        in_range = False
+                        for s in batch:
+                            if s.id == start_id:
+                                in_range = True
+                            if in_range:
+                                covered_ids.add(s.id)
+                            if s.id == end_id:
+                                break
 
-                # Nếu Gemini xử lý tốt và bao phủ ít nhất 70% số mẩu trong batch
-                if extracted_batch_items and len(covered_ids) >= max(1, int(len(batch) * 0.7)):
-                    missing_batch = [s for s in batch if s.id not in covered_ids]
-                    if missing_batch:
-                        for ms in missing_batch:
-                            extracted_batch_items.append({
-                                "start": round(float(ms.start), 2),
-                                "end": round(float(ms.end), 2),
-                                "text": ensure_sentence_casing_and_punctuation(ms.text)
-                            })
-                        extracted_batch_items.sort(key=lambda x: x["start"])
-                    refined_items.extend(extracted_batch_items)
-                    consecutive_failures = 0
-                else:
-                    for orig_s in batch:
-                        refined_items.extend(
-                            split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
-                        )
+            # Nếu Gemini xử lý tốt và bao phủ ít nhất 70% số mẩu trong batch
+            if extracted_batch_items and len(covered_ids) >= max(1, int(len(batch) * 0.7)):
+                missing_batch = [s for s in batch if s.id not in covered_ids]
+                if missing_batch:
+                    for ms in missing_batch:
+                        extracted_batch_items.append({
+                            "start": round(float(ms.start), 2),
+                            "end": round(float(ms.end), 2),
+                            "text": ensure_sentence_casing_and_punctuation(ms.text)
+                        })
+                    extracted_batch_items.sort(key=lambda x: x["start"])
+                return extracted_batch_items
+            return self._fallback_batch_items(batch)
+        except Exception as e:
+            code = log_ai_api_error(
+                logger,
+                f"REFINER lo {b_idx}",
+                getattr(self, "model_name", "unknown"),
+                e,
+                is_fatal=False,
+            )
+            if code == "API_KEY_ERROR":
+                abort_event.set()
+            return self._fallback_batch_items(batch)
 
-            except Exception as e:
-                consecutive_failures += 1
-                log_ai_api_error(logger, f"REFINER lo {b_idx}", getattr(self, "model_name", "unknown"), e, is_fatal=False)
-                for orig_s in batch:
-                    refined_items.extend(
-                        split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text)
-                    )
+    def refine_transcript(
+        self,
+        transcript: TranscriptOutput,
+        outline_text: Optional[str] = None,
+        start_from_id: Optional[str] = None,
+        max_workers: int = DEFAULT_REFINE_MAX_WORKERS
+    ) -> TranscriptOutput:
+        """Hiệu đính chính tả và tách từng câu đơn trên toàn bộ transcript, sau đó đánh lại mã S0001, S0002..."""
+        if not transcript.sentences:
+            return transcript
+
+        if getattr(self, "_lock", None) is None:
+            self._lock = threading.Lock()
+
+        terms = extract_terms_from_outline(outline_text) if outline_text else []
+        terms_hint = f"Thuật ngữ bài giảng cần đối chiếu: {', '.join(terms)}" if terms else ""
+
+        prefix_items: List[dict] = []
+        target_sentences: List[Sentence] = []
+        resuming = bool(start_from_id)
+
+        for s in transcript.sentences:
+            if resuming and s.id != start_from_id:
+                prefix_items.extend(split_segment_into_timed_sentences(s.start, s.end, s.text))
+            else:
+                resuming = False
+                target_sentences.append(s)
+
+        batch_max_items = 60 if len(target_sentences) > 200 else 25
+        batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
+        batches = self._build_char_batches(target_sentences, max_chars=batch_max_chars, max_items=batch_max_items)
+        total_batches = len(batches)
+        refine_start_wall = time.perf_counter()
+        abort_event = threading.Event()
+        batch_results: List[Optional[List[dict]]] = [None] * total_batches
+
+        def write_progress(completed: int, label_batch: List[Sentence], b_num: int):
+            elapsed_ref = time.perf_counter() - refine_start_wall
+            percent_ref = (completed / total_batches) * 100.0 if total_batches > 0 else 100.0
+            if completed > 0:
+                avg_per_batch = elapsed_ref / completed
+                eta_ref = avg_per_batch * (total_batches - completed)
+                eta_str = f"~{format_duration(eta_ref)}"
+            else:
+                eta_str = "đang tính..."
+            bar = build_progress_bar(percent_ref)
+            sys.stdout.write(
+                f"\r[Gemini Refiner] [{bar}] {percent_ref:5.1f}% | "
+                f"Lô {b_num}/{total_batches} ({label_batch[0].id}->{label_batch[-1].id}) | "
+                f"Đã chạy: {format_duration(elapsed_ref)} | Còn lại (ETA): {eta_str}   "
+            )
+            sys.stdout.flush()
+
+        workers = max(1, min(int(max_workers or 1), total_batches)) if total_batches > 0 else 1
+        if workers <= 1:
+            for idx, batch in enumerate(batches):
+                write_progress(idx, batch, idx + 1)
+                batch_results[idx] = self._refine_single_batch(idx + 1, batch, terms_hint, abort_event)
+        else:
+            completed_count = 0
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                future_to_idx = {
+                    executor.submit(self._refine_single_batch, idx + 1, batch, terms_hint, abort_event): idx
+                    for idx, batch in enumerate(batches)
+                }
+                for future in as_completed(future_to_idx):
+                    idx = future_to_idx[future]
+                    batch_results[idx] = future.result()
+                    completed_count += 1
+                    write_progress(completed_count, batches[idx], idx + 1)
+
+        refined_items: List[dict] = list(prefix_items)
+        for items in batch_results:
+            if items:
+                refined_items.extend(items)
 
         if total_batches > 0:
             total_ref_elapsed = time.perf_counter() - refine_start_wall
@@ -438,11 +571,50 @@ DANH SÁCH ĐẦU VÀO:
         if not getattr(self, "models_to_try", None):
             force_ai = False
 
-        # Đọc toàn bộ 100% câu transcript chi tiết để Gemini phân đoạn chính xác nhất
+        # Đọc toàn bộ câu transcript, tự động nén gọn nếu vượt max_llm_chars trong config.yaml (mặc định 60.000 ký tự)
+        raw_cfg = getattr(default_ai_config, "raw_config", None) or {}
+        max_llm_chars = int(raw_cfg.get("segmentation", {}).get("max_llm_chars", 60000) or 60000)
+        target_transcript_chars = max(8000, max_llm_chars - 3000)
+
         formatted_sentences = [
             f"{s.id} [{s.start:.1f}s-{s.end:.1f}s]: {s.text}"
             for s in sentences
         ]
+        if sum(len(line) + 1 for line in formatted_sentences) > target_transcript_chars:
+            # Bước 1: Rút gọn timestamp mỗi dòng, ưu tiên giữ đủ 100% mã câu S0001..Sxxxx
+            fits_budget = False
+            for char_cap in (140, 100, 75, 55):
+                compact_lines = []
+                for s in sentences:
+                    t = s.text.strip()
+                    if len(t) > char_cap:
+                        t = t[: char_cap - 1].rstrip() + "…"
+                    compact_lines.append(f"{s.id} [{int(round(s.start))}s]: {t}")
+                formatted_sentences = compact_lines
+                if sum(len(line) + 1 for line in formatted_sentences) <= target_transcript_chars:
+                    fits_budget = True
+                    break
+
+            # Bước 2 (video rất dài > 1.000 câu): chỉ gắn mốc giây mỗi 5 câu để nhường ngân sách cho nội dung lời thoại
+            if not fits_budget:
+                last_idx = len(sentences) - 1
+                prefixes = [
+                    f"{s.id} [{int(round(s.start))}s]: " if (i % 5 == 0 or i == last_idx) else f"{s.id}: "
+                    for i, s in enumerate(sentences)
+                ]
+                prefix_total = sum(len(p) + 1 for p in prefixes)
+                dynamic_floor = max(12, (target_transcript_chars - prefix_total) // max(1, len(sentences)))
+                for char_cap in (100, 75, 55, 45, 38, 32, 26, 20, dynamic_floor):
+                    sparse_lines = []
+                    for pfx, s in zip(prefixes, sentences):
+                        t = s.text.strip()
+                        if len(t) > char_cap:
+                            t = t[: max(1, char_cap - 1)].rstrip() + "…"
+                        sparse_lines.append(f"{pfx}{t}")
+                    formatted_sentences = sparse_lines
+                    if sum(len(line) + 1 for line in formatted_sentences) <= target_transcript_chars:
+                        break
+
         first_id = sentences[0].id
         last_id = sentences[-1].id
 

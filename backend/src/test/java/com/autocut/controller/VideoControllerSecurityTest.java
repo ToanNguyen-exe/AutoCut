@@ -42,6 +42,7 @@ class VideoControllerSecurityTest {
     Path tmp;
 
     private Path outputRoot;
+    private Path uploadsRoot;
     private VideoConcat videoConcat;
     private MockMvc mvc;
 
@@ -49,12 +50,15 @@ class VideoControllerSecurityTest {
     void setUp(@TempDir Path tempDir) throws Exception {
         tmp = tempDir;
         outputRoot = Files.createDirectories(tempDir.resolve("output"));
+        uploadsRoot = Files.createDirectories(tempDir.resolve("uploads"));
 
         ConfigService config = Mockito.mock(ConfigService.class);
         Mockito.when(config.getEnv(Mockito.anyString(), Mockito.any()))
                 .thenReturn(null);
         Mockito.when(config.getEnv(Mockito.eq("STORAGE_OUTPUT_DIR"), Mockito.any()))
                 .thenReturn(outputRoot.toString());
+        Mockito.when(config.getEnv(Mockito.eq("STORAGE_UPLOADS_DIR"), Mockito.any()))
+                .thenReturn(uploadsRoot.toString());
 
         videoConcat = Mockito.mock(VideoConcat.class);
         Mockito.when(videoConcat.concat(Mockito.anyList(), Mockito.any(File.class), Mockito.anyBoolean()))
@@ -153,6 +157,42 @@ class VideoControllerSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("download-zip nén được bài học có tên tiếng Việt, khoảng trắng, ngoặc")
+    void downloadZipAcceptsVietnameseLessonName() throws Exception {
+        String lesson = "Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)";
+        Path lessonDir = Files.createDirectories(
+                outputRoot.resolve("users").resolve("toan").resolve(lesson));
+        Files.write(lessonDir.resolve("clip_01.mp4"), new byte[]{1, 2, 3});
+
+        mvc.perform(get("/api/video/download-zip")
+                        .param("lesson", lesson)
+                        .param("user", "toan"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("render nhận tên bài học tiếng Việt thay vì chặn 400")
+    void renderAcceptsVietnameseLessonName() throws Exception {
+        String body = "{\"video\":\"v.mp4\",\"lesson\":\"Bài giảng Lập trình Web (2 Giờ)\",\"segments\":[]}";
+
+        mvc.perform(post("/api/video/render")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("render vẫn chặn lesson thoát khỏi thư mục output")
+    void renderStillRejectsTraversalLesson() throws Exception {
+        String body = "{\"video\":\"v.mp4\",\"lesson\":\"../..\",\"segments\":[]}";
+
+        mvc.perform(post("/api/video/render")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
     // ------------------------------------------------ 3+4. ghép video (đọc & ghi)
 
     @Test
@@ -204,6 +244,20 @@ class VideoControllerSecurityTest {
     void streamRejectsInvalidHash(String hash) throws Exception {
         mvc.perform(get("/api/video/stream/" + hash))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("stream phát được tệp đã upload theo định dạng <hash>_<ten_file>.mp4")
+    void streamServesUploadedVideoWithHashPrefixFilename() throws Exception {
+        String validHash = "0f1b867ff583f404f58fbfc305eb0dfbf4dc544c812351393d5e0bb526f175b8";
+        Files.write(uploadsRoot.resolve(validHash + "_download.mp4"), new byte[]{0, 1, 2, 3});
+
+        mvc.perform(get("/api/video/stream/" + validHash))
+                .andExpect(status().isOk());
+
+        String otherHash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+        mvc.perform(get("/api/video/stream/" + otherHash))
+                .andExpect(status().isNotFound());
     }
 
     // ------------------------------------------------ 6. render (ghi theo lesson)
