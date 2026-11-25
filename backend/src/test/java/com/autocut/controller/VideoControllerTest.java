@@ -232,6 +232,23 @@ class VideoControllerTest {
     }
 
     @Test
+    @DisplayName("getPeaks chấp nhận tiêu đề bài học tiếng Việt, không trả 400")
+    void testGetPeaks_AcceptsVietnameseLessonTitle() {
+        // F20: tiêu đề thật có dấu và khoảng trắng. Trước đây isSafeSlug chặn nên trả 400.
+        // Không có peaks.json nên kết quả đúng là 404 — điều cần khẳng định là qua được bước validate.
+        ResponseEntity<?> res = controller.getPeaks("Bài giảng Lập trình Web Full khóa (2 Giờ)", "admin", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks chặn đường dẫn tuyệt đối ở tham số video")
+    void testGetPeaks_BlocksAbsoluteVideoPath() {
+        // F04: resolve thẳng cho phép đọc ngoài uploads bằng path tuyệt đối.
+        ResponseEntity<?> res = controller.getPeaks("BaiGiang", "admin", "C:/Windows/win.ini");
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
     @DisplayName("getPeaks should return 404 when peaks.json and video are not found")
     void testGetPeaks_NotFound() {
         ResponseEntity<?> res = controller.getPeaks("unknown_lesson_12345", "unknown_user", null);

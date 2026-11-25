@@ -79,6 +79,9 @@ public class WaveformGenerator {
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(false);
+            // ffmpeg ghi cảnh báo/lỗi ra stderr. Không ai đọc thì pipe 64KB đầy,
+            // ffmpeg block khi ghi stderr, stdout ngừng chảy và process treo tới timeout.
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
             process = pb.start();
 
             // Đọc luồng PCM dạng streaming để tránh tràn RAM với video dung lượng lớn
@@ -145,11 +148,14 @@ public class WaveformGenerator {
                 }
             }
 
-            int timeoutSec = videoProps.getTimeoutSeconds() > 0 ? videoProps.getTimeoutSeconds() : 60;
+            // Trước đây dùng getTimeoutSeconds() (=20s) cho cả video 2 giờ → ffmpeg bị
+            // destroyForcibly() giữa luồng, peaks trả về dở/rỗng mà không báo lỗi.
+            int timeoutSec = Math.max(300, videoProps.getCutTimeoutSeconds());
             boolean finished = process.waitFor(timeoutSec, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                log.warn("Lệnh ffmpeg trích xuất âm thanh bị timeout sau {}s", timeoutSec);
+                log.warn("Lệnh ffmpeg trích xuất âm thanh bị timeout sau {}s: {}", timeoutSec, sourceVideo.getFileName());
+                return WaveformResult.empty();
             }
 
             if (totalSamples == 0) {

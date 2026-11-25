@@ -1452,21 +1452,26 @@ public class VideoController {
             @RequestParam(value = "user", defaultValue = "admin") String rawUser,
             @RequestParam(value = "video", required = false) String rawVideo) {
 
-        if (rawLesson != null && !SafePaths.isSafeSlug(rawLesson)) {
+        // F20: lesson là tiêu đề bài học thật (tiếng Việt, khoảng trắng, ngoặc),
+        // nên phải dùng isSafeSegment — isSafeSlug chỉ cho ASCII nên trả 400 nhầm.
+        // isSafeSegment vẫn cấm dấu phân cách và "." / ".." nên không thoát thư mục được.
+        if (rawLesson == null || !SafePaths.isSafeSegment(rawLesson)) {
             log.warn("Chặn getPeaks: lesson không hợp lệ ('{}')", rawLesson);
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "BAD_REQUEST",
                     "error", "Tên bài học không hợp lệ"));
         }
-        if (rawUser != null && !SafePaths.isSafeSlug(rawUser)) {
+        if (rawUser == null || !SafePaths.isSafeSlug(rawUser)) {
             log.warn("Chặn getPeaks: user không hợp lệ ('{}')", rawUser);
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "BAD_REQUEST",
                     "error", "Tên user không hợp lệ"));
         }
 
-        String safeUser = rawUser != null ? rawUser.replaceAll("[^a-zA-Z0-9._-]", "_") : "admin";
-        String safeLesson = rawLesson != null ? rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_") : "BaiGiang";
+        // Giữ đúng quy ước thư mục của saveProject: tên thư mục là bản đã lọc ASCII.
+        // Không lọc thì getPeaks không tìm thấy peaks.json mà saveProject vừa ghi.
+        String safeUser = rawUser.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeLesson = rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_");
         if (safeUser.isBlank()) safeUser = "admin";
         if (safeLesson.isBlank()) safeLesson = "BaiGiang";
 
@@ -1486,15 +1491,17 @@ public class VideoController {
 
         // 2. Nếu chưa có peaks.json, tìm video nguồn trong uploads để trích xuất và lưu vào peaks.json
         Path videoPath = null;
-        if (rawVideo != null && !rawVideo.isBlank() && !rawVideo.contains("..")) {
-            Path candidate = projectRoot.resolve("uploads").resolve(rawVideo);
-            if (Files.exists(candidate)) {
-                videoPath = candidate;
-            } else {
-                Path candidate2 = Paths.get("uploads", rawVideo);
-                if (Files.exists(candidate2)) {
-                    videoPath = candidate2;
+        if (rawVideo != null && !rawVideo.isBlank()) {
+            // F04: resolve thẳng không chặn được đường dẫn tuyệt đối — Path.resolve trả về
+            // chính path tuyệt đối, nên ?video=C:/Windows/win.ini đọc được ngoài uploads.
+            try {
+                Path candidate = SafePaths.resolveWithin(rootFor("uploads"), rawVideo);
+                if (Files.isRegularFile(candidate)) {
+                    videoPath = candidate;
                 }
+            } catch (PathOutsideRootException e) {
+                log.warn("Chặn getPeaks: video nằm ngoài thư mục uploads ('{}'), ip={}",
+                        abbreviate(rawVideo), currentRequestIp());
             }
         }
 
