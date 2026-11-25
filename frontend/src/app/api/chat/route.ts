@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveEnvKey } from "@/lib/groqEnv";
 
 export const dynamic = "force-dynamic";
 
@@ -66,10 +67,7 @@ Nhiệm vụ của bạn:
     // 1. GROQ (Meta Llama / OSS 120B / Qwen)
     if (model === "groq") {
       const groqKey =
-        customKey ||
-        process.env.GROQ_API_KEY ||
-        process.env.WHISPER_API_KEY ||
-        process.env.NEXT_PUBLIC_WHISPER_API_KEY;
+        customKey || resolveEnvKey(["GROQ_API_KEY", "WHISPER_API_KEY"]);
 
       if (!groqKey) {
         return NextResponse.json({
@@ -132,10 +130,7 @@ Nhiệm vụ của bạn:
     // 2. GEMINI (Google Gemini)
     if (model === "gemini") {
       const geminiKey =
-        customKey ||
-        process.env.GEMINI_API_KEY ||
-        process.env.LLM_API_KEY ||
-        process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+        customKey || resolveEnvKey(["GEMINI_API_KEY", "LLM_API_KEY"]);
 
       if (!geminiKey) {
         return NextResponse.json({
@@ -212,9 +207,7 @@ Nhiệm vụ của bạn:
     // 3. CHATGPT (OpenAI)
     if (model === "chatgpt") {
       const openAiKey =
-        customKey ||
-        process.env.OPENAI_API_KEY ||
-        process.env.LLM_API_KEY;
+        customKey || resolveEnvKey(["OPENAI_API_KEY", "LLM_API_KEY"]);
 
       if (!openAiKey || openAiKey === "your_llm_api_key_here") {
         return NextResponse.json({
@@ -271,9 +264,7 @@ Nhiệm vụ của bạn:
     // 4. CLAUDE AI (Anthropic)
     if (model === "claude") {
       const claudeKey =
-        customKey ||
-        process.env.ANTHROPIC_API_KEY ||
-        process.env.CLAUDE_API_KEY;
+        customKey || resolveEnvKey(["ANTHROPIC_API_KEY", "CLAUDE_API_KEY"]);
 
       if (!claudeKey) {
         return NextResponse.json({

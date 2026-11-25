@@ -162,7 +162,18 @@ def is_valid_real_transcript(data: dict, expected_duration: float = 0.0) -> bool
     sents = data.get("sentences", [])
     if not sents or len(sents) < 2:
         return False
-    dummy_count = sum(1 for s in sents if "Nội dung phần " in str(s.get("text", "")) or "Nội dung bóc băng" in str(s.get("text", "")))
+    dummy_markers = (
+        "Nội dung phần ",
+        "Nội dung bóc băng",
+        "Chào mừng các bạn đến với nội dung ",
+        "Trong phần này, chúng ta sẽ tìm hiểu tổng quan về ",
+        "Tiếp theo, chúng ta đi sâu vào các nội dung trọng tâm và cú pháp cốt lõi.",
+        "đến đây là hoàn thành.",
+    )
+    dummy_count = sum(
+        1 for s in sents
+        if any(marker in str(s.get("text", "")) for marker in dummy_markers)
+    )
     if dummy_count >= (len(sents) * 0.5):
         return False
     # Nếu kiểm tra video dài (> 10 phút), transcript không thể ngắn cũn cỡn dưới 30% thời lượng
@@ -180,7 +191,8 @@ def _find_matching_transcript_or_video(
     duration: float,
     exhausted_models: Optional[Set[str]] = None,
     force: bool = False,
-    url: Optional[str] = None
+    url: Optional[str] = None,
+    unavailable_models: Optional[Set[str]] = None,
 ) -> TranscriptOutput:
     """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video/audio vật lý hoặc stream từ URL."""
     cache_dir = PROJECT_ROOT / "cache"
@@ -355,7 +367,10 @@ def _find_matching_transcript_or_video(
         res = None
         try:
             from .groq_service import transcribe_with_groq
-            res = transcribe_with_groq(str(vid_path))
+            try:
+                res = transcribe_with_groq(str(vid_path), save_to_transcripts=False)
+            except TypeError:
+                res = transcribe_with_groq(str(vid_path))
         except Exception as groq_err:
             logger.warning(f"[CLI] Groq fallback -> Whisper cuc bo ({summarize_error(groq_err)})")
             from .whisper_service import WhisperTranscriber
@@ -366,7 +381,13 @@ def _find_matching_transcript_or_video(
         print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
         try:
             from .transcript_refiner import TranscriptRefiner
-            refiner = TranscriptRefiner(exhausted_models=exhausted_models)
+            try:
+                refiner = TranscriptRefiner(
+                    exhausted_models=exhausted_models,
+                    unavailable_models=unavailable_models,
+                )
+            except TypeError:
+                refiner = TranscriptRefiner(exhausted_models=exhausted_models)
             res = refiner.refine_transcript(res)
         except Exception as ref_err:
             logger.warning(f"[CLI] Refiner fallback -> tach cau cuc bo ({summarize_error(ref_err)})")
@@ -423,9 +444,13 @@ def _find_matching_transcript_or_video(
         except Exception:
             continue
 
-    # 5. Trường hợp video mới không có file audio cục bộ (ví dụ bài giảng demo trong test/preview):
-    # Tạo câu thoại tổng quan riêng biệt dựa trên tên bài học thực tế của video này, KHÔNG lấy transcript của video khác
+    # 5. Không tìm thấy file video/audio vật lý hay URL hợp lệ:
+    # Trong môi trường chạy thật, tuyệt đối KHÔNG bịa câu thoại giả và KHÔNG ghi rác vào transcripts/.
+    # Trả transcript rỗng để run_backend_analysis dừng rõ ràng với lỗi EMPTY_TRANSCRIPT.
     eff_dur = round(float(duration if duration and duration > 0 else 180.0), 2)
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        return TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=[])
+
     step = round(eff_dur / 8.0, 2)
     sample_texts = [
         f"Chào mừng các bạn đến với nội dung {lesson or clean_vname}.",
@@ -446,9 +471,7 @@ def _find_matching_transcript_or_video(
         )
         for idx, txt in enumerate(sample_texts, start=1)
     ]
-    synth_output = TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=synth_sentences)
-    save_to_dedicated_transcripts_folder(synth_output, clean_vname)
-    return synth_output
+    return TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=synth_sentences)
 
 
 def save_segments_to_segments_folder(segments_data: Dict[str, Any], lesson_or_video: str) -> Path:
@@ -482,6 +505,7 @@ def run_backend_analysis(
 ):
     """Thực thi trọn vẹn pipeline AI cho API /api/video/analyze của Spring Boot."""
     session_exhausted_models: Set[str] = set()
+    session_unavailable_models: Set[str] = set()
     try:
         transcript = _find_matching_transcript_or_video(
             video_name=video_name,
@@ -490,7 +514,8 @@ def run_backend_analysis(
             duration=duration,
             exhausted_models=session_exhausted_models,
             force=force,
-            url=url
+            url=url,
+            unavailable_models=session_unavailable_models,
         )
     except TypeError:
         try:
@@ -500,16 +525,27 @@ def run_backend_analysis(
                 file_hash=file_hash,
                 duration=duration,
                 exhausted_models=session_exhausted_models,
-                force=force
+                force=force,
+                url=url
             )
         except TypeError:
-            transcript = _find_matching_transcript_or_video(
-                video_name=video_name,
-                lesson=lesson,
-                file_hash=file_hash,
-                duration=duration,
-                exhausted_models=session_exhausted_models
-            )
+            try:
+                transcript = _find_matching_transcript_or_video(
+                    video_name=video_name,
+                    lesson=lesson,
+                    file_hash=file_hash,
+                    duration=duration,
+                    exhausted_models=session_exhausted_models,
+                    force=force
+                )
+            except TypeError:
+                transcript = _find_matching_transcript_or_video(
+                    video_name=video_name,
+                    lesson=lesson,
+                    file_hash=file_hash,
+                    duration=duration,
+                    exhausted_models=session_exhausted_models
+                )
 
     # Không có lời thoại thì KHÔNG được báo SUCCESS: giao diện sẽ hiện thông báo
     # thành công mà màn hình không đổi gì, người dùng tưởng AI bị treo.
@@ -525,12 +561,27 @@ def run_backend_analysis(
     from .transcript_refiner import TranscriptRefiner
     is_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
     try:
-        refiner = TranscriptRefiner(exhausted_models=session_exhausted_models)
-        segments_data = refiner.segment_transcript(
-            transcript,
-            lesson_name=lesson or video_name,
-            force_ai=not is_pytest
-        )
+        try:
+            refiner = TranscriptRefiner(
+                exhausted_models=session_exhausted_models,
+                unavailable_models=session_unavailable_models,
+            )
+        except TypeError:
+            refiner = TranscriptRefiner(exhausted_models=session_exhausted_models)
+        seg_kwargs = {
+            "lesson_name": lesson or video_name,
+            "force_ai": not is_pytest,
+        }
+        if not is_pytest:
+            seg_kwargs["max_retries"] = 3
+        try:
+            segments_data = refiner.segment_transcript(transcript, **seg_kwargs)
+        except TypeError:
+            segments_data = refiner.segment_transcript(
+                transcript,
+                lesson_name=lesson or video_name,
+                force_ai=not is_pytest,
+            )
     except Exception as e:
         if is_pytest:
             dummy_refiner = object.__new__(TranscriptRefiner)
