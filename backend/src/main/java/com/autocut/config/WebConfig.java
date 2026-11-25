@@ -36,19 +36,20 @@ public class WebConfig implements WebMvcConfigurer {
      * Chỉ {@code dev} và {@code test} được dùng giá trị mặc định của dev.
      * Không có profile nào bị coi là production — an toàn theo hướng đóng.
      */
+    /**
+     * Chỉ {@code dev} và {@code test} được dùng giá trị mặc định của dev.
+     * Không có profile nào (hoặc {@code default}/{@code prod}) bị coi là production — fail-closed (F05 FR-2b).
+     */
     static boolean isDevLike(String[] activeProfiles) {
         if (activeProfiles == null || activeProfiles.length == 0) {
-            return true;
+            return false;
         }
         for (String profile : activeProfiles) {
-            if ("dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile) || "default".equalsIgnoreCase(profile)) {
+            if ("dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile)) {
                 return true;
             }
-            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
-                return false;
-            }
         }
-        return true;
+        return false;
     }
 
     @Override

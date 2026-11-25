@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);

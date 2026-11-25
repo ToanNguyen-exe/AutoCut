@@ -5,7 +5,7 @@
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
-    "backend": "cd backend && .\\mvnw.cmd spring-boot:run"
+    "backend": "cd backend && .\\mvnw.cmd spring-boot:run \"-Dspring-boot.run.profiles=dev\""
   },
   "dependencies": {
     "@neon/config": "^1.9.5",
