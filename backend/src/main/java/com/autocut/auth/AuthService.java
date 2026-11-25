@@ -79,7 +79,7 @@ public class AuthService {
         }
 
         String storedHash = user.getPasswordHash();
-        if (!isBcryptHash(storedHash) || !passwordEncoder.matches(rawPassword, storedHash)) {
+        if (!matchesStoredHash(storedHash, rawPassword)) {
             recordFailedAttempt(user, now);
             throw invalidCredentials();
         }
@@ -90,6 +90,11 @@ public class AuthService {
                     "ACCOUNT_DISABLED",
                     "Tài khoản đã bị vô hiệu hóa."
             );
+        }
+
+        // Lazy migration: tài khoản cũ dùng SHA-256 hex được tự động băm lại bằng BCrypt(12) ngay lần đăng nhập đầu.
+        if (!isBcryptHash(storedHash)) {
+            user.setPasswordHash(passwordEncoder.encode(rawPassword));
         }
 
         user.setFailedLoginCount(0);
@@ -167,9 +172,7 @@ public class AuthService {
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
         UserEntity user = getUserById(userId);
-        if (currentPassword == null
-                || !isBcryptHash(user.getPasswordHash())
-                || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+        if (currentPassword == null || !matchesStoredHash(user.getPasswordHash(), currentPassword)) {
             throw new AuthException(
                     HttpStatus.UNAUTHORIZED,
                     "INVALID_CREDENTIALS",
@@ -264,8 +267,37 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    private boolean matchesStoredHash(String storedHash, String rawPassword) {
+        if (storedHash == null || rawPassword == null) {
+            return false;
+        }
+        if (isBcryptHash(storedHash)) {
+            return passwordEncoder.matches(rawPassword, storedHash);
+        }
+        if (isLegacySha256Hex(storedHash)) {
+            byte[] expected = storedHash.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8);
+            byte[] actual = sha256Hex(rawPassword).toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8);
+            return MessageDigest.isEqual(expected, actual);
+        }
+        return false;
+    }
+
     private static boolean isBcryptHash(String hash) {
         return hash != null && (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$"));
+    }
+
+    private static boolean isLegacySha256Hex(String hash) {
+        if (hash == null || hash.length() != 64) {
+            return false;
+        }
+        for (int i = 0; i < hash.length(); i++) {
+            char c = hash.charAt(i);
+            boolean hex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+            if (!hex) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void validatePasswordStrength(String password) {

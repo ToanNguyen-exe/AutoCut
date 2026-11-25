@@ -63,13 +63,13 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("BCrypt hash bat dau bang $2a$12$/$2b$12$, TU CHOI plaintext va SHA-256")
-    void rejectsPlaintextAndWeakSha256() throws Exception {
+    @DisplayName("BCrypt hash bat dau bang $2a$12$/$2b$12$; TU CHOI plaintext; SHA-256 cu duoc xac thuc 1 lan va tu dong nang cap len BCrypt(12)")
+    void rejectsPlaintext_andUpgradesLegacySha256OnLogin() throws Exception {
         String encoded = passwordEncoder.encode("MatKhau123");
         Assertions.assertTrue(encoded.startsWith("$2a$12$") || encoded.startsWith("$2b$12$"),
                 "Hash phai la BCrypt cost 12");
 
-        // DB luu plaintext -> TU CHOI
+        // DB luu plaintext -> VAN TU CHOI hoan toan
         UserEntity plaintextUser = new UserEntity("plain@autocut.ai", "MatKhau123", "Plain", "INSTRUCTOR");
         plaintextUser.setId(1L);
         when(userRepository.findByEmailIgnoreCase("plain@autocut.ai")).thenReturn(Optional.of(plaintextUser));
@@ -77,15 +77,30 @@ class AuthServiceTest {
                 () -> authService.login("plain@autocut.ai", "MatKhau123", "ua", "127.0.0.1"));
         Assertions.assertEquals("INVALID_CREDENTIALS", plainEx.getCode());
 
-        // DB luu SHA-256 khong salt -> TU CHOI
+        // Yeu cau thay doi theo DB hien huu: user cu luu SHA-256 hex (64 ky tu) dang nhap dung phai thanh cong
+        // va ngay lap tuc duoc bam lai bang BCrypt cost 12 trong DB (lazy migration).
         String sha256 = HexFormat.of().formatHex(
                 MessageDigest.getInstance("SHA-256").digest("MatKhau123".getBytes(StandardCharsets.UTF_8)));
         UserEntity shaUser = new UserEntity("sha@autocut.ai", sha256, "Sha", "INSTRUCTOR");
         shaUser.setId(2L);
+        shaUser.setIsActive(true);
         when(userRepository.findByEmailIgnoreCase("sha@autocut.ai")).thenReturn(Optional.of(shaUser));
-        AuthException shaEx = Assertions.assertThrows(AuthException.class,
-                () -> authService.login("sha@autocut.ai", "MatKhau123", "ua", "127.0.0.1"));
-        Assertions.assertEquals("INVALID_CREDENTIALS", shaEx.getCode());
+
+        // Sai mat khau voi SHA-256 van bi dem loi nhu thuong
+        AuthException wrongSha = Assertions.assertThrows(AuthException.class,
+                () -> authService.login("sha@autocut.ai", "SaiMatKhau", "ua", "127.0.0.1"));
+        Assertions.assertEquals("INVALID_CREDENTIALS", wrongSha.getCode());
+        Assertions.assertEquals(1, shaUser.getFailedLoginCount());
+        Assertions.assertEquals(sha256, shaUser.getPasswordHash());
+
+        // Dung mat khau -> dang nhap thanh cong va DB hash doi thanh BCrypt cost 12
+        AuthService.LoginResult result = authService.login("sha@autocut.ai", "MatKhau123", "ua", "127.0.0.1");
+        Assertions.assertNotNull(result.accessToken());
+        Assertions.assertTrue(
+                shaUser.getPasswordHash().startsWith("$2a$12$") || shaUser.getPasswordHash().startsWith("$2b$12$"),
+                "Password hash trong DB phai duoc nang cap ngay sang BCrypt(12), thuc te: " + shaUser.getPasswordHash());
+        Assertions.assertTrue(passwordEncoder.matches("MatKhau123", shaUser.getPasswordHash()));
+        Assertions.assertEquals(0, shaUser.getFailedLoginCount());
     }
 
     @Test
