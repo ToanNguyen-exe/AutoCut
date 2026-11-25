@@ -38,6 +38,11 @@ out/
 .yarn/install-state.gz
 coverage/
 .vercel
+
+# Cloudflare Workers (OpenNext) — output build, không commit
+.open-next/
+.wrangler/
+frontend/.dev.vars
 *.tsbuildinfo
 next-env.d.ts
 npm-debug.log*

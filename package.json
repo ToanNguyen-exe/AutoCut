@@ -5,10 +5,16 @@
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
-    "backend": "cd backend && .\\mvnw.cmd spring-boot:run"
+    "backend": "cd backend && .\\mvnw.cmd spring-boot:run",
+    "build:worker": "npm ci --prefix frontend && npm --prefix frontend run build:worker",
+    "deploy:worker": "wrangler deploy",
+    "preview:worker": "npm --prefix frontend run preview:worker"
   },
   "dependencies": {
     "@neon/config": "^1.9.5",
     "@neon/env": "^1.6.6"
+  },
+  "devDependencies": {
+    "wrangler": "^4.59.2"
   }
 }
