@@ -11,11 +11,13 @@ Mục đích: đưa phần **Next.js (frontend/)** lên Cloudflare Workers bằn
 | Repository | `ToanNguyen-exe/AutoCut` |
 | Branch | `feature/f14/cloudflare_worker_deploy` (hoặc `main` sau khi merge) |
 | Root directory | để trống (gốc repo) |
-| Build command | `npm run build:worker` |
+| Build command | `npm run build` (mặc định của Cloudflare cũng đúng — script này tự `npm ci` trong `frontend/` rồi build Worker) |
 | Deploy command | `npx wrangler deploy` |
 | Node version | đặt biến `NODE_VERSION=20` (adapter OpenNext chưa hỗ trợ Node 26) |
 
-`npm run build:worker` ở gốc repo sẽ: `npm ci` trong `frontend/` → `opennextjs-cloudflare build --config ../wrangler.jsonc`.
+`npm run build` ở gốc repo sẽ: `npm ci` trong `frontend/` → `opennextjs-cloudflare build --config ../wrangler.jsonc`.
+Nếu Cloudflare đang để Build command là `npm run build` (mặc định) thì **không cần sửa gì** — script `build` đã trỏ đúng.
+Chỉ muốn build Next thuần (không ra Worker) thì dùng `npm run build:next`.
 
 ## 2. Biến môi trường cho Worker
 

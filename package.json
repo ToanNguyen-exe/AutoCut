@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
+    "build": "npm ci --prefix frontend && npm --prefix frontend run build:worker",
+    "build:next": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
     "backend": "cd backend && .\\mvnw.cmd spring-boot:run",
     "build:worker": "npm ci --prefix frontend && npm --prefix frontend run build:worker",
