@@ -217,7 +217,8 @@ def transcribe_audio_in_chunks(
 def transcribe_with_groq(
     media_path: str,
     api_key: Optional[str] = None,
-    output_file: Optional[str] = None
+    output_file: Optional[str] = None,
+    save_to_transcripts: bool = True
 ) -> TranscriptOutput:
     """Thực thi bóc băng hoàn chỉnh với Groq Whisper và lưu kết quả vào file."""
     p = Path(media_path)
@@ -326,14 +327,15 @@ def transcribe_with_groq(
         sentences=sentences
     )
 
-    # 3. Ghi ra 1 file transcript duy nhất cho video:
+    # 3. Ghi ra 1 file transcript duy nhất cho video (trừ khi cli gọi làm bước trung gian trước Gemini Refiner):
     # transcripts/<tên_video>_transcript.json (chuẩn hóa không dấu, không khoảng cách)
     safe_stem = sanitize_transcript_stem(stem)
     dedicated_file = TRANSCRIPTS_DIR / f"{safe_stem}_transcript.json"
     json_str = transcript_out.model_dump_json(indent=2, exclude_none=True)
-    with open(dedicated_file, "w", encoding="utf-8") as f:
-        f.write(json_str)
-    logger.info(f"[+] Da luu transcript tai: {dedicated_file}")
+    if save_to_transcripts:
+        with open(dedicated_file, "w", encoding="utf-8") as f:
+            f.write(json_str)
+        logger.info(f"[+] Da luu transcript tai: {dedicated_file}")
 
     # File output chỉ định (nếu có và trùng path thì đã lưu, nếu khác thì lưu vào đích)
     if output_file:
@@ -341,7 +343,7 @@ def transcribe_with_groq(
         if out_p.parent.resolve() == TRANSCRIPTS_DIR.resolve():
             clean_stem = sanitize_transcript_stem(out_p.name.replace("_transcript.json", "").replace(".json", ""))
             out_p = TRANSCRIPTS_DIR / f"{clean_stem}_transcript.json"
-        if out_p.resolve() != dedicated_file.resolve():
+        if not save_to_transcripts or out_p.resolve() != dedicated_file.resolve():
             out_p.parent.mkdir(parents=True, exist_ok=True)
             with open(out_p, "w", encoding="utf-8") as f:
                 f.write(json_str)

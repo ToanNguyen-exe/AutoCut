@@ -264,13 +264,13 @@ public class CutPointService {
             }
         }
 
-        // 3. Đảm bảo các phân đoạn liền kề liên tục không có khe hở (Contiguous)
+        // 3. Đảm bảo các phân đoạn liền kề liên tục không có khe hở (Contiguous) và đồng bộ mốc parts
         List<Segment> finalized = new ArrayList<>();
         double currentCursor = 0.0;
         for (int i = 0; i < mergedList.size(); i++) {
             Segment s = mergedList.get(i);
-            double sStart = (i == 0) ? 0.0 : currentCursor;
-            double sEnd = (i == mergedList.size() - 1) ? Math.max(sStart + 1.0, totalDuration) : Math.max(sStart + 1.0, s.end());
+            double sStart = Math.round(((i == 0) ? 0.0 : currentCursor) * 100.0) / 100.0;
+            double sEnd = Math.round(((i == mergedList.size() - 1) ? Math.max(sStart + 1.0, totalDuration) : Math.max(sStart + 1.0, s.end())) * 100.0) / 100.0;
             currentCursor = sEnd;
 
             finalized.add(new Segment(
@@ -282,9 +282,9 @@ public class CutPointService {
                     s.slug(),
                     s.startId(),
                     s.endId(),
-                    Math.round(sStart * 100.0) / 100.0,
-                    Math.round(sEnd * 100.0) / 100.0,
-                    s.parts()
+                    sStart,
+                    sEnd,
+                    syncPartsToRange(s.parts(), sStart, sEnd)
             ));
         }
 
@@ -295,6 +295,24 @@ public class CutPointService {
                 rawSegments.reviewed(),
                 finalized
         );
+    }
+
+    private List<VideoPart> syncPartsToRange(List<VideoPart> parts, double start, double end) {
+        if (parts == null || parts.isEmpty()) {
+            return parts;
+        }
+        if (parts.size() == 1) {
+            VideoPart p = parts.get(0);
+            return List.of(new VideoPart(p.part(), start, end, p.file()));
+        }
+        List<VideoPart> synced = new ArrayList<>(parts.size());
+        for (int i = 0; i < parts.size(); i++) {
+            VideoPart p = parts.get(i);
+            double pStart = (i == 0) ? start : Math.max(start, Math.min(end, p.start()));
+            double pEnd = (i == parts.size() - 1) ? end : Math.max(pStart, Math.min(end, p.end()));
+            synced.add(new VideoPart(p.part(), pStart, pEnd, p.file()));
+        }
+        return synced;
     }
 
     /**

@@ -7,6 +7,7 @@ import type { ReadableStream as WebReadableStream } from "stream/web";
 import { pipeline } from "stream/promises";
 import { Sentence, TranscriptData, Segment, SegmentsData } from "@/types";
 import { recalculateParts } from "@/lib/utils";
+import { resolveGroqApiKey } from "@/lib/groqEnv";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ function findExistingTranscript(projectRoot: string, videoName: string): Transcr
     }
 
     // 2. Bí danh chuẩn cho video demo/bài giảng có sẵn
-    if (targetNorm.includes("bai08") || targetNorm.includes("epkieu") || targetNorm.includes("ytsave")) {
+    if (targetNorm.includes("bai08") || targetNorm.includes("epkieu")) {
       const match = files.find((f) => f.toLowerCase().includes("ep_kieu") || f.toLowerCase().includes("ep-kieu"));
       if (match) {
         try {
@@ -323,12 +324,26 @@ async function processTranscription(
     }
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = resolveGroqApiKey(process.env, projectRoot);
+  if (!apiKey || !apiKey.startsWith("gsk_")) {
+    if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+      try {
+        fs.unlinkSync(tempAudioPath);
+      } catch (unlinkErr) {
+        console.warn("Không thể xóa tệp audio tạm:", unlinkErr);
+      }
+    }
+    throw new Error(
+      "Chưa cấu hình hoặc sai định dạng GROQ_API_KEY / WHISPER_API_KEY (bắt đầu bằng gsk_ trong .env hoặc frontend/.env.local)."
+    );
+  }
+
   let rawSegments: Array<{ id: number; start: number; end: number; text: string; no_speech_prob?: number }> = [];
   let totalDuration = 180.0;
+  let groqErrorDetail: string | null = null;
 
   // 3. Gọi Groq Whisper API nếu có âm thanh
-  if (apiKey && audioBuffer && audioBuffer.length > 0) {
+  if (audioBuffer && audioBuffer.length > 0) {
     const groqFormData = new FormData();
     const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" });
     groqFormData.append("file", blob, `${videoStem}.mp3`);
@@ -357,17 +372,23 @@ async function processTranscription(
         }
       } else {
         const errText = await groqRes.text();
+        groqErrorDetail = `Groq API trả về HTTP ${groqRes.status}: ${errText.slice(0, 200)}`;
         console.error(`Groq API returned ${groqRes.status}:`, errText);
       }
     } catch (err) {
+      groqErrorDetail = err instanceof Error ? err.message : String(err);
       console.error("Groq Whisper API fetch error:", err);
     } finally {
       if (tempAudioPath && fs.existsSync(tempAudioPath)) {
         try {
           fs.unlinkSync(tempAudioPath);
-        } catch {}
+        } catch (unlinkErr) {
+          console.warn("Không thể xóa tệp audio tạm:", unlinkErr);
+        }
       }
     }
+  } else {
+    groqErrorDetail = "Không tìm thấy luồng âm thanh hoặc tệp video vật lý để trích xuất audio.";
   }
 
   // 4. Trích xuất câu THỰC TẾ từ Groq và chuẩn hóa Timeline
@@ -391,7 +412,11 @@ async function processTranscription(
   }
 
   if (rawSentences.length === 0) {
-    throw new Error("Không thể bóc băng lời thoại từ âm thanh video. Vui lòng kiểm tra lại mic/audio nguồn!");
+    throw new Error(
+      groqErrorDetail
+        ? `Groq STT thất bại: ${groqErrorDetail}`
+        : "Không thể bóc băng lời thoại từ âm thanh video. Vui lòng kiểm tra lại mic/audio nguồn!"
+    );
   }
 
   const filledSentences: Sentence[] = rawSentences;
