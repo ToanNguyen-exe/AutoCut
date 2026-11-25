@@ -198,4 +198,42 @@ class SafePathsTest {
         Assertions.assertFalse(SafePaths.isSha256("A".repeat(64)),
                 "Hash SHA-256 biểu diễn chữ thường");
     }
+
+    // ------------------------------------------------ isSafeSegment (tên bài học)
+
+    @Test
+    @DisplayName("isSafeSegment chấp nhận tiêu đề bài học thật")
+    void safeSegmentAcceptsRealLessonTitles() {
+        String[] accepted = {
+                "Bài giảng Lập trình Web Full khóa (2 Giờ - Vibe-Coding-4.mp4)",
+                "Bai05_VongLap",
+                "snaptik.vn_7706759613387148564.mp4",
+                "Bài 1 - Giới thiệu (phần 2)",
+                "Chương 3: Vòng lặp".replace(":", ""), // dấu hai chấm bị cấm trên Windows
+                "javascript"
+        };
+        for (String value : accepted) {
+            Assertions.assertTrue(SafePaths.isSafeSegment(value),
+                    "Phải chấp nhận tên bài học thật: " + value);
+        }
+    }
+
+    @Test
+    @DisplayName("isSafeSegment từ chối dấu phân cách và ký tự cấm")
+    void safeSegmentRejectsUnsafeNames() {
+        String[] rejected = {
+                null, "", "   ",
+                "..", ".",
+                "../..", "../../.env",
+                "a/b", "users/toan/Bai05",       // đọc được dữ liệu người khác
+                "a\\b", "..\\..\\.env",
+                "a:b", "a*b", "a?b", "a<b", "a|b", "a\"b",
+                "a\u0000b", "a\nb",
+                "x".repeat(201)
+        };
+        for (String value : rejected) {
+            Assertions.assertFalse(SafePaths.isSafeSegment(value),
+                    "Phải từ chối: " + value);
+        }
+    }
 }

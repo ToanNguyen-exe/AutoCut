@@ -38,6 +38,44 @@ except (ImportError, ValueError):
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
+
+# Đuôi tệp được coi là "nguồn media" để bóc băng.
+#
+# Cần danh sách này vì glob tìm ứng viên khớp cả tên tệp transcript trong
+# cache/ (v.d. `hash_<...>_transcript.json`). Không lọc thì pipeline lấy chính
+# bản transcript ra làm video: Groq trả 400 "unsupported_audio_format", rồi
+# Whisper cục bộ chết với InvalidDataError.
+MEDIA_EXTENSIONS = frozenset({
+    ".mp4", ".mkv", ".mov", ".webm", ".avi", ".m4v", ".flv", ".mpeg", ".mpg", ".wmv",
+    ".mp3", ".m4a", ".wav", ".flac", ".ogg", ".opus", ".aac", ".wma",
+})
+
+
+def _is_media_file(path: Path) -> bool:
+    """Tệp này có phải nguồn media để bóc băng không (theo đuôi tệp)."""
+    return path.suffix.lower() in MEDIA_EXTENSIONS
+
+
+def _cache_transcripts_for(video_name: str, cache_dir: Path) -> list:
+    """Các tệp transcript trong cache/ có ghi đúng tên video này."""
+    target = (video_name or "").strip().lower()
+    if not target:
+        return []
+    target_stem = Path(target).stem
+    found = []
+    for path in sorted(cache_dir.glob("*_transcript.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        name = str(data.get("video", "")).strip().lower()
+        if not name:
+            continue
+        if name == target or Path(name).stem == target_stem:
+            found.append(path)
+    return found
+
+
 SEGMENTS_DIR = PROJECT_ROOT / "segments"
 SHA256_PREFIX_RE = re.compile(r"^[0-9a-fA-F]{64}_")
 
@@ -181,20 +219,34 @@ def _find_matching_transcript_or_video(
                 except Exception:
                     pass
 
-        # 2. Kiểm tra cache duy nhất của hệ thống (AutoCut/cache) theo SHA-256 hash nếu có
+        # 2. Transcript có sẵn trong cache: ưu tiên hash do backend truyền, nếu
+        #    không có thì dò theo tên video ghi bên trong tệp.
+        #
+        #    Vì sao cần nhánh theo tên: backend chỉ truyền --hash khi biết hash
+        #    (video tải lên). Với video phát từ R2, hash rỗng nên trước đây
+        #    pipeline bỏ qua cache và bóc băng lại từ đầu — một video 2 giờ phải
+        #    chạy Whisper lại toàn bộ, trên CPU là hàng giờ.
+        cache_candidates = []
         if file_hash:
-            candidate_cache = cache_dir / f"{file_hash}_transcript.json"
-            if candidate_cache.exists():
-                try:
-                    with open(candidate_cache, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                    if is_valid_real_transcript(data, expected_duration=duration):
-                        t_obj = TranscriptOutput.model_validate(data)
-                        processed = post_process_transcript(t_obj)
-                        save_to_dedicated_transcripts_folder(processed, clean_vname)
-                        return processed
-                except Exception:
-                    pass
+            cache_candidates.append(cache_dir / f"{file_hash}_transcript.json")
+        else:
+            cache_candidates.extend(_cache_transcripts_for(clean_vname, cache_dir))
+
+        for candidate_cache in cache_candidates:
+            if not candidate_cache.exists():
+                continue
+            try:
+                with open(candidate_cache, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if is_valid_real_transcript(data, expected_duration=duration):
+                    t_obj = TranscriptOutput.model_validate(data)
+                    processed = post_process_transcript(t_obj)
+                    processed.video = clean_vname
+                    save_to_dedicated_transcripts_folder(processed, clean_vname)
+                    logger.info(f"[CLI] Dung transcript co san trong cache: {candidate_cache.name}")
+                    return processed
+            except Exception:
+                pass
 
     # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
     video_candidates = []
@@ -236,6 +288,11 @@ def _find_matching_transcript_or_video(
     seen_vids = set()
     unique_vids = []
     for vp in video_candidates:
+        # Glob ở trên khớp cả tên tệp bất kỳ chứa chuỗi tìm kiếm, kể cả
+        # `*_transcript.json` trong cache/. Chỉ nhận đuôi media, nếu không
+        # pipeline sẽ đem chính transcript đi bóc băng lại rồi chết.
+        if not _is_media_file(vp):
+            continue
         if vp.exists() and vp.is_file() and vp.stat().st_size > 0 and str(vp) not in seen_vids:
             seen_vids.add(str(vp))
             unique_vids.append(vp)
