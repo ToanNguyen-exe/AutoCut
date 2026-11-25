@@ -26,14 +26,30 @@ node_modules
 
 # --- Dữ liệu sinh ra khi chạy, không phải mã nguồn ---
 uploads
+backend/uploads
 output
+backend/output
 cache
+backend/cache
 transcripts
 transcript.json
 cut_points.json
 segments
 input
 mock-data
+temp
+backend/temp
+
+# --- AI Whisper & HuggingFace Models (~1.5GB) - KHÔNG đóng gói vào image ---
+models/
+**/models/
+backend/models/
+backend/ai/cache/
+.cache/
+*.bin
+*.pt
+*.safetensors
+*.onnx
 
 # --- Kiểm thử và tài liệu (không cần trong image production) ---
 backend/src/test
