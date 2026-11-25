@@ -56,24 +56,110 @@ def _is_media_file(path: Path) -> bool:
     return path.suffix.lower() in MEDIA_EXTENSIONS
 
 
-def _cache_transcripts_for(video_name: str, cache_dir: Path) -> list:
-    """Các tệp transcript trong cache/ có ghi đúng tên video này."""
+_VIDEO_HEADER_RE = re.compile(r'"video"\s*:\s*"((?:\\.|[^"\\])*)"')
+
+
+def _peek_transcript_video_name(path: Path) -> Optional[str]:
+    """Đọc 1 KB đầu của file transcript để lấy trường 'video' mà không nạp mảng sentences vào RAM."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            head = f.read(1024)
+        sents_pos = head.find('"sentences"')
+        search_area = head[:sents_pos] if sents_pos >= 0 else head
+        match = _VIDEO_HEADER_RE.search(search_area)
+        if not match:
+            return None
+        return str(json.loads(f'"{match.group(1)}"')).strip().lower()
+    except Exception:
+        return None
+
+
+def _match_rank(
+    candidate_video: str,
+    target_video: str,
+    candidate_duration: Optional[float] = None,
+    expected_duration: Optional[float] = None,
+) -> int:
+    """Mức khớp giữa video ghi trong transcript và video đang cần.
+
+    3 = trùng cả tên tệp (chắc chắn) · 2 = chỉ trùng stem nhưng duration khớp
+    · 1 = chỉ trùng stem (nghi ngờ) · 0 = không liên quan.
+
+    Cần mức thay vì true/false vì hai video khác thư mục có thể trùng tên
+    ``bai1.mp4``; khớp stem đơn thuần sẽ lấy nhầm transcript của video kia.
+    """
+    cand = (candidate_video or "").strip().lower()
+    target = (target_video or "").strip().lower()
+    if not cand or not target:
+        return 0
+    if cand == target:
+        return 3
+    if Path(cand).stem != Path(target).stem:
+        return 0
+    if candidate_duration and expected_duration and expected_duration > 0:
+        try:
+            if abs(float(candidate_duration) - float(expected_duration)) <= 1.0:
+                return 2
+        except (TypeError, ValueError):
+            return 1
+        # Cùng tên nhưng độ dài lệch → chắc chắn là video khác.
+        return 0
+    return 1
+
+
+def _matches_video_name(candidate_video: str, target_video: str) -> bool:
+    """Giữ lại cho chỗ gọi cũ: có khớp ở mức nào không."""
+    return _match_rank(candidate_video, target_video) > 0
+
+
+def _cache_transcripts_for(
+    video_name: str,
+    cache_dir: Path,
+    expected_duration: Optional[float] = None,
+) -> list:
+    """Transcript trong cache/ khớp chắc chắn với video này.
+
+    Trả [] khi có nhiều ứng viên cùng mức khớp mà không phân định được — thà
+    bóc băng lại còn hơn trả về transcript của video khác.
+    """
     target = (video_name or "").strip().lower()
     if not target:
         return []
-    target_stem = Path(target).stem
-    found = []
+
+    ranked: list = []
     for path in sorted(cache_dir.glob("*_transcript.json")):
+        peeked = _peek_transcript_video_name(path)
+        if peeked is not None and _match_rank(peeked, target) == 0:
+            continue  # khác tên ngay từ 1KB đầu → khỏi parse cả file
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
         except Exception:
             continue
         name = str(data.get("video", "")).strip().lower()
-        if not name:
-            continue
-        if name == target or Path(name).stem == target_stem:
-            found.append(path)
-    return found
+        rank = _match_rank(name, target, data.get("duration"), expected_duration)
+        if rank > 0:
+            ranked.append((rank, path))
+
+    if not ranked:
+        return []
+
+    best = max(rank for rank, _ in ranked)
+    winners = [path for rank, path in ranked if rank == best]
+
+    if len(winners) == 1:
+        return winners
+
+    if best >= 3:
+        # Trùng đúng tên tệp: đây là các bản cache của cùng một video, lấy bản mới nhất.
+        return [max(winners, key=lambda p: p.stat().st_mtime)]
+
+    logger.warning(
+        "[CLI] Có %d transcript cùng khớp mức %d với '%s' nhưng không phân định được: %s. "
+        "Bỏ qua để bóc băng lại thay vì chọn sai.",
+        len(winners), best, target, [p.name for p in winners],
+    )
+    return []
 
 
 SEGMENTS_DIR = PROJECT_ROOT / "segments"
@@ -230,7 +316,7 @@ def _find_matching_transcript_or_video(
         if file_hash:
             cache_candidates.append(cache_dir / f"{file_hash}_transcript.json")
         else:
-            cache_candidates.extend(_cache_transcripts_for(clean_vname, cache_dir))
+            cache_candidates.extend(_cache_transcripts_for(clean_vname, cache_dir, expected_duration=duration))
 
         for candidate_cache in cache_candidates:
             if not candidate_cache.exists():
@@ -340,6 +426,7 @@ def _find_matching_transcript_or_video(
                 import subprocess
                 cmd = [
                     "ffmpeg", "-y",
+                    "-nostats", "-loglevel", "error",
                     "-i", url,
                     "-vn",
                     "-ar", "16000",
@@ -347,20 +434,24 @@ def _find_matching_transcript_or_video(
                     "-b:a", calc_bitrate,
                     str(temp_url_audio)
                 ]
+                # Timeout theo độ dài video: 300s cố định thì video 2 giờ luôn bị kill giữa
+                # đường. PIPE bị bỏ vì ffmpeg ghi stderr liên tục → đầy pipe, treo, tốn RAM.
+                extract_timeout = max(300, int(duration * 3) if duration > 0 else 900)
                 subprocess.run(
                     cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
                     check=True,
-                    timeout=300
+                    timeout=extract_timeout
                 )
                 if temp_url_audio.exists() and temp_url_audio.stat().st_size > 0:
                     unique_vids.append(temp_url_audio)
             except Exception as url_err:
                 logger.warning(f"[CLI] Khong the stream audio tu URL ({url_err})")
 
-    for vid_path in unique_vids:
+    transcriber = None  # tạo một lần, dùng lại: nạp lại model small tốn ~314 MB đỉnh
+    for vid_idx, vid_path in enumerate(unique_vids):
         from .whisper_service import compute_file_sha256
         # Bước 1 & 2: Tách âm thanh & dùng Groq để lấy văn bản từ âm thanh (whisper-large-v3)
         print(f"[1/4] Đang tách âm thanh & gọi Groq Whisper Cloud bóc băng từ: {vid_path.name}...")
@@ -373,9 +464,20 @@ def _find_matching_transcript_or_video(
                 res = transcribe_with_groq(str(vid_path))
         except Exception as groq_err:
             logger.warning(f"[CLI] Groq fallback -> Whisper cuc bo ({summarize_error(groq_err)})")
-            from .whisper_service import WhisperTranscriber
-            transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
-            res = transcriber.transcribe(media_path=str(vid_path))
+            from .whisper_service import WhisperTranscriber, available_ram_mb
+            if transcriber is None:
+                transcriber = WhisperTranscriber(cache_dir=str(cache_dir))
+            # Còn video khác cần bóc băng và RAM còn thoải mái thì giữ model để
+            # không nạp lại (~314 MB đỉnh + vài giây cho mỗi lần nạp).
+            ram_free = available_ram_mb()
+            keep_model = (
+                vid_idx < len(unique_vids) - 1
+                and (ram_free is None or ram_free > 800)
+            )
+            res = transcriber.transcribe(
+                media_path=str(vid_path),
+                release_after_use=not keep_model,
+            )
 
         # Bước 3: Dùng Gemini để sửa lại câu từ và xuất ra file transcript
         print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
@@ -414,21 +516,35 @@ def _find_matching_transcript_or_video(
         if cache_dir.exists():
             json_candidates.extend(sorted(cache_dir.glob("*_transcript.json")))
 
+    sanitized_stem = sanitize_transcript_stem(clean_vname)
     for jc in json_candidates:
         try:
+            has_hash_match = bool(file_hash and file_hash.lower() in jc.name.lower())
+            if not has_hash_match:
+                peeked = _peek_transcript_video_name(jc)
+                if peeked is not None:
+                    p_vid = clean_video_filename(peeked).strip().lower()
+                    p_stem = Path(p_vid).stem.lower()
+                    peek_exact = (
+                        (norm_video and p_vid == norm_video)
+                        or (norm_stem and p_stem == norm_stem)
+                        or (sanitized_stem and (p_stem == sanitized_stem or p_stem.replace("-", "_") == sanitized_stem.replace("-", "_")))
+                    )
+                    if not peek_exact:
+                        continue
+
             with open(jc, "r", encoding="utf-8") as f:
                 data = json.load(f)
             t_obj = TranscriptOutput.model_validate(data)
             t_vid = clean_video_filename(t_obj.video).strip().lower()
             t_stem = Path(t_vid).stem.lower()
-            sanitized_stem = sanitize_transcript_stem(clean_vname)
 
             # CHỈ khớp chính xác tên video hoặc stem chuẩn hóa của đúng video đó, TUYỆT ĐỐI không khớp theo bài giảng chung
             is_exact = (
                 (norm_video and t_vid == norm_video)
                 or (norm_stem and t_stem == norm_stem)
                 or (sanitized_stem and (t_stem == sanitized_stem or t_stem.replace("-", "_") == sanitized_stem.replace("-", "_")))
-                or (file_hash and file_hash.lower() in jc.name.lower())
+                or has_hash_match
             )
             if is_exact:
                 if duration > 600.0 and t_obj.duration < (duration * 0.3):
@@ -599,13 +715,14 @@ def run_backend_analysis(
         "status": "SUCCESS",
         "mode": "analyzed",
         "segmentsData": segments_data,
-        "transcript": json.loads(transcript.model_dump_json(exclude_none=True))
+        "transcript": transcript.model_dump(exclude_none=True),
     }
 
     out_p = Path(output_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
     with open(out_p, "w", encoding="utf-8") as f:
-        json.dump(result_payload, f, ensure_ascii=False, indent=2)
+        json.dump(result_payload, f, ensure_ascii=False, separators=(",", ":"))
+    del result_payload
 
 
 def main():

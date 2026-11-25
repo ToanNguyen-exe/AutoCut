@@ -7,6 +7,8 @@ import os
 import re
 import json
 import logging
+import shutil
+import tempfile
 import urllib.request
 import urllib.error
 import subprocess
@@ -85,58 +87,61 @@ def call_groq_whisper_api(
 ) -> Dict[str, Any]:
     """
     Gửi file âm thanh đến Groq Whisper API qua multipart/form-data.
-    Sử dụng User-Agent chuẩn để không bị chặn bởi Cloudflare.
+    Dùng SpooledTemporaryFile stream từng chunk 64KB thay vì nhân đôi bytes trong RAM.
     """
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
     boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
-    
-    body = bytearray()
-    
-    def add_field(name: str, val: str):
-        body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode("utf-8"))
-        body.extend(f"{val}\r\n".encode("utf-8"))
 
-    def add_file(name: str, filepath: str):
-        filename = Path(filepath).name
-        body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'.encode("utf-8"))
-        body.extend(b"Content-Type: audio/mpeg\r\n\r\n")
-        with open(filepath, "rb") as f:
-            body.extend(f.read())
-        body.extend(b"\r\n")
+    with tempfile.SpooledTemporaryFile(max_size=512 * 1024, mode="w+b") as payload:
+        def add_field(name: str, val: str):
+            payload.write(f"--{boundary}\r\n".encode("utf-8"))
+            payload.write(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode("utf-8"))
+            payload.write(f"{val}\r\n".encode("utf-8"))
 
-    add_field("model", model)
-    add_field("response_format", "verbose_json")
-    if language:
-        add_field("language", language)
-    if prompt:
-        add_field("prompt", prompt)
-    add_file("file", audio_path)
-    body.extend(f"--{boundary}--\r\n".encode("utf-8"))
+        def add_file(name: str, filepath: str):
+            filename = Path(filepath).name
+            payload.write(f"--{boundary}\r\n".encode("utf-8"))
+            payload.write(f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'.encode("utf-8"))
+            payload.write(b"Content-Type: audio/mpeg\r\n\r\n")
+            with open(filepath, "rb") as f:
+                shutil.copyfileobj(f, payload, length=65536)
+            payload.write(b"\r\n")
 
-    req = urllib.request.Request(url, data=bytes(body), method="POST")
-    req.add_header("Authorization", f"Bearer {api_key}")
-    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
-    # Header User-Agent để vượt qua Cloudflare (tránh lỗi 403 error code 1010)
-    req.add_header(
-        "User-Agent",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
+        add_field("model", model)
+        add_field("response_format", "verbose_json")
+        if language:
+            add_field("language", language)
+        if prompt:
+            add_field("prompt", prompt)
+        add_file("file", audio_path)
+        payload.write(f"--{boundary}--\r\n".encode("utf-8"))
 
-    try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = resp.read().decode("utf-8")
-            logger.info(f"[GROQ] Model: {model}")
-            return json.loads(data)
-    except urllib.error.HTTPError as http_err:
-        err_body = http_err.read().decode("utf-8", errors="ignore")
-        wrapped = RuntimeError(f"Groq API tra ve loi {http_err.code}: {err_body}")
-        log_ai_api_error(logger, "GROQ", model, wrapped, is_fatal=True)
-        raise wrapped
-    except Exception as e:
-        log_ai_api_error(logger, "GROQ", model, e, is_fatal=True)
-        raise e
+        content_length = payload.tell()
+        payload.seek(0)
+
+        req = urllib.request.Request(url, data=payload, method="POST")
+        req.add_header("Authorization", f"Bearer {api_key}")
+        req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+        req.add_header("Content-Length", str(content_length))
+        # Header User-Agent để vượt qua Cloudflare (tránh lỗi 403 error code 1010)
+        req.add_header(
+            "User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = resp.read().decode("utf-8")
+                logger.info(f"[GROQ] Model: {model}")
+                return json.loads(data)
+        except urllib.error.HTTPError as http_err:
+            err_body = http_err.read().decode("utf-8", errors="ignore")
+            wrapped = RuntimeError(f"Groq API tra ve loi {http_err.code}: {err_body}")
+            log_ai_api_error(logger, "GROQ", model, wrapped, is_fatal=True)
+            raise wrapped
+        except Exception as e:
+            log_ai_api_error(logger, "GROQ", model, e, is_fatal=True)
+            raise e
 
 
 def transcribe_audio_in_chunks(
@@ -168,6 +173,7 @@ def transcribe_audio_in_chunks(
 
         cmd = [
             "ffmpeg", "-y",
+            "-nostats", "-loglevel", "error",
             "-ss", str(start_sec),
             "-t", str(curr_len),
             "-i", str(audio_path),
@@ -175,10 +181,13 @@ def transcribe_audio_in_chunks(
             str(chunk_file)
         ]
         try:
+            # Không dùng PIPE: ffmpeg ghi tiến trình ra stderr liên tục, pipe 64KB đầy
+            # là ffmpeg block còn Python thì chờ tới hết process → treo, và buffer
+            # stderr tích trong RAM.
             subprocess.run(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
                 check=True
             )
@@ -197,6 +206,7 @@ def transcribe_audio_in_chunks(
                 seg_copy["start"] = round(float(seg.get("start") or 0.0) + start_sec, 2)
                 seg_copy["end"] = round(float(seg.get("end") or 0.0) + start_sec, 2)
                 all_segments.append(seg_copy)
+            del chunk_res
         finally:
             if chunk_file.exists():
                 try:
@@ -309,6 +319,8 @@ def transcribe_with_groq(
             )
         )
         idx += 1
+
+    del api_res, raw_segments
 
     # Nếu video không có lời thoại (hoàn toàn là nhạc nền beat không lời)
     if not sentences and total_duration > 0:

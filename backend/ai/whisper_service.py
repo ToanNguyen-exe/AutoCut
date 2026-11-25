@@ -9,6 +9,7 @@
 6. Bộ hiển thị tiến trình thời gian thực (Progress %, tốc độ x realtime, thời gian đã chạy & ETA).
 """
 
+import gc
 import hashlib
 import json
 import logging
@@ -38,6 +39,10 @@ from .post_processor import post_process_transcript, merge_fragmented_segments, 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("AutoCut.AI.Whisper")
+
+# Đánh dấu máy đã thất bại khi nạp CUDA (thiếu cublas/cudnn). Giữ ở cấp module để
+# các lần bóc băng sau đi thẳng vào CPU int8, khỏi nạp model float16 vô ích.
+_CUDA_UNAVAILABLE = False
 
 
 def format_duration(seconds: float) -> str:
@@ -89,6 +94,41 @@ def clear_all_cache(cache_dir: Optional[str] = None) -> int:
     return count
 
 
+def available_ram_mb() -> Optional[float]:
+    """RAM còn trống (MB) của máy, hoặc None nếu không đọc được (không phải Windows).
+
+    Dùng để quyết định có giữ model Whisper giữa các video hay không: giữ được
+    thì tiết kiệm ~314 MB đỉnh và vài giây nạp lại, nhưng máy sắp hết RAM thì
+    phải trả lại ngay.
+    """
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", wintypes.DWORD),
+                ("dwMemoryLoad", wintypes.DWORD),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        stat = MEMORYSTATUSEX()
+        stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+        if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat)):
+            return None
+        return stat.ullAvailPhys / 1024 / 1024
+    except Exception:
+        return None
+
+
 class WhisperTranscriber:
     """Bộ chuyển đổi giọng nói sang văn bản sử dụng faster-whisper (Bản nâng cấp chất lượng cao)."""
 
@@ -109,6 +149,7 @@ class WhisperTranscriber:
 
     def _get_model(self):
         """Khởi tạo mô hình Whisper (lazy loading)."""
+        global _CUDA_UNAVAILABLE
         if self._model is None:
             from faster_whisper import WhisperModel
             import ctranslate2
@@ -117,7 +158,9 @@ class WhisperTranscriber:
             chosen_compute = self.compute_type
 
             if chosen_device == "auto":
-                if ctranslate2.get_cuda_device_count() > 0:
+                # Máy đã thất bại vì thiếu cublas/cudnn một lần rồi thì vào thẳng
+                # CPU: nạp model float16 trên GPU chỉ để lỗi tốn ~2s và 484 MB đỉnh.
+                if not _CUDA_UNAVAILABLE and ctranslate2.get_cuda_device_count() > 0:
                     chosen_device = "cuda"
                     chosen_compute = "float16" if chosen_compute == "auto" else chosen_compute
                 else:
@@ -136,20 +179,30 @@ class WhisperTranscriber:
             logger.info("Da tai xong model Whisper.")
         return self._model
 
+    def release_model(self) -> None:
+        """Giải phóng trọng số Whisper khỏi RAM ngay sau khi hoàn tất bóc băng."""
+        if self._model is not None:
+            self._model = None
+            gc.collect()
+
     def get_cache_path(self, file_hash: str) -> Path:
         """Đường dẫn tệp cache theo mã hash SHA-256."""
         return Path(self.cache_dir) / f"{file_hash}_transcript.json"
 
     @staticmethod
     def _consume_segments_with_progress(segments_gen, total_duration: float) -> list:
-        """Duyệt từng segment từ generator của Whisper và hiển thị thanh tiến trình + ETA theo thời gian thực."""
+        """Duyệt từng segment từ generator của Whisper, trích dict gọn nhẹ và hiển thị tiến trình."""
         raw_segments = []
         start_wall = time.perf_counter()
 
         for seg in segments_gen:
-            raw_segments.append(seg)
-            elapsed = max(0.001, time.perf_counter() - start_wall)
             processed_audio_sec = float(getattr(seg, "end", 0.0) or 0.0)
+            raw_segments.append({
+                "start": float(getattr(seg, "start", 0.0) or 0.0),
+                "end": processed_audio_sec,
+                "text": str(getattr(seg, "text", "") or ""),
+            })
+            elapsed = max(0.001, time.perf_counter() - start_wall)
 
             if total_duration and total_duration > 0:
                 percent = min(100.0, (processed_audio_sec / total_duration) * 100.0)
@@ -182,9 +235,15 @@ class WhisperTranscriber:
         media_path: str,
         outline_text: Optional[str] = None,
         force_recompute: bool = False,
-        output_file: Optional[str] = None
+        output_file: Optional[str] = None,
+        release_after_use: bool = True,
     ) -> TranscriptOutput:
-        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1."""
+        """Thực hiện bóc băng video/audio và trả về TranscriptOutput theo chuẩn Mục 5.1.
+
+        ``release_after_use=False`` giữ model trong RAM để video kế tiếp không phải
+        nạp lại (nạp model ``small`` int8 tốn ~314 MB và vài giây). Mặc định vẫn
+        giải phóng như cũ để không đổi hành vi khi chỉ bóc băng một lần.
+        """
         media_p = Path(media_path)
         if not media_p.exists():
             raise FileNotFoundError(f"Không tìm thấy tệp phương tiện: {media_path}")
@@ -227,7 +286,6 @@ class WhisperTranscriber:
         initial_prompt = build_initial_prompt(outline_text)
         logger.info(f"Da tao initial_prompt nang cao: '{initial_prompt}'")
 
-        model = self._get_model()
         transcribe_kwargs = dict(
             language=self.language,
             vad_filter=True,
@@ -240,8 +298,8 @@ class WhisperTranscriber:
             condition_on_previous_text=False,
             no_repeat_ngram_size=3,
             repetition_penalty=1.2,
-            beam_size=5,
-            best_of=5,
+            beam_size=getattr(default_ai_config, "whisper_beam_size", 5),
+            best_of=max(1, getattr(default_ai_config, "whisper_beam_size", 5)),
             temperature=[0.0, 0.2, 0.4],
             compression_ratio_threshold=2.2,
             log_prob_threshold=-1.0,
@@ -249,30 +307,45 @@ class WhisperTranscriber:
             initial_prompt=initial_prompt
         )
 
+        # failed=True cho tới khi bóc băng xong: mọi lỗi (kể cả lỗi của nhánh
+        # fallback CPU) đều phải giải phóng model để không giữ 314 MB rác.
+        failed = True
         try:
+            model = self._get_model()
             segments_gen, info = model.transcribe(str(media_p), **transcribe_kwargs)
             media_duration = float(info.duration) if info and info.duration else 0.0
             raw_segments = self._consume_segments_with_progress(segments_gen, media_duration)
+            failed = False
         except RuntimeError as e:
             if ("cublas" in str(e).lower() or "cudnn" in str(e).lower() or "cuda" in str(e).lower()) and self.device in ("auto", "cuda"):
                 logger.warning(
                     f"[CUDA WARNING] Khong tim thay thu vien CUDA DLLs ({e}). "
                     f"Tu dong chuyen sang chay bang CPU (int8)..."
                 )
+                global _CUDA_UNAVAILABLE
+                _CUDA_UNAVAILABLE = True
                 from faster_whisper import WhisperModel
+                self.release_model()
                 self.device = "cpu"
                 self.compute_type = "int8"
                 self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
                 segments_gen, info = self._model.transcribe(str(media_p), **transcribe_kwargs)
                 media_duration = float(info.duration) if info and info.duration else 0.0
                 raw_segments = self._consume_segments_with_progress(segments_gen, media_duration)
+                failed = False
             else:
                 raise
+        finally:
+            # Giữ model khi caller báo còn video khác cần bóc băng (nạp lại tốn
+            # ~314 MB đỉnh + vài giây), nhưng luôn giải phóng khi gặp lỗi.
+            if release_after_use or failed:
+                self.release_model()
 
         total_segments = len(raw_segments)
         logger.info(f"Whisper hoan thanh: nhan dien duoc {total_segments} raw segments.")
 
         merged_items = merge_fragmented_segments(raw_segments)
+        del raw_segments
         total_merged = len(merged_items)
         logger.info(f"Sau khi chuan hoa & tach cau don: {total_merged} cau hoan chinh (tu {total_segments} segments).")
 
@@ -293,6 +366,7 @@ class WhisperTranscriber:
         total_duration = round(info.duration, 2) if info and info.duration else (
             sentences[-1].end if sentences else 0.0
         )
+        del merged_items
 
         transcript_output = TranscriptOutput(
             video=media_p.name,

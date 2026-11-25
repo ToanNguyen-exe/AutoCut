@@ -49,6 +49,15 @@ class AIConfig:
         self.whisper_language: str = transcript_cfg.get("language", "vi")
         self.use_outline_as_prompt: bool = transcript_cfg.get("use_outline_as_prompt", True)
 
+        # Beam search giữ nhiều giả thuyết cùng lúc. beam_size=5/best_of=5 tốn thêm
+        # RAM và CPU cho mỗi câu; hạ xuống 1 đổi lại chất lượng giảm nhẹ.
+        # Đặt WHISPER_BEAM_SIZE hoặc transcript.beam_size trong config.yaml để giảm RAM.
+        self.whisper_beam_size: int = int(
+            os.getenv("WHISPER_BEAM_SIZE")
+            or transcript_cfg.get("beam_size")
+            or 5
+        )
+
         # Cấu hình VAD lọc khoảng lặng (tránh bẻ vụn câu khi giảng viên ngừng nghỉ ngắn)
         self.vad_min_silence_duration_ms: int = int(
             os.getenv("VAD_MIN_SILENCE_MS")
