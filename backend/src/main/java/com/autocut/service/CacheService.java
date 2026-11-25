@@ -1,6 +1,7 @@
 package com.autocut.service;
 
 import com.autocut.dto.Models.TranscriptDTO;
+import com.autocut.video.WaveformResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +24,16 @@ public class CacheService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CacheService() {
-        Path projectRoot = resolveProjectRoot();
-        this.cacheDir = projectRoot.resolve("cache");
+        this(null);
+    }
+
+    public CacheService(Path customCacheDir) {
+        if (customCacheDir != null) {
+            this.cacheDir = customCacheDir;
+        } else {
+            Path projectRoot = resolveProjectRoot();
+            this.cacheDir = projectRoot.resolve("cache");
+        }
         try {
             if (!Files.exists(this.cacheDir)) {
                 Files.createDirectories(this.cacheDir);
@@ -103,6 +112,43 @@ public class CacheService {
         } catch (IOException e) {
             log.error("Không thể ghi cache transcript cho mã băm {}: {}", videoHash, e.getMessage(), e);
             throw new RuntimeException("Không thể lưu cache transcript", e);
+        }
+    }
+
+    /**
+     * Kiểm tra và nạp dữ liệu sóng âm (peaks) từ cache theo mã băm SHA-256 của video.
+     */
+    public Optional<WaveformResult> getCachedWaveform(String videoHash) {
+        if (videoHash == null || videoHash.isBlank()) {
+            return Optional.empty();
+        }
+        Path cacheFile = this.cacheDir.resolve(videoHash + "_peaks.json");
+        if (!Files.exists(cacheFile)) {
+            return Optional.empty();
+        }
+        try {
+            WaveformResult result = objectMapper.readValue(cacheFile.toFile(), WaveformResult.class);
+            log.info("Waveform Cache HIT cho mã băm: {}", videoHash);
+            return Optional.of(result);
+        } catch (IOException e) {
+            log.warn("Không thể đọc cache sóng âm cho mã băm {}: {}", videoHash, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Lưu kết quả sóng âm (peaks) vào thư mục cache hệ thống theo mã băm SHA-256.
+     */
+    public void saveWaveformCache(String videoHash, WaveformResult waveform) {
+        if (videoHash == null || videoHash.isBlank() || waveform == null) {
+            return;
+        }
+        Path cacheFile = this.cacheDir.resolve(videoHash + "_peaks.json");
+        try {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(cacheFile.toFile(), waveform);
+            log.info("Đã lưu waveform vào cache hệ thống: {}", cacheFile);
+        } catch (IOException e) {
+            log.error("Không thể ghi cache waveform cho mã băm {}: {}", videoHash, e.getMessage(), e);
         }
     }
 }

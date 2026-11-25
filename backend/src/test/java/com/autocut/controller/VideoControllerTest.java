@@ -9,6 +9,7 @@ import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
@@ -176,6 +177,82 @@ class VideoControllerTest {
                 transcript.sentences().size() > 10,
                 "Transcript thực tế từ module AI phải chứa đầy đủ các câu đã tách (> 10 câu)"
         );
+    }
+
+    @Test
+    @DisplayName("saveProject should save peaks.json next to segments.json and getPeaks should read it")
+    void testSaveProject_AndGetPeaks() throws Exception {
+        String testUser = "peaks_user";
+        String testLesson = "peaks_lesson";
+
+        Map<String, Object> req = new java.util.HashMap<>();
+        req.put("user", testUser);
+        req.put("lesson", testLesson);
+        req.put("segments", java.util.List.of(Map.of("id", "seg_1", "start", 0.0, "end", 10.0)));
+        req.put("peaks", java.util.List.of(0, 25, 80, 100, 40, 10));
+
+        ResponseEntity<?> saveResponse = controller.saveProject(req);
+        Assertions.assertEquals(HttpStatus.OK, saveResponse.getStatusCode());
+
+        // Kiểm tra 2 file segments.json và peaks.json được lưu cùng thư mục
+        java.nio.file.Path projectRoot = com.autocut.service.PythonRuntime.resolveProjectRoot();
+        java.nio.file.Path userDir = projectRoot.resolve("output").resolve("users").resolve(testUser).resolve(testLesson);
+        java.nio.file.Path segmentsFile = userDir.resolve("segments.json");
+        java.nio.file.Path peaksFile = userDir.resolve("peaks.json");
+
+        Assertions.assertTrue(java.nio.file.Files.exists(segmentsFile), "segments.json phải tồn tại");
+        Assertions.assertTrue(java.nio.file.Files.exists(peaksFile), "peaks.json phải tồn tại cạnh segments.json");
+        Assertions.assertEquals(segmentsFile.getParent(), peaksFile.getParent());
+
+        // Gọi getPeaks để SV4 lấy dữ liệu thật
+        ResponseEntity<?> peaksResponse = controller.getPeaks(testLesson, testUser, null);
+        Assertions.assertEquals(HttpStatus.OK, peaksResponse.getStatusCode());
+        Assertions.assertNotNull(peaksResponse.getBody());
+
+        com.fasterxml.jackson.databind.JsonNode node = (com.fasterxml.jackson.databind.JsonNode) peaksResponse.getBody();
+        Assertions.assertTrue(node.has("peaks"));
+        Assertions.assertEquals(6, node.get("peaks").size());
+        Assertions.assertEquals(80, node.get("peaks").get(2).asInt());
+
+        // Dọn dẹp tệp test
+        java.nio.file.Files.deleteIfExists(peaksFile);
+        java.nio.file.Files.deleteIfExists(segmentsFile);
+        java.nio.file.Files.deleteIfExists(userDir.resolve("project.json"));
+        java.nio.file.Files.deleteIfExists(userDir);
+    }
+
+    @Test
+    @DisplayName("getPeaks should block path traversal")
+    void testGetPeaks_BlockPathTraversal() {
+        ResponseEntity<?> res1 = controller.getPeaks("../../.env", "admin", null);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res1.getStatusCode());
+
+        ResponseEntity<?> res2 = controller.getPeaks("BaiGiang", "../../admin", null);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res2.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks chấp nhận tiêu đề bài học tiếng Việt, không trả 400")
+    void testGetPeaks_AcceptsVietnameseLessonTitle() {
+        // F20: tiêu đề thật có dấu và khoảng trắng. Trước đây isSafeSlug chặn nên trả 400.
+        // Không có peaks.json nên kết quả đúng là 404 — điều cần khẳng định là qua được bước validate.
+        ResponseEntity<?> res = controller.getPeaks("Bài giảng Lập trình Web Full khóa (2 Giờ)", "admin", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks chặn đường dẫn tuyệt đối ở tham số video")
+    void testGetPeaks_BlocksAbsoluteVideoPath() {
+        // F04: resolve thẳng cho phép đọc ngoài uploads bằng path tuyệt đối.
+        ResponseEntity<?> res = controller.getPeaks("BaiGiang", "admin", "C:/Windows/win.ini");
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks should return 404 when peaks.json and video are not found")
+    void testGetPeaks_NotFound() {
+        ResponseEntity<?> res = controller.getPeaks("unknown_lesson_12345", "unknown_user", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
     }
 
     @Test
