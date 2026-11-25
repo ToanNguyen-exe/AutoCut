@@ -1820,6 +1820,131 @@ public class VideoController {
         }
     }
 
+    /**
+     * Cắt và ghép các phân đoạn bất kỳ được người dùng chọn (liền kề hoặc cách quãng, VD đoạn 4 &amp; 6)
+     * thành 1 tệp video MP4 duy nhất trong thư mục output/combined.
+     */
+    @PostMapping("/merge-clips")
+    public ResponseEntity<?> mergeSelectedClips(@RequestBody Map<String, Object> payload) {
+        String videoName = payload.get("videoName") != null ? String.valueOf(payload.get("videoName")) : "";
+        String rawLesson = payload.get("lesson") != null ? String.valueOf(payload.get("lesson")) : "lesson";
+        String rawUser = payload.get("user") != null ? String.valueOf(payload.get("user")) : "admin";
+
+        if (!SafePaths.isSafeSlug(rawLesson) || !SafePaths.isSafeSlug(rawUser)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Tên bài học hoặc người dùng không hợp lệ"
+            ));
+        }
+
+        Object rawSegmentsObj = payload.get("segments");
+        if (!(rawSegmentsObj instanceof List<?> rawSegments) || rawSegments.size() < 2) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Cần chọn ít nhất 2 phân đoạn để gộp clip"
+            ));
+        }
+
+        List<double[]> ranges = new ArrayList<>();
+        for (Object item : rawSegments) {
+            if (!(item instanceof Map<?, ?> segMap)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Định dạng phân đoạn không hợp lệ"
+                ));
+            }
+            double start = segMap.get("start") instanceof Number n1 ? n1.doubleValue() : -1;
+            double end = segMap.get("end") instanceof Number n2 ? n2.doubleValue() : -1;
+            if (start < 0 || end <= start) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Khoảng thời gian phân đoạn không hợp lệ"
+                ));
+            }
+            ranges.add(new double[]{start, end});
+        }
+
+        String sourceVideo = resolveVideoSource(videoName);
+        if (sourceVideo == null || sourceVideo.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Không tìm thấy video nguồn: " + abbreviate(videoName)
+            ));
+        }
+
+        Path root = outputRoot();
+        Path combinedDir;
+        Path outputFile;
+        String fileName = "merged_" + System.currentTimeMillis() + ".mp4";
+        try {
+            combinedDir = SafePaths.resolveWithin(root, "combined");
+            Files.createDirectories(combinedDir);
+            outputFile = SafePaths.resolveWithin(combinedDir, fileName);
+        } catch (IOException e) {
+            log.error("Không tạo được thư mục gộp clip: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Không tạo được thư mục đầu ra"
+            ));
+        }
+
+        Path tempDir = null;
+        List<File> tempClips = new ArrayList<>();
+        try {
+            tempDir = Files.createTempDirectory("autocut_merge_");
+            for (int i = 0; i < ranges.size(); i++) {
+                double[] r = ranges.get(i);
+                Path tempClipPath = tempDir.resolve("part_" + i + ".mp4");
+                CutResult cutResult = videoCutter.cut(sourceVideo, tempClipPath.toAbsolutePath().toString(), r[0], r[1]);
+                if (!cutResult.success()) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "status", "ERROR",
+                        "error", "Cắt đoạn #" + (i + 1) + " thất bại: " + cutResult.errorMessage()
+                    ));
+                }
+                tempClips.add(tempClipPath.toFile());
+            }
+
+            com.autocut.video.ConcatResult concatResult = videoConcat.concat(tempClips, outputFile.toFile(), false);
+            if (!concatResult.success()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "ERROR",
+                    "error", concatResult.errorMessage() != null ? concatResult.errorMessage() : "Ghép clip thất bại"
+                ));
+            }
+
+            String relPath = "combined/" + fileName;
+            return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "Đã gộp thành công " + ranges.size() + " đoạn thành 1 clip!",
+                "outputFile", relPath,
+                "downloadUrl", "/api/video/download-clip?path=" + relPath,
+                "outputSizeBytes", concatResult.outputSizeBytes(),
+                "executionTimeMs", concatResult.executionTimeMs(),
+                "mergedCount", ranges.size()
+            ));
+        } catch (IOException e) {
+            log.error("Lỗi I/O khi gộp clip: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Lỗi máy chủ khi xử lý gộp clip"
+            ));
+        } finally {
+            if (tempDir != null) {
+                for (File f : tempClips) {
+                    try {
+                        Files.deleteIfExists(f.toPath());
+                    } catch (IOException ignored) {
+                    }
+                }
+                try {
+                    Files.deleteIfExists(tempDir);
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
     private String resolveVideoSource(String videoName) {
         if (videoName != null && (videoName.startsWith("http://") || videoName.startsWith("https://"))) {
             return videoName;
