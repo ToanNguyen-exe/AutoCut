@@ -76,8 +76,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    await logoutUser();
     router.push("/login");
   };
 
@@ -306,10 +306,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       {/* Account Management Modal */}
       {user && (
         <AccountModal
-          isOpen={accountModalOpen}
-          initialTab={accountModalTab}
+          isOpen={accountModalOpen || Boolean(user.mustChangePassword)}
+          initialTab={user.mustChangePassword ? "password" : accountModalTab}
           user={user}
-          onClose={() => setAccountModalOpen(false)}
+          onClose={() => {
+            if (!user.mustChangePassword) setAccountModalOpen(false);
+          }}
           onUserUpdate={(updatedUser) => {
             if (onUserUpdate) onUserUpdate(updatedUser);
           }}

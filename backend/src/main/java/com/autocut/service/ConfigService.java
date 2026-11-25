@@ -114,6 +114,10 @@ public class ConfigService {
         return getEnv("WHISPER_API_KEY", "");
     }
 
+    public String getJwtSecret() {
+        return getEnv("JWT_SECRET", "");
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> getSection(String sectionName) {
         if (configMap != null && configMap.get(sectionName) instanceof Map<?, ?> map) {

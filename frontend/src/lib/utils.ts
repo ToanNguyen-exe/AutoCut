@@ -1,4 +1,4 @@
-import { VideoPart, Sentence, Segment } from "@/types";
+import type { VideoPart, Sentence, Segment } from "@/types";
 
 /**
  * Định dạng số giây sang chuỗi mm:ss hoặc hh:mm:ss

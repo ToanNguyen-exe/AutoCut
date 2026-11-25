@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User, JoinedVideoClip } from "@/types";
-import { getCurrentUser } from "@/lib/auth";
+import { ensureAuthenticated, getCurrentUser } from "@/lib/auth";
 import {
   fetchConfig,
   submitRenderSegments,
@@ -13,8 +13,10 @@ import {
   fetchBackendVideos,
   analyzeVideoWithAutoSync,
   saveProjectToBackend,
+  resolveProtectedStreamUrl,
   API_BASE,
 } from "@/lib/api";
+import { clearAllTimerRefs } from "@/lib/timerManager";
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
@@ -315,18 +317,24 @@ export default function Home() {
     showToast("success", `✓ Đã cập nhật màu nền giao diện mới: ${color.toUpperCase()}`);
   }, [showToast]);
 
-  // Check login authentication
+  // Check login authentication and restore in-memory JWT via HttpOnly refresh cookie
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      router.push("/login");
-    } else {
-      setCurrentUser(user);
+    let active = true;
+    const cachedUser = getCurrentUser();
+    if (cachedUser) {
+      setCurrentUser(cachedUser);
     }
+    ensureAuthenticated().then((user) => {
+      if (!active) return;
+      if (!user) {
+        router.push("/login");
+      } else {
+        setCurrentUser(user);
+      }
+    });
     return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-      if (renderTimerRef.current) clearInterval(renderTimerRef.current);
-      if (analyzeTickerRef.current) clearInterval(analyzeTickerRef.current);
+      active = false;
+      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef]);
     };
   }, [router]);
 
@@ -407,7 +415,7 @@ export default function Home() {
           if (cachedBlob && !isCancelled) {
             finalUrl = URL.createObjectURL(cachedBlob);
           } else if (restoredHash) {
-            finalUrl = `${API_BASE}/stream/${restoredHash}`;
+            finalUrl = await resolveProtectedStreamUrl(`${API_BASE}/stream/${restoredHash}`);
           } else {
             finalUrl = resolvePlayableVideoUrl(restoredUrl || undefined, restoredVideoName);
           }
@@ -904,7 +912,8 @@ export default function Home() {
   }, []);
 
   const handleAddVideo = async (newVideo: NewVideoData) => {
-    setExternalVideoUrl(newVideo.url);
+    const authorizedUrl = await resolveProtectedStreamUrl(newVideo.url);
+    setExternalVideoUrl(authorizedUrl);
     setCurrentVideoId(newVideo.videoId);
     if (newVideo.sha256) {
       setCurrentVideoHash(newVideo.sha256);
@@ -1246,7 +1255,8 @@ export default function Home() {
             syncResult.syncedUrl !== externalVideoUrl &&
             !syncResult.syncedUrl.startsWith("blob:")
           ) {
-            setExternalVideoUrl(syncResult.syncedUrl);
+            const authorizedSyncUrl = await resolveProtectedStreamUrl(syncResult.syncedUrl);
+            setExternalVideoUrl(authorizedSyncUrl);
           }
           const res = syncResult.response;
           if (
@@ -1776,7 +1786,9 @@ export default function Home() {
       } catch { }
 
       if (!playableUrl) {
-        playableUrl = resolvePlayableVideoUrl(card.url, card.fileName);
+        playableUrl = await resolveProtectedStreamUrl(
+          resolvePlayableVideoUrl(card.url, card.fileName)
+        );
       }
 
       setExternalVideoUrl(playableUrl);

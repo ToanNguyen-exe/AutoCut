@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Sparkles, Film, ListPlus, Play } from "lucide-react";
 import { Segment, TranscriptData } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { cleanVideoStem } from "@/lib/videoMatching";
 
 export interface LibraryVideoCard {
   id: string;
@@ -190,13 +191,11 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
         ) : (
           // Hiển thị danh sách các video trong thư viện gốc
           videos.map((item) => {
-            const cleanStem = (s: string) =>
-              (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
             const isActive =
               item.fileName.toLowerCase() === currentVideoName.toLowerCase() ||
               item.title.toLowerCase() === currentVideoName.toLowerCase() ||
-              cleanStem(item.fileName) === cleanStem(currentVideoName) ||
-              cleanStem(item.title) === cleanStem(currentVideoName);
+              cleanVideoStem(item.fileName) === cleanVideoStem(currentVideoName) ||
+              cleanVideoStem(item.title) === cleanVideoStem(currentVideoName);
 
             return (
               <div

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { User } from "@/types";
 import { changePassword, updateProfile } from "@/lib/auth";
 import {
@@ -29,7 +30,11 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   onClose,
   onUserUpdate,
 }) => {
-  const [tab, setTab] = useState<"profile" | "password">(initialTab);
+  const router = useRouter();
+  const mustChangePassword = Boolean(user?.mustChangePassword);
+  const [tab, setTab] = useState<"profile" | "password">(
+    mustChangePassword ? "password" : initialTab
+  );
 
   // Form profile
   const [nameInput, setNameInput] = useState(user?.name || "");
@@ -39,6 +44,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -47,7 +53,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
 
   // Sync initial tab when modal opens
   React.useEffect(() => {
-    setTab(initialTab);
+    setTab(user?.mustChangePassword ? "password" : initialTab);
     setFeedback(null);
     if (user) {
       setNameInput(user.name);
@@ -56,11 +62,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setSubmitting(false);
   }, [initialTab, isOpen, user]);
 
   if (!isOpen || !user) return null;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -69,24 +76,31 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       return;
     }
 
-    const res = updateProfile({
-      name: nameInput.trim(),
-      email: emailInput.trim(),
-    });
-
-    if (res.success && res.user) {
-      onUserUpdate(res.user);
-      setFeedback({
-        type: "success",
-        message: res.message || "Cập nhật thông tin tài khoản thành công!",
+    setSubmitting(true);
+    try {
+      const res = await updateProfile({
+        name: nameInput.trim(),
       });
-      setTimeout(() => setFeedback(null), 3000);
-    } else {
-      setFeedback({ type: "error", message: res.message || "Không thể lưu thông tin. Vui lòng thử lại!" });
+
+      if (res.success && res.user) {
+        onUserUpdate(res.user);
+        setFeedback({
+          type: "success",
+          message: res.message || "Cập nhật thông tin tài khoản thành công!",
+        });
+        setTimeout(() => setFeedback(null), 3000);
+      } else {
+        setFeedback({
+          type: "error",
+          message: res.message || "Không thể lưu thông tin. Vui lòng thử lại!",
+        });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -94,10 +108,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       setFeedback({ type: "error", message: "Vui lòng nhập mật khẩu hiện tại!" });
       return;
     }
-    if (!newPassword || newPassword.length < 4) {
+    if (!newPassword || newPassword.length < 8 || !/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
       setFeedback({
         type: "error",
-        message: "Mật khẩu mới phải có ít nhất 4 ký tự!",
+        message: "Mật khẩu mới phải có ít nhất 8 ký tự, gồm cả chữ cái và chữ số!",
       });
       return;
     }
@@ -109,18 +123,27 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       return;
     }
 
-    const res = changePassword(oldPassword, newPassword);
-    if (res.success) {
-      setFeedback({ type: "success", message: res.message });
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setTimeout(() => {
-        setFeedback(null);
-        onClose();
-      }, 1500);
-    } else {
-      setFeedback({ type: "error", message: res.message });
+    setSubmitting(true);
+    try {
+      const res = await changePassword(oldPassword, newPassword);
+      if (res.success) {
+        setFeedback({ type: "success", message: res.message });
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => {
+          setFeedback(null);
+          if (res.reloginRequired) {
+            router.push("/login");
+          } else {
+            onClose();
+          }
+        }, 1200);
+      } else {
+        setFeedback({ type: "error", message: res.message });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -136,52 +159,68 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <UserIcon className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Quản Lý Tài Khoản</h3>
-              <p className="text-xs text-slate-500">Xem thông tin và thay đổi mật khẩu tài khoản</p>
+              <h3 className="text-base font-bold text-slate-900">
+                {mustChangePassword ? "Đổi Mật Khẩu Bắt Buộc" : "Quản Lý Tài Khoản"}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {mustChangePassword
+                  ? "Vui lòng đổi mật khẩu khởi tạo trước khi tiếp tục sử dụng"
+                  : "Xem thông tin và thay đổi mật khẩu tài khoản"}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!mustChangePassword && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Tab navigation */}
-        <div className="flex border-b border-slate-200 bg-slate-100/60 p-1">
-          <button
-            onClick={() => {
-              setTab("profile");
-              setFeedback(null);
-            }}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
-              tab === "profile"
-                ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80 font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-            }`}
-          >
-            <UserIcon className="w-4 h-4" />
-            <span>Thông Tin Tài Khoản</span>
-          </button>
-          <button
-            onClick={() => {
-              setTab("password");
-              setFeedback(null);
-            }}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
-              tab === "password"
-                ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80 font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-            }`}
-          >
-            <KeyRound className="w-4 h-4" />
-            <span>Đổi Mật Khẩu</span>
-          </button>
-        </div>
+        {!mustChangePassword && (
+          <div className="flex border-b border-slate-200 bg-slate-100/60 p-1">
+            <button
+              onClick={() => {
+                setTab("profile");
+                setFeedback(null);
+              }}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
+                tab === "profile"
+                  ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80 font-bold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+            >
+              <UserIcon className="w-4 h-4" />
+              <span>Thông Tin Tài Khoản</span>
+            </button>
+            <button
+              onClick={() => {
+                setTab("password");
+                setFeedback(null);
+              }}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
+                tab === "password"
+                  ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80 font-bold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Đổi Mật Khẩu</span>
+            </button>
+          </div>
+        )}
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
+          {mustChangePassword && (
+            <div className="mb-4 p-3 rounded-xl border bg-amber-50 border-amber-200 text-amber-900 text-xs">
+              Tài khoản quản trị khởi tạo bắt buộc phải đổi mật khẩu lần đầu trước khi truy cập dữ liệu video.
+            </div>
+          )}
+
           {/* Feedback banner */}
           {feedback && (
             <div
@@ -200,7 +239,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </div>
           )}
 
-          {tab === "profile" ? (
+          {tab === "profile" && !mustChangePassword ? (
             <form onSubmit={handleSaveProfile} className="space-y-4">
               {/* Profile Card Header */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
@@ -225,16 +264,19 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <div className="space-y-3 pt-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tên đăng nhập
+                    Email tài khoản
                   </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={user.username}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-xs font-mono cursor-not-allowed"
-                  />
+                  <div className="relative">
+                    <input
+                      type="email"
+                      disabled
+                      value={emailInput}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-xs font-mono cursor-not-allowed"
+                    />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">
-                    Tên đăng nhập cố định không thể thay đổi.
+                    Email đăng nhập cố định không thể tự thay đổi.
                   </span>
                 </div>
 
@@ -250,21 +292,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Email liên hệ
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-300 focus:border-indigo-500 text-slate-900 text-xs outline-none transition shadow-2xs focus:ring-1 focus:ring-indigo-500"
-                    />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  </div>
-                </div>
-
                 {/* System Permissions Info */}
                 <div className="pt-2">
                   <label className="block text-xs font-semibold text-slate-600 mb-2">
@@ -277,7 +304,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     </div>
                     <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-1.5 text-slate-700 font-medium">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                      <span>Xuất video & Render B10</span>
+                      <span>Xuất video &amp; Render B10</span>
                     </div>
                   </div>
                 </div>
@@ -294,9 +321,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition disabled:opacity-50"
                 >
-                  Lưu thay đổi
+                  {submitting ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
@@ -310,7 +338,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu đang dùng (ví dụ: admin123)..."
+                  placeholder="Nhập mật khẩu hiện tại..."
                   className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 focus:border-indigo-500 text-slate-900 text-xs outline-none transition shadow-2xs focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
@@ -323,7 +351,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)..."
+                  placeholder="Tối thiểu 8 ký tự, gồm cả chữ và số..."
                   className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 focus:border-indigo-500 text-slate-900 text-xs outline-none transition shadow-2xs focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
@@ -342,23 +370,26 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
 
               <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900">
-                Mật khẩu sau khi đổi sẽ được áp dụng ngay lập tức cho các lần đăng nhập tiếp theo.
+                Sau khi đổi mật khẩu, toàn bộ phiên đăng nhập trên các thiết bị khác sẽ bị thu hồi và bạn cần đăng nhập lại.
               </div>
 
               {/* Actions */}
               <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition"
-                >
-                  Hủy bỏ
-                </button>
+                {!mustChangePassword && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition"
+                  >
+                    Hủy bỏ
+                  </button>
+                )}
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition disabled:opacity-50"
                 >
-                  Xác nhận đổi mật khẩu
+                  {submitting ? "Đang xử lý..." : "Xác nhận đổi mật khẩu"}
                 </button>
               </div>
             </form>

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { VideoLibraryItem } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { cleanVideoStem } from "@/lib/videoMatching";
 import {
   Film,
   X,
@@ -156,11 +157,9 @@ export const VideoLibraryDrawer: React.FC<VideoLibraryDrawerProps> = ({
             </div>
           ) : (
             filteredVideos.map((video) => {
-              const cleanStem = (s: string) =>
-                (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
               const isActive =
                 activeVideoName === video.name ||
-                cleanStem(activeVideoName || "") === cleanStem(video.name || "");
+                cleanVideoStem(activeVideoName || "") === cleanVideoStem(video.name || "");
 
               return (
                 <div

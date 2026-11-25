@@ -66,12 +66,15 @@ export interface SegmentsData {
 export interface User {
   id: string;
   username: string;
-  password?: string;
   name: string;
+  fullName?: string;
   role: string;
   email: string;
   avatar: string;
   avatarColor: string;
+  mustChangePassword?: boolean;
+  storageUsedBytes?: number;
+  storageLimitBytes?: number;
 }
 
 export interface VideoLibraryItem {

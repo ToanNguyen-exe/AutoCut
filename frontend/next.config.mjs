@@ -10,6 +10,10 @@ const nextConfig = {
       "http://localhost:8080";
     return [
       {
+        source: "/api/v1/:path*",
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+      {
         source: "/api/video/:path*",
         destination: `${backendUrl}/api/video/:path*`,
       },

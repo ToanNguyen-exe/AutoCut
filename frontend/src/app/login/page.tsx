@@ -90,7 +90,7 @@ export default function LoginPage() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Nhập email hoặc tên tài khoản (vd: admin@autocut.ai, sv4...)"
+                  placeholder="Nhập email tài khoản của bạn..."
                   className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none transition shadow-2xs focus:ring-1 focus:ring-indigo-500"
                 />
               </div>

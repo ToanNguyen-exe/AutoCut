@@ -1,11 +1,7 @@
-import type { SegmentsData, Segment, TranscriptData, User } from "@/types";
+import type { SegmentsData, Segment, TranscriptData } from "@/types";
+import { API_BASE, apiFetch, requestAuthTicket } from "./http.ts";
 
-const rawBase =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" ? "/api/video" : "http://localhost:8080/api/video");
-export const API_BASE = rawBase.endsWith("/api/video")
-  ? rawBase
-  : `${rawBase.replace(/\/+$/, "")}/api/video`;
+export { API_BASE };
 
 export interface ApiResponse<T> {
   data?: T;
@@ -115,7 +111,7 @@ export const FALLBACK_SEGMENTS: SegmentsData = {
  */
 export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
   try {
-    const res = await fetch(`${API_BASE}/mock-segments`, {
+    const res = await apiFetch(`${API_BASE}/mock-segments`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -136,7 +132,7 @@ export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
  */
 export async function fetchMockTranscript(): Promise<ApiResponse<TranscriptData>> {
   try {
-    const res = await fetch(`${API_BASE}/mock-transcript`, {
+    const res = await apiFetch(`${API_BASE}/mock-transcript`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -164,7 +160,7 @@ export interface CacheResponse {
  */
 export async function checkCache(hash: string): Promise<ApiResponse<CacheResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/cache/${encodeURIComponent(hash)}`, {
+    const res = await apiFetch(`${API_BASE}/cache/${encodeURIComponent(hash)}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -188,7 +184,7 @@ export async function checkCache(hash: string): Promise<ApiResponse<CacheRespons
  */
 export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>>> {
   try {
-    const res = await fetch(`${API_BASE}/config`, {
+    const res = await apiFetch(`${API_BASE}/config`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -225,10 +221,7 @@ export interface RenderResponse {
   engine?: string;
 }
 
-/**
- * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
- */
-export function getDownloadClipUrl(filePath: string, lesson?: string): string {
+export function normalizeClipPath(filePath: string, lesson?: string): string {
   if (!filePath) return "";
   // Chuẩn hóa đường dẫn: đổi tất cả \ thành /
   let clean = filePath.replace(/\\/g, "/");
@@ -244,16 +237,63 @@ export function getDownloadClipUrl(filePath: string, lesson?: string): string {
     clean = `${lesson}/${clean}`;
   }
 
-  return `${API_BASE}/download-clip?path=${encodeURIComponent(clean)}`;
+  return clean;
+}
+
+/**
+ * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
+ */
+export function getDownloadClipUrl(filePath: string, lesson?: string, ticket?: string): string {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticketParam = ticket ? `&ticket=${encodeURIComponent(ticket)}` : "";
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(clean)}${ticketParam}`;
 }
 
 /**
  * Lấy URL tải về toàn bộ các clip đã cắt dưới dạng file nén ZIP
  */
-export function getDownloadZipUrl(lesson: string, user?: string): string {
+export function getDownloadZipUrl(lesson: string, user?: string, ticket?: string): string {
   const cleanLesson = (lesson || "clips").trim();
   const userParam = user ? `&user=${encodeURIComponent(user)}` : "";
-  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(cleanLesson)}${userParam}`;
+  const ticketParam = ticket ? `&ticket=${encodeURIComponent(ticket)}` : "";
+  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(cleanLesson)}${userParam}${ticketParam}`;
+}
+
+export function buildVideoSegmentsUrl(videoId: number | string): string {
+  return `${API_BASE}/${videoId}/segments`;
+}
+
+export async function resolveProtectedDownloadClipUrl(
+  filePath: string,
+  lesson?: string
+): Promise<string> {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticket = await requestAuthTicket("DOWNLOAD", clean);
+  return getDownloadClipUrl(filePath, lesson, ticket || undefined);
+}
+
+export async function resolveProtectedDownloadZipUrl(
+  lesson: string,
+  user?: string
+): Promise<string> {
+  const cleanLesson = (lesson || "clips").trim();
+  const ticket = await requestAuthTicket("DOWNLOAD", cleanLesson);
+  return getDownloadZipUrl(cleanLesson, user, ticket || undefined);
+}
+
+export async function resolveProtectedStreamUrl(url: string): Promise<string> {
+  if (!url || !url.includes("/api/video/stream/") || url.includes("ticket=")) {
+    return url;
+  }
+  const match = url.match(/\/api\/video\/stream\/([a-fA-F0-9]{64})/);
+  if (!match) return url;
+  const hash = match[1];
+  const ticket = await requestAuthTicket("STREAM", hash);
+  if (!ticket) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}ticket=${encodeURIComponent(ticket)}`;
 }
 
 /**
@@ -284,7 +324,7 @@ export async function submitRenderSegments(
   segmentsData: SegmentsData
 ): Promise<RenderResponse> {
   try {
-    const res = await fetch(`${API_BASE}/render`, {
+    const res = await apiFetch(`${API_BASE}/render`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(segmentsData),
@@ -360,7 +400,7 @@ export async function uploadVideoFile(
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/upload-sample`, {
+    const res = await apiFetch(`${API_BASE}/upload-sample`, {
       method: "POST",
       body: formData,
     });
@@ -407,7 +447,7 @@ export interface BackendVideoItem {
  */
 export async function fetchBackendVideos(): Promise<ApiResponse<BackendVideoItem[]>> {
   try {
-    const res = await fetch(`${API_BASE}/list`, {
+    const res = await apiFetch(`${API_BASE}/list`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -466,7 +506,7 @@ export async function analyzeVideoBackend(payload: {
       requestBody.url = payload.url;
     }
 
-    const res = await fetch(`${API_BASE}/analyze`, {
+    const res = await apiFetch(`${API_BASE}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -624,7 +664,7 @@ export async function saveProjectToBackend(
   payload: SaveProjectPayload
 ): Promise<ApiResponse<SaveProjectResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/save`, {
+    const res = await apiFetch(`${API_BASE}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -666,7 +706,7 @@ export async function submitConcatVideos(
   payload: ConcatVideosPayload
 ): Promise<ApiResponse<ConcatVideosResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/concat`, {
+    const res = await apiFetch(`${API_BASE}/concat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -701,7 +741,7 @@ export async function deleteSegmentBackend(
   segmentId: string
 ): Promise<ApiResponse<{ deleted: boolean; message: string; segments?: Segment[] }>> {
   try {
-    const res = await fetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
+    const res = await apiFetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
       method: "DELETE",
     });
     if (res.ok) {
@@ -728,7 +768,7 @@ export async function getSegments(
   videoId: number
 ): Promise<ApiResponse<SegmentsData>> {
   try {
-    const res = await fetch(`${API_BASE}/${videoId}/segments`, {
+    const res = await apiFetch(buildVideoSegmentsUrl(videoId), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -757,7 +797,7 @@ export async function saveSegments(
   segs: Segment[]
 ): Promise<ApiResponse<SaveSegmentsResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/${videoId}/segments`, {
+    const res = await apiFetch(buildVideoSegmentsUrl(videoId), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(segs),
@@ -774,59 +814,6 @@ export async function saveSegments(
     return {
       error: message,
       source: "fallback",
-    };
-  }
-}
-
-export interface DatabaseLoginResponse {
-  status: "SUCCESS" | "ERROR";
-  message?: string;
-  user?: User;
-}
-
-/**
- * Đăng nhập người dùng thực tế qua Database (POST /api/video/auth/login hoặc /api/auth/login)
- */
-export async function loginWithDatabase(
-  usernameOrEmail: string,
-  password: string
-): Promise<{ success: boolean; user?: User; message?: string }> {
-  try {
-    const url = `${API_BASE}/auth/login`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: usernameOrEmail.trim(),
-        password: password.trim(),
-      }),
-    });
-
-    const json: DatabaseLoginResponse = await res.json().catch(() => ({
-      status: "ERROR",
-      message: `Lỗi kết nối máy chủ (${res.status})`,
-    }));
-
-    if (res.ok && json.status === "SUCCESS" && json.user) {
-      const userObj: User = {
-        ...json.user,
-        id: String(json.user.id),
-      };
-      return { success: true, user: userObj };
-    }
-
-    return {
-      success: false,
-      message: json.message || "Email/Tài khoản hoặc mật khẩu không chính xác!",
-    };
-  } catch (err) {
-    const message =
-      err instanceof Error
-        ? err.message
-        : "Không thể kết nối đến máy chủ xác thực cơ sở dữ liệu";
-    return {
-      success: false,
-      message: `Lỗi kết nối backend: ${message}`,
     };
   }
 }

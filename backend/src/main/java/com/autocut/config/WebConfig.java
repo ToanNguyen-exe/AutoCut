@@ -3,44 +3,27 @@ package com.autocut.config;
 import com.autocut.service.ConfigService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * F05 — Cấu hình CORS.
+ * F05 — Kiểm tra cấu hình CORS fail-fast khi khởi động và quy tắc xác định môi trường dev-like.
  *
- * <p>Trước đây: {@code allowedOriginPatterns("*")} + {@code allowCredentials(true)},
- * nghĩa là bất kỳ website nào cũng gọi được API kèm cookie người dùng.
- *
- * <p>Bây giờ: chỉ những origin khai báo trong {@code AUTOCUT_CORS_ALLOWED_ORIGINS}.
- * Ở môi trường production (profile {@code prod}, hoặc không có profile nào)
- * thiếu biến này thì ứng dụng <b>không khởi động</b> — cấu hình sai phải lộ ra
- * lúc deploy, không phải lúc bị khai thác.
+ * <p>Việc áp dụng {@code CorsConfigurationSource} cho HTTP nằm tập trung tại
+ * {@link SecurityConfig#corsConfigurationSource(ConfigService, Environment)}.
  */
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
-
-    private final ConfigService configService;
-    private final boolean devLike;
+public class WebConfig {
 
     public WebConfig(ConfigService configService, Environment environment) {
-        this.configService = configService;
-        this.devLike = isDevLike(environment.getActiveProfiles());
-
+        boolean devLike = isDevLike(environment.getActiveProfiles());
         // Dựng thử ngay khi khởi động để cấu hình sai làm ứng dụng dừng.
         CorsSettings.build(configService.getEnv(CorsSettings.ENV_KEY, null), devLike);
     }
 
     /**
      * Chỉ {@code dev} và {@code test} được dùng giá trị mặc định của dev.
-     * Không có profile nào bị coi là production — an toàn theo hướng đóng.
-     */
-    /**
-     * Chỉ {@code dev} và {@code test} được dùng giá trị mặc định của dev.
      * Không có profile nào (hoặc {@code default}/{@code prod}) bị coi là production — fail-closed (F05 FR-2b).
      */
-    static boolean isDevLike(String[] activeProfiles) {
+    public static boolean isDevLike(String[] activeProfiles) {
         if (activeProfiles == null || activeProfiles.length == 0) {
             return false;
         }
@@ -50,19 +33,5 @@ public class WebConfig implements WebMvcConfigurer {
             }
         }
         return false;
-    }
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        CorsConfiguration config = CorsSettings.build(
-                configService.getEnv(CorsSettings.ENV_KEY, null), devLike);
-
-        registry.addMapping("/api/**")
-                .allowedOrigins(config.getAllowedOrigins().toArray(new String[0]))
-                .allowedMethods(config.getAllowedMethods().toArray(new String[0]))
-                .allowedHeaders(config.getAllowedHeaders().toArray(new String[0]))
-                .exposedHeaders(config.getExposedHeaders().toArray(new String[0]))
-                .allowCredentials(Boolean.TRUE.equals(config.getAllowCredentials()))
-                .maxAge(config.getMaxAge() == null ? 1800 : config.getMaxAge());
     }
 }

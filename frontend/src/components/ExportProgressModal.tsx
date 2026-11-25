@@ -13,7 +13,13 @@ import {
   FileJson,
   Loader2,
 } from "lucide-react";
-import { RenderedClipItem, getDownloadClipUrl, getDownloadZipUrl, triggerBrowserDownload } from "@/lib/api";
+import {
+  RenderedClipItem,
+  getDownloadClipUrl,
+  resolveProtectedDownloadClipUrl,
+  resolveProtectedDownloadZipUrl,
+  triggerBrowserDownload,
+} from "@/lib/api";
 
 export type ProgressModalMode = "render" | "analyze";
 
@@ -79,9 +85,9 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
     }
   };
 
-  const handleDownloadZip = () => {
+  const handleDownloadZip = async () => {
     const lName = lessonTitle || videoTitle || "clips";
-    const url = getDownloadZipUrl(lName);
+    const url = await resolveProtectedDownloadZipUrl(lName);
     const cleanName = lName.replace(/[^a-zA-Z0-9_.-]/g, "_");
     triggerBrowserDownload(url, `${cleanName}_exported_clips.zip`);
   };
@@ -328,9 +334,12 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                         download={clip.file || "clip.mp4"}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
-                          const downloadUrl = getDownloadClipUrl(clip.path || clip.file, lessonTitle || videoTitle);
+                          const downloadUrl = await resolveProtectedDownloadClipUrl(
+                            clip.path || clip.file,
+                            lessonTitle || videoTitle
+                          );
                           triggerBrowserDownload(downloadUrl, clip.file || "clip.mp4");
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold border border-slate-200 hover:border-indigo-300 shadow-2xs transition shrink-0 cursor-pointer"
