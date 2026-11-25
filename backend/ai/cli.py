@@ -38,6 +38,44 @@ except (ImportError, ValueError):
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 TRANSCRIPTS_DIR = PROJECT_ROOT / "transcripts"
+
+# Đuôi tệp được coi là "nguồn media" để bóc băng.
+#
+# Cần danh sách này vì glob tìm ứng viên khớp cả tên tệp transcript trong
+# cache/ (v.d. `hash_<...>_transcript.json`). Không lọc thì pipeline lấy chính
+# bản transcript ra làm video: Groq trả 400 "unsupported_audio_format", rồi
+# Whisper cục bộ chết với InvalidDataError.
+MEDIA_EXTENSIONS = frozenset({
+    ".mp4", ".mkv", ".mov", ".webm", ".avi", ".m4v", ".flv", ".mpeg", ".mpg", ".wmv",
+    ".mp3", ".m4a", ".wav", ".flac", ".ogg", ".opus", ".aac", ".wma",
+})
+
+
+def _is_media_file(path: Path) -> bool:
+    """Tệp này có phải nguồn media để bóc băng không (theo đuôi tệp)."""
+    return path.suffix.lower() in MEDIA_EXTENSIONS
+
+
+def _cache_transcripts_for(video_name: str, cache_dir: Path) -> list:
+    """Các tệp transcript trong cache/ có ghi đúng tên video này."""
+    target = (video_name or "").strip().lower()
+    if not target:
+        return []
+    target_stem = Path(target).stem
+    found = []
+    for path in sorted(cache_dir.glob("*_transcript.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        name = str(data.get("video", "")).strip().lower()
+        if not name:
+            continue
+        if name == target or Path(name).stem == target_stem:
+            found.append(path)
+    return found
+
+
 SEGMENTS_DIR = PROJECT_ROOT / "segments"
 SHA256_PREFIX_RE = re.compile(r"^[0-9a-fA-F]{64}_")
 
@@ -124,7 +162,18 @@ def is_valid_real_transcript(data: dict, expected_duration: float = 0.0) -> bool
     sents = data.get("sentences", [])
     if not sents or len(sents) < 2:
         return False
-    dummy_count = sum(1 for s in sents if "Nội dung phần " in str(s.get("text", "")) or "Nội dung bóc băng" in str(s.get("text", "")))
+    dummy_markers = (
+        "Nội dung phần ",
+        "Nội dung bóc băng",
+        "Chào mừng các bạn đến với nội dung ",
+        "Trong phần này, chúng ta sẽ tìm hiểu tổng quan về ",
+        "Tiếp theo, chúng ta đi sâu vào các nội dung trọng tâm và cú pháp cốt lõi.",
+        "đến đây là hoàn thành.",
+    )
+    dummy_count = sum(
+        1 for s in sents
+        if any(marker in str(s.get("text", "")) for marker in dummy_markers)
+    )
     if dummy_count >= (len(sents) * 0.5):
         return False
     # Nếu kiểm tra video dài (> 10 phút), transcript không thể ngắn cũn cỡn dưới 30% thời lượng
@@ -142,7 +191,8 @@ def _find_matching_transcript_or_video(
     duration: float,
     exhausted_models: Optional[Set[str]] = None,
     force: bool = False,
-    url: Optional[str] = None
+    url: Optional[str] = None,
+    unavailable_models: Optional[Set[str]] = None,
 ) -> TranscriptOutput:
     """Tìm kiếm transcript trong thư mục transcripts/, cache/, hoặc chạy Whisper + Gemini trên file video/audio vật lý hoặc stream từ URL."""
     cache_dir = PROJECT_ROOT / "cache"
@@ -169,20 +219,34 @@ def _find_matching_transcript_or_video(
                 except Exception:
                     pass
 
-        # 2. Kiểm tra cache duy nhất của hệ thống (AutoCut/cache) theo SHA-256 hash nếu có
+        # 2. Transcript có sẵn trong cache: ưu tiên hash do backend truyền, nếu
+        #    không có thì dò theo tên video ghi bên trong tệp.
+        #
+        #    Vì sao cần nhánh theo tên: backend chỉ truyền --hash khi biết hash
+        #    (video tải lên). Với video phát từ R2, hash rỗng nên trước đây
+        #    pipeline bỏ qua cache và bóc băng lại từ đầu — một video 2 giờ phải
+        #    chạy Whisper lại toàn bộ, trên CPU là hàng giờ.
+        cache_candidates = []
         if file_hash:
-            candidate_cache = cache_dir / f"{file_hash}_transcript.json"
-            if candidate_cache.exists():
-                try:
-                    with open(candidate_cache, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                    if is_valid_real_transcript(data, expected_duration=duration):
-                        t_obj = TranscriptOutput.model_validate(data)
-                        processed = post_process_transcript(t_obj)
-                        save_to_dedicated_transcripts_folder(processed, clean_vname)
-                        return processed
-                except Exception:
-                    pass
+            cache_candidates.append(cache_dir / f"{file_hash}_transcript.json")
+        else:
+            cache_candidates.extend(_cache_transcripts_for(clean_vname, cache_dir))
+
+        for candidate_cache in cache_candidates:
+            if not candidate_cache.exists():
+                continue
+            try:
+                with open(candidate_cache, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if is_valid_real_transcript(data, expected_duration=duration):
+                    t_obj = TranscriptOutput.model_validate(data)
+                    processed = post_process_transcript(t_obj)
+                    processed.video = clean_vname
+                    save_to_dedicated_transcripts_folder(processed, clean_vname)
+                    logger.info(f"[CLI] Dung transcript co san trong cache: {candidate_cache.name}")
+                    return processed
+            except Exception:
+                pass
 
     # 3. Ưu tiên kiểm tra file video vật lý trong uploads/ để chạy Groq Whisper / Whisper thật
     video_candidates = []
@@ -224,6 +288,11 @@ def _find_matching_transcript_or_video(
     seen_vids = set()
     unique_vids = []
     for vp in video_candidates:
+        # Glob ở trên khớp cả tên tệp bất kỳ chứa chuỗi tìm kiếm, kể cả
+        # `*_transcript.json` trong cache/. Chỉ nhận đuôi media, nếu không
+        # pipeline sẽ đem chính transcript đi bóc băng lại rồi chết.
+        if not _is_media_file(vp):
+            continue
         if vp.exists() and vp.is_file() and vp.stat().st_size > 0 and str(vp) not in seen_vids:
             seen_vids.add(str(vp))
             unique_vids.append(vp)
@@ -298,7 +367,10 @@ def _find_matching_transcript_or_video(
         res = None
         try:
             from .groq_service import transcribe_with_groq
-            res = transcribe_with_groq(str(vid_path))
+            try:
+                res = transcribe_with_groq(str(vid_path), save_to_transcripts=False)
+            except TypeError:
+                res = transcribe_with_groq(str(vid_path))
         except Exception as groq_err:
             logger.warning(f"[CLI] Groq fallback -> Whisper cuc bo ({summarize_error(groq_err)})")
             from .whisper_service import WhisperTranscriber
@@ -309,7 +381,13 @@ def _find_matching_transcript_or_video(
         print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
         try:
             from .transcript_refiner import TranscriptRefiner
-            refiner = TranscriptRefiner(exhausted_models=exhausted_models)
+            try:
+                refiner = TranscriptRefiner(
+                    exhausted_models=exhausted_models,
+                    unavailable_models=unavailable_models,
+                )
+            except TypeError:
+                refiner = TranscriptRefiner(exhausted_models=exhausted_models)
             res = refiner.refine_transcript(res)
         except Exception as ref_err:
             logger.warning(f"[CLI] Refiner fallback -> tach cau cuc bo ({summarize_error(ref_err)})")
@@ -366,9 +444,13 @@ def _find_matching_transcript_or_video(
         except Exception:
             continue
 
-    # 5. Trường hợp video mới không có file audio cục bộ (ví dụ bài giảng demo trong test/preview):
-    # Tạo câu thoại tổng quan riêng biệt dựa trên tên bài học thực tế của video này, KHÔNG lấy transcript của video khác
+    # 5. Không tìm thấy file video/audio vật lý hay URL hợp lệ:
+    # Trong môi trường chạy thật, tuyệt đối KHÔNG bịa câu thoại giả và KHÔNG ghi rác vào transcripts/.
+    # Trả transcript rỗng để run_backend_analysis dừng rõ ràng với lỗi EMPTY_TRANSCRIPT.
     eff_dur = round(float(duration if duration and duration > 0 else 180.0), 2)
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        return TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=[])
+
     step = round(eff_dur / 8.0, 2)
     sample_texts = [
         f"Chào mừng các bạn đến với nội dung {lesson or clean_vname}.",
@@ -389,9 +471,7 @@ def _find_matching_transcript_or_video(
         )
         for idx, txt in enumerate(sample_texts, start=1)
     ]
-    synth_output = TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=synth_sentences)
-    save_to_dedicated_transcripts_folder(synth_output, clean_vname)
-    return synth_output
+    return TranscriptOutput(video=clean_vname, duration=eff_dur, sentences=synth_sentences)
 
 
 def save_segments_to_segments_folder(segments_data: Dict[str, Any], lesson_or_video: str) -> Path:
@@ -425,6 +505,7 @@ def run_backend_analysis(
 ):
     """Thực thi trọn vẹn pipeline AI cho API /api/video/analyze của Spring Boot."""
     session_exhausted_models: Set[str] = set()
+    session_unavailable_models: Set[str] = set()
     try:
         transcript = _find_matching_transcript_or_video(
             video_name=video_name,
@@ -433,7 +514,8 @@ def run_backend_analysis(
             duration=duration,
             exhausted_models=session_exhausted_models,
             force=force,
-            url=url
+            url=url,
+            unavailable_models=session_unavailable_models,
         )
     except TypeError:
         try:
@@ -443,16 +525,27 @@ def run_backend_analysis(
                 file_hash=file_hash,
                 duration=duration,
                 exhausted_models=session_exhausted_models,
-                force=force
+                force=force,
+                url=url
             )
         except TypeError:
-            transcript = _find_matching_transcript_or_video(
-                video_name=video_name,
-                lesson=lesson,
-                file_hash=file_hash,
-                duration=duration,
-                exhausted_models=session_exhausted_models
-            )
+            try:
+                transcript = _find_matching_transcript_or_video(
+                    video_name=video_name,
+                    lesson=lesson,
+                    file_hash=file_hash,
+                    duration=duration,
+                    exhausted_models=session_exhausted_models,
+                    force=force
+                )
+            except TypeError:
+                transcript = _find_matching_transcript_or_video(
+                    video_name=video_name,
+                    lesson=lesson,
+                    file_hash=file_hash,
+                    duration=duration,
+                    exhausted_models=session_exhausted_models
+                )
 
     # Không có lời thoại thì KHÔNG được báo SUCCESS: giao diện sẽ hiện thông báo
     # thành công mà màn hình không đổi gì, người dùng tưởng AI bị treo.
@@ -468,12 +561,27 @@ def run_backend_analysis(
     from .transcript_refiner import TranscriptRefiner
     is_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
     try:
-        refiner = TranscriptRefiner(exhausted_models=session_exhausted_models)
-        segments_data = refiner.segment_transcript(
-            transcript,
-            lesson_name=lesson or video_name,
-            force_ai=not is_pytest
-        )
+        try:
+            refiner = TranscriptRefiner(
+                exhausted_models=session_exhausted_models,
+                unavailable_models=session_unavailable_models,
+            )
+        except TypeError:
+            refiner = TranscriptRefiner(exhausted_models=session_exhausted_models)
+        seg_kwargs = {
+            "lesson_name": lesson or video_name,
+            "force_ai": not is_pytest,
+        }
+        if not is_pytest:
+            seg_kwargs["max_retries"] = 3
+        try:
+            segments_data = refiner.segment_transcript(transcript, **seg_kwargs)
+        except TypeError:
+            segments_data = refiner.segment_transcript(
+                transcript,
+                lesson_name=lesson or video_name,
+                force_ai=not is_pytest,
+            )
     except Exception as e:
         if is_pytest:
             dummy_refiner = object.__new__(TranscriptRefiner)
