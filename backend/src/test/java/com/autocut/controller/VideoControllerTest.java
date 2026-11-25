@@ -9,6 +9,7 @@ import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
@@ -176,5 +177,148 @@ class VideoControllerTest {
                 transcript.sentences().size() > 10,
                 "Transcript thực tế từ module AI phải chứa đầy đủ các câu đã tách (> 10 câu)"
         );
+    }
+
+    @Test
+    @DisplayName("saveProject should save peaks.json next to segments.json and getPeaks should read it")
+    void testSaveProject_AndGetPeaks() throws Exception {
+        String testUser = "peaks_user";
+        String testLesson = "peaks_lesson";
+
+        Map<String, Object> req = new java.util.HashMap<>();
+        req.put("user", testUser);
+        req.put("lesson", testLesson);
+        req.put("segments", java.util.List.of(Map.of("id", "seg_1", "start", 0.0, "end", 10.0)));
+        req.put("peaks", java.util.List.of(0, 25, 80, 100, 40, 10));
+
+        ResponseEntity<?> saveResponse = controller.saveProject(req);
+        Assertions.assertEquals(HttpStatus.OK, saveResponse.getStatusCode());
+
+        // Kiểm tra 2 file segments.json và peaks.json được lưu cùng thư mục
+        java.nio.file.Path projectRoot = com.autocut.service.PythonRuntime.resolveProjectRoot();
+        java.nio.file.Path userDir = projectRoot.resolve("output").resolve("users").resolve(testUser).resolve(testLesson);
+        java.nio.file.Path segmentsFile = userDir.resolve("segments.json");
+        java.nio.file.Path peaksFile = userDir.resolve("peaks.json");
+
+        Assertions.assertTrue(java.nio.file.Files.exists(segmentsFile), "segments.json phải tồn tại");
+        Assertions.assertTrue(java.nio.file.Files.exists(peaksFile), "peaks.json phải tồn tại cạnh segments.json");
+        Assertions.assertEquals(segmentsFile.getParent(), peaksFile.getParent());
+
+        // Gọi getPeaks để SV4 lấy dữ liệu thật
+        ResponseEntity<?> peaksResponse = controller.getPeaks(testLesson, testUser, null);
+        Assertions.assertEquals(HttpStatus.OK, peaksResponse.getStatusCode());
+        Assertions.assertNotNull(peaksResponse.getBody());
+
+        com.fasterxml.jackson.databind.JsonNode node = (com.fasterxml.jackson.databind.JsonNode) peaksResponse.getBody();
+        Assertions.assertTrue(node.has("peaks"));
+        Assertions.assertEquals(6, node.get("peaks").size());
+        Assertions.assertEquals(80, node.get("peaks").get(2).asInt());
+
+        // Dọn dẹp tệp test
+        java.nio.file.Files.deleteIfExists(peaksFile);
+        java.nio.file.Files.deleteIfExists(segmentsFile);
+        java.nio.file.Files.deleteIfExists(userDir.resolve("project.json"));
+        java.nio.file.Files.deleteIfExists(userDir);
+    }
+
+    @Test
+    @DisplayName("getPeaks should block path traversal")
+    void testGetPeaks_BlockPathTraversal() {
+        ResponseEntity<?> res1 = controller.getPeaks("../../.env", "admin", null);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res1.getStatusCode());
+
+        ResponseEntity<?> res2 = controller.getPeaks("BaiGiang", "../../admin", null);
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res2.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks chấp nhận tiêu đề bài học tiếng Việt, không trả 400")
+    void testGetPeaks_AcceptsVietnameseLessonTitle() {
+        // F20: tiêu đề thật có dấu và khoảng trắng. Trước đây isSafeSlug chặn nên trả 400.
+        // Không có peaks.json nên kết quả đúng là 404 — điều cần khẳng định là qua được bước validate.
+        ResponseEntity<?> res = controller.getPeaks("Bài giảng Lập trình Web Full khóa (2 Giờ)", "admin", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks chặn đường dẫn tuyệt đối ở tham số video")
+    void testGetPeaks_BlocksAbsoluteVideoPath() {
+        // F04: resolve thẳng cho phép đọc ngoài uploads bằng path tuyệt đối.
+        ResponseEntity<?> res = controller.getPeaks("BaiGiang", "admin", "C:/Windows/win.ini");
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getPeaks should return 404 when peaks.json and video are not found")
+    void testGetPeaks_NotFound() {
+        ResponseEntity<?> res = controller.getPeaks("unknown_lesson_12345", "unknown_user", null);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+    }
+
+    @Test
+    void testSanitizeStemAndSafeSlugPreserveDotsInTitles() {
+        String titleWithDot = "YTSave.to_YouTube_Media_NEgDBzHg9_c_Tự-học-JS";
+        String filenameWithDot = titleWithDot + ".mp4";
+
+        String stemFromTitle = VideoController.sanitizeStem(titleWithDot);
+        String stemFromFile = VideoController.sanitizeStem(filenameWithDot);
+
+        Assertions.assertEquals("ytsave-to_youtube_media_negdbzhg9_c_tu-hoc-js", stemFromFile);
+        Assertions.assertEquals(stemFromFile, stemFromTitle);
+        Assertions.assertEquals("node-js-co-ban", VideoController.sanitizeStem("Node.js cơ bản"));
+        Assertions.assertEquals("bai_test_upload", VideoController.sanitizeStem("bai_test_upload.mp4"));
+
+        String slugFromTitle = VideoController.sanitizeToSafeSlug(titleWithDot);
+        Assertions.assertFalse("ytsave".equals(slugFromTitle),
+                "sanitizeToSafeSlug không được cắt cụt tên bài chứa dấu chấm thành 'ytsave'");
+        Assertions.assertTrue(slugFromTitle.contains("youtube_media"),
+                "sanitizeToSafeSlug phải giữ lại phần sau '.to', thực tế: " + slugFromTitle);
+    }
+
+    @Test
+    void testNormalizeFallbackSentencesDoesNotInjectFakeMusicBeats() {
+        List<com.autocut.dto.Models.Sentence> raw = List.of(
+                new com.autocut.dto.Models.Sentence("S0001", 5.0, 10.0, "Xin chào các bạn.", null),
+                new com.autocut.dto.Models.Sentence("S0002", 25.0, 30.0, "Hôm nay học về biến.", null)
+        );
+
+        List<com.autocut.dto.Models.Sentence> normalized = VideoController.normalizeFallbackSentences(raw);
+
+        Assertions.assertEquals(2, normalized.size(), "Không được tự bơm câu Intro Beat / Beat Drop / Outro Fade");
+        Assertions.assertEquals("S0001", normalized.get(0).id());
+        Assertions.assertEquals("Xin chào các bạn.", normalized.get(0).text());
+        Assertions.assertEquals("S0002", normalized.get(1).id());
+        Assertions.assertEquals("Hôm nay học về biến.", normalized.get(1).text());
+    }
+
+    @Test
+    void testUploadWithHyphensUsesCanonicalStemMatchingAnalyze() throws Exception {
+        byte[] content = new byte[]{9, 8, 7, 6, 5, 4, 3, 2};
+        String original = "YTSave.to_YouTube_Media_NEgDBzHg9_c_Tự-học-JS.mp4";
+        MockMultipartFile mediaFile = new MockMultipartFile("file", original, "video/mp4", content);
+
+        ResponseEntity<Map<String, Object>> response = controller.uploadSampleVideo(mediaFile);
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+
+        String expectedStem = "ytsave-to_youtube_media_negdbzhg9_c_tu-hoc-js";
+        String transcriptFile = (String) response.getBody().get("transcript_file");
+        String sha256 = (String) response.getBody().get("sha256");
+
+        try {
+            Assertions.assertEquals("transcripts/" + expectedStem + "_transcript.json", transcriptFile,
+                    "Tên file transcript khi upload phải khớp 100% với stem chuẩn của analyze/Python để không sinh 2 file!");
+        } finally {
+            Files.deleteIfExists(Paths.get("..", "transcripts", expectedStem + "_transcript.json"));
+            Files.deleteIfExists(Paths.get("transcripts", expectedStem + "_transcript.json"));
+            Files.deleteIfExists(Paths.get("..", "transcripts", "ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js_transcript.json"));
+            Files.deleteIfExists(Paths.get("transcripts", "ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js_transcript.json"));
+            if (sha256 != null) {
+                Files.deleteIfExists(Paths.get("..", "uploads", sha256 + "_" + expectedStem + ".mp4"));
+                Files.deleteIfExists(Paths.get("uploads", sha256 + "_" + expectedStem + ".mp4"));
+                Files.deleteIfExists(Paths.get("..", "uploads", sha256 + "_ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js.mp4"));
+                Files.deleteIfExists(Paths.get("uploads", sha256 + "_ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js.mp4"));
+            }
+        }
     }
 }

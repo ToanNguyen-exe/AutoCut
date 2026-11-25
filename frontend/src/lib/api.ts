@@ -1,4 +1,4 @@
-import { SegmentsData, Segment, TranscriptData, User } from "@/types";
+import type { SegmentsData, Segment, TranscriptData, User } from "@/types";
 
 const rawBase =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -11,6 +11,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   source: "api" | "fallback";
+  status?: number;
 }
 
 // Dữ liệu fallback nếu backend chưa khởi động
@@ -445,10 +446,30 @@ export async function analyzeVideoBackend(payload: {
   url?: string;
 }): Promise<ApiResponse<AnalyzeResponse>> {
   try {
+    const requestBody: {
+      videoName: string;
+      lesson: string;
+      duration: number;
+      force: boolean;
+      hash?: string;
+      url?: string;
+    } = {
+      videoName: payload.videoName,
+      lesson: payload.lesson,
+      duration: payload.duration,
+      force: payload.force === true,
+    };
+    if (payload.hash) {
+      requestBody.hash = payload.hash;
+    }
+    if (payload.url) {
+      requestBody.url = payload.url;
+    }
+
     const res = await fetch(`${API_BASE}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
@@ -462,17 +483,119 @@ export async function analyzeVideoBackend(payload: {
         const errText = await res.text().catch(() => "");
         if (errText) errorMsg = errText;
       }
-      throw new Error(errorMsg);
+      return {
+        error: errorMsg,
+        source: "fallback",
+        status: res.status,
+      };
     }
 
     const data: AnalyzeResponse = await res.json();
-    return { data, source: "api" };
+    return { data, source: "api", status: res.status };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Lỗi khi gọi AI phân tích trên backend",
       source: "fallback",
     };
   }
+}
+
+export interface AnalyzeWithAutoSyncOptions {
+  videoName: string;
+  lesson: string;
+  duration: number;
+  hash?: string;
+  force?: boolean;
+  url?: string;
+  getLocalBlob?: () => Promise<Blob | null>;
+  analyzeFn?: typeof analyzeVideoBackend;
+  uploadFn?: typeof uploadVideoFile;
+}
+
+export interface AnalyzeWithAutoSyncResult {
+  response: ApiResponse<AnalyzeResponse>;
+  syncedHash?: string;
+  syncedUrl?: string;
+}
+
+function isMissingBackendMediaError(res: ApiResponse<AnalyzeResponse>): boolean {
+  if (res.source === "api") return false;
+  const err = (res.error || "").toLowerCase();
+  return (
+    res.status === 502 ||
+    err.includes("empty_transcript") ||
+    err.includes("uploads/")
+  );
+}
+
+/**
+ * Gọi /api/video/analyze; nếu Backend thiếu tệp vật lý trong uploads/ nhưng trình duyệt
+ * còn giữ video trong IndexedDB, tự động đồng bộ qua /api/video/upload-sample rồi thử lại 1 lần.
+ */
+export async function analyzeVideoWithAutoSync(
+  options: AnalyzeWithAutoSyncOptions
+): Promise<AnalyzeWithAutoSyncResult> {
+  const analyzeFn = options.analyzeFn ?? analyzeVideoBackend;
+  const uploadFn = options.uploadFn ?? uploadVideoFile;
+  const serverUrl =
+    options.url && !options.url.startsWith("blob:") ? options.url : undefined;
+
+  const firstRes = await analyzeFn({
+    videoName: options.videoName,
+    lesson: options.lesson,
+    duration: options.duration,
+    hash: options.hash,
+    force: options.force,
+    url: serverUrl,
+  });
+
+  if (
+    firstRes.source === "api" &&
+    firstRes.data?.status === "SUCCESS" &&
+    (firstRes.data.segmentsData?.segments?.length ?? 0) > 0
+  ) {
+    return {
+      response: firstRes,
+      syncedHash: options.hash,
+      syncedUrl: options.url,
+    };
+  }
+
+  if (isMissingBackendMediaError(firstRes) && options.getLocalBlob) {
+    const localBlob = await options.getLocalBlob().catch(() => null);
+    if (localBlob && localBlob.size > 0) {
+      const uploadTarget =
+        typeof File !== "undefined" && localBlob instanceof File
+          ? localBlob
+          : new File([localBlob], options.videoName, {
+              type: localBlob.type || "video/mp4",
+            });
+      const uploadRes = await uploadFn(uploadTarget);
+      if (uploadRes.source === "api" && uploadRes.data?.sha256) {
+        const syncedHash = uploadRes.data.sha256;
+        const syncedUrl = uploadRes.data.cloud_url || serverUrl;
+        const retryRes = await analyzeFn({
+          videoName: options.videoName,
+          lesson: options.lesson,
+          duration: options.duration,
+          hash: syncedHash,
+          force: options.force,
+          url: syncedUrl,
+        });
+        return {
+          response: retryRes,
+          syncedHash,
+          syncedUrl,
+        };
+      }
+    }
+  }
+
+  return {
+    response: firstRes,
+    syncedHash: options.hash,
+    syncedUrl: options.url,
+  };
 }
 
 export interface SaveProjectPayload {

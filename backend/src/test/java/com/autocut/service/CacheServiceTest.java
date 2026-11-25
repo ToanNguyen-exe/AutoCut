@@ -15,7 +15,7 @@ class CacheServiceTest {
 
     @Test
     void testComputeSha256AndCacheFlow(@TempDir Path tempDir) throws IOException {
-        CacheService cacheService = new CacheService();
+        CacheService cacheService = new CacheService(tempDir.resolve("cache"));
 
         // 1. Tạo tệp giả lập video
         Path mockVideo = tempDir.resolve("test_video.mp4");
@@ -34,5 +34,31 @@ class CacheServiceTest {
         Assertions.assertTrue(cached.isPresent());
         Assertions.assertEquals("test_video.mp4", cached.get().video());
         Assertions.assertEquals(120.0, cached.get().duration());
+    }
+
+    @Test
+    void testWaveformCacheFlow(@TempDir Path tempDir) throws IOException {
+        CacheService cacheService = new CacheService(tempDir.resolve("cache"));
+        Path mockVideo = tempDir.resolve("test_waveform_video.mp4");
+        Files.writeString(mockVideo, "mock content for waveform cache test");
+
+        String hash = cacheService.computeSha256(mockVideo);
+
+        // Chưa có cache
+        Optional<com.autocut.video.WaveformResult> initial = cacheService.getCachedWaveform(hash);
+        Assertions.assertTrue(initial.isEmpty(), "Ban đầu chưa có cache sóng âm");
+
+        // Lưu cache
+        com.autocut.video.WaveformResult result = new com.autocut.video.WaveformResult(
+                true, 45.0, 10, new int[]{15, 30, 80, 100, 20}, new byte[]{-15, 30}
+        );
+        cacheService.saveWaveformCache(hash, result);
+
+        // Đọc lại cache
+        Optional<com.autocut.video.WaveformResult> cached = cacheService.getCachedWaveform(hash);
+        Assertions.assertTrue(cached.isPresent(), "Phải đọc được waveform từ cache");
+        Assertions.assertTrue(cached.get().hasAudio());
+        Assertions.assertEquals(45.0, cached.get().durationSec());
+        Assertions.assertArrayEquals(new int[]{15, 30, 80, 100, 20}, cached.get().peaks());
     }
 }

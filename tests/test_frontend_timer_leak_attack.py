@@ -26,8 +26,8 @@ class TestFrontendTimerLeakAttack:
         """
         content = read_frontend_page_content()
 
-        # Trích xuất toàn bộ thân hàm handleAnalyzeAI
-        match = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
+        # Trích xuất toàn bộ thân hàm handleAnalyzeAI (hỗ trợ cả tham số như forceRefresh từ PR #14)
+        match = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\([^)]*\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
         assert match, "Không tìm thấy hàm handleAnalyzeAI trong page.tsx!"
         func_body = match.group(1)
 
@@ -58,7 +58,7 @@ class TestFrontendTimerLeakAttack:
         """
         content = read_frontend_page_content()
 
-        match = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
+        match = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\([^)]*\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
         assert match, "Không tìm thấy hàm handleAnalyzeAI trong page.tsx!"
         func_body = match.group(1)
 
@@ -137,8 +137,8 @@ class TestFrontendTimerLeakAttack:
 
         has_render_pre_clear = bool(re.search(r"if\s*\(\s*renderTimerRef\.current\s*\)\s*clearInterval\s*\(\s*renderTimerRef\.current\s*\)", func_render))
 
-        # Kiểm tra trong handleAnalyzeAI
-        match_analyze = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
+        # Kiểm tra trong handleAnalyzeAI (hỗ trợ cả tham số forceRefresh từ PR #14)
+        match_analyze = re.search(r"const\s+handleAnalyzeAI\s*=\s*useCallback\(async\s*\([^)]*\)\s*=>\s*\{(.*?)\n\s*\}\s*,\s*\[", content, re.DOTALL)
         assert match_analyze, "Không tìm thấy hàm handleAnalyzeAI!"
         func_analyze = match_analyze.group(1)
 

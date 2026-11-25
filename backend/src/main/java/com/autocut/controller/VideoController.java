@@ -39,6 +39,8 @@ import com.autocut.video.VideoProps;
 import com.autocut.video.CutResult;
 import com.autocut.video.SafePaths;
 import com.autocut.video.PathOutsideRootException;
+import com.autocut.video.WaveformGenerator;
+import com.autocut.video.WaveformResult;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -102,30 +104,44 @@ public class VideoController {
     private final BatchVideoCutService batchVideoCutService;
     private final com.autocut.video.VideoConcat videoConcat;
     private final SegmentPersistenceService segmentPersistenceService;
+    private final WaveformGenerator waveformGenerator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository) {
-        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, new VideoCutter(new VideoProps(), configService), new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(new VideoCutter(new VideoProps(), configService), r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, new com.autocut.video.VideoConcat(new VideoProps()), null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, com.autocut.video.VideoConcat videoConcat) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, new CutPointService(configService, new ObjectMapper()), new BatchVideoCutService(videoCutter, r2Service, configService, new ObjectMapper()), videoConcat, null, new WaveformGenerator());
     }
 
     public VideoController(CacheService cacheService, ConfigService configService, CloudflareR2Service r2Service, VideoRepository videoRepository, VideoCutter videoCutter, CutPointService cutPointService, BatchVideoCutService batchVideoCutService, com.autocut.video.VideoConcat videoConcat) {
-        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null);
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, null, new WaveformGenerator());
+    }
+
+    public VideoController(
+            CacheService cacheService,
+            ConfigService configService,
+            CloudflareR2Service r2Service,
+            VideoRepository videoRepository,
+            VideoCutter videoCutter,
+            CutPointService cutPointService,
+            BatchVideoCutService batchVideoCutService,
+            com.autocut.video.VideoConcat videoConcat,
+            SegmentPersistenceService segmentPersistenceService) {
+        this(cacheService, configService, r2Service, videoRepository, videoCutter, cutPointService, batchVideoCutService, videoConcat, segmentPersistenceService, new WaveformGenerator());
     }
 
     @Autowired
@@ -138,7 +154,8 @@ public class VideoController {
             CutPointService cutPointService,
             BatchVideoCutService batchVideoCutService,
             com.autocut.video.VideoConcat videoConcat,
-            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService) {
+            @Autowired(required = false) SegmentPersistenceService segmentPersistenceService,
+            @Autowired(required = false) WaveformGenerator waveformGenerator) {
         this.cacheService = cacheService;
         this.configService = configService;
         this.r2Service = r2Service;
@@ -148,6 +165,7 @@ public class VideoController {
         this.batchVideoCutService = batchVideoCutService != null ? batchVideoCutService : new BatchVideoCutService(this.videoCutter, r2Service, configService, objectMapper);
         this.videoConcat = videoConcat != null ? videoConcat : new com.autocut.video.VideoConcat(new VideoProps());
         this.segmentPersistenceService = segmentPersistenceService;
+        this.waveformGenerator = waveformGenerator != null ? waveformGenerator : new WaveformGenerator();
     }
 
 
@@ -212,7 +230,7 @@ public class VideoController {
 
             String hash = cacheService.computeSha256(tempFile);
 
-            String safeSlug = sanitizeToSafeSlug(originalFilename);
+            String safeSlug = sanitizeStem(originalFilename);
             String ext = "";
             int dot = originalFilename.lastIndexOf('.');
             if (dot > 0) ext = originalFilename.substring(dot).toLowerCase();
@@ -356,7 +374,7 @@ public class VideoController {
     private String generateTranscriptForUploadedVideo(Path localVideoFile, String originalFilename, String hash) {
         Path projectRoot = resolveProjectRoot();
         Path transcriptsDir = projectRoot.resolve("transcripts");
-        String videoStem = sanitizeToSafeSlug(originalFilename);
+        String videoStem = sanitizeStem(originalFilename);
         String fileName = videoStem + "_transcript.json";
         Path transcriptPath = transcriptsDir.resolve(fileName);
 
@@ -392,29 +410,35 @@ public class VideoController {
         return "transcripts/" + fileName;
     }
 
-    private String stripExtension(String filename) {
+    private static final Set<String> KNOWN_MEDIA_EXTENSIONS = Set.of(
+            ".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".ts",
+            ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
+            ".json", ".srt", ".vtt", ".txt"
+    );
 
+    private static String stripExtension(String filename) {
         if (filename == null || filename.isBlank()) {
-
             return "video";
-
         }
-
         int dotIdx = filename.lastIndexOf('.');
-
-        return (dotIdx > 0) ? filename.substring(0, dotIdx) : filename;
-
+        if (dotIdx > 0) {
+            String ext = filename.substring(dotIdx).toLowerCase(Locale.ROOT);
+            if (KNOWN_MEDIA_EXTENSIONS.contains(ext)) {
+                return filename.substring(0, dotIdx);
+            }
+        }
+        return filename;
     }
 
-    private String sanitizeStem(String name) {
+    static String sanitizeStem(String name) {
         if (name == null || name.isBlank()) return "video";
-        String raw = name.contains(".") ? stripExtension(name) : name;
+        String raw = stripExtension(name);
         String s = raw.replace("đ", "d").replace("Đ", "D");
         s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         s = s.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        s = s.replaceAll("[\\s()\\[\\]{}]+", "-");
-        s = s.replaceAll("[^a-zA-Z0-9_-]", "-");
-        s = s.replaceAll("-+", "-").replaceAll("^-+|-+$", "").toLowerCase();
+        s = s.replaceAll("[\\s.()\\[\\]{}]+", "-");
+        s = s.replaceAll("[^a-zA-Z0-9_-]+", "");
+        s = s.replaceAll("-+", "-").replaceAll("_+", "_").replaceAll("^[-_]+|[-_]+$", "").toLowerCase(Locale.ROOT);
         return s.isEmpty() ? "video" : s;
     }
 
@@ -473,16 +497,20 @@ public class VideoController {
             return ResponseEntity.badRequest().build();
         }
 
-        for (Path uploadDir : List.of(Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
+        String lowerHash = hash.toLowerCase(Locale.ROOT);
+        for (Path uploadDir : List.of(rootFor("uploads"), Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
 
             if (Files.exists(uploadDir)) {
 
                 try (var stream = Files.list(uploadDir)) {
 
                     Optional<Path> found = stream
+                            .filter(Files::isRegularFile)
                             .filter(p -> {
-                                String name = p.getFileName().toString();
-                                return name.equals(hash) || name.equals(hash + ".mp4");
+                                String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                                return name.equals(lowerHash)
+                                        || name.equals(lowerHash + ".mp4")
+                                        || name.startsWith(lowerHash + "_");
                             })
                             .findFirst();
 
@@ -891,13 +919,21 @@ public class VideoController {
 
         // 2. Kiểm tra xem có file transcript thật trong thư mục transcripts/ hoặc cache
 
+        String canonicalStem = sanitizeStem(videoName);
+
         String safeStem = sanitizeToSafeSlug(videoName);
 
         String videoStem = stripExtension(videoName);
 
         Path transcriptsDir = resolveProjectRoot().resolve("transcripts");
 
-        Path candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+        Path candidateTranscript = transcriptsDir.resolve(canonicalStem + "_transcript.json");
+
+        if (!Files.exists(candidateTranscript)) {
+
+            candidateTranscript = transcriptsDir.resolve(safeStem + "_transcript.json");
+
+        }
 
         if (!Files.exists(candidateTranscript)) {
 
@@ -960,56 +996,8 @@ public class VideoController {
                         List<Sentence> rawSents = existingDto.sentences();
                         double totalDur = (duration > 0) ? duration : (transDur > 0 ? transDur : 120.0);
 
-                        // 1. Chuẩn hóa transcript: Timeline bắt buộc bắt đầu từ 00:00 và lấp đầy các khoảng trống âm nhạc
-                        List<Sentence> filledSents = new ArrayList<>();
-                        if (rawSents.get(0).start() > 1.5) {
-                            filledSents.add(new Sentence(
-                                    "S0000",
-                                    0.0,
-                                    Math.round(rawSents.get(0).start() * 10.0) / 10.0,
-                                    "Giai điệu mở màn & Dạo nhạc (Intro Beat)",
-                                    null
-                            ));
-                        }
-                        for (int s = 0; s < rawSents.size(); s++) {
-                            Sentence curr = rawSents.get(s);
-                            filledSents.add(curr);
-                            if (s < rawSents.size() - 1) {
-                                Sentence next = rawSents.get(s + 1);
-                                double gap = next.start() - curr.end();
-                                if (gap >= 8.0) {
-                                    filledSents.add(new Sentence(
-                                            "S_gap_" + s,
-                                            Math.round(curr.end() * 10.0) / 10.0,
-                                            Math.round(next.start() * 10.0) / 10.0,
-                                            "Đoạn chuyển tiếp / Beat Drop (Instrumental)",
-                                            null
-                                    ));
-                                }
-                            }
-                        }
-                        if (totalDur - rawSents.get(rawSents.size() - 1).end() >= 5.0) {
-                            filledSents.add(new Sentence(
-                                    "S_outro",
-                                    Math.round(rawSents.get(rawSents.size() - 1).end() * 10.0) / 10.0,
-                                    Math.round(totalDur * 10.0) / 10.0,
-                                    "Giai điệu kết thúc (Outro Fade)",
-                                    null
-                            ));
-                        }
-
-                        // Đánh số lại thứ tự câu S0001, S0002...
-                        List<Sentence> sents = new ArrayList<>();
-                        for (int s = 0; s < filledSents.size(); s++) {
-                            Sentence item = filledSents.get(s);
-                            sents.add(new Sentence(
-                                    String.format("S%04d", s + 1),
-                                    item.start(),
-                                    item.end(),
-                                    item.text(),
-                                    item.words()
-                            ));
-                        }
+                        // 1. Giữ nguyên các câu thoại thực tế và đánh lại mã câu S0001..Sxxxx (không chèn chữ nhạc nền giả)
+                        List<Sentence> sents = normalizeFallbackSentences(rawSents);
 
                         // 2. Chia phân đoạn liên tục 100% - Tuyệt đối không để khoảng trống (Zero Gaps) và ràng buộc cứng <= 7 phút (420.0s)
                         int minSegs = (int) Math.ceil(totalDur / 420.0);
@@ -1180,6 +1168,19 @@ public class VideoController {
             Object segmentsData = payload.get("segments");
             if (segmentsData != null) {
                 objectMapper.writerWithDefaultPrettyPrinter().writeValue(segmentsFile.toFile(), segmentsData);
+            }
+
+            // 1b. Ghi file peaks.json cạnh file segments.json
+            Path peaksFile = userDir.resolve("peaks.json");
+            Object peaksPayload = payload.get("peaks");
+            if (peaksPayload != null) {
+                Map<String, Object> peaksJson = new LinkedHashMap<>();
+                peaksJson.put("lesson", safeLesson);
+                peaksJson.put("hasAudio", true);
+                peaksJson.put("peaks", peaksPayload);
+                peaksJson.put("generatedAt", System.currentTimeMillis());
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(peaksFile.toFile(), peaksJson);
+                log.info("Đã lưu file peaks.json cạnh segments.json tại: {}", peaksFile.toAbsolutePath());
             }
 
             // 2. Ghi file project.json
@@ -1404,6 +1405,12 @@ public class VideoController {
                 responseData.put("segments", segmentsNode);
             }
 
+            Path peaksFile = foundDir.resolve("peaks.json");
+            if (Files.exists(peaksFile)) {
+                JsonNode peaksNode = objectMapper.readTree(peaksFile.toFile());
+                responseData.put("peaks", peaksNode);
+            }
+
             // Tìm transcript tương ứng nếu có
             String videoName = rawVideo;
             if ((videoName == null || videoName.isBlank()) && responseData.containsKey("project")) {
@@ -1435,6 +1442,86 @@ public class VideoController {
         }
     }
 
+    /**
+     * API Đọc dữ liệu sóng âm thật (peaks.json) cho Frontend (SV4) vẽ Timeline.
+     * Đọc file peaks.json nằm cạnh file segments.json hoặc trích xuất bằng ffmpeg nếu chưa có.
+     */
+    @GetMapping("/peaks")
+    public ResponseEntity<?> getPeaks(
+            @RequestParam(value = "lesson", defaultValue = "BaiGiang") String rawLesson,
+            @RequestParam(value = "user", defaultValue = "admin") String rawUser,
+            @RequestParam(value = "video", required = false) String rawVideo) {
+
+        // F20: lesson là tiêu đề bài học thật (tiếng Việt, khoảng trắng, ngoặc),
+        // nên phải dùng isSafeSegment — isSafeSlug chỉ cho ASCII nên trả 400 nhầm.
+        // isSafeSegment vẫn cấm dấu phân cách và "." / ".." nên không thoát thư mục được.
+        if (rawLesson == null || !SafePaths.isSafeSegment(rawLesson)) {
+            log.warn("Chặn getPeaks: lesson không hợp lệ ('{}')", rawLesson);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "BAD_REQUEST",
+                    "error", "Tên bài học không hợp lệ"));
+        }
+        if (rawUser == null || !SafePaths.isSafeSlug(rawUser)) {
+            log.warn("Chặn getPeaks: user không hợp lệ ('{}')", rawUser);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "BAD_REQUEST",
+                    "error", "Tên user không hợp lệ"));
+        }
+
+        // Giữ đúng quy ước thư mục của saveProject: tên thư mục là bản đã lọc ASCII.
+        // Không lọc thì getPeaks không tìm thấy peaks.json mà saveProject vừa ghi.
+        String safeUser = rawUser.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeLesson = rawLesson.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (safeUser.isBlank()) safeUser = "admin";
+        if (safeLesson.isBlank()) safeLesson = "BaiGiang";
+
+        Path projectRoot = resolveProjectRoot();
+        Path userDir = projectRoot.resolve("output").resolve("users").resolve(safeUser).resolve(safeLesson);
+        Path peaksFile = userDir.resolve("peaks.json");
+
+        // 1. Kiểm tra nếu file peaks.json đã tồn tại cạnh segments.json
+        if (Files.exists(peaksFile)) {
+            try {
+                JsonNode node = objectMapper.readTree(peaksFile.toFile());
+                return ResponseEntity.ok(node);
+            } catch (Exception e) {
+                log.warn("Không thể đọc file peaks.json tại {}: {}", peaksFile, e.getMessage());
+            }
+        }
+
+        // 2. Nếu chưa có peaks.json, tìm video nguồn trong uploads để trích xuất và lưu vào peaks.json
+        Path videoPath = null;
+        if (rawVideo != null && !rawVideo.isBlank()) {
+            // F04: resolve thẳng không chặn được đường dẫn tuyệt đối — Path.resolve trả về
+            // chính path tuyệt đối, nên ?video=C:/Windows/win.ini đọc được ngoài uploads.
+            try {
+                Path candidate = SafePaths.resolveWithin(rootFor("uploads"), rawVideo);
+                if (Files.isRegularFile(candidate)) {
+                    videoPath = candidate;
+                }
+            } catch (PathOutsideRootException e) {
+                log.warn("Chặn getPeaks: video nằm ngoài thư mục uploads ('{}'), ip={}",
+                        abbreviate(rawVideo), currentRequestIp());
+            }
+        }
+
+        if (videoPath != null && Files.exists(videoPath)) {
+            WaveformResult result = waveformGenerator.extractPeaksWithCache(videoPath, 10, peaksFile, cacheService, safeLesson);
+            if (Files.exists(peaksFile)) {
+                try {
+                    JsonNode node = objectMapper.readTree(peaksFile.toFile());
+                    return ResponseEntity.ok(node);
+                } catch (Exception ignored) {}
+            }
+            return ResponseEntity.ok(result);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "status", "NOT_FOUND",
+                "message", "Chưa có dữ liệu sóng âm peaks.json cho bài học " + safeLesson
+        ));
+    }
+
     public ResponseEntity<?> renderSegments(SegmentsDTO segments) {
         if (segments == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Payload segments null"));
@@ -1456,7 +1543,9 @@ public class VideoController {
 
         // F04: lesson từng được ghép thẳng vào đường dẫn ghi (cả Files.createDirectories
         // lẫn tệp segments_*.json) nên lesson="../.." ghi được ra ngoài output.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        // Dùng isSafeSegment (cho phép tiếng Việt, cấm dấu phân cách) để không
+        // chặn nhầm tiêu đề bài học thật.
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn cắt video: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().body(Map.of(
@@ -1650,7 +1739,11 @@ public class VideoController {
             @RequestParam(value = "user", required = false) String user) {
         // F04: lesson do client đặt và từng được ghép thẳng vào đường dẫn,
         // nên ?lesson=../.. nén cả thư mục dự án kể cả .env.
-        if (!SafePaths.isSafeSlug(lesson)) {
+        //
+        // Không dùng isSafeSlug: tên bài học thật là tiêu đề tự do, có dấu tiếng
+        // Việt và khoảng trắng, nên lọc theo bộ ký tự ASCII sẽ chặn nhầm mọi bài
+        // học thật (lỗi phát hiện khi chạy thử: HTTP 400 với tên "Bài giảng ...").
+        if (!SafePaths.isSafeSegment(lesson)) {
             log.warn("Chặn nén ZIP: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().build();
@@ -1977,6 +2070,24 @@ public class VideoController {
         }
     }
 
+    static List<Sentence> normalizeFallbackSentences(List<Sentence> rawSents) {
+        if (rawSents == null || rawSents.isEmpty()) {
+            return List.of();
+        }
+        List<Sentence> sents = new ArrayList<>(rawSents.size());
+        for (int i = 0; i < rawSents.size(); i++) {
+            Sentence item = rawSents.get(i);
+            sents.add(new Sentence(
+                    String.format("S%04d", i + 1),
+                    item.start(),
+                    item.end(),
+                    item.text(),
+                    item.words()
+            ));
+        }
+        return sents;
+    }
+
     public static String sanitizeToSafeSlug(String raw) {
         if (raw == null || raw.isBlank()) return "video";
         String name = raw;
@@ -1987,16 +2098,13 @@ public class VideoController {
                 name = inner;
             }
         }
-        int dotIdx = name.lastIndexOf('.');
-        if (dotIdx > 0) {
-            name = name.substring(0, dotIdx);
-        }
+        name = stripExtension(name);
         String nfd = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD);
         String ascii = nfd.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                           .replace('đ', 'd').replace('Đ', 'D');
         String slug = ascii.replaceAll("[^a-zA-Z0-9]+", "_")
                            .replaceAll("^_+|_+$", "")
-                           .toLowerCase();
+                           .toLowerCase(Locale.ROOT);
         return slug.isBlank() ? "video" : slug;
     }
 
