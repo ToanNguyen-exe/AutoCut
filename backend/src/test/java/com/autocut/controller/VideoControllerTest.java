@@ -194,4 +194,71 @@ class VideoControllerTest {
                 "Transcript thực tế từ module AI phải chứa đầy đủ các câu đã tách (> 10 câu)"
         );
     }
+
+    @Test
+    void testSanitizeStemAndSafeSlugPreserveDotsInTitles() {
+        String titleWithDot = "YTSave.to_YouTube_Media_NEgDBzHg9_c_Tự-học-JS";
+        String filenameWithDot = titleWithDot + ".mp4";
+
+        String stemFromTitle = VideoController.sanitizeStem(titleWithDot);
+        String stemFromFile = VideoController.sanitizeStem(filenameWithDot);
+
+        Assertions.assertEquals("ytsave-to_youtube_media_negdbzhg9_c_tu-hoc-js", stemFromFile);
+        Assertions.assertEquals(stemFromFile, stemFromTitle);
+        Assertions.assertEquals("node-js-co-ban", VideoController.sanitizeStem("Node.js cơ bản"));
+        Assertions.assertEquals("bai_test_upload", VideoController.sanitizeStem("bai_test_upload.mp4"));
+
+        String slugFromTitle = VideoController.sanitizeToSafeSlug(titleWithDot);
+        Assertions.assertFalse("ytsave".equals(slugFromTitle),
+                "sanitizeToSafeSlug không được cắt cụt tên bài chứa dấu chấm thành 'ytsave'");
+        Assertions.assertTrue(slugFromTitle.contains("youtube_media"),
+                "sanitizeToSafeSlug phải giữ lại phần sau '.to', thực tế: " + slugFromTitle);
+    }
+
+    @Test
+    void testNormalizeFallbackSentencesDoesNotInjectFakeMusicBeats() {
+        List<com.autocut.dto.Models.Sentence> raw = List.of(
+                new com.autocut.dto.Models.Sentence("S0001", 5.0, 10.0, "Xin chào các bạn.", null),
+                new com.autocut.dto.Models.Sentence("S0002", 25.0, 30.0, "Hôm nay học về biến.", null)
+        );
+
+        List<com.autocut.dto.Models.Sentence> normalized = VideoController.normalizeFallbackSentences(raw);
+
+        Assertions.assertEquals(2, normalized.size(), "Không được tự bơm câu Intro Beat / Beat Drop / Outro Fade");
+        Assertions.assertEquals("S0001", normalized.get(0).id());
+        Assertions.assertEquals("Xin chào các bạn.", normalized.get(0).text());
+        Assertions.assertEquals("S0002", normalized.get(1).id());
+        Assertions.assertEquals("Hôm nay học về biến.", normalized.get(1).text());
+    }
+
+    @Test
+    void testUploadWithHyphensUsesCanonicalStemMatchingAnalyze() throws Exception {
+        byte[] content = new byte[]{9, 8, 7, 6, 5, 4, 3, 2};
+        String original = "YTSave.to_YouTube_Media_NEgDBzHg9_c_Tự-học-JS.mp4";
+        MockMultipartFile mediaFile = new MockMultipartFile("file", original, "video/mp4", content);
+
+        ResponseEntity<Map<String, Object>> response = controller.uploadSampleVideo(mediaFile);
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+
+        String expectedStem = "ytsave-to_youtube_media_negdbzhg9_c_tu-hoc-js";
+        String transcriptFile = (String) response.getBody().get("transcript_file");
+        String sha256 = (String) response.getBody().get("sha256");
+
+        try {
+            Assertions.assertEquals("transcripts/" + expectedStem + "_transcript.json", transcriptFile,
+                    "Tên file transcript khi upload phải khớp 100% với stem chuẩn của analyze/Python để không sinh 2 file!");
+        } finally {
+            Files.deleteIfExists(Paths.get("..", "transcripts", expectedStem + "_transcript.json"));
+            Files.deleteIfExists(Paths.get("transcripts", expectedStem + "_transcript.json"));
+            Files.deleteIfExists(Paths.get("..", "transcripts", "ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js_transcript.json"));
+            Files.deleteIfExists(Paths.get("transcripts", "ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js_transcript.json"));
+            if (sha256 != null) {
+                Files.deleteIfExists(Paths.get("..", "uploads", sha256 + "_" + expectedStem + ".mp4"));
+                Files.deleteIfExists(Paths.get("uploads", sha256 + "_" + expectedStem + ".mp4"));
+                Files.deleteIfExists(Paths.get("..", "uploads", sha256 + "_ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js.mp4"));
+                Files.deleteIfExists(Paths.get("uploads", sha256 + "_ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js.mp4"));
+            }
+        }
+    }
 }

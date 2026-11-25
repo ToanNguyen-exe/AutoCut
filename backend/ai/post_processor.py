@@ -255,17 +255,25 @@ def post_process_transcript(transcript: TranscriptOutput) -> TranscriptOutput:
     return transcript
 
 
+KNOWN_MEDIA_EXTENSIONS = {
+    ".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".ts",
+    ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
+    ".json", ".srt", ".vtt", ".txt",
+}
+
+
 def sanitize_transcript_stem(name: str) -> str:
     """Chuẩn hóa stem tên file transcript: không dấu tiếng Việt, không khoảng trắng, chỉ gồm ký tự ASCII an toàn."""
     if not name:
         return "video"
-    raw_stem = Path(name).stem if "." in name else name
+    p = Path(name)
+    raw_stem = p.stem if p.suffix.lower() in KNOWN_MEDIA_EXTENSIONS else name
     # 1. Bỏ dấu tiếng Việt (đ/Đ và các dấu thanh Unicode)
     s = raw_stem.replace("đ", "d").replace("Đ", "D")
     s = unicodedata.normalize("NFD", s)
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
-    # 2. Thay thế khoảng trắng và ký tự đặc biệt bằng gạch nối '-', giữ gạch dưới hợp lệ
-    s = re.sub(r"[\s\(\)\[\]\{\}]+", "-", s)
+    # 2. Thay thế khoảng trắng, dấu chấm và dấu ngoặc bằng gạch nối '-', giữ gạch dưới hợp lệ
+    s = re.sub(r"[\s\.\(\)\[\]\{\}]+", "-", s)
     s = re.sub(r"[^a-zA-Z0-9_-]+", "", s)
     s = re.sub(r"-+", "-", s)
     s = re.sub(r"_+", "_", s)
