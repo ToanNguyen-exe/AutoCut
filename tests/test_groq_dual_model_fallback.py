@@ -44,7 +44,7 @@ def _isolate_default_ai_config(monkeypatch):
         "https://api.groq.com/openai/v1/chat/completions",
         raising=False,
     )
-    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_model", "gemini-3.8-flash", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_model", "gemini-3.5-flash-lite", raising=False)
 
 
 def test_config_defaults_groq_dual_models_and_removes_openrouter(monkeypatch):
@@ -62,7 +62,7 @@ def test_config_defaults_groq_dual_models_and_removes_openrouter(monkeypatch):
     assert cfg.groq_refine_model == "openai/gpt-oss-20b"
     assert cfg.groq_segment_model == "openai/gpt-oss-120b"
     assert cfg.groq_api_url == "https://api.groq.com/openai/v1/chat/completions"
-    assert cfg.gemini_model == "gemini-3.8-flash"
+    assert cfg.gemini_model == "gemini-3.5-flash-lite"
     assert not hasattr(cfg, "openrouter_api_key")
     assert not hasattr(cfg, "openrouter_model")
     assert not hasattr(cfg, "openrouter_api_url")
@@ -75,7 +75,7 @@ def test_config_defaults_groq_dual_models_and_removes_openrouter(monkeypatch):
 
 
 def test_refiner_builds_distinct_groq_priority_lists_for_refine_and_segment(monkeypatch):
-    """Chau chuốt ưu tiên gpt-oss-20b -> gpt-oss-120b -> Gemini; phân đoạn ưu tiên gpt-oss-120b -> gpt-oss-20b -> Gemini."""
+    """Chau chuốt ưu tiên 20B -> 120B -> Qwen -> Gemini (flash-lite đầu); phân đoạn ưu tiên 120B -> 20B -> Qwen -> Gemini."""
     monkeypatch.setattr(refiner_mod.genai, "Client", lambda **kwargs: object())
 
     refiner = TranscriptRefiner(
@@ -84,15 +84,15 @@ def test_refiner_builds_distinct_groq_priority_lists_for_refine_and_segment(monk
     )
 
     expected_gemini = [
+        "gemini-3.5-flash-lite",
         "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
         "gemini-pro-latest",
     ]
-    assert refiner.refine_models_to_try == ["openai/gpt-oss-20b", "openai/gpt-oss-120b", *expected_gemini]
-    assert refiner.segment_models_to_try == ["openai/gpt-oss-120b", "openai/gpt-oss-20b", *expected_gemini]
+    assert refiner.refine_models_to_try == ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.8-27b", *expected_gemini]
+    assert refiner.segment_models_to_try == ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", *expected_gemini]
     assert refiner.models_to_try == refiner.refine_models_to_try
     assert refiner.model_name == "openai/gpt-oss-20b"
 
@@ -103,8 +103,8 @@ def test_refiner_works_with_only_groq_key_without_gemini(monkeypatch):
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_api_key", "gsk_only", raising=False)
 
     refiner = TranscriptRefiner()
-    assert refiner.refine_models_to_try == ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
-    assert refiner.segment_models_to_try == ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    assert refiner.refine_models_to_try == ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    assert refiner.segment_models_to_try == ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
     assert refiner.client is None
 
 
@@ -115,16 +115,16 @@ def test_refiner_falls_back_to_gemini_list_when_groq_key_missing(monkeypatch):
 
     refiner = TranscriptRefiner(api_key="fake-gemini-key")
     expected_gemini = [
+        "gemini-3.5-flash-lite",
         "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
         "gemini-pro-latest",
     ]
     assert refiner.refine_models_to_try == expected_gemini
     assert refiner.segment_models_to_try == expected_gemini
-    assert refiner.model_name == "gemini-3.8-flash"
+    assert refiner.model_name == "gemini-3.5-flash-lite"
 
 
 def test_groq_dual_models_use_20b_for_refine_and_120b_for_segment(monkeypatch, caplog):
@@ -261,10 +261,12 @@ def test_groq_segment_413_falls_back_to_other_groq_then_gemini(monkeypatch):
     assert call_trace == [
         ("groq", "openai/gpt-oss-120b"),
         ("groq", "openai/gpt-oss-20b"),
-        ("gemini", "gemini-3.8-flash"),
+        ("groq", "qwen/qwen3.8-27b"),
+        ("gemini", "gemini-3.5-flash-lite"),
     ]
     assert "openai/gpt-oss-120b" in refiner.exhausted_models
     assert "openai/gpt-oss-20b" in refiner.exhausted_models
+    assert "qwen/qwen3.8-27b" in refiner.exhausted_models
 
 
 def test_groq_refine_429_falls_back_to_120b_before_gemini(monkeypatch):
@@ -345,15 +347,16 @@ def test_groq_invalid_key_skips_all_groq_models_and_falls_back_to_gemini(monkeyp
     refiner = TranscriptRefiner(api_key="fake-gemini-key", groq_api_key="gsk_bad")
     resp = refiner._generate_with_fallback("prompt 1")
     assert resp is not None
-    assert call_trace == [("groq", "openai/gpt-oss-20b"), ("gemini", "gemini-3.8-flash")]
+    assert call_trace == [("groq", "openai/gpt-oss-20b"), ("gemini", "gemini-3.5-flash-lite")]
     assert "openai/gpt-oss-20b" in refiner._unavailable_models
     assert "openai/gpt-oss-120b" in refiner._unavailable_models
+    assert "qwen/qwen3.8-27b" in refiner._unavailable_models
 
     # Lần sau bỏ qua toàn bộ Groq trong suốt phiên
     call_trace.clear()
     resp2 = refiner._generate_with_fallback("prompt 2")
     assert resp2 is not None
-    assert call_trace == [("gemini", "gemini-3.8-flash")]
+    assert call_trace == [("gemini", "gemini-3.5-flash-lite")]
 
 
 def test_groq_retries_without_response_format_on_400(monkeypatch):
@@ -537,4 +540,250 @@ def test_refine_prompt_is_compact_without_indented_json_and_logs_max_tokens_once
 
     max_tok_warnings = [rec.getMessage() for rec in caplog.records if "MAX_TOKENS" in rec.getMessage()]
     assert len(max_tok_warnings) == 1, f"Cảnh báo MAX_TOKENS chỉ được in 1 lần, thực tế: {len(max_tok_warnings)}"
+
+
+def test_503_and_504_models_enter_cooldown_and_skip_redundant_retry_when_fallback_exists(monkeypatch):
+    """Model bị 503/504 không retry lặp thừa khi còn ứng viên khác, và vào cooldown 60s để lô sau bỏ qua ngay."""
+    called = []
+    slept = []
+    monkeypatch.setattr(refiner_mod.time, "sleep", lambda sec: slept.append(sec))
+
+    class FakeGeminiModels:
+        def generate_content(self, model, contents, config):
+            called.append(model)
+            if model == "gemini-3.5-flash":
+                raise RuntimeError("503 UNAVAILABLE: This model is currently experiencing high demand.")
+            if model == "gemini-3.8-flash":
+                raise RuntimeError("504 DEADLINE_EXCEEDED: Deadline expired before operation could complete.")
+            class Resp:
+                text = '{"sentences": []}'
+            return Resp()
+
+    class FakeGeminiClient:
+        models = FakeGeminiModels()
+
+    refiner = object.__new__(TranscriptRefiner)
+    refiner.models_to_try = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"]
+    refiner.model_name = "gemini-3.5-flash"
+    refiner.exhausted_models = set()
+    refiner._unavailable_models = set()
+    refiner._exhausted_at = {}
+    refiner.client = FakeGeminiClient()
+
+    resp1 = refiner._generate_with_fallback("lo 1")
+    resp2 = refiner._generate_with_fallback("lo 2")
+    assert resp1 is not None and resp2 is not None
+    # Lô 1: thử mỗi model lỗi đúng 1 lần rồi sang flash-lite ngay (không sleep); lô 2: đi thẳng flash-lite
+    assert called == ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash-lite"]
+    assert slept == []
+    assert "gemini-3.5-flash" in refiner.exhausted_models
+    assert "gemini-3.8-flash" in refiner.exhausted_models
+
+
+def test_refine_uses_fast_20s_timeout_while_segment_keeps_60s_timeout(monkeypatch):
+    """Bước chau chuốt lô nhỏ dùng timeout ngắn (<=25s) tránh kẹt 504; bước phân đoạn giữ timeout >=60s."""
+    groq_timeouts = []
+    gemini_timeouts = []
+
+    def fake_urlopen(req, timeout=None):
+        body = json.loads(req.data.decode("utf-8"))
+        groq_timeouts.append((body["model"], timeout))
+        raise urllib.error.HTTPError(
+            url=req.full_url,
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": {"message": "Rate limit reached for tokens"}}'),
+        )
+
+    class SpyGeminiModels:
+        def generate_content(self, model, contents, config):
+            http_opts = getattr(config, "http_options", None)
+            t_ms = getattr(http_opts, "timeout", None) if http_opts is not None else None
+            gemini_timeouts.append((model, t_ms))
+            if "Semantic Video Segmentation" in contents:
+                class SegResp:
+                    text = json.dumps({
+                        "sections": [{
+                            "label": "Mở đầu",
+                            "topics": [{"title": "Bài 1", "slug": "bai-1", "start_id": "S0001", "end_id": "S0002"}],
+                        }]
+                    })
+                return SegResp()
+            class RefResp:
+                text = json.dumps({
+                    "sentences": [
+                        {"start_id": "S0001", "end_id": "S0001", "text": "Câu một."},
+                        {"start_id": "S0002", "end_id": "S0002", "text": "Câu hai."},
+                    ]
+                })
+            return RefResp()
+
+    class SpyGeminiClient:
+        models = SpyGeminiModels()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(refiner_mod.genai, "Client", lambda **kwargs: SpyGeminiClient())
+
+    refiner = TranscriptRefiner(api_key="fake-gemini-key", groq_api_key="gsk_test")
+    tr = TranscriptOutput(
+        video="demo.mp4",
+        duration=10.0,
+        sentences=[
+            Sentence(id="S0001", start=0.0, end=5.0, text="cau mot"),
+            Sentence(id="S0002", start=5.0, end=10.0, text="cau hai"),
+        ],
+    )
+    refined = refiner.refine_transcript(tr)
+    # Gỡ cooldown Groq giả lập để kiểm tra luôn timeout của segment trên cả Groq lẫn Gemini
+    refiner.exhausted_models.clear()
+    refiner._exhausted_at.clear()
+    refiner.segment_transcript(refined, lesson_name="Demo", force_ai=True, max_retries=1)
+
+    assert groq_timeouts[0][1] <= 25.0, f"Refine trên Groq phải dùng timeout <=25s, thực tế: {groq_timeouts}"
+    assert groq_timeouts[-1][1] >= 60.0, f"Segment trên Groq phải giữ timeout >=60s, thực tế: {groq_timeouts}"
+    assert gemini_timeouts[0][1] is not None and gemini_timeouts[0][1] <= 25000.0, (
+        f"Refine trên Gemini phải dùng timeout <=25000ms, thực tế: {gemini_timeouts}"
+    )
+    assert gemini_timeouts[-1][1] is not None and gemini_timeouts[-1][1] >= 60000.0, (
+        f"Segment trên Gemini phải giữ timeout >=60000ms, thực tế: {gemini_timeouts}"
+    )
+
+
+def test_refine_waits_for_earliest_cooldown_instead_of_skipping_remaining_batches(monkeypatch):
+    """Khi toàn bộ model cùng đang cooldown ở giữa phiên, Refiner phải chờ model sắp hồi sớm nhất và xử lý đủ 100% lô."""
+    waits = []
+    called_models = []
+    batch_calls = {"count": 0}
+
+    orig_wait = threading.Event.wait
+
+    def fake_event_wait(self, timeout=None):
+        if timeout is not None and timeout > 0:
+            waits.append(timeout)
+            return False
+        return orig_wait(self, timeout)
+
+    monkeypatch.setattr(threading.Event, "wait", fake_event_wait)
+
+    def fake_urlopen(req, timeout=None):
+        body = json.loads(req.data.decode("utf-8"))
+        model = body["model"]
+        called_models.append(model)
+        batch_calls["count"] += 1
+        # Lượt 1: model cuối còn lại (120b) dính 429 -> tất cả model rơi vào cooldown
+        if batch_calls["count"] == 1:
+            raise urllib.error.HTTPError(
+                url=req.full_url,
+                code=429,
+                msg="Too Many Requests",
+                hdrs={},
+                fp=io.BytesIO(b'{"error": {"message": "Rate limit reached for model"}}'),
+            )
+        prompt = body["messages"][0]["content"]
+        ids = [f"S{i:04d}" for i in range(1, 5) if f'"S{i:04d}"' in prompt]
+        return _FakeHTTPResponse({
+            "choices": [{
+                "message": {
+                    "content": json.dumps({
+                        "sentences": [{"start_id": sid, "end_id": sid, "text": f"Da chau chuot {sid}."} for sid in ids]
+                    })
+                },
+                "finish_reason": "stop",
+            }]
+        })
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_api_key", "")
+
+    refiner = TranscriptRefiner(groq_api_key="gsk_test")
+    now = time.monotonic()
+    # Giả lập: 20b còn 45s cooldown, qwen chỉ còn ~5s cooldown, 120b sắp bị 429 ở lô 1
+    refiner.exhausted_models = {"openai/gpt-oss-20b", "qwen/qwen3.8-27b"}
+    refiner._exhausted_at = {
+        "openai/gpt-oss-20b": now - 15.0,
+        "qwen/qwen3.8-27b": now - 55.0,
+    }
+    refiner._build_char_batches = lambda sents, **kw: [[sents[0], sents[1]], [sents[2], sents[3]]]
+
+    tr = TranscriptOutput(
+        video="long.mp4",
+        duration=20.0,
+        sentences=[
+            Sentence(id="S0001", start=0.0, end=5.0, text="cau tho 1"),
+            Sentence(id="S0002", start=5.0, end=10.0, text="cau tho 2"),
+            Sentence(id="S0003", start=10.0, end=15.0, text="cau tho 3"),
+            Sentence(id="S0004", start=15.0, end=20.0, text="cau tho 4"),
+        ],
+    )
+    result = refiner.refine_transcript(tr, max_workers=1)
+
+    # Phải chờ đúng khoảng ~5s cho qwen hồi (không chờ 45s và không bỏ qua lô 1 hay lô 2)
+    assert len(waits) == 1
+    assert 3.0 <= waits[0] <= 8.0, f"Thời gian chờ phải khớp model sắp hồi sớm nhất (~5s), thực tế: {waits}"
+    assert [s.text for s in result.sentences] == [
+        "Da chau chuot S0001.",
+        "Da chau chuot S0002.",
+        "Da chau chuot S0003.",
+        "Da chau chuot S0004.",
+    ]
+    assert called_models == ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "qwen/qwen3.8-27b"]
+
+
+def test_refine_does_not_wait_when_all_models_permanently_unavailable(monkeypatch):
+    """Nếu mọi model đều unavailable vĩnh viễn (401/404), không được ngủ chờ mà fallback cục bộ ngay."""
+    waits = []
+    monkeypatch.setattr(threading.Event, "wait", lambda self, timeout=None: waits.append(timeout) or False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_api_key", "")
+
+    refiner = TranscriptRefiner(groq_api_key="gsk_test")
+    refiner._unavailable_models = set(refiner.refine_models_to_try)
+
+    tr = TranscriptOutput(
+        video="demo.mp4",
+        duration=5.0,
+        sentences=[Sentence(id="S0001", start=0.0, end=5.0, text="cau tho goc")],
+    )
+    res = refiner.refine_transcript(tr, max_workers=1)
+    assert waits == []
+    assert [s.text for s in res.sentences] == ["Cau tho goc."]
+
+
+def test_refine_stops_waiting_after_consecutive_post_cooldown_failures(monkeypatch):
+    """Nếu mọi model đều hết quota ngày (chờ xong vẫn 429 liên tiếp), Refiner dừng chờ sớm thay vì ngủ lặp tới timeout."""
+    waits = []
+    monkeypatch.setattr(
+        threading.Event,
+        "wait",
+        lambda self, timeout=None: (waits.append(timeout) or False) if timeout and timeout > 0 else False,
+    )
+
+    def always_429(req, timeout=None):
+        raise urllib.error.HTTPError(
+            url=req.full_url,
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": {"message": "Daily token limit reached"}}'),
+        )
+
+    monkeypatch.setattr(urllib.request, "urlopen", always_429)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_api_key", "")
+
+    refiner = TranscriptRefiner(groq_api_key="gsk_test")
+    refiner._build_char_batches = lambda sents, **kw: [[s] for s in sents]
+
+    tr = TranscriptOutput(
+        video="daily_limit.mp4",
+        duration=60.0,
+        sentences=[
+            Sentence(id=f"S{i:04d}", start=float(i * 5), end=float((i + 1) * 5), text=f"cau tho {i}")
+            for i in range(1, 11)
+        ],
+    )
+    res = refiner.refine_transcript(tr, max_workers=1)
+
+    assert 1 <= len(waits) <= 3, f"Chỉ được chờ tối đa 3 lần thất bại liên tiếp, thực tế: {len(waits)}"
+    assert len(res.sentences) == 10
+
 

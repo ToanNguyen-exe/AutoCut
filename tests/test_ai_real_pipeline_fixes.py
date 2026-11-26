@@ -234,20 +234,20 @@ def test_refine_transcript_splits_overmerged_multi_sentence_item():
 
 
 def test_model_priority_matches_week2_branch(monkeypatch):
-    """Kiểm tra: 2 model Groq (gpt-oss-20b chau chuốt, gpt-oss-120b phân đoạn) làm chính và chuỗi Gemini làm dự phòng."""
+    """Kiểm tra: 3 model Groq (20B chau chuốt, 120B phân đoạn, Qwen dự phòng) làm chính và chuỗi Gemini (flash-lite đầu) dự phòng."""
     import backend.ai.config_loader as config_mod
     import backend.ai.transcript_refiner as refiner_mod
 
     expected_gemini = [
+        "gemini-3.5-flash-lite",
         "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
         "gemini-pro-latest",
     ]
-    expected_refine_order = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", *expected_gemini]
-    expected_segment_order = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", *expected_gemini]
+    expected_refine_order = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.8-27b", *expected_gemini]
+    expected_segment_order = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", *expected_gemini]
 
     monkeypatch.delenv("GROQ_REFINE_MODEL", raising=False)
     monkeypatch.delenv("GROQ_SEGMENT_MODEL", raising=False)
@@ -255,7 +255,7 @@ def test_model_priority_matches_week2_branch(monkeypatch):
     fresh_cfg = config_mod.AIConfig(config_dict={})
     assert fresh_cfg.groq_refine_model == "openai/gpt-oss-20b"
     assert fresh_cfg.groq_segment_model == "openai/gpt-oss-120b"
-    assert fresh_cfg.gemini_model == "gemini-3.8-flash"
+    assert fresh_cfg.gemini_model == "gemini-3.5-flash-lite"
 
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_refine_model", fresh_cfg.groq_refine_model)
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_segment_model", fresh_cfg.groq_segment_model)

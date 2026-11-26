@@ -1,0 +1,313 @@
+{
+  "video" : "javascript.mp4",
+  "lesson" : "javascript",
+  "mode" : "analyzed",
+  "reviewed" : false,
+  "segments" : [ {
+    "id" : "seg_ai_01",
+    "section_no" : 1,
+    "section" : "01_gioi-thieu",
+    "topic_no" : 1,
+    "topic" : "Tổng quan và mục lục bài giảng",
+    "slug" : "tong-quan-va-muc-luc",
+    "start_id" : "S0001",
+    "end_id" : "S0017",
+    "start" : 0.0,
+    "end" : 90.06,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 0.0,
+      "end" : 90.06,
+      "file" : "01_tong-quan-va-muc-luc.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_02",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet",
+    "topic_no" : 2,
+    "topic" : "Thiết lập môi trường & Lệnh đầu tiên",
+    "slug" : "moi-truong-va-lenh-dau-tien",
+    "start_id" : "S0018",
+    "end_id" : "S0046",
+    "start" : 90.06,
+    "end" : 187.62,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 90.06,
+      "end" : 187.62,
+      "file" : "01_moi-truong-va-lenh-dau-tien.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_03",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet",
+    "topic_no" : 3,
+    "topic" : "Khai báo và khởi tạo biến",
+    "slug" : "bien-va-khoi-tao",
+    "start_id" : "S0047",
+    "end_id" : "S0112",
+    "start" : 187.62,
+    "end" : 356.1,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 187.62,
+      "end" : 356.1,
+      "file" : "02_bien-va-khoi-tao.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_04",
+    "section_no" : 2,
+    "section" : "02_ly-thuyet",
+    "topic_no" : 4,
+    "topic" : "Kiểu dữ liệu trong JavaScript",
+    "slug" : "kiem-du-lieu-trong-javascript",
+    "start_id" : "S0113",
+    "end_id" : "S0160",
+    "start" : 356.1,
+    "end" : 450.36,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 356.1,
+      "end" : 450.36,
+      "file" : "03_kiem-du-lieu-trong-javascript.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_05",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 5,
+    "topic" : "Xuất và nhập dữ liệu cơ bản",
+    "slug" : "xuat-va-nhap-du-lieu-co-ban",
+    "start_id" : "S0161",
+    "end_id" : "S0225",
+    "start" : 450.36,
+    "end" : 595.1,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 450.36,
+      "end" : 595.1,
+      "file" : "01_xuat-va-nhap-du-lieu-co-ban.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_06",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 6,
+    "topic" : "Các phép toán và biểu thức",
+    "slug" : "cac-phep-toan-va-bieu-thuc",
+    "start_id" : "S0226",
+    "end_id" : "S0346",
+    "start" : 595.1,
+    "end" : 850.42,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 595.1,
+      "end" : 850.42,
+      "file" : "02_cac-phep-toan-va-bieu-thuc.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_07",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 7,
+    "topic" : "Cấu trúc rẽ nhánh if-else",
+    "slug" : "cau-truc-re-nhanh-if-else",
+    "start_id" : "S0347",
+    "end_id" : "S0462",
+    "start" : 850.42,
+    "end" : 1093.57,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 850.42,
+      "end" : 1093.57,
+      "file" : "03_cau-truc-re-nhanh-if-else.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_08",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 8,
+    "topic" : "Cấu trúc lặp for",
+    "slug" : "cau-truc-lap-for",
+    "start_id" : "S0463",
+    "end_id" : "S0563",
+    "start" : 1093.57,
+    "end" : 1329.03,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1093.57,
+      "end" : 1329.03,
+      "file" : "04_cau-truc-lap-for.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_09",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 9,
+    "topic" : "Kiểu dữ liệu Object",
+    "slug" : "kieu-du-lieu-object",
+    "start_id" : "S0564",
+    "end_id" : "S0650",
+    "start" : 1329.03,
+    "end" : 1507.35,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1329.03,
+      "end" : 1507.35,
+      "file" : "05_kieu-du-lieu-object.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_10",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 10,
+    "topic" : "Hàm (Function) cơ bản",
+    "slug" : "ham-function-co-ban",
+    "start_id" : "S0651",
+    "end_id" : "S0810",
+    "start" : 1507.35,
+    "end" : 1860.19,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1507.35,
+      "end" : 1860.19,
+      "file" : "06_ham-function-co-ban.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_11",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 11,
+    "topic" : "Tham số và giá trị trả về của Function",
+    "slug" : "tham-so-va-gia-tri-tra-ve",
+    "start_id" : "S0811",
+    "end_id" : "S0872",
+    "start" : 1860.19,
+    "end" : 1994.36,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1860.19,
+      "end" : 1994.36,
+      "file" : "07_tham-so-va-gia-tri-tra-ve.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_12",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 12,
+    "topic" : "Kiểu dữ liệu Array",
+    "slug" : "kieu-du-lieu-array",
+    "start_id" : "S0873",
+    "end_id" : "S0986",
+    "start" : 1994.36,
+    "end" : 2232.04,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 1994.36,
+      "end" : 2232.04,
+      "file" : "08_kieu-du-lieu-array.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_13",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 13,
+    "topic" : "Kiểu dữ liệu String và String coercion",
+    "slug" : "kieu-du-lieu-string-va-coercion",
+    "start_id" : "S0987",
+    "end_id" : "S1073",
+    "start" : 2232.04,
+    "end" : 2397.92,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2232.04,
+      "end" : 2397.92,
+      "file" : "09_kieu-du-lieu-string-va-coercion.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_14",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 14,
+    "topic" : "Cơ chế DOM và tương tác giao diện (Phần 1)",
+    "slug" : "co-che-dom-va-tuong-tac-giao-dien-phan-1",
+    "start_id" : "S1074",
+    "end_id" : "S1186",
+    "start" : 2397.92,
+    "end" : 2641.64,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2397.92,
+      "end" : 2641.64,
+      "file" : "10_co-che-dom-va-tuong-tac-giao-dien/10_co-che-dom-va-tuong-tac-giao-dien_Phan1.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_15",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 15,
+    "topic" : "Cơ chế DOM và tương tác giao diện (Phần 2)",
+    "slug" : "co-che-dom-va-tuong-tac-giao-dien-phan-2",
+    "start_id" : "S1187",
+    "end_id" : "S1312",
+    "start" : 2641.64,
+    "end" : 2884.65,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2641.64,
+      "end" : 2884.65,
+      "file" : "10_co-che-dom-va-tuong-tac-giao-dien/10_co-che-dom-va-tuong-tac-giao-dien_Phan2.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_16",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 16,
+    "topic" : "Bất đồng bộ trong JavaScript",
+    "slug" : "bat-dong-bo-trong-javascript",
+    "start_id" : "S1313",
+    "end_id" : "S1457",
+    "start" : 2884.65,
+    "end" : 3178.28,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 2884.65,
+      "end" : 3178.28,
+      "file" : "11_bat-dong-bo-trong-javascript.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_17",
+    "section_no" : 3,
+    "section" : "03_thuc-hanh-vi-du",
+    "topic_no" : 17,
+    "topic" : "Lưu trữ dữ liệu với Local Storage",
+    "slug" : "luu-tru-du-lieu-voi-local-storage",
+    "start_id" : "S1458",
+    "end_id" : "S1553",
+    "start" : 3178.28,
+    "end" : 3392.14,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3178.28,
+      "end" : 3392.14,
+      "file" : "12_luu-tru-du-lieu-voi-local-storage.mp4"
+    } ]
+  }, {
+    "id" : "seg_ai_18",
+    "section_no" : 4,
+    "section" : "04_tong-ket",
+    "topic_no" : 18,
+    "topic" : "Tổng kết và định hướng học tập",
+    "slug" : "tong-ket-va-dinh-huong-hoc-tap",
+    "start_id" : "S1554",
+    "end_id" : "S1571",
+    "start" : 3392.14,
+    "end" : 3427.57,
+    "parts" : [ {
+      "part" : 1,
+      "start" : 3392.14,
+      "end" : 3427.57,
+      "file" : "01_tong-ket-va-dinh-huong-hoc-tap.mp4"
+    } ]
+  } ]
+}

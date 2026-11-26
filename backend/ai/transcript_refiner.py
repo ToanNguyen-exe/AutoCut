@@ -45,19 +45,21 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 DEFAULT_GROQ_REFINE_MODEL = "openai/gpt-oss-20b"
 DEFAULT_GROQ_SEGMENT_MODEL = "openai/gpt-oss-120b"
+DEFAULT_GROQ_EXTRA_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 GROQ_FALLBACK_MODELS = [
     DEFAULT_GROQ_REFINE_MODEL,
     DEFAULT_GROQ_SEGMENT_MODEL,
+    DEFAULT_GROQ_EXTRA_MODEL,
 ]
 
 GEMINI_FALLBACK_MODELS = [
+    "gemini-3.5-flash-lite",
     "gemini-3.8-flash",
     "gemini-3.6-flash",
     "gemini-3.5-flash",
     "gemini-flash-latest",
-    "gemini-3.5-flash-lite",
     "gemini-pro-latest",
 ]
 
@@ -66,8 +68,9 @@ FALLBACK_MODELS = [
     *GEMINI_FALLBACK_MODELS,
 ]
 
-# Timeout 60.000 ms (60 giây) tránh lỗi 504 DEADLINE_EXCEEDED trên các lô lớn / bước segment
+# Timeout 60s cho bước phân đoạn dài, 20s cho các lô chau chuốt nhỏ để tránh bị 504 đóng băng cả pipeline
 REFINER_HTTP_TIMEOUT_MS = 60000.0
+REFINE_BATCH_HTTP_TIMEOUT_MS = 20000.0
 DEFAULT_REFINE_MAX_WORKERS = 2
 EXHAUSTED_MODEL_COOLDOWN_SEC = 60.0
 
@@ -164,7 +167,7 @@ class TranscriptRefiner:
 
         groq_refine = refine_model or getattr(default_ai_config, "groq_refine_model", DEFAULT_GROQ_REFINE_MODEL)
         groq_segment = segment_model or getattr(default_ai_config, "groq_segment_model", DEFAULT_GROQ_SEGMENT_MODEL)
-        gemini_primary = getattr(default_ai_config, "gemini_model", "gemini-3.8-flash")
+        gemini_primary = getattr(default_ai_config, "gemini_model", "gemini-3.5-flash-lite")
 
         gemini_models: List[str] = []
         if self.api_key:
@@ -176,8 +179,8 @@ class TranscriptRefiner:
             refine_order.append(model_name)
             segment_order.append(model_name)
         if self.groq_api_key:
-            refine_order.extend([m for m in (groq_refine, groq_segment) if m])
-            segment_order.extend([m for m in (groq_segment, groq_refine) if m])
+            refine_order.extend([m for m in (groq_refine, groq_segment, DEFAULT_GROQ_EXTRA_MODEL) if m])
+            segment_order.extend([m for m in (groq_segment, groq_refine, DEFAULT_GROQ_EXTRA_MODEL) if m])
         refine_order.extend(gemini_models)
         segment_order.extend(gemini_models)
 
@@ -199,14 +202,14 @@ class TranscriptRefiner:
             else None
         )
 
-    def _call_groq(self, model_candidate: str, prompt: str):
+    def _call_groq(self, model_candidate: str, prompt: str, timeout_sec: Optional[float] = None):
         """Gọi Groq Cloud Chat Completions bằng stdlib urllib (không cần thêm thư viện ngoài)."""
         api_key = getattr(self, "groq_api_key", "")
         if not api_key:
             raise RuntimeError("401 Unauthorized: missing GROQ_API_KEY")
 
         api_url = getattr(self, "groq_api_url", DEFAULT_GROQ_API_URL)
-        timeout_sec = REFINER_HTTP_TIMEOUT_MS / 1000.0
+        req_timeout_sec = float(timeout_sec) if timeout_sec is not None else (REFINER_HTTP_TIMEOUT_MS / 1000.0)
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -232,7 +235,7 @@ class TranscriptRefiner:
                 headers=headers,
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            with urllib.request.urlopen(req, timeout=req_timeout_sec) as resp:
                 return json.loads(resp.read().decode("utf-8"))
 
         def read_err_body(http_err: urllib.error.HTTPError) -> str:
@@ -285,10 +288,11 @@ class TranscriptRefiner:
             candidates=[SimpleNamespace(finish_reason=mapped_reason)],
         )
 
-    def _call_model(self, model_candidate: str, prompt: str):
-        """Điều phối gọi Groq Cloud (2 model chính) hoặc Gemini SDK (model dự phòng)."""
+    def _call_model(self, model_candidate: str, prompt: str, timeout_ms: Optional[float] = None):
+        """Điều phối gọi Groq Cloud (3 model chính/dự phòng) hoặc Gemini SDK (dự phòng)."""
+        effective_timeout_ms = float(timeout_ms) if timeout_ms is not None else REFINER_HTTP_TIMEOUT_MS
         if _is_groq_model(model_candidate):
-            return self._call_groq(model_candidate, prompt)
+            return self._call_groq(model_candidate, prompt, timeout_sec=effective_timeout_ms / 1000.0)
         client = getattr(self, "client", None)
         if client is None:
             raise RuntimeError("401 Unauthorized: missing GEMINI_API_KEY")
@@ -298,11 +302,12 @@ class TranscriptRefiner:
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0.1,
+                http_options=types.HttpOptions(timeout=effective_timeout_ms),
             ),
         )
 
     def _evict_cooled_down_models_locked(self, exhausted: Set[str], exhausted_at: Dict[str, float]) -> None:
-        """Gỡ các model từng báo 429 nếu đã qua cửa sổ hồi quota (60s)."""
+        """Gỡ các model từng báo 429/503/504 nếu đã qua cửa sổ hồi (60s)."""
         now = time.monotonic()
         expired = [
             m for m, marked_at in list(exhausted_at.items())
@@ -320,6 +325,7 @@ class TranscriptRefiner:
         exhausted: Set[str],
         exhausted_at: Dict[str, float],
         unavailable: Set[str],
+        timeout_ms: Optional[float] = None,
     ):
         """Thử lần lượt danh sách model ứng viên (Groq chính -> Gemini dự phòng)."""
         last_err = None
@@ -331,7 +337,7 @@ class TranscriptRefiner:
             provider = _provider_label(model_candidate)
             for attempt in range(1, 3):
                 try:
-                    response = self._call_model(model_candidate, prompt)
+                    response = self._call_model(model_candidate, prompt, timeout_ms=timeout_ms)
                     # Xác thực phản hồi parse được JSON trước khi chấp nhận (không in lặp cảnh báo MAX_TOKENS)
                     _parse_json_response(response, model_candidate, warn_on_truncation=False)
                     with lock:
@@ -343,6 +349,7 @@ class TranscriptRefiner:
                 except Exception as err:
                     last_err = err
                     err_str = str(err)
+                    err_lower = err_str.lower()
                     code, _ = classify_ai_api_error(err)
                     is_key_err = code == "API_KEY_ERROR"
                     has_other_provider = any(
@@ -373,14 +380,34 @@ class TranscriptRefiner:
                             exhausted_at[model_candidate] = time.monotonic()
                         break
                     had_non_quota_err = True
-                    if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
+                    is_overload_or_timeout = (
+                        "503" in err_str
+                        or "504" in err_str
+                        or "UNAVAILABLE" in err_str
+                        or "DEADLINE_EXCEEDED" in err_str
+                        or "timed out" in err_lower
+                        or "timeout" in err_lower
+                    )
+                    has_more_candidates = any(
+                        other not in unavailable for other in candidates[idx + 1 :]
+                    )
+                    if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 2 and not has_more_candidates:
                         time.sleep(2)
                         continue
+                    if is_overload_or_timeout:
+                        with lock:
+                            exhausted.add(model_candidate)
+                            exhausted_at[model_candidate] = time.monotonic()
                     break
         return None, last_err, had_non_quota_err
 
-    def _generate_with_fallback(self, prompt: str, models_override: Optional[List[str]] = None):
-        """Gọi LLM API (Groq chính, Gemini dự phòng): bỏ qua 404 suốt phiên, tạm bỏ qua 429/413 trong 60s hoặc khi còn model khác."""
+    def _generate_with_fallback(
+        self,
+        prompt: str,
+        models_override: Optional[List[str]] = None,
+        timeout_ms: Optional[float] = None,
+    ):
+        """Gọi LLM API (Groq chính, Gemini dự phòng): bỏ qua 404 suốt phiên, tạm cooldown 60s cho 429/413/503/504."""
         lock = getattr(self, "_lock", None) or nullcontext()
         with lock:
             exhausted = getattr(self, "exhausted_models", None)
@@ -412,7 +439,7 @@ class TranscriptRefiner:
             raise RuntimeError("Không có model LLM khả dụng trong danh sách fallback.")
 
         response, last_err, had_non_quota_err = self._try_candidate_models(
-            candidates, prompt, lock, exhausted, exhausted_at, unavailable
+            candidates, prompt, lock, exhausted, exhausted_at, unavailable, timeout_ms=timeout_ms
         )
         if response is not None:
             return response
@@ -422,7 +449,7 @@ class TranscriptRefiner:
         tried_models = list(candidates)
         if had_non_quota_err and skipped_exhausted:
             recovery_resp, recovery_err, _ = self._try_candidate_models(
-                skipped_exhausted, prompt, lock, exhausted, exhausted_at, unavailable
+                skipped_exhausted, prompt, lock, exhausted, exhausted_at, unavailable, timeout_ms=timeout_ms
             )
             if recovery_resp is not None:
                 return recovery_resp
@@ -507,13 +534,17 @@ class TranscriptRefiner:
         return items
 
     def _generate_for_task(self, prompt: str, task: str):
-        """Gọi LLM theo danh sách ưu tiên riêng cho từng phần việc ('refine' hoặc 'segment')."""
+        """Gọi LLM theo danh sách ưu tiên và timeout riêng cho từng phần việc ('refine' 20s, 'segment' 60s)."""
         current_models = getattr(self, "models_to_try", None)
         default_models = getattr(self, "_default_models_to_try", None)
         if default_models is not None and current_models is not None and tuple(current_models) == default_models:
             task_models = getattr(self, f"{task}_models_to_try", None)
-            if task_models and task_models != current_models:
-                return self._generate_with_fallback(prompt, models_override=task_models)
+            task_timeout = REFINE_BATCH_HTTP_TIMEOUT_MS if task == "refine" else REFINER_HTTP_TIMEOUT_MS
+            return self._generate_with_fallback(
+                prompt,
+                models_override=task_models if task_models and task_models != current_models else None,
+                timeout_ms=task_timeout,
+            )
         return self._generate_with_fallback(prompt)
 
     def _all_models_exhausted(self, model_list: Optional[List[str]] = None) -> bool:
@@ -525,6 +556,59 @@ class TranscriptRefiner:
             unique_models = set(try_models)
             return bool(unique_models) and len(unique_models & (ex_models | unavail_models)) >= len(unique_models)
 
+    def _wait_for_cooldown_if_all_exhausted(
+        self,
+        model_list: Optional[List[str]],
+        abort_event: threading.Event,
+    ) -> tuple[bool, bool]:
+        """Kiểm tra model khả dụng; nếu tất cả đang cooldown thì chờ model hồi sớm nhất. Trả về (can_proceed, did_wait)."""
+        if abort_event.is_set():
+            return False, False
+
+        lock = getattr(self, "_lock", None) or nullcontext()
+        with lock:
+            try_models = model_list if model_list is not None else (getattr(self, "models_to_try", None) or [])
+            if not try_models:
+                return True, False
+            ex_models = getattr(self, "exhausted_models", None)
+            ex_at = getattr(self, "_exhausted_at", None)
+            unavail_models = getattr(self, "_unavailable_models", None) or set()
+
+            if ex_models is not None and ex_at is not None:
+                self._evict_cooled_down_models_locked(ex_models, ex_at)
+
+            available = [m for m in try_models if m not in unavail_models]
+            if not available:
+                return False, False
+            if ex_models is None or any(m not in ex_models for m in available):
+                return True, False
+            if not ex_at or getattr(self, "_cooldown_wait_failures", 0) >= 3:
+                return False, False
+
+            now = time.monotonic()
+            remaining = [
+                max(0.0, EXHAUSTED_MODEL_COOLDOWN_SEC - (now - ex_at[m]))
+                for m in available
+                if m in ex_at
+            ]
+            if not remaining:
+                return False, False
+            wait_sec = min(remaining) + 0.2
+
+        logger.info(f"[REFINER] Tat ca model dang cooldown, cho {wait_sec:.1f}s de hoi quota...")
+        if abort_event.wait(wait_sec):
+            return False, True
+
+        with lock:
+            if ex_models is not None and ex_at is not None:
+                self._evict_cooled_down_models_locked(ex_models, ex_at)
+                if all(m in ex_models for m in available):
+                    earliest = min((m for m in available if m in ex_at), key=lambda m: ex_at[m], default=None)
+                    if earliest is not None:
+                        ex_models.discard(earliest)
+                        ex_at.pop(earliest, None)
+        return True, True
+
     def _refine_single_batch(
         self,
         b_idx: int,
@@ -532,9 +616,10 @@ class TranscriptRefiner:
         terms_hint: str,
         abort_event: threading.Event,
     ) -> List[dict]:
-        """Hiệu đính 1 lô câu bằng LLM; fallback cục bộ chỉ cho lô lỗi nếu gặp lỗi tạm thời."""
+        """Hiệu đính 1 lô câu bằng LLM; chờ cooldown nếu toàn bộ model tạm hết quota, fallback cục bộ khi lỗi kéo dài."""
         refine_models = getattr(self, "refine_models_to_try", None)
-        if abort_event.is_set() or self._all_models_exhausted(refine_models):
+        can_proceed, waited = self._wait_for_cooldown_if_all_exhausted(refine_models, abort_event)
+        if not can_proceed:
             return self._fallback_batch_items(batch)
 
         batch_data = [{"id": s.id, "text": s.text} for s in batch]
@@ -551,87 +636,108 @@ class TranscriptRefiner:
             f"- Bao phủ liên tục mọi id từ {batch[0].id} đến {batch[-1].id}, không bỏ sót.\n"
             f"INPUT:{compact_input}"
         )
-        try:
-            response = self._generate_for_task(prompt, "refine")
-            parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
-            response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
-            batch_map = {s.id: s for s in batch}
-            merged_sentences = parsed.get("sentences") or parsed.get("items") or []
+        lock = getattr(self, "_lock", None) or nullcontext()
+        parsed = None
+        for attempt in range(2):
+            if attempt > 0:
+                can_proceed, did_wait = self._wait_for_cooldown_if_all_exhausted(refine_models, abort_event)
+                waited = waited or did_wait
+                if not can_proceed:
+                    return self._fallback_batch_items(batch)
+            try:
+                response = self._generate_for_task(prompt, "refine")
+                parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
+                response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
+                with lock:
+                    self._cooldown_wait_failures = 0
+                break
+            except Exception as e:
+                code = log_ai_api_error(
+                    logger,
+                    f"REFINER lo {b_idx}",
+                    getattr(self, "model_name", "unknown"),
+                    e,
+                    is_fatal=False,
+                )
+                if code == "API_KEY_ERROR":
+                    abort_event.set()
+                    return self._fallback_batch_items(batch)
+                if attempt == 0 and not waited and self._all_models_exhausted(refine_models):
+                    continue
+                if waited and self._all_models_exhausted(refine_models):
+                    with lock:
+                        self._cooldown_wait_failures = getattr(self, "_cooldown_wait_failures", 0) + 1
+                return self._fallback_batch_items(batch)
 
-            extracted_batch_items: List[dict] = []
-            covered_ids = set()
+        if not isinstance(parsed, dict):
+            return self._fallback_batch_items(batch)
 
-            if isinstance(merged_sentences, list) and merged_sentences:
-                for it in merged_sentences:
-                    if not isinstance(it, dict):
-                        continue
-                    start_id = it.get("start_id") or it.get("id")
-                    end_id = it.get("end_id") or start_id
-                    txt = str(it.get("text") or "").strip()
+        batch_map = {s.id: s for s in batch}
+        merged_sentences = parsed.get("sentences") or parsed.get("items") or []
 
-                    # Định dạng tương thích nếu Gemini trả về mảng con sentences
-                    if not txt and "sentences" in it and isinstance(it["sentences"], list):
-                        multi_sents = [str(x).strip() for x in it["sentences"] if str(x).strip()]
-                        if start_id in batch_map:
-                            orig_s = batch_map[start_id]
-                            extracted_batch_items.extend(
-                                self._interpolate_sentences(orig_s.start, orig_s.end, multi_sents)
-                            )
-                            covered_ids.add(start_id)
-                        continue
+        extracted_batch_items: List[dict] = []
+        covered_ids = set()
 
-                    if not txt:
-                        continue
+        if isinstance(merged_sentences, list) and merged_sentences:
+            for it in merged_sentences:
+                if not isinstance(it, dict):
+                    continue
+                start_id = it.get("start_id") or it.get("id")
+                end_id = it.get("end_id") or start_id
+                txt = str(it.get("text") or "").strip()
 
-                    s_obj = batch_map.get(start_id)
-                    e_obj = batch_map.get(end_id)
-                    if s_obj is not None and e_obj is not None:
-                        s_start = s_obj.start
-                        s_end = e_obj.end
-                        if s_end <= s_start:
-                            s_end = round(s_start + 1.0, 2)
-                        split_items = split_segment_into_timed_sentences(s_start, s_end, txt)
-                        if split_items:
-                            extracted_batch_items.extend(split_items)
-                        else:
-                            extracted_batch_items.append({
-                                "start": round(float(s_start), 2),
-                                "end": round(float(s_end), 2),
-                                "text": ensure_sentence_casing_and_punctuation(txt)
-                            })
-                        in_range = False
-                        for s in batch:
-                            if s.id == start_id:
-                                in_range = True
-                            if in_range:
-                                covered_ids.add(s.id)
-                            if s.id == end_id:
-                                break
+                # Định dạng tương thích nếu Gemini trả về mảng con sentences
+                if not txt and "sentences" in it and isinstance(it["sentences"], list):
+                    multi_sents = [str(x).strip() for x in it["sentences"] if str(x).strip()]
+                    if start_id in batch_map:
+                        orig_s = batch_map[start_id]
+                        extracted_batch_items.extend(
+                            self._interpolate_sentences(orig_s.start, orig_s.end, multi_sents)
+                        )
+                        covered_ids.add(start_id)
+                    continue
 
-            # Nếu Gemini xử lý tốt và bao phủ ít nhất 70% số mẩu trong batch
-            if extracted_batch_items and len(covered_ids) >= max(1, int(len(batch) * 0.7)):
-                missing_batch = [s for s in batch if s.id not in covered_ids]
-                if missing_batch:
-                    for ms in missing_batch:
+                if not txt:
+                    continue
+
+                s_obj = batch_map.get(start_id)
+                e_obj = batch_map.get(end_id)
+                if s_obj is not None and e_obj is not None:
+                    s_start = s_obj.start
+                    s_end = e_obj.end
+                    if s_end <= s_start:
+                        s_end = round(s_start + 1.0, 2)
+                    split_items = split_segment_into_timed_sentences(s_start, s_end, txt)
+                    if split_items:
+                        extracted_batch_items.extend(split_items)
+                    else:
                         extracted_batch_items.append({
-                            "start": round(float(ms.start), 2),
-                            "end": round(float(ms.end), 2),
-                            "text": ensure_sentence_casing_and_punctuation(ms.text)
+                            "start": round(float(s_start), 2),
+                            "end": round(float(s_end), 2),
+                            "text": ensure_sentence_casing_and_punctuation(txt)
                         })
-                    extracted_batch_items.sort(key=lambda x: x["start"])
-                return extracted_batch_items
-            return self._fallback_batch_items(batch)
-        except Exception as e:
-            code = log_ai_api_error(
-                logger,
-                f"REFINER lo {b_idx}",
-                getattr(self, "model_name", "unknown"),
-                e,
-                is_fatal=False,
-            )
-            if code == "API_KEY_ERROR":
-                abort_event.set()
-            return self._fallback_batch_items(batch)
+                    in_range = False
+                    for s in batch:
+                        if s.id == start_id:
+                            in_range = True
+                        if in_range:
+                            covered_ids.add(s.id)
+                        if s.id == end_id:
+                            break
+
+        # Nếu Gemini xử lý tốt và bao phủ ít nhất 70% số mẩu trong batch
+        if extracted_batch_items and len(covered_ids) >= max(1, int(len(batch) * 0.7)):
+            missing_batch = [s for s in batch if s.id not in covered_ids]
+            if missing_batch:
+                for ms in missing_batch:
+                    extracted_batch_items.append({
+                        "start": round(float(ms.start), 2),
+                        "end": round(float(ms.end), 2),
+                        "text": ensure_sentence_casing_and_punctuation(ms.text)
+                    })
+                extracted_batch_items.sort(key=lambda x: x["start"])
+            return extracted_batch_items
+        return self._fallback_batch_items(batch)
 
     def refine_transcript(
         self,
@@ -677,6 +783,7 @@ class TranscriptRefiner:
         total_batches = len(batches)
         refine_start_wall = time.perf_counter()
         abort_event = threading.Event()
+        self._cooldown_wait_failures = 0
         batch_results: List[Optional[List[dict]]] = [None] * total_batches
 
         def write_progress(completed: int, label_batch: List[Sentence], b_num: int):
