@@ -81,7 +81,21 @@ class AIConfig:
             or "https://api.groq.com/openai/v1/audio/transcriptions"
         )
 
-        # Gemini API Key & Model
+        # Groq Cloud LLM (2 model chính: chau chuốt & phân đoạn) & Gemini (dự phòng)
+        self.groq_api_key: str = (
+            os.getenv("GROQ_API_KEY")
+            or os.getenv("WHISPER_API_KEY")
+            or transcript_cfg.get("api_key")
+            or ""
+        )
+        self.groq_refine_model: str = os.getenv("GROQ_REFINE_MODEL", "openai/gpt-oss-20b")
+        self.groq_segment_model: str = os.getenv("GROQ_SEGMENT_MODEL", "openai/gpt-oss-120b")
+        self.groq_api_url: str = os.getenv(
+            "GROQ_API_URL",
+            "https://api.groq.com/openai/v1/chat/completions",
+        )
+
+        # Gemini API Key & Model (dự phòng khi Groq gặp giới hạn hoặc lỗi)
         self.gemini_api_key: str = (
             os.getenv("GEMINI_API_KEY")
             or os.getenv("LLM_API_KEY")

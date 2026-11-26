@@ -234,11 +234,11 @@ def test_refine_transcript_splits_overmerged_multi_sentence_item():
 
 
 def test_model_priority_matches_week2_branch(monkeypatch):
-    """Kiểm tra: Thứ tự ưu tiên model mặc định khớp với nhánh feature/sv2-whisper-stt-week2."""
+    """Kiểm tra: 2 model Groq (gpt-oss-20b chau chuốt, gpt-oss-120b phân đoạn) làm chính và chuỗi Gemini làm dự phòng."""
     import backend.ai.config_loader as config_mod
     import backend.ai.transcript_refiner as refiner_mod
 
-    expected_order = [
+    expected_gemini = [
         "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
@@ -246,18 +246,28 @@ def test_model_priority_matches_week2_branch(monkeypatch):
         "gemini-3.5-flash-lite",
         "gemini-pro-latest",
     ]
+    expected_refine_order = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", *expected_gemini]
+    expected_segment_order = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", *expected_gemini]
 
+    monkeypatch.delenv("GROQ_REFINE_MODEL", raising=False)
+    monkeypatch.delenv("GROQ_SEGMENT_MODEL", raising=False)
     monkeypatch.delenv("GEMINI_MODEL", raising=False)
     fresh_cfg = config_mod.AIConfig(config_dict={})
+    assert fresh_cfg.groq_refine_model == "openai/gpt-oss-20b"
+    assert fresh_cfg.groq_segment_model == "openai/gpt-oss-120b"
     assert fresh_cfg.gemini_model == "gemini-3.8-flash"
 
+    monkeypatch.setattr(refiner_mod.default_ai_config, "groq_refine_model", fresh_cfg.groq_refine_model)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "groq_segment_model", fresh_cfg.groq_segment_model)
     monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_model", fresh_cfg.gemini_model)
     monkeypatch.setattr(refiner_mod.genai, "Client", lambda **kwargs: object())
 
-    refiner = TranscriptRefiner(api_key="fake-test-key")
-    assert refiner_mod.FALLBACK_MODELS == expected_order
-    assert refiner.models_to_try == expected_order
-    assert refiner.model_name == "gemini-3.8-flash"
+    refiner = TranscriptRefiner(api_key="fake-test-key", groq_api_key="gsk_fake_test")
+    assert refiner_mod.FALLBACK_MODELS == expected_refine_order
+    assert refiner.refine_models_to_try == expected_refine_order
+    assert refiner.segment_models_to_try == expected_segment_order
+    assert refiner.models_to_try == expected_refine_order
+    assert refiner.model_name == "openai/gpt-oss-20b"
 
 
 def test_generate_with_fallback_skips_404_not_found_models_for_rest_of_session():

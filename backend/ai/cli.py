@@ -479,8 +479,8 @@ def _find_matching_transcript_or_video(
                 release_after_use=not keep_model,
             )
 
-        # Bước 3: Dùng Gemini để sửa lại câu từ và xuất ra file transcript
-        print(f"[2/4] Đang dùng Google Gemini sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
+        # Bước 3: Dùng Groq LLM (openai/gpt-oss-20b chau chuốt, dự phòng gpt-oss-120b / Gemini) sửa lại câu từ và xuất file transcript
+        print("[2/4] Đang dùng AI LLM (Groq GPT-OSS 20B / 120B, Gemini dự phòng) sửa chính tả, chuẩn hóa thuật ngữ & tách câu đơn...")
         try:
             from .transcript_refiner import TranscriptRefiner
             try:

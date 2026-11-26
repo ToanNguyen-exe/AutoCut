@@ -1,10 +1,10 @@
-"""Module hiệu đính, tách câu đơn & phân đoạn ngữ nghĩa bài giảng bằng Google Gemini LLM.
+"""Module hiệu đính, tách câu đơn & phân đoạn ngữ nghĩa bài giảng bằng LLM (Groq Cloud 2 model chính, Google Gemini dự phòng).
 
 Nhiệm vụ trong Pipeline:
-1. Tiếp nhận kết quả bóc băng từ Faster-Whisper (đã có mốc thời gian start, end).
-2. Dùng Gemini để đọc hiểu văn bản, sửa lỗi chính tả tiếng Việt, chuẩn hóa thuật ngữ chuyên ngành và tách các đoạn dài thành từng câu đơn.
+1. Tiếp nhận kết quả bóc băng từ Whisper (đã có mốc thời gian start, end).
+2. Dùng Groq LLM (mặc định `openai/gpt-oss-20b` chau chuốt câu từ, dự phòng `openai/gpt-oss-120b` & Google Gemini) sửa lỗi chính tả tiếng Việt, chuẩn hóa thuật ngữ chuyên ngành và tách các đoạn dài thành từng câu đơn.
 3. Nội suy mốc thời gian [start, end] tương ứng cho từng câu đơn và đánh lại mã định danh tuần tự S0001, S0002...
-4. Phân tích ngữ nghĩa toàn bộ các câu S0001..Sxxxx để chia bài giảng thành các chương/chủ đề (SegmentsDTO) phục vụ Backend Spring Boot & Frontend Studio.
+4. Dùng Groq LLM (mặc định `openai/gpt-oss-120b` phân đoạn, dự phòng `openai/gpt-oss-20b` & Google Gemini) chia bài giảng thành các chương/chủ đề (SegmentsDTO) phục vụ Backend Spring Boot & Frontend Studio.
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -17,8 +17,11 @@ import re
 import sys
 import threading
 import time
+from types import SimpleNamespace
 import unicodedata
 from typing import Optional, List, Dict, Any, Set
+import urllib.error
+import urllib.request
 
 from google import genai
 from google.genai import types
@@ -40,7 +43,16 @@ from .whisper_service import format_duration, build_progress_bar
 logger = logging.getLogger("AutoCut.AI.Refiner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
-FALLBACK_MODELS = [
+DEFAULT_GROQ_REFINE_MODEL = "openai/gpt-oss-20b"
+DEFAULT_GROQ_SEGMENT_MODEL = "openai/gpt-oss-120b"
+DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+GROQ_FALLBACK_MODELS = [
+    DEFAULT_GROQ_REFINE_MODEL,
+    DEFAULT_GROQ_SEGMENT_MODEL,
+]
+
+GEMINI_FALLBACK_MODELS = [
     "gemini-3.8-flash",
     "gemini-3.6-flash",
     "gemini-3.5-flash",
@@ -49,10 +61,24 @@ FALLBACK_MODELS = [
     "gemini-pro-latest",
 ]
 
+FALLBACK_MODELS = [
+    *GROQ_FALLBACK_MODELS,
+    *GEMINI_FALLBACK_MODELS,
+]
+
 # Timeout 60.000 ms (60 giây) tránh lỗi 504 DEADLINE_EXCEEDED trên các lô lớn / bước segment
 REFINER_HTTP_TIMEOUT_MS = 60000.0
 DEFAULT_REFINE_MAX_WORKERS = 2
 EXHAUSTED_MODEL_COOLDOWN_SEC = 60.0
+
+
+def _is_groq_model(model_name: str) -> bool:
+    """Nhận diện model chạy qua Groq Cloud (không phải họ Google Gemini)."""
+    return bool(model_name) and not model_name.strip().lower().startswith("gemini")
+
+
+def _provider_label(model_name: str) -> str:
+    return "GROQ" if _is_groq_model(model_name) else "GEMINI"
 
 
 def slugify_vi(text: str) -> str:
@@ -66,21 +92,40 @@ def slugify_vi(text: str) -> str:
     return s[:48].strip("-") or "chu-de"
 
 
-def _parse_json_response(response: Any, model_name: str) -> Dict[str, Any]:
-    """Kiểm tra giới hạn token đầu ra và parse JSON từ phản hồi Gemini."""
+def _strip_reasoning_and_fences(raw_text: str) -> str:
+    """Loại bỏ khối suy luận <think>...</think> và markdown fence quanh JSON."""
+    cleaned = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.IGNORECASE | re.DOTALL).strip()
+    fence_match = re.search(r"```(?:json)?\s*(.*?)\s*```", cleaned, flags=re.IGNORECASE | re.DOTALL)
+    if fence_match:
+        cleaned = fence_match.group(1).strip()
+    return cleaned
+
+
+def _parse_json_response(
+    response: Any,
+    model_name: str,
+    warn_on_truncation: bool = True,
+) -> Dict[str, Any]:
+    """Kiểm tra giới hạn token đầu ra, bóc khối reasoning/markdown và parse JSON từ phản hồi LLM."""
+    provider = _provider_label(model_name)
     candidates = getattr(response, "candidates", None)
-    if candidates:
-        finish_reason = str(getattr(candidates[0], "finish_reason", "") or "")
-        if "MAX_TOKENS" in finish_reason.upper():
-            logger.warning(f"[GEMINI-TOKEN_OR_QUOTA_EXHAUSTED] {model_name}: cham MAX_TOKENS, JSON co the bi cat")
-    raw_text = response.text.strip()
-    if raw_text.startswith("```json"):
-        raw_text = raw_text[7:]
-    if raw_text.startswith("```"):
-        raw_text = raw_text[3:]
-    if raw_text.endswith("```"):
-        raw_text = raw_text[:-3]
-    return json.loads(raw_text.strip())
+    if warn_on_truncation and candidates:
+        finish_reason = str(getattr(candidates[0], "finish_reason", "") or "").upper()
+        if "MAX_TOKENS" in finish_reason or finish_reason == "LENGTH":
+            logger.warning(f"[{provider}-TOKEN_OR_QUOTA_EXHAUSTED] {model_name}: cham MAX_TOKENS, JSON co the bi cat")
+    raw_text = str(getattr(response, "text", "") or "").strip()
+    cleaned = _strip_reasoning_and_fences(raw_text)
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        start_idx = cleaned.find("{")
+        end_idx = cleaned.rfind("}")
+        if start_idx == -1 or end_idx <= start_idx:
+            raise
+        parsed = json.loads(cleaned[start_idx : end_idx + 1])
+    if not isinstance(parsed, dict):
+        raise ValueError(f"LLM {model_name} khong tra ve JSON object")
+    return parsed
 
 
 def _is_model_not_found_error(err: Exception) -> bool:
@@ -89,7 +134,7 @@ def _is_model_not_found_error(err: Exception) -> bool:
 
 
 class TranscriptRefiner:
-    """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề bằng Gemini LLM."""
+    """Bộ hiệu đính, tách câu đơn và phân đoạn chủ đề (Groq 2 model chính: 20B chau chuốt / 120B phân đoạn, Gemini dự phòng)."""
 
     def __init__(
         self,
@@ -97,21 +142,163 @@ class TranscriptRefiner:
         model_name: Optional[str] = None,
         exhausted_models: Optional[Set[str]] = None,
         unavailable_models: Optional[Set[str]] = None,
+        groq_api_key: Optional[str] = None,
+        groq_api_url: Optional[str] = None,
+        refine_model: Optional[str] = None,
+        segment_model: Optional[str] = None,
     ):
-        self.api_key = api_key or default_ai_config.gemini_api_key
-        if not self.api_key:
-            logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
-            raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
-        primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
-        self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
+        self.groq_api_key = (
+            groq_api_key
+            if groq_api_key is not None
+            else getattr(default_ai_config, "groq_api_key", "")
+        )
+        self.groq_api_url = (
+            groq_api_url
+            or getattr(default_ai_config, "groq_api_url", DEFAULT_GROQ_API_URL)
+        )
+        self.api_key = api_key if api_key is not None else default_ai_config.gemini_api_key
+
+        if not self.groq_api_key and not self.api_key:
+            logger.error("[GEMINI-API_KEY_ERROR] Thieu GROQ_API_KEY va GEMINI_API_KEY trong .env")
+            raise ValueError("Không tìm thấy GROQ_API_KEY hoặc GEMINI_API_KEY trong .env hoặc cấu hình!")
+
+        groq_refine = refine_model or getattr(default_ai_config, "groq_refine_model", DEFAULT_GROQ_REFINE_MODEL)
+        groq_segment = segment_model or getattr(default_ai_config, "groq_segment_model", DEFAULT_GROQ_SEGMENT_MODEL)
+        gemini_primary = getattr(default_ai_config, "gemini_model", "gemini-3.8-flash")
+
+        gemini_models: List[str] = []
+        if self.api_key:
+            gemini_models = list(dict.fromkeys([gemini_primary, *GEMINI_FALLBACK_MODELS]))
+
+        refine_order: List[str] = []
+        segment_order: List[str] = []
+        if model_name:
+            refine_order.append(model_name)
+            segment_order.append(model_name)
+        if self.groq_api_key:
+            refine_order.extend([m for m in (groq_refine, groq_segment) if m])
+            segment_order.extend([m for m in (groq_segment, groq_refine) if m])
+        refine_order.extend(gemini_models)
+        segment_order.extend(gemini_models)
+
+        self.refine_models_to_try = list(dict.fromkeys(refine_order))
+        self.segment_models_to_try = list(dict.fromkeys(segment_order))
+        self.models_to_try = list(self.refine_models_to_try)
+        self._default_models_to_try = tuple(self.models_to_try)
         self.model_name = self.models_to_try[0]
         self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
         self._unavailable_models: Set[str] = unavailable_models if unavailable_models is not None else set()
         self._exhausted_at: Dict[str, float] = {}
         self._lock = threading.Lock()
-        self.client = genai.Client(
-            api_key=self.api_key,
-            http_options={"timeout": REFINER_HTTP_TIMEOUT_MS}
+        self.client = (
+            genai.Client(
+                api_key=self.api_key,
+                http_options={"timeout": REFINER_HTTP_TIMEOUT_MS},
+            )
+            if self.api_key
+            else None
+        )
+
+    def _call_groq(self, model_candidate: str, prompt: str):
+        """Gọi Groq Cloud Chat Completions bằng stdlib urllib (không cần thêm thư viện ngoài)."""
+        api_key = getattr(self, "groq_api_key", "")
+        if not api_key:
+            raise RuntimeError("401 Unauthorized: missing GROQ_API_KEY")
+
+        api_url = getattr(self, "groq_api_url", DEFAULT_GROQ_API_URL)
+        timeout_sec = REFINER_HTTP_TIMEOUT_MS / 1000.0
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        }
+
+        def send_request(include_response_format: bool) -> Dict[str, Any]:
+            payload: Dict[str, Any] = {
+                "model": model_candidate,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+            }
+            if "gpt-oss" in model_candidate.lower():
+                payload["reasoning_effort"] = "low"
+            if include_response_format:
+                payload["response_format"] = {"type": "json_object"}
+            req = urllib.request.Request(
+                api_url,
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+
+        def read_err_body(http_err: urllib.error.HTTPError) -> str:
+            try:
+                return http_err.read().decode("utf-8", errors="ignore")
+            except Exception:
+                return ""
+
+        try:
+            data = send_request(include_response_format=True)
+        except urllib.error.HTTPError as err:
+            body = read_err_body(err)
+            body_lower = body.lower()
+            retry_without_rf = err.code == 400 and (
+                "response_format" in body_lower
+                or "json_object" in body_lower
+                or "json_validate_failed" in body_lower
+                or "failed to validate json" in body_lower
+            )
+            if retry_without_rf:
+                try:
+                    data = send_request(include_response_format=False)
+                except urllib.error.HTTPError as retry_err:
+                    retry_body = read_err_body(retry_err)
+                    raise RuntimeError(
+                        f"HTTP {retry_err.code} {retry_err.reason}: {retry_body[:500]}"
+                    ) from retry_err
+            else:
+                raise RuntimeError(f"HTTP {err.code} {err.reason}: {body[:500]}") from err
+
+        choices = data.get("choices") or []
+        if not choices:
+            raise ValueError("Groq khong tra ve choices hop le")
+        choice0 = choices[0]
+        message = choice0.get("message") or {}
+        content = message.get("content")
+        if isinstance(content, list):
+            content = "".join(
+                str(part.get("text", "")) if isinstance(part, dict) else str(part)
+                for part in content
+            )
+        content_str = str(content or "").strip()
+        if not content_str:
+            raise ValueError("Groq tra ve noi dung rong")
+
+        finish_reason = str(choice0.get("finish_reason") or "").lower()
+        mapped_reason = "MAX_TOKENS" if finish_reason == "length" else finish_reason.upper()
+        return SimpleNamespace(
+            text=content_str,
+            candidates=[SimpleNamespace(finish_reason=mapped_reason)],
+        )
+
+    def _call_model(self, model_candidate: str, prompt: str):
+        """Điều phối gọi Groq Cloud (2 model chính) hoặc Gemini SDK (model dự phòng)."""
+        if _is_groq_model(model_candidate):
+            return self._call_groq(model_candidate, prompt)
+        client = getattr(self, "client", None)
+        if client is None:
+            raise RuntimeError("401 Unauthorized: missing GEMINI_API_KEY")
+        return client.models.generate_content(
+            model=model_candidate,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1,
+            ),
         )
 
     def _evict_cooled_down_models_locked(self, exhausted: Set[str], exhausted_at: Dict[str, float]) -> None:
@@ -134,33 +321,47 @@ class TranscriptRefiner:
         exhausted_at: Dict[str, float],
         unavailable: Set[str],
     ):
-        """Thử lần lượt danh sách model ứng viên; trả về (response, last_err, had_non_quota_err)."""
+        """Thử lần lượt danh sách model ứng viên (Groq chính -> Gemini dự phòng)."""
         last_err = None
         had_non_quota_err = False
-        for model_candidate in candidates:
+        for idx, model_candidate in enumerate(candidates):
+            with lock:
+                if model_candidate in unavailable:
+                    continue
+            provider = _provider_label(model_candidate)
             for attempt in range(1, 3):
                 try:
-                    response = self.client.models.generate_content(
-                        model=model_candidate,
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            temperature=0.1
-                        )
-                    )
+                    response = self._call_model(model_candidate, prompt)
+                    # Xác thực phản hồi parse được JSON trước khi chấp nhận (không in lặp cảnh báo MAX_TOKENS)
+                    _parse_json_response(response, model_candidate, warn_on_truncation=False)
                     with lock:
                         self.model_name = model_candidate
                         exhausted.discard(model_candidate)
                         exhausted_at.pop(model_candidate, None)
-                    logger.info(f"[GEMINI] Model: {model_candidate}")
+                    logger.info(f"[{provider}] Model: {model_candidate}")
                     return response, None, had_non_quota_err
                 except Exception as err:
                     last_err = err
                     err_str = str(err)
                     code, _ = classify_ai_api_error(err)
                     is_key_err = code == "API_KEY_ERROR"
-                    log_ai_api_error(logger, "GEMINI", model_candidate, err, is_fatal=is_key_err)
+                    has_other_provider = any(
+                        _provider_label(other) != provider for other in candidates[idx + 1 :]
+                    )
+                    log_ai_api_error(
+                        logger,
+                        provider,
+                        model_candidate,
+                        err,
+                        is_fatal=is_key_err and not has_other_provider,
+                    )
                     if is_key_err:
+                        if has_other_provider:
+                            with lock:
+                                for other in candidates:
+                                    if _provider_label(other) == provider:
+                                        unavailable.add(other)
+                            break
                         raise err
                     if _is_model_not_found_error(err):
                         with lock:
@@ -178,8 +379,8 @@ class TranscriptRefiner:
                     break
         return None, last_err, had_non_quota_err
 
-    def _generate_with_fallback(self, prompt: str):
-        """Gọi Gemini API: tự động bỏ qua model 404 suốt phiên, bỏ qua model 429 tạm thời rồi mở lại sau 60s hoặc khi model còn lại gặp 503/504."""
+    def _generate_with_fallback(self, prompt: str, models_override: Optional[List[str]] = None):
+        """Gọi LLM API (Groq chính, Gemini dự phòng): bỏ qua 404 suốt phiên, tạm bỏ qua 429/413 trong 60s hoặc khi còn model khác."""
         lock = getattr(self, "_lock", None) or nullcontext()
         with lock:
             exhausted = getattr(self, "exhausted_models", None)
@@ -197,7 +398,8 @@ class TranscriptRefiner:
 
             self._evict_cooled_down_models_locked(exhausted, exhausted_at)
 
-            available_models = [m for m in self.models_to_try if m not in unavailable]
+            model_list = models_override if models_override is not None else self.models_to_try
+            available_models = [m for m in model_list if m not in unavailable]
             candidates = [m for m in available_models if m not in exhausted]
             skipped_exhausted = [m for m in available_models if m in exhausted]
             if not candidates and available_models:
@@ -207,7 +409,7 @@ class TranscriptRefiner:
                 skipped_exhausted = []
 
         if not candidates:
-            raise RuntimeError("Không có model Gemini khả dụng trong danh sách fallback.")
+            raise RuntimeError("Không có model LLM khả dụng trong danh sách fallback.")
 
         response, last_err, had_non_quota_err = self._try_candidate_models(
             candidates, prompt, lock, exhausted, exhausted_at, unavailable
@@ -230,7 +432,8 @@ class TranscriptRefiner:
 
         if last_err is not None:
             target_label = tried_models[0] if len(tried_models) == 1 else ",".join(tried_models)
-            log_ai_api_error(logger, "GEMINI", target_label, last_err, is_fatal=True)
+            provider_label = _provider_label(tried_models[-1]) if tried_models else "GEMINI"
+            log_ai_api_error(logger, provider_label, target_label, last_err, is_fatal=True)
         # pyrefly: ignore[bad-raise]
         raise last_err
 
@@ -303,12 +506,24 @@ class TranscriptRefiner:
             items.extend(split_segment_into_timed_sentences(orig_s.start, orig_s.end, orig_s.text))
         return items
 
-    def _all_models_exhausted(self) -> bool:
+    def _generate_for_task(self, prompt: str, task: str):
+        """Gọi LLM theo danh sách ưu tiên riêng cho từng phần việc ('refine' hoặc 'segment')."""
+        current_models = getattr(self, "models_to_try", None)
+        default_models = getattr(self, "_default_models_to_try", None)
+        if default_models is not None and current_models is not None and tuple(current_models) == default_models:
+            task_models = getattr(self, f"{task}_models_to_try", None)
+            if task_models and task_models != current_models:
+                return self._generate_with_fallback(prompt, models_override=task_models)
+        return self._generate_with_fallback(prompt)
+
+    def _all_models_exhausted(self, model_list: Optional[List[str]] = None) -> bool:
         lock = getattr(self, "_lock", None) or nullcontext()
         with lock:
-            try_models = getattr(self, "models_to_try", None) or []
+            try_models = model_list if model_list is not None else (getattr(self, "models_to_try", None) or [])
             ex_models = getattr(self, "exhausted_models", None) or set()
-            return bool(try_models) and len(ex_models) >= len(try_models)
+            unavail_models = getattr(self, "_unavailable_models", None) or set()
+            unique_models = set(try_models)
+            return bool(unique_models) and len(unique_models & (ex_models | unavail_models)) >= len(unique_models)
 
     def _refine_single_batch(
         self,
@@ -317,51 +532,27 @@ class TranscriptRefiner:
         terms_hint: str,
         abort_event: threading.Event,
     ) -> List[dict]:
-        """Hiệu đính 1 lô câu bằng Gemini; fallback cục bộ chỉ cho lô lỗi nếu gặp lỗi tạm thời."""
-        if abort_event.is_set() or self._all_models_exhausted():
+        """Hiệu đính 1 lô câu bằng LLM; fallback cục bộ chỉ cho lô lỗi nếu gặp lỗi tạm thời."""
+        refine_models = getattr(self, "refine_models_to_try", None)
+        if abort_event.is_set() or self._all_models_exhausted(refine_models):
             return self._fallback_batch_items(batch)
 
         batch_data = [{"id": s.id, "text": s.text} for s in batch]
-        prompt = f"""
-Bạn là chuyên gia biên tập ngữ liệu bóc băng giọng nói bài giảng video tiếng Việt chuyên nghiệp.
-Dưới đây là danh sách các câu/mẩu câu bóc băng thô từ giọng nói của giảng viên trong video.
-
-NGUYÊN TẮC CỐT LÕI (BẢO TOÀN NGUYÊN VĂN & TÁCH CÂU CHI TIẾT):
-1. ƯU TIÊN TÁCH CÂU CỤ THỂ ĐỂ PHÂN ĐOẠN CHÍNH XÁC:
-   - Hãy cố gắng giữ và tách riêng từng câu đơn cụ thể theo từng phát ngôn hoặc vế câu có nghĩa độc lập.
-   - CÂU ĐƠN ĐỘC LẬP: Nếu một mẩu câu đã diễn đạt xong một ý hoặc đã có cấu trúc câu tương đối hoàn chỉnh (dù ngắn), BẮT BUỘC giữ nguyên là một câu độc lập riêng biệt (chỉ định "start_id" và "end_id" GIỐNG NHAU).
-   - CHỈ GỘP KHI BỊ VỠ CÂU DO NGẮT NGHỈ LẤY HƠI: Chỉ gộp khi một câu thực sự bị đứt gãy lửng lơ giữa chừng (ví dụ: bị ngắt giữa cụm danh từ hoặc vị ngữ: 'Anh em có thể viết app từ desktop' và 'cho đến mobile.'). TUYỆT ĐỐI KHÔNG gộp 2 câu đơn độc lập hoàn chỉnh liên tiếp vào một khối lớn.
-   - Việc tách câu chi tiết và cụ thể là tối quan trọng để hệ thống phân đoạn (video segmentation) xác định chính xác các điểm mốc thời gian bắt đầu và kết thúc của từng chủ đề bài giảng!
-
-2. BẢO TOÀN TỐI ĐA CÂU TỪ (VERBATIM FIDELITY - TUYỆT ĐỐI KHÔNG GỌT TỪ):
-   - Giữ nguyên vẹn 100% tất cả các từ ngữ mà người nói đã phát âm, bao gồm cả từ nối, từ đệm tự nhiên ('thế nhưng mà', 'nói gì đi nữa', 'tuy nhiên', 'cá nhân tôi', 'đấy nhé', 'ạ'...), số liệu, tên riêng, thuật ngữ.
-   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG LƯỢC BỎ TỪ, KHÔNG TỰ Ý VIẾT LẠI VĂN PHONG (NO PARAPHRASING).
-   - Chỉ sửa các lỗi chính tả hiển nhiên do nhận diện âm thanh nhầm, chuẩn hóa viết hoa danh từ riêng/thuật ngữ kỹ thuật, và đảm bảo câu có dấu kết thúc (. ? !).
-3. {terms_hint}
-4. BẢO TOÀN TOÀN BỘ MÃ ID:
-   - Toàn bộ các mẩu id từ {batch[0].id} đến {batch[-1].id} phải được bao phủ liên tục theo thứ tự thời gian tăng dần, không được bỏ rơi bất kỳ mẩu id nào.
-
-DANH SÁCH ĐẦU VÀO:
-{json.dumps(batch_data, ensure_ascii=False, separators=(',', ':'))}
-
-ĐỊNH DẠNG JSON ĐẦU RA BẮT BUỘC:
-{{
-  "sentences": [
-    {{
-      "start_id": "{batch[0].id}",
-      "end_id": "{batch[0].id}",
-      "text": "Câu đơn thứ nhất giữ nguyên văn câu từ gốc."
-    }},
-    {{
-      "start_id": "S0002",
-      "end_id": "S0003",
-      "text": "Câu sau khi ghép 2 mẩu bị vỡ câu lửng lơ do lấy hơi."
-    }}
-  ]
-}}
-"""
+        terms_line = f"\n- {terms_hint}" if terms_hint else ""
+        compact_input = json.dumps(batch_data, ensure_ascii=False, separators=(",", ":"))
+        prompt = (
+            "Biên tập bản bóc băng bài giảng tiếng Việt sau và trả về DUY NHẤT JSON:\n"
+            f'{{"sentences":[{{"start_id":"{batch[0].id}","end_id":"{batch[0].id}","text":"..."}}]}}\n'
+            "Quy tắc:\n"
+            "- Giữ riêng từng câu đơn hoàn chỉnh (start_id=end_id); CHỈ gộp các mẩu bị vỡ câu lửng lơ do lấy hơi.\n"
+            "- Giữ nguyên văn 100% từ ngữ, từ đệm, số liệu, thuật ngữ; KHÔNG tóm tắt hay viết lại văn phong.\n"
+            "- Chỉ sửa lỗi chính tả nghe nhầm, chuẩn hóa viết hoa tên riêng/thuật ngữ và thêm dấu kết câu (. ? !)."
+            f"{terms_line}\n"
+            f"- Bao phủ liên tục mọi id từ {batch[0].id} đến {batch[-1].id}, không bỏ sót.\n"
+            f"INPUT:{compact_input}"
+        )
         try:
-            response = self._generate_with_fallback(prompt)
+            response = self._generate_for_task(prompt, "refine")
             parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
             response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
             batch_map = {s.id: s for s in batch}
@@ -447,7 +638,7 @@ DANH SÁCH ĐẦU VÀO:
         transcript: TranscriptOutput,
         outline_text: Optional[str] = None,
         start_from_id: Optional[str] = None,
-        max_workers: int = DEFAULT_REFINE_MAX_WORKERS
+        max_workers: Optional[int] = None
     ) -> TranscriptOutput:
         """Hiệu đính chính tả và tách từng câu đơn trên toàn bộ transcript, sau đó đánh lại mã S0001, S0002..."""
         if not transcript.sentences:
@@ -470,8 +661,18 @@ DANH SÁCH ĐẦU VÀO:
                 resuming = False
                 target_sentences.append(s)
 
-        batch_max_items = 60 if len(target_sentences) > 200 else 25
-        batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
+        active_models = getattr(self, "refine_models_to_try", None) or getattr(self, "models_to_try", None) or []
+        using_groq = bool(active_models) and _is_groq_model(active_models[0])
+        if using_groq:
+            # Groq Free giới hạn ~8.000 TPM/model -> chia lô gọn & chạy tuần tự để tránh 429/413
+            batch_max_items = 20
+            batch_max_chars = 4000
+            effective_workers = max_workers if max_workers is not None else 1
+        else:
+            batch_max_items = 60 if len(target_sentences) > 200 else 25
+            batch_max_chars = 12000 if len(target_sentences) > 200 else 6000
+            effective_workers = max_workers if max_workers is not None else DEFAULT_REFINE_MAX_WORKERS
+
         batches = self._build_char_batches(target_sentences, max_chars=batch_max_chars, max_items=batch_max_items)
         total_batches = len(batches)
         refine_start_wall = time.perf_counter()
@@ -489,13 +690,13 @@ DANH SÁCH ĐẦU VÀO:
                 eta_str = "đang tính..."
             bar = build_progress_bar(percent_ref)
             sys.stdout.write(
-                f"\r[Gemini Refiner] [{bar}] {percent_ref:5.1f}% | "
+                f"\r[AI Refiner] [{bar}] {percent_ref:5.1f}% | "
                 f"Lô {b_num}/{total_batches} ({label_batch[0].id}->{label_batch[-1].id}) | "
                 f"Đã chạy: {format_duration(elapsed_ref)} | Còn lại (ETA): {eta_str}   "
             )
             sys.stdout.flush()
 
-        workers = max(1, min(int(max_workers or 1), total_batches)) if total_batches > 0 else 1
+        workers = max(1, min(int(effective_workers or 1), total_batches)) if total_batches > 0 else 1
         if workers <= 1:
             for idx, batch in enumerate(batches):
                 write_progress(idx, batch, idx + 1)
@@ -699,7 +900,7 @@ DANH SÁCH CÂU TRANSCRIPT:
             attempt += 1
             try:
                 logger.info(f"[SEGMENTER] Goi AI lan #{attempt}")
-                response = self._generate_with_fallback(prompt)
+                response = self._generate_for_task(prompt, "segment")
                 parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
                 response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
 
