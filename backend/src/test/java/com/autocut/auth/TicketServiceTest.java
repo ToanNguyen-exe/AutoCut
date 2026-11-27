@@ -41,10 +41,11 @@ class TicketServiceTest {
 
         TicketService.IssuedTicket issued = ticketService.issue(5L, "SSE", "7");
         String hash = AuthService.sha256Hex(issued.ticket());
-        AuthTicketEntity entity = new AuthTicketEntity(hash, 5L, "SSE", "7", true, Instant.now().plusSeconds(60));
+        String resourceHash = AuthService.sha256Hex("7");
+        AuthTicketEntity entity = new AuthTicketEntity(hash, 5L, "SSE", resourceHash, true, Instant.now().plusSeconds(60));
 
         when(ticketRepository.findByTicketHash(hash)).thenReturn(Optional.of(entity));
-        when(ticketRepository.markUsedIfValid(eq(hash), eq("SSE"), eq("7"), any(Instant.class)))
+        when(ticketRepository.markUsedIfValid(eq(hash), eq("SSE"), eq(resourceHash), any(Instant.class)))
                 .thenReturn(1)
                 .thenReturn(0);
 
@@ -64,10 +65,10 @@ class TicketServiceTest {
         inactive.setIsActive(false);
 
         String hash = AuthService.sha256Hex("raw-ticket");
-        AuthTicketEntity entity = new AuthTicketEntity(hash, 9L, "STREAM", "42", false, Instant.now().plusSeconds(300));
+        AuthTicketEntity entity = new AuthTicketEntity(hash, 9L, "STREAM", AuthService.sha256Hex("42"), false, Instant.now().plusSeconds(300));
         when(ticketRepository.findByTicketHash(hash)).thenReturn(Optional.of(entity));
-        when(ticketRepository.markUsedIfValid(eq(hash), eq("STREAM"), eq("43"), any(Instant.class))).thenReturn(0);
-        when(ticketRepository.markUsedIfValid(eq(hash), eq("STREAM"), eq("42"), any(Instant.class))).thenReturn(1);
+        when(ticketRepository.markUsedIfValid(eq(hash), eq("STREAM"), eq(AuthService.sha256Hex("43")), any(Instant.class))).thenReturn(0);
+        when(ticketRepository.markUsedIfValid(eq(hash), eq("STREAM"), eq(AuthService.sha256Hex("42")), any(Instant.class))).thenReturn(1);
         when(userRepository.findById(9L)).thenReturn(Optional.of(inactive));
 
         AuthException wrongRes = Assertions.assertThrows(AuthException.class,

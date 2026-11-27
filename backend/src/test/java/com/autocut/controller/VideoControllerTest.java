@@ -446,9 +446,9 @@ class VideoControllerTest {
             VideoController mockController = new VideoController(
                     cacheService, configService, r2Service, videoRepository, mockCutter, mockConcat
             );
-            Mockito.when(mockCutter.cut(Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()))
+            Mockito.when(mockCutter.cutExact(Mockito.any(java.io.File.class), Mockito.any(java.io.File.class), Mockito.anyDouble(), Mockito.anyDouble()))
                     .thenAnswer(inv -> com.autocut.video.CutResult.success(
-                            inv.getArgument(0), inv.getArgument(1),
+                            inv.getArgument(0).toString(), inv.getArgument(1).toString(),
                             inv.getArgument(2), inv.getArgument(3), 10L, 100L));
             Mockito.when(mockConcat.concat(Mockito.anyList(), Mockito.any(java.io.File.class), Mockito.anyBoolean()))
                     .thenAnswer(inv -> com.autocut.video.ConcatResult.success(
@@ -465,9 +465,9 @@ class VideoControllerTest {
             ));
 
             Assertions.assertEquals(HttpStatus.OK, res.getStatusCode());
-            Mockito.verify(mockCutter, Mockito.times(2)).cut(
-                    Mockito.argThat((String src) -> src.endsWith("Bai08_Ep_kieu_du_lieu.mp4")),
-                    Mockito.anyString(),
+            Mockito.verify(mockCutter, Mockito.times(2)).cutExact(
+                    Mockito.argThat((java.io.File src) -> src.getName().endsWith("Bai08_Ep_kieu_du_lieu.mp4")),
+                    Mockito.any(java.io.File.class),
                     Mockito.anyDouble(),
                     Mockito.anyDouble()
             );
@@ -504,5 +504,86 @@ class VideoControllerTest {
         Mockito.verify(mockCutter).cut(Mockito.eq("https://example.com/v1.mp4"), Mockito.anyString(), Mockito.eq(5.0), Mockito.eq(20.0));
         Mockito.verify(mockCutter).cut(Mockito.eq("https://example.com/v2.mp4"), Mockito.anyString(), Mockito.eq(10.0), Mockito.eq(30.0));
         Mockito.verify(mockConcat).concat(Mockito.argThat(l -> l.size() == 2), Mockito.any(java.io.File.class), Mockito.eq(true));
+    }
+
+    @Test
+    void testRenderSegments_ResolvesHashedUploadAndColonLessonAndDoesNotFallbackToVibeShort() throws Exception {
+        java.nio.file.Path uploadsDir = Paths.get("uploads");
+        Files.createDirectories(uploadsDir);
+        String validHash = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        java.nio.file.Path uploadedFile = uploadsDir.resolve(validHash + "_desktop_clip.mp4");
+        Files.write(uploadedFile, new byte[]{1, 2, 3, 4});
+
+        try {
+            com.autocut.video.VideoCutter mockCutter = Mockito.mock(com.autocut.video.VideoCutter.class);
+            com.autocut.video.VideoConcat mockConcat = Mockito.mock(com.autocut.video.VideoConcat.class);
+            VideoController mockController = new VideoController(
+                    cacheService, configService, r2Service, videoRepository, mockCutter, mockConcat
+            );
+            Mockito.when(mockCutter.cut(Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()))
+                    .thenAnswer(inv -> com.autocut.video.CutResult.success(
+                            inv.getArgument(0), inv.getArgument(1),
+                            inv.getArgument(2), inv.getArgument(3), 15L, 512L));
+
+            ResponseEntity<?> res = mockController.renderSegments(Map.of(
+                    "video", "Desktop Clip.mp4",
+                    "videoHash", validHash,
+                    "lesson", "Video: 14:30",
+                    "autoConcat", false,
+                    "segments", List.of(Map.of(
+                            "slug", "doan-1",
+                            "parts", List.of(Map.of("part", 1, "start", 0.0, "end", 10.0, "file", "01_Video/01_doan-1.mp4"))
+                    ))
+            ));
+
+            Assertions.assertEquals(HttpStatus.OK, res.getStatusCode());
+            Mockito.verify(mockCutter).cut(
+                    Mockito.argThat(src -> src.endsWith(validHash + "_desktop_clip.mp4")),
+                    Mockito.anyString(),
+                    Mockito.eq(0.0),
+                    Mockito.eq(10.0)
+            );
+            Mockito.verifyNoInteractions(mockConcat);
+        } finally {
+            Files.deleteIfExists(uploadedFile);
+            Path createdOut = Paths.get("output", "Video_ 14_30");
+            if (!Files.exists(createdOut)) {
+                createdOut = Paths.get("..", "output", "Video_ 14_30");
+            }
+            if (Files.exists(createdOut)) {
+                try (var s = Files.walk(createdOut)) {
+                    s.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                        try { Files.deleteIfExists(p); } catch (Exception ignored) {}
+                    });
+                }
+            }
+        }
+    }
+
+    @Test
+    void testRenderSegments_UnknownSourceAndAllCutsFailed_ReturnErrors() {
+        ResponseEntity<?> missingRes = controller.renderSegments(Map.of(
+                "video", "khong_ton_tai_export_999.mp4",
+                "lesson", "BaiTestExport",
+                "segments", List.of(Map.of("slug", "s1", "start", 0.0, "end", 10.0))
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, missingRes.getStatusCode());
+        Assertions.assertFalse(String.valueOf(missingRes.getBody()).contains("vibe_short"));
+
+        com.autocut.video.VideoCutter failingCutter = Mockito.mock(com.autocut.video.VideoCutter.class);
+        Mockito.when(failingCutter.cut(Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()))
+                .thenReturn(com.autocut.video.CutResult.failure(
+                        "src", "out", 0.0, 10.0, 10L,
+                        com.autocut.video.ErrorCode.CUT_FAILED, "FFmpeg exit 1"));
+        VideoController failingController = new VideoController(
+                cacheService, configService, r2Service, videoRepository, failingCutter
+        );
+        ResponseEntity<?> failRes = failingController.renderSegments(Map.of(
+                "video", "https://example.com/real.mp4",
+                "lesson", "BaiTestFail",
+                "segments", List.of(Map.of("slug", "s1", "start", 0.0, "end", 10.0))
+        ));
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, failRes.getStatusCode());
+        Assertions.assertTrue(String.valueOf(failRes.getBody()).contains("FFmpeg exit 1"));
     }
 }

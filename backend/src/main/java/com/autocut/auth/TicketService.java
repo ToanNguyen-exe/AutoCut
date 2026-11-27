@@ -22,6 +22,8 @@ public class TicketService {
     private static final Set<String> ALLOWED_PURPOSES = Set.of("SSE", "STREAM", "DOWNLOAD");
     private static final long SINGLE_USE_TTL_SECONDS = 60L;
     private static final long STREAM_TTL_SECONDS = 300L;
+    /** Chặn resource rác quá lớn; giá trị lưu DB vẫn là SHA-256 (64 ký tự). */
+    private static final int MAX_RESOURCE_LENGTH = 4096;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AuthTicketRepository ticketRepository;
@@ -39,7 +41,11 @@ public class TicketService {
         String normalizedPurpose = purpose == null ? "" : purpose.trim().toUpperCase();
         String trimmedResource = resourceId == null ? "" : resourceId.trim();
 
-        if (!ALLOWED_PURPOSES.contains(normalizedPurpose) || trimmedResource.isEmpty() || trimmedResource.length() > 100) {
+        // Trước đây chặn >100 ký tự vì cột resource_id là VARCHAR(100). Đường dẫn clip thật
+        // (tên bài giảng tiếng Việt + thư mục chủ đề + tên file) thường dài hơn 100 ký tự,
+        // khiến việc tải clip luôn trả 400 INVALID_TICKET_REQUEST. Nay chỉ lưu SHA-256 của
+        // resource (64 ký tự) nên không còn giới hạn độ dài thực tế.
+        if (!ALLOWED_PURPOSES.contains(normalizedPurpose) || trimmedResource.isEmpty() || trimmedResource.length() > MAX_RESOURCE_LENGTH) {
             throw new AuthException(
                     HttpStatus.BAD_REQUEST,
                     "INVALID_TICKET_REQUEST",
@@ -67,7 +73,7 @@ public class TicketService {
                 hash,
                 user.getId(),
                 normalizedPurpose,
-                trimmedResource,
+                AuthService.sha256Hex(trimmedResource),
                 singleUse,
                 Instant.now().plusSeconds(ttlSeconds)
         );
@@ -86,7 +92,7 @@ public class TicketService {
 
         String hash = AuthService.sha256Hex(rawTicket);
         String purpose = expectedPurpose.trim().toUpperCase();
-        String resource = expectedResourceId.trim();
+        String resource = AuthService.sha256Hex(expectedResourceId.trim());
 
         int updated = ticketRepository.markUsedIfValid(hash, purpose, resource, Instant.now());
         if (updated != 1) {
