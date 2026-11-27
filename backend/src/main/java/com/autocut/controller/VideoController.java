@@ -30,6 +30,10 @@ import com.autocut.dto.Models.CutPoint;
 import com.autocut.dto.Models.CutRequestDTO;
 import com.autocut.dto.Models.CutJobResponse;
 import java.io.File;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Locale;
 import java.util.Set;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -42,6 +46,9 @@ import com.autocut.video.PathOutsideRootException;
 import com.autocut.video.WaveformGenerator;
 import com.autocut.video.WaveformResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+
+import java.io.InputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -410,6 +417,9 @@ public class VideoController {
         return "transcripts/" + fileName;
     }
 
+    /** Các thư mục gốc dùng chung trong output — không bao giờ bị dọn tự động. */
+    private static final Set<String> SHARED_OUTPUT_DIRS = Set.of("users", "combined", "input", "uploads");
+
     private static final Set<String> KNOWN_MEDIA_EXTENSIONS = Set.of(
             ".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".ts",
             ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
@@ -487,7 +497,9 @@ public class VideoController {
 
     @GetMapping("/stream/{hash}")
 
-    public ResponseEntity<Resource> streamVideo(@PathVariable String hash) {
+    public ResponseEntity<?> streamVideo(@PathVariable String hash,
+                                         @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader,
+                                         jakarta.servlet.http.HttpServletResponse response) {
 
         // F04: trước đây dùng startsWith(hash) nên hash rỗng hoặc một ký tự
         // khớp với video đầu tiên tìm được — trả video của người khác.
@@ -516,13 +528,9 @@ public class VideoController {
 
                     if (found.isPresent()) {
 
-                        Resource resource = new FileSystemResource(found.get());
+                        Path videoPath = found.get();
 
-                        return ResponseEntity.ok()
-
-                                .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
-
-                                .body(resource);
+                        return serveMediaFile(videoPath, videoPath.getFileName().toString(), "inline", rangeHeader, response);
 
                     }
 
@@ -1537,21 +1545,22 @@ public class VideoController {
     public ResponseEntity<?> renderSegments(@RequestBody Map<String, Object> payload) {
         String lesson = (String) payload.getOrDefault("lesson", "Bai05_VongLap");
         String videoName = (String) payload.getOrDefault("video", "vibe_short.mp4");
+        String defaultVideoHash = payload.get("videoHash") != null ? String.valueOf(payload.get("videoHash")).trim() : "";
+        String defaultVideoUrl = payload.get("videoUrl") != null ? String.valueOf(payload.get("videoUrl")).trim() : "";
         List<?> rawSegments = (List<?>) payload.getOrDefault("segments", List.of());
         String user = (String) payload.get("user");
         log.info("Tiếp nhận yêu cầu cắt video: user={}, lesson={}, video={}, số phân đoạn={}", user, lesson, videoName, rawSegments.size());
 
-        // F04: lesson từng được ghép thẳng vào đường dẫn ghi (cả Files.createDirectories
-        // lẫn tệp segments_*.json) nên lesson="../.." ghi được ra ngoài output.
-        // Dùng isSafeSegment (cho phép tiếng Việt, cấm dấu phân cách) để không
-        // chặn nhầm tiêu đề bài học thật.
-        if (!SafePaths.isSafeSegment(lesson)) {
+        // F04: chặn path traversal (/, \, ..) trong lesson; đồng thời chuẩn hoá ký tự đặc biệt Windows (:, *, ?...)
+        // để tiêu đề video thực tế không bị từ chối 400 oan.
+        if (isInvalidLessonParam(lesson)) {
             log.warn("Chặn cắt video: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "ERROR",
                     "error", "Tên bài học không hợp lệ"));
         }
+        String safeLessonDir = sanitizeFolderSegment(lesson);
 
         try {
             Path root = outputRoot();
@@ -1560,35 +1569,47 @@ public class VideoController {
                 String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
                 scope = root.resolve("users").resolve(safeUser);
             }
-            Path outputDir = SafePaths.resolveWithin(scope, lesson);
+            Path outputDir = SafePaths.resolveWithin(scope, safeLessonDir);
 
             if (!Files.exists(outputDir)) {
                 Files.createDirectories(outputDir);
             }
 
-            String sourcePath = resolveVideoSource(videoName);
-            log.info("Nguồn video để cắt: {}", sourcePath);
-
             List<Map<String, Object>> renderedFiles = new ArrayList<>();
             int successCount = 0;
+            String lastCutError = null;
 
             for (Object segObj : rawSegments) {
                 if (!(segObj instanceof Map<?, ?> rawMap)) continue;
                 @SuppressWarnings("unchecked")
                 Map<String, Object> segMap = (Map<String, Object>) rawMap;
+
+                String segVideoName = firstNonBlankString(segMap.get("videoName"), videoName);
+                String segVideoHash = firstNonBlankString(segMap.get("videoHash"), defaultVideoHash);
+                String segVideoUrl = firstNonBlankString(segMap.get("videoUrl"), defaultVideoUrl);
+                String segSourcePath = resolveMergeVideoSource(segVideoName, segVideoHash, segVideoUrl);
+                if (segSourcePath == null || segSourcePath.isBlank()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "status", "ERROR",
+                            "error", "Không tìm thấy video nguồn khớp với '" + abbreviate(segVideoName)
+                                    + "'. Vui lòng kiểm tra hoặc tải video lên trước."));
+                }
+                log.info("Nguồn video để cắt đoạn: {}", segSourcePath);
+
                 Object partsObj = segMap.get("parts");
                 if (partsObj instanceof List<?> partsList && !partsList.isEmpty()) {
                     for (Object pObj : partsList) {
                         if (!(pObj instanceof Map<?, ?> rawPMap)) continue;
                         @SuppressWarnings("unchecked")
                         Map<String, Object> pMap = (Map<String, Object>) rawPMap;
-                        String relFile = String.valueOf(pMap.get("file"));
+                        String rawRelFile = pMap.get("file") != null ? String.valueOf(pMap.get("file")) : "";
+                        String relFile = sanitizeRelativeClipPath(rawRelFile, "part_" + (successCount + 1) + ".mp4");
                         double start = pMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
                         double end = pMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
 
-                        File outFile = outputDir.resolve(relFile).toFile();
+                        File outFile = SafePaths.resolveWithin(outputDir, relFile).toFile();
                         log.info("Đang thực hiện cắt clip: {} [{} -> {}]", relFile, start, end);
-                        CutResult cutResult = videoCutter.cut(sourcePath, outFile.getAbsolutePath(), start, end);
+                        CutResult cutResult = videoCutter.cut(segSourcePath, outFile.getAbsolutePath(), start, end);
 
                         if (cutResult.success()) {
                             successCount++;
@@ -1598,17 +1619,18 @@ public class VideoController {
                                 "executionMs", cutResult.executionTimeMs(),
                                 "path", outFile.getAbsolutePath()
                             ));
+                        } else {
+                            lastCutError = cutResult.errorMessage();
                         }
                     }
                 } else {
                     String slug = segMap.get("slug") != null ? String.valueOf(segMap.get("slug")) : "clip";
-                    String section = segMap.get("section") != null ? String.valueOf(segMap.get("section")) : "01_Phan";
                     double start = segMap.get("start") instanceof Number n ? n.doubleValue() : 0.0;
                     double end = segMap.get("end") instanceof Number n ? n.doubleValue() : 0.0;
-                    String relFile = slug + ".mp4";
+                    String relFile = sanitizeRelativeClipPath(slug + ".mp4", "clip_" + (successCount + 1) + ".mp4");
 
-                    File outFile = outputDir.resolve(relFile).toFile();
-                    CutResult cutResult = videoCutter.cut(sourcePath, outFile.getAbsolutePath(), start, end);
+                    File outFile = SafePaths.resolveWithin(outputDir, relFile).toFile();
+                    CutResult cutResult = videoCutter.cut(segSourcePath, outFile.getAbsolutePath(), start, end);
                     if (cutResult.success()) {
                         successCount++;
                         renderedFiles.add(Map.of(
@@ -1617,12 +1639,24 @@ public class VideoController {
                             "executionMs", cutResult.executionTimeMs(),
                             "path", outFile.getAbsolutePath()
                         ));
+                    } else {
+                        lastCutError = cutResult.errorMessage();
                     }
                 }
             }
 
-            // Tự động ghép nối các clip con thành video tổng hợp nếu có yêu cầu hoặc mặc định khi cắt nhiều clip
-            boolean autoConcat = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("autoConcat", "true")));
+            if (!rawSegments.isEmpty() && successCount == 0) {
+                String errMsg = (lastCutError != null && !lastCutError.isBlank())
+                        ? lastCutError
+                        : "Không thể cắt phân đoạn video nào. Vui lòng kiểm tra nguồn video và FFmpeg.";
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "status", "ERROR",
+                        "error", errMsg
+                ));
+            }
+
+            // Chỉ ghép nối thêm file tổng hợp khi client yêu cầu tường minh (autoConcat=true) để cắt nhanh tối đa
+            boolean autoConcat = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("autoConcat", "false")));
             String combinedFilePath = null;
             if (autoConcat && renderedFiles.size() >= 2) {
                 List<File> clipsToConcat = new ArrayList<>();
@@ -1632,7 +1666,7 @@ public class VideoController {
                         clipsToConcat.add(new File(String.valueOf(p)));
                     }
                 }
-                File combinedOut = outputDir.resolve(lesson + "_full.mp4").toFile();
+                File combinedOut = SafePaths.resolveWithin(outputDir, safeLessonDir + "_full.mp4").toFile();
                 com.autocut.video.ConcatResult concatRes = videoConcat.concat(clipsToConcat, combinedOut);
                 if (concatRes.success()) {
                     combinedFilePath = combinedOut.getAbsolutePath();
@@ -1645,23 +1679,61 @@ public class VideoController {
             Map<String, Object> respMap = new HashMap<>();
             respMap.put("status", "COMPLETED");
             respMap.put("engine", "FFmpeg libx264 (SV1)");
-            respMap.put("lesson", lesson);
+            respMap.put("lesson", safeLessonDir);
             respMap.put("totalRendered", successCount);
             respMap.put("renderedFiles", renderedFiles);
             respMap.put("outputDirectory", outputDir.toAbsolutePath().toString());
-            respMap.put("message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + lesson);
+            respMap.put("message", "Đã cắt thành công " + successCount + " clip bằng FFmpeg! Lưu tại thư mục output/" + safeLessonDir);
             if (combinedFilePath != null) {
                 respMap.put("combinedFile", combinedFilePath);
             }
 
             return ResponseEntity.ok(respMap);
+        } catch (PathOutsideRootException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Đường dẫn đầu ra không hợp lệ"
+            ));
         } catch (Exception e) {
             log.error("Không thể hoàn tất cắt video: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
-                "error", e.getMessage()
+                "error", e.getMessage() != null ? e.getMessage() : "Lỗi máy chủ khi cắt video"
             ));
         }
+    }
+
+    private static boolean isInvalidLessonParam(String lesson) {
+        return lesson == null || lesson.isBlank() || ".".equals(lesson) || "..".equals(lesson)
+                || lesson.contains("/") || lesson.contains("\\") || lesson.contains("..");
+    }
+
+    private static String sanitizeFolderSegment(String value) {
+        String clean = value.replaceAll("[<>:\"|?*\\x00-\\x1f]+", "_").trim();
+        clean = clean.replaceAll("[. ]+$", "");
+        return clean.isBlank() ? "lesson" : clean;
+    }
+
+    private static String sanitizeRelativeClipPath(String rawRelFile, String fallbackFile) {
+        if (rawRelFile == null || rawRelFile.isBlank() || "null".equalsIgnoreCase(rawRelFile.trim())) {
+            return fallbackFile;
+        }
+        String normalized = rawRelFile.trim().replace('\\', '/');
+        String[] segments = normalized.split("/");
+        List<String> safeSegments = new ArrayList<>();
+        for (String seg : segments) {
+            if (seg == null || seg.isBlank() || ".".equals(seg)) {
+                continue;
+            }
+            if ("..".equals(seg)) {
+                throw new PathOutsideRootException("Đường dẫn tệp con chứa '..'");
+            }
+            safeSegments.add(sanitizeFolderSegment(seg));
+        }
+        if (safeSegments.isEmpty()) {
+            return fallbackFile;
+        }
+        return String.join("/", safeSegments);
     }
 
     /**
@@ -1686,7 +1758,10 @@ public class VideoController {
      * Tải về clip con đã cắt trong thư mục output (GET /api/video/download-clip?path=...).
      */
     @GetMapping("/download-clip")
-    public ResponseEntity<Resource> downloadClip(@RequestParam("path") String filePath) {
+    public ResponseEntity<?> downloadClip(@RequestParam("path") String filePath,
+                                          @RequestParam(value = "inline", defaultValue = "false") boolean inline,
+                                          @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader,
+                                          jakarta.servlet.http.HttpServletResponse response) {
         Path root = outputRoot();
 
         // F04: trước đây `Paths.get(filePath)` được dùng trước tiên nên
@@ -1709,12 +1784,153 @@ public class VideoController {
             return ResponseEntity.badRequest().build();
         }
 
-        Resource resource = new FileSystemResource(target);
         String fileName = target.getFileName().toString();
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-            .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
-            .body(resource);
+        return serveMediaFile(target, fileName, inline ? "inline" : "attachment", rangeHeader, response);
+    }
+
+    /**
+     * Dọn thư mục clip đã xuất (DELETE /api/video/export-dir?path=...).
+     *
+     * <p>Clip đã cắt chỉ cần tồn tại trong lúc người dùng mở bảng kết quả để xem trước / tải về.
+     * Đóng bảng xong thì xoá, tránh để rác tích tụ trong {@code output/}. Chỉ xoá bên trong
+     * thư mục output và không bao giờ xoá chính các thư mục gốc dùng chung.
+     */
+    @DeleteMapping("/export-dir")
+    public ResponseEntity<Map<String, Object>> deleteExportDirectory(@RequestParam("path") String dirPath) {
+        Path root = outputRoot();
+        Path target;
+        try {
+            target = SafePaths.resolveWithin(root, dirPath).toAbsolutePath().normalize();
+        } catch (PathOutsideRootException e) {
+            log.warn("Chặn xoá thư mục ngoài output: input='{}'", abbreviate(dirPath));
+            return ResponseEntity.badRequest().body(Map.of("status", "FAILED", "error", "Đường dẫn không hợp lệ"));
+        }
+
+        Path rootAbs = root.toAbsolutePath().normalize();
+        Path relative = rootAbs.relativize(target);
+        String firstSegment = relative.getNameCount() > 0 ? relative.getName(0).toString() : "";
+        if (target.equals(rootAbs) || firstSegment.isBlank()
+                || (relative.getNameCount() < 2 && SHARED_OUTPUT_DIRS.contains(firstSegment))) {
+            log.warn("Chặn xoá thư mục gốc dùng chung trong output: {}", relative);
+            return ResponseEntity.badRequest().body(Map.of("status", "FAILED", "error", "Không được xoá thư mục gốc"));
+        }
+
+        if (!Files.exists(target)) {
+            // Đã xoá trước đó (người dùng đóng/mở bảng nhiều lần) — coi như thành công.
+            return ResponseEntity.ok(Map.of("status", "SUCCESS", "deletedFiles", 0));
+        }
+
+        long deleted = 0;
+        try (var paths = Files.walk(target)) {
+            List<Path> all = paths.sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+            for (Path p : all) {
+                if (Files.isRegularFile(p)) {
+                    deleted++;
+                }
+                Files.deleteIfExists(p);
+            }
+        } catch (IOException e) {
+            log.warn("Không dọn được thư mục xuất '{}': {}", abbreviate(dirPath), e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("status", "FAILED", "error", "Không xoá được thư mục xuất"));
+        }
+
+        log.info("Đã dọn thư mục xuất '{}' ({} mục)", abbreviate(dirPath), deleted);
+        return ResponseEntity.ok(Map.of("status", "SUCCESS", "deletedFiles", deleted));
+    }
+
+    /**
+     * Trả tệp media kèm hỗ trợ HTTP Range (206) để trình duyệt tải nối tiếp,
+     * resume khi mất mạng và tua được khi phát. Không có Range → trả 200 như cũ.
+     */
+    private ResponseEntity<?> serveMediaFile(Path target, String fileName, String dispositionType, String rangeHeader,
+                                             jakarta.servlet.http.HttpServletResponse response) {
+        long length;
+        try {
+            length = Files.size(target);
+        } catch (IOException e) {
+            log.warn("Không đọc được kích thước tệp {}: {}", fileName, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        String disposition = dispositionType + "; filename=\"" + fileName + "\"";
+        long start = 0;
+        long end = length - 1;
+        boolean partial = false;
+
+        if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+            String spec = rangeHeader.substring("bytes=".length()).trim();
+            int dash = spec.indexOf('-');
+            if (dash >= 0) {
+                String rawStart = spec.substring(0, dash).trim();
+                String rawEnd = spec.substring(dash + 1).trim();
+                try {
+                    if (!rawStart.isEmpty()) {
+                        start = Long.parseLong(rawStart);
+                        if (!rawEnd.isEmpty()) {
+                            end = Long.parseLong(rawEnd);
+                        }
+                    } else if (!rawEnd.isEmpty()) {
+                        // "bytes=-500" = 500 byte cuối
+                        start = Math.max(0, length - Long.parseLong(rawEnd));
+                    }
+                    partial = true;
+                } catch (NumberFormatException e) {
+                    partial = false;
+                }
+            }
+        }
+
+        if (partial && (start >= length || start > end)) {
+            // Range không hợp lệ hoặc vượt kích thước tệp
+            response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+            response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + length);
+            return null;
+        }
+
+        if (partial) {
+            end = Math.min(end, length - 1);
+            long contentLength = end - start + 1;
+
+            response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+            response.setContentType("video/mp4");
+            response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+            response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + length);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, disposition);
+            response.setContentLengthLong(contentLength);
+
+            // Ghi trực tiếp bằng RandomAccessFile: seek O(1), không cần bộ chuyển đổi message của Spring
+            try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(target.toFile(), "r")) {
+                raf.seek(start);
+                jakarta.servlet.ServletOutputStream out = response.getOutputStream();
+                byte[] buffer = new byte[64 * 1024];
+                long remaining = contentLength;
+                while (remaining > 0) {
+                    int read = raf.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                    if (read == -1) {
+                        break;
+                    }
+                    out.write(buffer, 0, read);
+                    remaining -= read;
+                }
+                out.flush();
+            } catch (IOException e) {
+                log.warn("Lỗi khi gửi phần Range của {}: {}", fileName, e.getMessage());
+            }
+            return null;
+        }
+
+        response.setStatus(HttpStatus.OK.value());
+        response.setContentType("video/mp4");
+        response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, disposition);
+        response.setContentLengthLong(length);
+        try (InputStream in = Files.newInputStream(target)) {
+            in.transferTo(response.getOutputStream());
+            response.getOutputStream().flush();
+        } catch (IOException e) {
+            log.warn("Lỗi khi gửi tệp {}: {}", fileName, e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -1736,25 +1952,52 @@ public class VideoController {
     @GetMapping("/download-zip")
     public ResponseEntity<byte[]> downloadZip(
             @RequestParam("lesson") String lesson,
-            @RequestParam(value = "user", required = false) String user) {
-        // F04: lesson do client đặt và từng được ghép thẳng vào đường dẫn,
-        // nên ?lesson=../.. nén cả thư mục dự án kể cả .env.
-        //
-        // Không dùng isSafeSlug: tên bài học thật là tiêu đề tự do, có dấu tiếng
-        // Việt và khoảng trắng, nên lọc theo bộ ký tự ASCII sẽ chặn nhầm mọi bài
-        // học thật (lỗi phát hiện khi chạy thử: HTTP 400 với tên "Bài giảng ...").
-        if (!SafePaths.isSafeSegment(lesson)) {
+            @RequestParam(value = "user", required = false) String user,
+            @RequestParam(value = "paths", required = false) List<String> paths) {
+        if (isInvalidLessonParam(lesson)) {
             log.warn("Chặn nén ZIP: lesson không hợp lệ ('{}'), ip={}",
                     abbreviate(lesson), currentRequestIp());
             return ResponseEntity.badRequest().build();
         }
         try {
-            Path scope = outputRoot();
+            Path root = outputRoot();
+            Path scope = root;
             if (user != null && !user.isBlank()) {
                 String safeUser = user.replaceAll("[^a-zA-Z0-9_.-]", "_");
                 scope = scope.resolve("users").resolve(safeUser);
             }
-            Path outputDir = SafePaths.resolveWithin(scope, lesson);
+            Path outputDir = SafePaths.resolveWithin(scope, sanitizeFolderSegment(lesson));
+
+            if (paths != null && !paths.isEmpty()) {
+                List<Path> selectedFiles = new ArrayList<>();
+                for (String rawPath : paths) {
+                    Path resolved = SafePaths.resolveWithin(root, rawPath);
+                    if (Files.isRegularFile(resolved) && hasAllowedClipExtension(resolved)) {
+                        selectedFiles.add(resolved);
+                    }
+                }
+                if (selectedFiles.isEmpty()) {
+                    return ResponseEntity.notFound().build();
+                }
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Set<String> usedEntries = new HashSet<>();
+                try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+                    for (Path p : selectedFiles) {
+                        String entryName = p.startsWith(outputDir)
+                                ? outputDir.relativize(p).toString().replace("\\", "/")
+                                : p.getFileName().toString();
+                        if (!usedEntries.add(entryName)) {
+                            entryName = usedEntries.size() + "_" + entryName;
+                            usedEntries.add(entryName);
+                        }
+                        zos.putNextEntry(new ZipEntry(entryName));
+                        Files.copy(p, zos);
+                        zos.closeEntry();
+                    }
+                }
+                return buildZipResponse(lesson, baos.toByteArray());
+            }
 
             if (!Files.isDirectory(outputDir)) {
                 log.warn("Không tìm thấy thư mục xuất bản để nén ZIP: {}", outputDir.toAbsolutePath());
@@ -1778,20 +2021,25 @@ public class VideoController {
                 }
             }
 
-            byte[] zipBytes = baos.toByteArray();
-            String zipFileName = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_") + "_exported_clips.zip";
-            ContentDisposition contentDisposition = ContentDisposition.attachment()
-                .filename(zipFileName, StandardCharsets.UTF_8)
-                .build();
-
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
-                .header(HttpHeaders.CONTENT_TYPE, "application/zip")
-                .body(zipBytes);
+            return buildZipResponse(lesson, baos.toByteArray());
+        } catch (PathOutsideRootException e) {
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Lỗi nén ZIP các file clip: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    private ResponseEntity<byte[]> buildZipResponse(String lesson, byte[] zipBytes) {
+        String zipFileName = lesson.replaceAll("[^a-zA-Z0-9_.-]", "_") + "_exported_clips.zip";
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+            .filename(zipFileName, StandardCharsets.UTF_8)
+            .build();
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+            .header(HttpHeaders.CONTENT_TYPE, "application/zip")
+            .body(zipBytes);
     }
 
     /**
@@ -2053,7 +2301,13 @@ public class VideoController {
                 MergeSegmentRequest r = requests.get(i);
                 String src = resolvedSources.get(i);
                 Path tempClipPath = tempDir.resolve("part_" + i + ".mp4");
-                CutResult cutResult = videoCutter.cut(src, tempClipPath.toAbsolutePath().toString(), r.start(), r.end());
+                // Gộp phân đoạn = cắt chính xác tuyệt đối: không đệm thở, không stream-copy,
+                // để file kết quả chứa đúng đoạn người dùng đã chọn (không dài hơn).
+                // Video nguồn là URL từ xa thì vẫn dùng đường cắt có hỗ trợ URL.
+                boolean remoteSource = src.startsWith("http://") || src.startsWith("https://");
+                CutResult cutResult = remoteSource
+                    ? videoCutter.cut(src, tempClipPath.toAbsolutePath().toString(), r.start(), r.end())
+                    : videoCutter.cutExact(new File(src), tempClipPath.toFile(), r.start(), r.end());
                 if (!cutResult.success()) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                         "status", "ERROR",

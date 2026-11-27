@@ -18,6 +18,24 @@ public class VideoProps {
     private double paddingStart = 0.3; // Lùi 0.3s chống cụt âm đầu theo config.yaml
     private double paddingEnd = 0.5;   // Tiến 0.5s cho thở tự nhiên theo config.yaml
 
+    /**
+     * Bộ mã hoá dùng cho nhánh re-encode (cắt chính xác từng frame).
+     * auto = dùng GPU (NVENC) nếu ffmpeg hỗ trợ, ngược lại về libx264.
+     * nvenc / libx264 = ép buộc một lựa chọn.
+     */
+    private String encoder = "auto";
+    /** Preset NVENC: p1 (nhanh nhất) → p7 (chất lượng nhất). */
+    private String nvencPreset = "p4";
+    /** Chất lượng không đổi của NVENC (tương đương -crf của libx264, số nhỏ = nét hơn). */
+    private int nvencCq = 23;
+
+    /**
+     * Cho phép bước ghép clip tự động re-encode toàn bộ khi stream-copy thất bại.
+     * Mặc định false: video dài re-encode có thể tốn hàng chục phút tới hàng giờ,
+     * nên chỉ bật khi thật sự cần.
+     */
+    private boolean concatAllowReencode = false;
+
     public VideoProps() {}
 
     public VideoProps(String ffprobePath, String ffmpegPath, int timeoutSeconds) {
@@ -86,5 +104,37 @@ public class VideoProps {
 
     public void setPaddingEnd(double paddingEnd) {
         this.paddingEnd = paddingEnd;
+    }
+
+    public String getEncoder() {
+        return encoder;
+    }
+
+    public void setEncoder(String encoder) {
+        this.encoder = encoder;
+    }
+
+    public String getNvencPreset() {
+        return nvencPreset;
+    }
+
+    public void setNvencPreset(String nvencPreset) {
+        this.nvencPreset = nvencPreset;
+    }
+
+    public int getNvencCq() {
+        return nvencCq;
+    }
+
+    public void setNvencCq(int nvencCq) {
+        this.nvencCq = nvencCq;
+    }
+
+    public boolean isConcatAllowReencode() {
+        return concatAllowReencode;
+    }
+
+    public void setConcatAllowReencode(boolean concatAllowReencode) {
+        this.concatAllowReencode = concatAllowReencode;
     }
 }

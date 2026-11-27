@@ -15,12 +15,18 @@ import {
   saveProjectToBackend,
   resolveProtectedStreamUrl,
   mergeSelectedClipsBackend,
-  getDownloadClipUrl,
-  triggerBrowserDownload,
+  deleteExportDirectory,
   uploadVideoFile,
   API_BASE,
 } from "@/lib/api";
-import { buildMergeClipItems, extractSha256FromStreamUrl } from "@/lib/mergeSelection";
+import {
+  mergeTimelineSegments,
+  extractSha256FromStreamUrl,
+  buildMergeClipItems,
+  buildRenderSegmentsPayload,
+  getCheckedSegmentsInOrder,
+  reconcileSelectedSegmentIds,
+} from "@/lib/mergeSelection";
 import { clearAllTimerRefs } from "@/lib/timerManager";
 
 import { StudioSidebar } from "@/components/StudioSidebar";
@@ -273,9 +279,7 @@ export default function Home() {
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const renderTimerRef = useRef<NodeJS.Timeout | null>(null);
   const analyzeTickerRef = useRef<NodeJS.Timeout | null>(null);
-  const mergeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isMergingClips, setIsMergingClips] = useState<boolean>(false);
 
   // Tiến độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
@@ -287,6 +291,9 @@ export default function Home() {
   const [renderedClips, setRenderedClips] = useState<RenderedClipItem[]>([]);
   const [renderedOutputDir, setRenderedOutputDir] = useState<string>("");
   const [totalRenderedCount, setTotalRenderedCount] = useState<number>(0);
+  const [checkedTimelineIds, setCheckedTimelineIds] = useState<string[]>([]);
+  const [isSelectingExportSegments, setIsSelectingExportSegments] = useState<boolean>(false);
+  const pendingExportRef = useRef<{ segments: Segment[]; format: "separate" | "merged" } | null>(null);
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -341,7 +348,7 @@ export default function Home() {
     });
     return () => {
       active = false;
-      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef, mergeTimerRef]);
+      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef]);
     };
   }, [router]);
 
@@ -612,7 +619,10 @@ export default function Home() {
   ]);
 
   // Segment modifications with Undo history
-  const handleUpdateSegments = (newSegments: Segment[]) => {
+  const handleUpdateSegments = (
+    newSegments: Segment[],
+    options?: { action?: "delete" | "merge" | "update" }
+  ) => {
     setUndoStack((prev) => [...prev.slice(-30), data.segments]);
     setRedoStack([]);
 
@@ -625,8 +635,8 @@ export default function Home() {
     updateVideoSegmentsInLibrary(data.video, newSegments);
     setVideoLibrary(getLibraryVideos());
 
-    // Nếu số phân đoạn giảm (có phân đoạn bị xóa):
-    if (newSegments.length < data.segments.length) {
+    // Nếu số phân đoạn giảm (có phân đoạn bị xóa, không phải thao tác gộp):
+    if (options?.action !== "merge" && newSegments.length < data.segments.length) {
       const deletedSeg = data.segments.find((s) => !newSegments.some((ns) => ns.id === s.id));
       if (deletedSeg) {
         showToast("info", `✓ Đã xóa "${deletedSeg.topic}". Trình phát sẽ tự động bỏ qua đoạn này khi phát.`);
@@ -753,93 +763,227 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSaveProject]);
 
+  const syncLocalVideoBlob = async (
+    syncedByName: Map<string, { sha256: string; cloudUrl?: string }>,
+    vName: string,
+    vUrl?: string,
+    vHash?: string
+  ) => {
+    if (!vName || vHash || syncedByName.has(vName)) return;
+    const needsSync =
+      Boolean(vUrl?.startsWith("blob:")) ||
+      (!vUrl?.startsWith("http") && !vUrl?.includes("/videos/") && !extractSha256FromStreamUrl(vUrl));
+    if (!needsSync) return;
+    const localBlob = await getVideoBlob(vName).catch(() => null);
+    if (localBlob && localBlob.size > 0) {
+      const uploadTarget =
+        typeof File !== "undefined" && localBlob instanceof File
+          ? localBlob
+          : new File([localBlob], vName, { type: localBlob.type || "video/mp4" });
+      const up = await uploadVideoFile(uploadTarget);
+      if (up.source === "api" && up.data?.sha256) {
+        syncedByName.set(vName, { sha256: up.data.sha256, cloudUrl: up.data.cloud_url });
+        if (vName === data.video) {
+          setCurrentVideoHash(up.data.sha256);
+        }
+      }
+    }
+  };
+
   const handleRender = async () => {
+    const exportPlan = pendingExportRef.current;
+    pendingExportRef.current = null;
+    const targetSegments = exportPlan?.segments?.length ? exportPlan.segments : data.segments;
+    const exportFormat = exportPlan?.format ?? "separate";
+
+    if (targetSegments.length === 0) {
+      showToast("info", "Chưa có phân đoạn nào để xuất!");
+      return;
+    }
+
     setIsRendering(true);
+    setIsSelectingExportSegments(false);
     setIsProgressModalOpen(true);
     setProgressModalMode("render");
-    setProgressPercent(15);
+    setProgressPercent(12);
     setProgressError(null);
     setRenderedClips([]);
     setRenderedOutputDir("");
-    setProgressActionText("Đang khởi tạo kế hoạch cắt FFmpeg & nạp cấu hình padding...");
+    setTotalRenderedCount(0);
+    setProgressActionText(`Đang chuẩn bị cắt ${targetSegments.length} phân đoạn đã chọn...`);
 
     const initialSteps: ProgressStep[] = [
       {
         id: "step-plan",
-        title: "1. Khởi tạo danh sách phân đoạn",
-        description: `Áp dụng padding_start (0.3s) và padding_end (0.5s) kẹp biên [0, duration] cho ${data.segments.length} phân đoạn.`,
+        title: `1. Chuẩn bị nguồn & danh sách ${targetSegments.length} phân đoạn đã chọn`,
+        description:
+          exportFormat === "merged"
+            ? "Cắt chính xác từng đoạn và ghép thành 1 video MP4 duy nhất."
+            : "Ưu tiên Stream Copy (-c copy) để cắt siêu tốc từng đoạn, chỉ xử lý các đoạn đã chọn.",
         status: "running",
       },
       {
         id: "step-cut",
-        title: "2. Cắt video Accurate Cut bằng FFmpeg (libx264)",
-        description: "Re-encode chính xác từng frame, khử hoàn toàn lỗi đen hình I-Frame.",
+        title: "2. Cắt video bằng FFmpeg",
+        description: "Cắt xong đoạn nào hiển thị liên kết tải về ngay đoạn đó.",
         status: "pending",
       },
       {
         id: "step-output",
-        title: "3. Đóng gói & tạo liên kết tải file xuất bản",
-        description: "Lưu tại thư mục output và sẵn sàng tải về máy tính.",
+        title: "3. Hoàn tất đóng gói & sẵn sàng tải về",
+        description: "Lưu tại thư mục output và sẵn sàng tải lẻ hoặc nén ZIP các đoạn đã chọn.",
         status: "pending",
       },
     ];
     setProgressSteps(initialSteps);
 
-    // Tự động tăng phần trăm nhịp nhàng để người dùng thấy rõ tiến trình
-    let currentP = 20;
+    let currentP = 15;
     if (renderTimerRef.current) clearInterval(renderTimerRef.current);
     renderTimerRef.current = setInterval(() => {
-      currentP = Math.min(88, currentP + Math.floor(Math.random() * 8) + 3);
-      setProgressPercent(currentP);
-      if (currentP > 30 && currentP < 85) {
-        const segIdx = Math.min(
-          data.segments.length - 1,
-          Math.floor(((currentP - 30) / 55) * data.segments.length)
-        );
-        const activeSeg = data.segments[segIdx];
-        setProgressActionText(
-          `Đang cắt clip #${segIdx + 1}/${data.segments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
-        );
-        setProgressSteps((prev) =>
-          prev.map((s) => {
-            if (s.id === "step-plan") return { ...s, status: "completed" };
-            if (s.id === "step-cut") return { ...s, status: "running" };
-            return s;
-          })
-        );
-      }
+      currentP = Math.min(88, currentP + 3);
+      setProgressPercent((prev) => Math.max(prev, currentP));
     }, 700);
 
     try {
-      const result = await submitRenderSegments({ ...data, reviewed: true });
+      const syncedByName = new Map<string, { sha256: string; cloudUrl?: string }>();
+      const mappedAll = buildRenderSegmentsPayload(targetSegments, joinedVideos, {
+        videoName: data.video,
+        videoUrl: externalVideoUrl || undefined,
+        videoHash: currentVideoHash || undefined,
+      });
+
+      for (const segItem of mappedAll) {
+        await syncLocalVideoBlob(
+          syncedByName,
+          segItem.videoName || data.video,
+          segItem.videoUrl,
+          segItem.videoHash
+        );
+      }
+
+      setProgressSteps((prev) =>
+        prev.map((s) =>
+          s.id === "step-plan"
+            ? { ...s, status: "completed" }
+            : s.id === "step-cut"
+            ? { ...s, status: "running" }
+            : s
+        )
+      );
+
+      if (exportFormat === "merged" && targetSegments.length >= 2) {
+        setProgressActionText(`Đang cắt & ghép ${targetSegments.length} đoạn đã chọn thành 1 file MP4...`);
+        const mergeItems = buildMergeClipItems(targetSegments, joinedVideos, {
+          videoName: data.video,
+          videoUrl: externalVideoUrl || undefined,
+          videoHash: currentVideoHash || undefined,
+        }).map((it) => {
+          const synced = syncedByName.get(it.videoName);
+          return synced ? { ...it, videoHash: synced.sha256, videoUrl: synced.cloudUrl || it.videoUrl } : it;
+        });
+
+        const lessonTitle = data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips";
+        const mergedRes = await mergeSelectedClipsBackend({
+          videoName: data.video,
+          videoHash: syncedByName.get(data.video)?.sha256 || currentVideoHash || undefined,
+          videoUrl: syncedByName.get(data.video)?.cloudUrl || externalVideoUrl || undefined,
+          lesson: lessonTitle,
+          user: currentUser?.id || currentUser?.username || "admin",
+          segments: mergeItems,
+        });
+
+        if (renderTimerRef.current) {
+          clearInterval(renderTimerRef.current);
+          renderTimerRef.current = null;
+        }
+
+        if (mergedRes.source === "api" && mergedRes.data) {
+          const merged = mergedRes.data;
+          const friendlyFileName = `${slugify(lessonTitle) || "merged"}_ghep_${merged.mergedCount}_doan.mp4`;
+          setProgressPercent(100);
+          setProgressActionText(merged.message || `Đã gộp ${merged.mergedCount} đoạn thành 1 file MP4!`);
+          setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+          setRenderedClips([
+            {
+              file: friendlyFileName,
+              path: merged.outputFile,
+              sizeBytes: merged.outputSizeBytes || 0,
+              executionMs: merged.executionTimeMs || 0,
+            },
+          ]);
+          setRenderedOutputDir("output/combined");
+          setTotalRenderedCount(1);
+          showToast("success", merged.message || "Đã xuất gộp video thành công!");
+        } else {
+          setProgressPercent(60);
+          setProgressError(mergedRes.error || "Không thể xuất gộp các phân đoạn đã chọn");
+          setProgressSteps((prev) =>
+            prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+          );
+          showToast("error", `Lỗi: ${mergedRes.error || "Xuất gộp thất bại"}`);
+        }
+        return;
+      }
+
+      let allSuccess = true;
+      let totalFiles = 0;
+      let lastMessage = "";
+
+      for (let i = 0; i < mappedAll.length; i++) {
+        const segPayload = mappedAll[i];
+        const synced = segPayload.videoName ? syncedByName.get(segPayload.videoName) : undefined;
+        const enrichedSeg = synced
+          ? { ...segPayload, videoHash: synced.sha256, videoUrl: synced.cloudUrl || segPayload.videoUrl }
+          : segPayload;
+
+        setProgressActionText(
+          `Đang cắt đoạn #${i + 1}/${mappedAll.length}: ${enrichedSeg.topic || "Phân đoạn"}...`
+        );
+
+        const topSynced = syncedByName.get(data.video);
+        const result = await submitRenderSegments({
+          ...data,
+          videoHash: topSynced?.sha256 || currentVideoHash || undefined,
+          videoUrl: topSynced?.cloudUrl || externalVideoUrl || undefined,
+          autoConcat: false,
+          reviewed: true,
+          segments: [enrichedSeg],
+        });
+
+        if (!result.success) {
+          allSuccess = false;
+          setProgressError(result.message || "Lỗi khi thực thi cắt video");
+          setProgressSteps((prev) =>
+            prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+          );
+          showToast("error", `Lỗi: ${result.message}`);
+          break;
+        }
+
+        const newFiles = result.renderedFiles || [];
+        totalFiles += newFiles.length;
+        lastMessage = result.message;
+        if (newFiles.length > 0) {
+          setRenderedClips((prev) => [...prev, ...newFiles]);
+          setTotalRenderedCount((prev) => prev + newFiles.length);
+        }
+        if (result.outputDirectory) {
+          setRenderedOutputDir(result.outputDirectory);
+        }
+        const pctDone = Math.round(((i + 1) / mappedAll.length) * 100);
+        setProgressPercent(pctDone);
+      }
+
       if (renderTimerRef.current) {
         clearInterval(renderTimerRef.current);
         renderTimerRef.current = null;
       }
 
-      if (result.success) {
+      if (allSuccess) {
         setProgressPercent(100);
-        setProgressActionText("Đã hoàn tất xuất bản toàn bộ các clip video!");
-        setProgressSteps((prev) =>
-          prev.map((s) => ({ ...s, status: "completed" }))
-        );
-        setRenderedClips(result.renderedFiles || []);
-        setRenderedOutputDir(result.outputDirectory || "");
-        setTotalRenderedCount(
-          result.totalRendered || result.renderedFiles?.length || data.segments.length
-        );
-
-        showToast(
-          "success",
-          `${result.message} ${result.savedPlan ? `(Lưu tại: ${result.savedPlan})` : ""}`
-        );
-      } else {
-        setProgressPercent(60);
-        setProgressError(result.message || "Lỗi khi thực thi cắt video");
-        setProgressSteps((prev) =>
-          prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
-        );
-        showToast("error", `Lỗi: ${result.message}`);
+        setProgressActionText(`Đã hoàn tất xuất ${totalFiles} clip từ ${mappedAll.length} phân đoạn đã chọn!`);
+        setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+        showToast("success", lastMessage || `Đã cắt thành công ${totalFiles} clip!`);
       }
     } catch (err) {
       if (renderTimerRef.current) {
@@ -856,176 +1000,62 @@ export default function Home() {
     }
   };
 
-  const handleMergeSelectedClips = async (selectedSegments: Segment[]): Promise<boolean> => {
-    if (selectedSegments.length < 2) {
-      showToast("info", "Vui lòng tích chọn ít nhất 2 phân đoạn trên timeline để gộp!");
-      return false;
-    }
-    if (isMergingClips) return false;
+  const validCheckedTimelineIds = reconcileSelectedSegmentIds(checkedTimelineIds, data.segments);
 
-    setIsMergingClips(true);
-    setIsRendering(true);
-    setIsProgressModalOpen(true);
+  const handleOpenExport = () => {
+    if (isRendering) return;
+    if (validCheckedTimelineIds.length > 0) {
+      pendingExportRef.current = {
+        segments: getCheckedSegmentsInOrder(data.segments, validCheckedTimelineIds),
+        format: "separate",
+      };
+      setIsSelectingExportSegments(false);
+      void handleRender();
+      return;
+    }
+
+    setIsSelectingExportSegments(true);
     setProgressModalMode("render");
-    setProgressPercent(18);
+    setProgressPercent(0);
     setProgressError(null);
     setRenderedClips([]);
     setRenderedOutputDir("");
-    setProgressActionText(`Đang cắt & ghép ${selectedSegments.length} phân đoạn đã chọn thành 1 video MP4...`);
-    setProgressSteps([
-      {
-        id: "merge-cut",
-        title: `1. Cắt ${selectedSegments.length} phân đoạn đã chọn`,
-        description: selectedSegments.map((s) => s.topic).join(" • "),
-        status: "running",
-      },
-      {
-        id: "merge-concat",
-        title: "2. Ghép nối thành 1 tệp video MP4 hoàn chỉnh",
-        description: "Ghép liên tục theo đúng thứ tự trên timeline và chuẩn bị liên kết tải về.",
-        status: "pending",
-      },
-    ]);
+    setTotalRenderedCount(0);
+    setIsProgressModalOpen(true);
+  };
 
-    if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
-    let pct = 18;
-    mergeTimerRef.current = setInterval(() => {
-      pct = Math.min(88, pct + Math.floor(Math.random() * 8) + 4);
-      setProgressPercent(pct);
-      if (pct >= 55) {
-        setProgressSteps((prev) =>
-          prev.map((s) =>
-            s.id === "merge-cut"
-              ? { ...s, status: "completed" }
-              : s.id === "merge-concat"
-              ? { ...s, status: "running" }
-              : s
-          )
-        );
-      }
-    }, 600);
-
-    try {
-      let mergeItems = buildMergeClipItems(selectedSegments, joinedVideos, {
-        videoName: data.video,
-        videoUrl: externalVideoUrl || undefined,
-        videoHash: currentVideoHash || undefined,
-      });
-
-      // Nếu có clip cục bộ (blob:) chưa nằm trên backend uploads/, tự đồng bộ lên trước khi cắt
-      const uploadedByName = new Map<string, { sha256: string; cloudUrl?: string }>();
-      for (const item of mergeItems) {
-        if (item.videoUrl?.startsWith("blob:") && !item.videoHash && item.videoName && !uploadedByName.has(item.videoName)) {
-          const blob = await getVideoBlob(item.videoName).catch(() => null);
-          if (blob && blob.size > 0) {
-            const uploadTarget =
-              typeof File !== "undefined" && blob instanceof File
-                ? blob
-                : new File([blob], item.videoName, { type: blob.type || "video/mp4" });
-            const up = await uploadVideoFile(uploadTarget);
-            if (up.source === "api" && up.data?.sha256) {
-              uploadedByName.set(item.videoName, {
-                sha256: up.data.sha256,
-                cloudUrl: up.data.cloud_url,
-              });
-            }
-          }
-        }
-      }
-      if (uploadedByName.size > 0) {
-        mergeItems = mergeItems.map((it) => {
-          const synced = uploadedByName.get(it.videoName);
-          return synced
-            ? { ...it, videoHash: synced.sha256, videoUrl: synced.cloudUrl || it.videoUrl }
-            : it;
-        });
-      }
-
-      const lessonTitle = data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips";
-      let result = await mergeSelectedClipsBackend({
-        videoName: data.video,
-        videoHash: currentVideoHash || undefined,
-        videoUrl: externalVideoUrl || undefined,
-        lesson: lessonTitle,
-        user: currentUser?.id || currentUser?.username || "admin",
-        segments: mergeItems,
-      });
-
-      // Dự phòng 1 lần: nếu backend báo chưa thấy file nguồn nhưng IndexedDB còn blob, upload rồi thử lại
-      if (result.source !== "api" && result.error?.includes("Không tìm thấy video nguồn")) {
-        const localBlob = await getVideoBlob(data.video).catch(() => null);
-        if (localBlob && localBlob.size > 0) {
-          const uploadTarget =
-            typeof File !== "undefined" && localBlob instanceof File
-              ? localBlob
-              : new File([localBlob], data.video, { type: localBlob.type || "video/mp4" });
-          const up = await uploadVideoFile(uploadTarget);
-          if (up.source === "api" && up.data?.sha256) {
-            setCurrentVideoHash(up.data.sha256);
-            mergeItems = mergeItems.map((it) => ({
-              ...it,
-              videoHash: up.data!.sha256,
-              videoUrl: up.data!.cloud_url || it.videoUrl,
-            }));
-            result = await mergeSelectedClipsBackend({
-              videoName: data.video,
-              videoHash: up.data.sha256,
-              videoUrl: up.data.cloud_url || externalVideoUrl || undefined,
-              lesson: lessonTitle,
-              user: currentUser?.id || currentUser?.username || "admin",
-              segments: mergeItems,
-            });
-          }
-        }
-      }
-
-      if (mergeTimerRef.current) {
-        clearInterval(mergeTimerRef.current);
-        mergeTimerRef.current = null;
-      }
-
-      if (result.source === "api" && result.data) {
-        const merged = result.data;
-        const friendlyFileName = `${slugify(lessonTitle) || "merged"}_ghep_${merged.mergedCount}_doan.mp4`;
-        setProgressPercent(100);
-        setProgressActionText(merged.message || `Đã gộp ${merged.mergedCount} đoạn thành 1 video MP4!`);
-        setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
-        setRenderedClips([
-          {
-            file: friendlyFileName,
-            path: merged.outputFile,
-            sizeBytes: merged.outputSizeBytes || 0,
-            executionMs: merged.executionTimeMs || 0,
-          },
-        ]);
-        setRenderedOutputDir("output/combined");
-        setTotalRenderedCount(1);
-
-        const downloadHref = merged.protectedDownloadUrl || getDownloadClipUrl(merged.outputFile);
-        if (downloadHref) {
-          triggerBrowserDownload(downloadHref, friendlyFileName);
-        }
-        showToast("success", merged.message || "Đã gộp thành công thành 1 video MP4!");
-        return true;
-      } else {
-        setProgressPercent(60);
-        setProgressError(result.error || "Không thể gộp các phân đoạn đã chọn");
-        setProgressSteps((prev) =>
-          prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
-        );
-        showToast("error", `Lỗi gộp video: ${result.error || "Thất bại"}`);
-        return false;
-      }
-    } catch (err) {
-      setProgressError(err instanceof Error ? err.message : "Lỗi ngoại lệ khi gộp video");
-      showToast("error", "Đã xảy ra lỗi khi gộp các đoạn video đã chọn.");
-      return false;
-    } finally {
-      if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
-      mergeTimerRef.current = null;
-      setIsMergingClips(false);
-      setIsRendering(false);
+  const handleStartSelectedExport = (
+    selectedIds: string[],
+    exportFormat: "separate" | "merged"
+  ) => {
+    const chosen = getCheckedSegmentsInOrder(data.segments, selectedIds);
+    if (chosen.length === 0) {
+      showToast("info", "Vui lòng chọn ít nhất 1 phân đoạn để Export!");
+      return;
     }
+    pendingExportRef.current = { segments: chosen, format: exportFormat };
+    setIsSelectingExportSegments(false);
+    void handleRender();
+  };
+
+  const handleMergeSelectedClips = (selectedSegments: Segment[]): boolean => {
+    const result = mergeTimelineSegments(
+      data.segments,
+      selectedSegments.map((s) => s.id),
+      joinedVideos
+    );
+    if (!result.ok) {
+      showToast("info", result.reason);
+      return false;
+    }
+
+    handleUpdateSegments(result.segments, { action: "merge" });
+    setActiveSegmentId(result.mergedSegment.id);
+    showToast(
+      "success",
+      `✓ Đã gộp ${result.mergedCount} phân đoạn thành "${result.mergedSegment.topic}" trên track Nội dung!`
+    );
+    return true;
   };
 
   const handleDurationChange = useCallback((detectedSecs: number) => {
@@ -1149,6 +1179,7 @@ export default function Home() {
       setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
       setUndoStack([]);
       setRedoStack([]);
+      setCheckedTimelineIds([]);
       setCurrentTime(0);
       setIsPlaying(true);
 
@@ -1230,6 +1261,7 @@ export default function Home() {
     setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
     setUndoStack([]);
     setRedoStack([]);
+    setCheckedTimelineIds([]);
 
     setActiveSegmentId(singleSegment.id);
     setCurrentTime(0);
@@ -2046,6 +2078,7 @@ export default function Home() {
 
       setUndoStack((prev) => [...prev.slice(-30), data.segments]);
       setRedoStack([]);
+      setCheckedTimelineIds([]);
       setCurrentVideoId(card.videoId);
 
       setData({
@@ -2124,49 +2157,15 @@ export default function Home() {
   );
 
   // Gộp 2 phân đoạn liền kề theo đề xuất của Trợ lý AI
-  const handleMergeSegments = useCallback(
-    (segIdx1: number, segIdx2: number) => {
-      setData((prev) => {
-        if (segIdx1 < 0 || segIdx2 >= prev.segments.length || segIdx1 >= segIdx2) {
-          return prev;
-        }
-        const s1 = prev.segments[segIdx1];
-        const s2 = prev.segments[segIdx2];
-
-        // Gộp s1 và s2 thành một đoạn kéo dài từ s1.start đến s2.end
-        const mergedSeg: Segment = {
-          ...s1,
-          id: `${s1.id}_merged`,
-          topic: `${s1.topic} & ${s2.topic}`,
-          slug: slugify(`${s1.slug}-${s2.slug}`),
-          end: s2.end,
-          parts: recalculateParts(
-            s1.start,
-            s2.end,
-            s1.section,
-            s1.topic_no,
-            slugify(`${s1.slug}-${s2.slug}`)
-          ),
-        };
-
-        const newSegments = [...prev.segments];
-        newSegments.splice(segIdx1, 2, mergedSeg);
-
-        // Đánh lại số thứ tự topic_no
-        const renumbered = newSegments.map((seg, idx) => ({
-          ...seg,
-          topic_no: idx + 1,
-        }));
-
-        return {
-          ...prev,
-          segments: renumbered,
-        };
-      });
-      showToast("success", "✓ Đã gộp thành công 2 phân đoạn trên timeline!");
-    },
-    [showToast]
-  );
+  const handleMergeSegments = (segIdx1: number, segIdx2: number) => {
+    if (segIdx1 < 0 || segIdx2 >= data.segments.length || segIdx1 >= segIdx2) {
+      return;
+    }
+    const s1 = data.segments[segIdx1];
+    const s2 = data.segments[segIdx2];
+    if (!s1 || !s2) return;
+    handleMergeSelectedClips([s1, s2]);
+  };
 
   if (!isSessionLoaded) {
     return (
@@ -2196,11 +2195,12 @@ export default function Home() {
         isSaving={isSaving}
         isDemo={isDemo}
         themeColor={themeBgColor}
+        selectedExportCount={validCheckedTimelineIds.length}
         onThemeColorChange={handleThemeColorChange}
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
         onSave={handleSaveProject}
-        onRender={handleRender}
+        onRender={handleOpenExport}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
         onAnalyzeAI={handleStartAnalyzeAI}
         onReAnalyzeAI={handleReAnalyzeAI}
@@ -2351,7 +2351,8 @@ export default function Home() {
         isMuted={isMuted}
         canUndo={undoStack.length > 0}
         canRedo={redoStack.length > 0}
-        isMergingSelectedClips={isMergingClips}
+        checkedSegmentIds={validCheckedTimelineIds}
+        onCheckedSegmentIdsChange={setCheckedTimelineIds}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onTogglePlay={() => setIsPlaying(!isPlaying)}
@@ -2430,7 +2431,27 @@ export default function Home() {
         renderedClips={renderedClips}
         outputDirectory={renderedOutputDir}
         totalRendered={totalRenderedCount}
-        onClose={() => setIsProgressModalOpen(false)}
+        segments={data.segments}
+        isSelectingSegments={isSelectingExportSegments}
+        onStartSelectedExport={handleStartSelectedExport}
+        onClose={() => {
+          // Clip đã cắt/gộp chỉ cần tồn tại trong lúc bảng kết quả còn mở.
+          // Đóng bảng thì dọn luôn để `output/` không phình ra sau mỗi lần xuất.
+          if (!isRendering) {
+            const mergedFile = renderedClips.find((c) => (c.path || "").startsWith("combined/"))?.path;
+            if (mergedFile) {
+              void deleteExportDirectory(mergedFile);
+            }
+            if (renderedOutputDir && renderedOutputDir.replace(/\\/g, "/").replace(/\/+$/, "") !== "output/combined") {
+              void deleteExportDirectory(renderedOutputDir);
+            }
+            setRenderedClips([]);
+            setRenderedOutputDir("");
+            setTotalRenderedCount(0);
+          }
+          setIsProgressModalOpen(false);
+          setIsSelectingExportSegments(false);
+        }}
         onExportJson={handleExportJson}
       />
     </div>

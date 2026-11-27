@@ -172,6 +172,36 @@ class VideoControllerSecurityTest {
     }
 
     @Test
+    @DisplayName("download-zip với tham số paths chỉ nén đúng các clip được chọn và chặn đường dẫn ngoài output")
+    void downloadZipWithSelectedPathsFiltersAndRejectsTraversal() throws Exception {
+        Path lessonDir = Files.createDirectories(outputRoot.resolve("Bai08"));
+        Files.write(lessonDir.resolve("clip_01.mp4"), new byte[]{1, 2, 3});
+        Files.write(lessonDir.resolve("clip_02.mp4"), new byte[]{4, 5, 6});
+
+        byte[] zipBytes = mvc.perform(get("/api/video/download-zip")
+                        .param("lesson", "Bai08")
+                        .param("paths", "Bai08/clip_02.mp4"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
+
+        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(zipBytes))) {
+            java.util.List<String> names = new java.util.ArrayList<>();
+            java.util.zip.ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                names.add(entry.getName());
+            }
+            Assertions.assertEquals(List.of("clip_02.mp4"), names);
+        }
+
+        mvc.perform(get("/api/video/download-zip")
+                        .param("lesson", "Bai08")
+                        .param("paths", "../.env"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("render nhận tên bài học tiếng Việt thay vì chặn 400")
     void renderAcceptsVietnameseLessonName() throws Exception {
         String body = "{\"video\":\"v.mp4\",\"lesson\":\"Bài giảng Lập trình Web (2 Giờ)\",\"segments\":[]}";

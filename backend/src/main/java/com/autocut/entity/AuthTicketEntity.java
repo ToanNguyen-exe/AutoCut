@@ -20,6 +20,7 @@ public class AuthTicketEntity {
     @Column(name = "purpose", length = 10, nullable = false)
     private String purpose;
 
+    /** SHA-256 (hex) của đường dẫn tài nguyên — nhờ vậy đường dẫn dài bao nhiêu cũng vừa cột. */
     @Column(name = "resource_id", length = 100, nullable = false)
     private String resourceId;
 
