@@ -1,8 +1,10 @@
 package com.autocut.config;
 
+import com.autocut.controller.AuthController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.cors.CorsConfiguration;
 
 /**
@@ -87,5 +89,27 @@ class CorsSettingsTest {
         Assertions.assertEquals(3600L, config.getMaxAge());
         Assertions.assertTrue(config.getExposedHeaders().contains("Content-Disposition"),
                 "Frontend cần đọc tên tệp khi tải clip");
+    }
+
+    @Test
+    @DisplayName("F05 FR-2b & AC-6: không set profile hoặc dùng profile default/prod phải bị coi là production (fail-closed)")
+    void emptyAndDefaultProfilesBehaveLikeProduction() {
+        Assertions.assertFalse(WebConfig.isDevLike(null), "null profiles phải fail-closed");
+        Assertions.assertFalse(WebConfig.isDevLike(new String[0]), "Không có profile phải coi như production");
+        Assertions.assertFalse(WebConfig.isDevLike(new String[]{"default"}), "Profile default phải coi như production");
+        Assertions.assertFalse(WebConfig.isDevLike(new String[]{"prod"}), "Profile prod không được dùng dev defaults");
+        Assertions.assertTrue(WebConfig.isDevLike(new String[]{"dev"}), "Profile dev được dùng dev defaults");
+        Assertions.assertTrue(WebConfig.isDevLike(new String[]{"test"}), "Profile test được dùng dev defaults");
+
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> CorsSettings.build(null, WebConfig.isDevLike(new String[0])),
+                "Thiếu SPRING_PROFILES_ACTIVE và thiếu AUTOCUT_CORS_ALLOWED_ORIGINS phải chặn khởi động");
+    }
+
+    @Test
+    @DisplayName("F05 §9: Controller không được gắn @CrossOrigin(\"*\") đè cấu hình CORS tập trung")
+    void authControllerMustNotUseWildcardCrossOrigin() {
+        Assertions.assertNull(AuthController.class.getAnnotation(CrossOrigin.class),
+                "AuthController không được đặt @CrossOrigin vì xung đột allowCredentials=true và vượt qua WebConfig/SecurityConfig");
     }
 }

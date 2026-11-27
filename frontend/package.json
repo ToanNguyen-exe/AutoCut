@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --test tests/*.mjs",
     "build:worker": "opennextjs-cloudflare build --config ../wrangler.jsonc",
     "preview:worker": "opennextjs-cloudflare preview --config ../wrangler.jsonc",
     "deploy:worker": "opennextjs-cloudflare deploy --config ../wrangler.jsonc"

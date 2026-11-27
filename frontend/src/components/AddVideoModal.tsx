@@ -20,6 +20,7 @@ import { saveVideoBlob } from "@/lib/videoStorage";
 import { TranscriptData, SegmentsData, VideoLibraryItem } from "@/types";
 
 export interface NewVideoData {
+  videoId?: number;
   url: string;
   name: string;
   duration: number; // in seconds
@@ -96,6 +97,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     return unit === "minutes" ? Math.round(num * 60) : Math.round(num);
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadPercent, setUploadPercent] = useState<number>(0);
@@ -183,11 +185,11 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     url: string;
     durationSeconds: number;
     durationText?: string;
-    sha256?: string;
+    videoId?: number;
   }) => {
     setUrlInput(sample.url);
     setTitleInput(sample.name);
-    setSelectedSha256(sample.sha256 || null);
+    setSelectedVideoId(sample.videoId);
     setDetectedDuration(sample.durationSeconds);
     if (sample.durationSeconds < 60) {
       setDurationUnit("seconds");
@@ -230,6 +232,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
       // Lưu file vào IndexedDB ngay để bảo toàn qua F5
       saveVideoBlob(file.name, file);
+      saveVideoBlob(file.name.replace(/\.[^/.]+$/, ""), file);
 
       const objectUrl = URL.createObjectURL(file);
       probeDuration(objectUrl, true);
@@ -242,6 +245,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     // Đảm bảo tệp đã chọn được lưu bền vững vào IndexedDB trước khi giao diện chuyển sang Studio
     if (selectedFile) {
       await saveVideoBlob(selectedFile.name, selectedFile);
+      await saveVideoBlob(selectedFile.name.replace(/\.[^/.]+$/, ""), selectedFile);
     }
 
     // Tính thời lượng bằng giây (ưu tiên thời lượng đã tự nhận diện từ video thực tế, kể cả clip ngắn vài giây)
@@ -274,17 +278,15 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
         return;
       }
 
-      const matchedSample = SAMPLE_VIDEOS.find((s) => s.url === urlInput.trim());
-      const effectiveHash = selectedSha256 || matchedSample?.sha256;
-
       deliverVideo({
+        videoId: selectedVideoId,
         url: urlInput.trim(),
         name: titleInput.trim() || "Video bài giảng mới",
         duration: finalDurationSeconds,
         isExternalUrl: true,
         topicTitle: titleInput.trim() || "Chủ đề bài giảng mới",
         sectionName: "01_NoiDungChinh",
-        sha256: effectiveHash || undefined,
+        sha256: selectedSha256 || undefined,
       });
     } else {
       if (!selectedFile) {
@@ -294,35 +296,35 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
       setIsUploading(true);
       setUploadPercent(10);
-      setUploadProgressMsg("Đang tải video lên hệ thống...");
+      setUploadProgressMsg("Đang tải video & AI đang bóc băng phân tích (Whisper + Gemini)...");
 
       const upStartTime = Date.now();
       const upTimer = setInterval(() => {
         const sec = (Date.now() - upStartTime) / 1000;
         setUploadPercent(() => {
-          if (sec < 1.5) return Math.min(50, 10 + sec * 30);
-          if (sec < 4) return Math.min(85, 50 + (sec - 1.5) * 15);
-          return Math.min(95, 85 + (sec - 4) * 2);
+          if (sec < 3) return Math.min(30, 10 + sec * 7);
+          if (sec < 8) return Math.min(65, 30 + (sec - 3) * 7);
+          return Math.min(94, 65 + (sec - 8) * 3);
         });
-      }, 100);
+      }, 250);
 
       try {
         const uploadRes = await uploadVideoFile(selectedFile);
         if (uploadRes.source === "api" && uploadRes.data?.cloud_url) {
           clearInterval(upTimer);
           setUploadPercent(100);
-          setUploadProgressMsg("Tải video lên thành công!");
-
-          // Kiểm tra xem transcript có lời thoại thật hay chỉ là bản ghi khởi tạo ban đầu
-          const hasRealTranscript = uploadRes.data.transcript &&
-            Array.isArray(uploadRes.data.transcript.sentences) &&
-            uploadRes.data.transcript.sentences.length > 1 &&
-            !uploadRes.data.transcript.sentences.some((s: { text?: string }) => s.text?.includes("Nội dung bóc băng của video"));
-
+          const cloudDur = (uploadRes.data.transcript?.duration && uploadRes.data.transcript.duration > 0)
+            ? uploadRes.data.transcript.duration
+            : finalDurationSeconds;
+          const hasRealTranscript = Boolean(
+            uploadRes.data.transcript?.sentences &&
+            uploadRes.data.transcript.sentences.length > 0
+          );
           deliverVideo({
+            videoId: uploadRes.data.videoId ?? uploadRes.data.video_id ?? selectedVideoId,
             url: uploadRes.data.cloud_url,
             name: uploadRes.data.file_name || selectedFile.name,
-            duration: finalDurationSeconds,
+            duration: cloudDur,
             isExternalUrl: false,
             topicTitle: titleInput.trim() || selectedFile.name.replace(/\.[^/.]+$/, ""),
             sectionName: "01_NoiDungChinh",
@@ -503,7 +505,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                               url: vUrl,
                               durationSeconds: dur,
                               durationText: formatTime(dur),
-                              sha256: cv.sha256Hash || undefined,
+                              videoId: cv.id,
                             });
                           }}
                           className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left transition group shadow-2xs ${

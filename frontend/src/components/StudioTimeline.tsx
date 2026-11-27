@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Segment, TranscriptData, JoinedVideoClip } from "@/types";
-import { formatTime, recalculateParts, slugify } from "@/lib/utils";
+import { formatTime, slugify, splitSegment } from "@/lib/utils";
+import {
+  toggleSelectedSegmentId,
+  reconcileSelectedSegmentIds,
+  getCheckedSegmentsInOrder,
+  canMergeSelectedSegments,
+} from "@/lib/mergeSelection";
 import {
   Play,
   Pause,
@@ -19,6 +25,10 @@ import {
   Plus,
   Link2,
   Film,
+  Check,
+  Combine,
+  Loader2,
+  X,
 } from "lucide-react";
 
 interface StudioTimelineProps {
@@ -33,12 +43,14 @@ interface StudioTimelineProps {
   joinedVideos?: JoinedVideoClip[];
   volume?: number;
   isMuted?: boolean;
+  isMergingSelectedClips?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
   onTogglePlay?: () => void;
   onSeek: (time: number) => void;
   onSelectSegment: (id: string) => void;
   onUpdateSegments: (newSegments: Segment[]) => void;
+  onMergeSelectedClips?: (selectedSegments: Segment[]) => Promise<boolean | void> | void;
   onVolumeChange?: (vol: number) => void;
   onToggleMute?: () => void;
   onOpenSegmentDetail?: (segment: Segment, index: number) => void;
@@ -53,12 +65,14 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   canUndo = false,
   canRedo = false,
   joinedVideos = [],
+  isMergingSelectedClips = false,
   onUndo,
   onRedo,
   onTogglePlay,
   onSeek,
   onSelectSegment,
   onUpdateSegments,
+  onMergeSelectedClips,
   onOpenSegmentDetail,
 }) => {
   const [internalPlaying, setInternalPlaying] = useState(false);
@@ -72,6 +86,32 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   }, [onTogglePlay]);
 
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [checkedSegmentIds, setCheckedSegmentIds] = useState<string[]>([]);
+
+  const validCheckedIds = useMemo(
+    () => reconcileSelectedSegmentIds(checkedSegmentIds, segments),
+    [checkedSegmentIds, segments]
+  );
+
+  const canMergeChecked = canMergeSelectedSegments(validCheckedIds);
+
+  const handleToggleCheck = useCallback(
+    (segmentId: string) => {
+      setCheckedSegmentIds((prev) => toggleSelectedSegmentId(reconcileSelectedSegmentIds(prev, segments), segmentId));
+    },
+    [segments]
+  );
+
+  const handleMergeCheckedClick = useCallback(async () => {
+    if (!onMergeSelectedClips || !canMergeChecked || isMergingSelectedClips) {
+      return;
+    }
+    const chosen = getCheckedSegmentsInOrder(segments, validCheckedIds);
+    const result = await onMergeSelectedClips(chosen);
+    if (result !== false) {
+      setCheckedSegmentIds([]);
+    }
+  }, [onMergeSelectedClips, canMergeChecked, isMergingSelectedClips, segments, validCheckedIds]);
 
   // Resizable timeline height (kéo lên kéo xuống)
   const [timelineHeight, setTimelineHeight] = useState<number>(() => {
@@ -230,36 +270,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     }
 
     const orig = segments[targetIdx];
-    const seg1: Segment = {
-      ...orig,
-      id: `${orig.id}_a`,
-      end: splitTime,
-      topic: `${orig.topic} (Phần 1)`,
-      slug: slugify(`${orig.topic} p1`),
-      parts: recalculateParts(
-        orig.start,
-        splitTime,
-        `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
-        orig.topic_no,
-        slugify(`${orig.topic} p1`)
-      ),
-    };
-
-    const seg2: Segment = {
-      ...orig,
-      id: `${orig.id}_b`,
-      start: splitTime,
-      topic: `${orig.topic} (Phần 2)`,
-      slug: slugify(`${orig.topic} p2`),
-      topic_no: orig.topic_no + 1,
-      parts: recalculateParts(
-        splitTime,
-        orig.end,
-        `${orig.section_no.toString().padStart(2, "0")}_${slugify(orig.section)}`,
-        orig.topic_no + 1,
-        slugify(`${orig.topic} p2`)
-      ),
-    };
+    const [seg1, seg2] = splitSegment(orig, splitTime);
 
     const newSegments = [...segments];
     newSegments.splice(targetIdx, 1, seg1, seg2);
@@ -448,6 +459,48 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
           >
             <Trash2 className="w-4 h-4" />
           </button>
+
+          {/* Gộp các phân đoạn đã tích thành 1 file MP4 */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleMergeCheckedClick}
+              disabled={!canMergeChecked || isMergingSelectedClips}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border transition ${
+                canMergeChecked && !isMergingSelectedClips
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs cursor-pointer"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200/80 dark:border-white/10 cursor-not-allowed"
+              }`}
+              title={
+                canMergeChecked
+                  ? `Cắt & ghép ${validCheckedIds.length} phân đoạn đã tích thành 1 video MP4`
+                  : "Tích chọn ít nhất 2 phân đoạn bên dưới để gộp thành 1 video MP4"
+              }
+            >
+              {isMergingSelectedClips ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Combine className="w-4 h-4" />
+              )}
+              <span>
+                {isMergingSelectedClips
+                  ? "Đang gộp..."
+                  : validCheckedIds.length > 0
+                  ? `Gộp (${validCheckedIds.length}${validCheckedIds.length === 1 ? "/2+" : ""})`
+                  : "Gộp"}
+              </span>
+            </button>
+            {validCheckedIds.length > 0 && !isMergingSelectedClips && (
+              <button
+                type="button"
+                onClick={() => setCheckedSegmentIds([])}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer"
+                title="Bỏ tích tất cả"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
           <div className="w-[1px] h-4 bg-slate-200 mx-1" />
 
@@ -698,6 +751,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                 ((seg.end - seg.start) / Math.max(1, totalDuration)) * 100
               );
               const isSelected = activeSegmentId === seg.id;
+              const isChecked = validCheckedIds.includes(seg.id);
               const isAppendedSeg = seg.isAppended || (seg.videoIndex && seg.videoIndex > 1);
 
               return (
@@ -723,7 +777,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                       isAppendedSeg ? "[Nối tiếp]" : ""
                     } - Nhấp để xem chi tiết`}
                     className={`w-full h-full rounded-xl border transition-all duration-150 flex flex-col justify-between p-2.5 cursor-pointer shadow-2xs overflow-hidden select-none ${
-                      isSelected
+                      isChecked
+                        ? "bg-amber-50 dark:bg-amber-950/50 border-amber-500 dark:border-amber-400 ring-2 ring-amber-400/70 z-10 shadow-xs"
+                        : isSelected
                         ? isAppendedSeg
                           ? "bg-[#d1fae5] dark:bg-emerald-950/80 border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700/60 z-10 shadow-xs"
                           : "bg-[#e0e7ff] dark:bg-indigo-950/80 border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-200 dark:ring-indigo-700/60 z-10 shadow-xs"
@@ -732,15 +788,36 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                         : "bg-[#eef2ff] dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/80 hover:border-indigo-400 dark:hover:border-indigo-600 z-0"
                     }`}
                   >
-                    {/* Top Row: Title + Duration */}
+                    {/* Top Row: Checkbox + Title + Duration */}
                     <div className="flex items-center justify-between gap-1.5 min-w-0">
-                      <span
-                        className={`text-sm font-bold truncate min-w-0 ${
-                          isAppendedSeg ? "text-emerald-950 dark:text-emerald-200" : "text-slate-900 dark:text-slate-100"
-                        }`}
-                      >
-                        #{idx + 1} {seg.topic}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={isChecked}
+                          aria-label={`Tích chọn đoạn #${idx + 1}: ${seg.topic}`}
+                          title={isChecked ? "Bỏ tích phân đoạn này" : "Tích chọn phân đoạn để gộp video"}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleCheck(seg.id);
+                          }}
+                          className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 transition cursor-pointer ${
+                            isChecked
+                              ? "bg-amber-500 border-amber-600 text-white shadow-2xs"
+                              : "bg-white/95 dark:bg-slate-900/90 border-slate-400 dark:border-slate-500 hover:border-indigo-600 text-transparent"
+                          }`}
+                        >
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </button>
+                        <span
+                          className={`text-sm font-bold truncate min-w-0 ${
+                            isAppendedSeg ? "text-emerald-950 dark:text-emerald-200" : "text-slate-900 dark:text-slate-100"
+                          }`}
+                        >
+                          #{idx + 1} {seg.topic}
+                        </span>
+                      </div>
                       <span
                         className={`text-xs font-mono font-bold ml-1 shrink-0 px-1.5 py-0.5 rounded shadow-2xs ${
                           isAppendedSeg

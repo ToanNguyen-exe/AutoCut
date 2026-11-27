@@ -187,20 +187,20 @@ jobs:
             "touch /opt/models/.probe /app/work/.probe && echo ghi-duoc"
 
   # ===========================================================================
-  # Frontend: lint, kiểm tra kiểu, build. Không chạy test vì hiện chưa có.
+  # Frontend: lint, kiểm tra kiểu, unit test (Node 24 LTS) và build Next.js.
   # ===========================================================================
   frontend:
-    name: Frontend (Node 20)
+    name: Frontend (Node 24)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cài Node 20
+      - name: Cài Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -218,6 +218,10 @@ jobs:
       - name: Kiểm tra kiểu
         working-directory: frontend
         run: npx tsc --noEmit
+
+      - name: Chạy unit test
+        working-directory: frontend
+        run: npm test
 
       - name: Build
         working-directory: frontend

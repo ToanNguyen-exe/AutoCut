@@ -54,8 +54,9 @@ class FlywayBaselineTest {
         MigrateResult result = flyway(ds).migrate();
 
         Assertions.assertTrue(result.success, "Migration phải thành công");
-        Assertions.assertEquals(1, result.migrationsExecuted,
-                "DB rỗng phải chạy đúng 1 migration (V1), không phải baseline");
+        // V1__baseline.sql + V202611251030__auth.sql (F01)
+        Assertions.assertEquals(2, result.migrationsExecuted,
+                "DB rỗng phải chạy đủ 2 migration (V1 + V2 auth), không phải baseline");
 
         List<String> tables = new ArrayList<>();
         try (Connection c = ds.getConnection(); Statement s = c.createStatement();
@@ -65,7 +66,8 @@ class FlywayBaselineTest {
             while (rs.next()) tables.add(rs.getString(1).toLowerCase());
         }
 
-        for (String expected : List.of("users", "videos", "transcripts", "sections", "topics", "video_parts")) {
+        for (String expected : List.of("users", "videos", "transcripts", "sections", "topics", "video_parts",
+                "refresh_tokens", "auth_tickets")) {
             Assertions.assertTrue(tables.contains(expected), "Thiếu bảng: " + expected + " — có: " + tables);
         }
     }
@@ -102,13 +104,15 @@ class FlywayBaselineTest {
 
         MigrateResult result = f.migrate();
 
-        Assertions.assertEquals(0, result.migrationsExecuted,
-                "DB đã có bảng: phải baseline V1, không chạy lại (nếu chạy sẽ lỗi 'table already exists')");
+        // V1 được đánh dấu BASELINE (không chạy lại), chỉ chạy tiếp V202611251030__auth.sql
+        Assertions.assertEquals(1, result.migrationsExecuted,
+                "DB đã có bảng: phải baseline V1 (không chạy V1) và chỉ chạy V2 auth");
 
         MigrationInfo[] applied = f.info().applied();
-        Assertions.assertEquals(1, applied.length, "Phải có đúng 1 mục trong lịch sử");
+        Assertions.assertEquals(2, applied.length, "Phải có 2 mục (V1 BASELINE + V2 SQL) trong lịch sử");
         Assertions.assertEquals("1", applied[0].getVersion().getVersion());
         Assertions.assertEquals("BASELINE", applied[0].getType().name());
+        Assertions.assertEquals("202611251030", applied[1].getVersion().getVersion());
     }
 
     @Test

@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import { Sparkles, Film, ListPlus, Play } from "lucide-react";
 import { Segment, TranscriptData } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { cleanVideoStem } from "@/lib/videoMatching";
 
 export interface LibraryVideoCard {
   id: string;
+  videoId?: number;
   title: string;
   fileName: string;
   durationStr: string;
@@ -192,7 +194,8 @@ export const VideoLibraryColumn: React.FC<VideoLibraryColumnProps> = ({
             const isActive =
               item.fileName.toLowerCase() === currentVideoName.toLowerCase() ||
               item.title.toLowerCase() === currentVideoName.toLowerCase() ||
-              currentVideoName.toLowerCase().includes(item.title.toLowerCase());
+              cleanVideoStem(item.fileName) === cleanVideoStem(currentVideoName) ||
+              cleanVideoStem(item.title) === cleanVideoStem(currentVideoName);
 
             return (
               <div

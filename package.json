@@ -6,7 +6,7 @@
     "build": "npm ci --prefix frontend --include=dev && npm --prefix frontend run build:worker",
     "build:next": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
-    "backend": "cd backend && .\\mvnw.cmd spring-boot:run",
+    "backend": "cd backend && .\\mvnw.cmd spring-boot:run \"-Dspring-boot.run.profiles=dev\"",
     "build:worker": "npm ci --prefix frontend --include=dev && npm --prefix frontend run build:worker",
     "deploy:worker": "wrangler deploy",
     "preview:worker": "npm --prefix frontend run preview:worker"

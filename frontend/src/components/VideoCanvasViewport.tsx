@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Segment, JoinedVideoClip } from "@/types";
 import { formatTime } from "@/lib/utils";
 import { resolvePlayableVideoUrl } from "@/lib/videoLibrary";
+import { getVideoBlob } from "@/lib/videoStorage";
 import {
   Maximize2,
   Play,
@@ -51,11 +52,9 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
   isPlaying = false,
   volume = 100,
   isMuted = false,
-  isDemo = false,
   isAnalyzing = false,
   analysisProgress = 0,
   analysisStep = "",
-  mode = "guided",
   onSeek,
   onTogglePlay,
   onDurationChange,
@@ -97,11 +96,6 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
     : currentTime;
 
   const [videoSrc, setVideoSrc] = useState<string | null>(activeVideoUrl);
-  const fallbackBlobUrls = useRef(new Map<string, string>());
-  useEffect(() => {
-    const urls = fallbackBlobUrls.current;
-    return () => urls.forEach((url) => URL.revokeObjectURL(url));
-  }, []);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [needsUserUnmute, setNeedsUserUnmute] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
@@ -118,19 +112,10 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
 
     // 1. Kiểm tra trong IndexedDB xem có blob của file đã lưu không
     try {
-      const { getVideoBlob } = await import("@/lib/videoStorage");
-      const cachedUrl = fallbackBlobUrls.current.get(fileName);
-      if (cachedUrl) {
-        if (videoSrc !== cachedUrl) {
-          setVideoSrc(cachedUrl);
-          setVideoLoadError(null);
-          return;
-        }
-      } else {
-        const blob = await getVideoBlob(fileName);
-        if (blob) {
-          const freshBlobUrl = URL.createObjectURL(blob);
-          fallbackBlobUrls.current.set(fileName, freshBlobUrl);
+      const blob = await getVideoBlob(fileName);
+      if (blob) {
+        const freshBlobUrl = URL.createObjectURL(blob);
+        if (videoSrc !== freshBlobUrl) {
           console.info("Khôi phục video từ IndexedDB thành công cho:", fileName);
           setVideoSrc(freshBlobUrl);
           setVideoLoadError(null);
@@ -445,19 +430,6 @@ export const VideoCanvasViewport: React.FC<VideoCanvasViewportProps> = ({
               })}
             </div>
           )}
-          {isDemo ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold">
-              Demo Mẫu
-            </span>
-          ) : mode === "raw" ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-bold">
-              Chưa phân tích (1 đoạn)
-            </span>
-          ) : videoSrc ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
-              ✓ Đã phân tích bởi AI
-            </span>
-          ) : null}
         </div>
 
         {/* Right: Tỉ lệ 16:9 Landscape & Nút thao tác */}

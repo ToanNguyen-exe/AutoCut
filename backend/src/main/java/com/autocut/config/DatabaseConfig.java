@@ -37,8 +37,16 @@ public class DatabaseConfig {
 
     @Bean
     public DataSource dataSource() {
-        Dotenv dotenv = configService.getDotenv();
-        String databaseUrl = dotenv.get("DATABASE_URL");
+        String databaseUrl = configService.getEnv("DATABASE_URL", null);
+        if (databaseUrl != null) {
+            databaseUrl = databaseUrl.trim();
+            if (databaseUrl.startsWith("\"") && databaseUrl.endsWith("\"") && databaseUrl.length() >= 2) {
+                databaseUrl = databaseUrl.substring(1, databaseUrl.length() - 1).trim();
+            }
+            if (databaseUrl.startsWith("'") && databaseUrl.endsWith("'") && databaseUrl.length() >= 2) {
+                databaseUrl = databaseUrl.substring(1, databaseUrl.length() - 1).trim();
+            }
+        }
 
         // Thà chết lúc khởi động hơn chạy bằng RAM rồi mất dữ liệu âm thầm (AD-7).
         if (databaseUrl == null || databaseUrl.isBlank() || databaseUrl.contains("ep-xyz")) {
@@ -103,6 +111,12 @@ public class DatabaseConfig {
         }
 
         String url = databaseUrl.trim();
+        if (url.startsWith("\"") && url.endsWith("\"") && url.length() >= 2) {
+            url = url.substring(1, url.length() - 1).trim();
+        }
+        if (url.startsWith("'") && url.endsWith("'") && url.length() >= 2) {
+            url = url.substring(1, url.length() - 1).trim();
+        }
 
         // Đã là JDBC URL: chỉ cần bổ sung sslmode nếu đích đến cần
         if (url.startsWith("jdbc:postgresql://")) {

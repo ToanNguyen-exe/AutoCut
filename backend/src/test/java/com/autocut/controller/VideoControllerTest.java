@@ -8,6 +8,7 @@ import com.autocut.service.CacheService;
 import com.autocut.service.CloudflareR2Service;
 import com.autocut.service.ConfigService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -320,5 +321,188 @@ class VideoControllerTest {
                 Files.deleteIfExists(Paths.get("uploads", sha256 + "_ytsave_to_youtube_media_negdbzhg9_c_tu_hoc_js.mp4"));
             }
         }
+    }
+
+    @Test
+    void testMergeSelectedClips_InvalidSegments_ReturnsBadRequest() {
+        ResponseEntity<?> emptyRes = controller.mergeSelectedClips(Map.of(
+                "videoName", "test.mp4",
+                "segments", List.of()
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, emptyRes.getStatusCode());
+
+        ResponseEntity<?> singleRes = controller.mergeSelectedClips(Map.of(
+                "videoName", "test.mp4",
+                "segments", List.of(Map.of("start", 0.0, "end", 10.0))
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, singleRes.getStatusCode());
+
+        ResponseEntity<?> invalidRangeRes = controller.mergeSelectedClips(Map.of(
+                "videoName", "test.mp4",
+                "segments", List.of(
+                        Map.of("start", 10.0, "end", 5.0),
+                        Map.of("start", 20.0, "end", 30.0)
+                )
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, invalidRangeRes.getStatusCode());
+    }
+
+    @Test
+    void testMergeSelectedClips_UnsafeLesson_ReturnsBadRequest() {
+        ResponseEntity<?> res = controller.mergeSelectedClips(Map.of(
+                "videoName", "test.mp4",
+                "lesson", "../../.env",
+                "segments", List.of(
+                        Map.of("start", 0.0, "end", 10.0),
+                        Map.of("start", 20.0, "end", 30.0)
+                )
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+    }
+
+    @Test
+    void testMergeSelectedClips_ValidNonAdjacentSegmentsAndVietnameseLesson_CutsAndConcats() throws Exception {
+        com.autocut.video.VideoCutter mockCutter = Mockito.mock(com.autocut.video.VideoCutter.class);
+        com.autocut.video.VideoConcat mockConcat = Mockito.mock(com.autocut.video.VideoConcat.class);
+        VideoController mockController = new VideoController(
+                cacheService, configService, r2Service, videoRepository, mockCutter, mockConcat
+        );
+
+        Mockito.when(mockCutter.cut(
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()
+        )).thenAnswer(inv -> com.autocut.video.CutResult.success(
+                inv.getArgument(0), inv.getArgument(1),
+                inv.getArgument(2), inv.getArgument(3), 50L, 1024L
+        ));
+
+        Mockito.when(mockConcat.concat(
+                Mockito.anyList(), Mockito.any(java.io.File.class), Mockito.anyBoolean()
+        )).thenAnswer(inv -> {
+            java.io.File outFile = inv.getArgument(1);
+            return com.autocut.video.ConcatResult.success(List.of(), outFile.getAbsolutePath(), 100L, 2048L);
+        });
+
+        ResponseEntity<?> res = mockController.mergeSelectedClips(Map.of(
+                "videoName", "https://example.com/sample.mp4",
+                "lesson", "Bài 08 - Ép kiểu dữ liệu",
+                "segments", List.of(
+                        Map.of("start", 30.0, "end", 45.0, "topic", "Doan 4"),
+                        Map.of("start", 60.0, "end", 75.0, "topic", "Doan 6")
+                )
+        ));
+
+        Assertions.assertEquals(HttpStatus.OK, res.getStatusCode());
+        Assertions.assertNotNull(res.getBody());
+        Map<?, ?> body = (Map<?, ?>) res.getBody();
+        Assertions.assertEquals("SUCCESS", body.get("status"));
+        Assertions.assertEquals(2, body.get("mergedCount"));
+        Assertions.assertTrue(String.valueOf(body.get("outputFile")).startsWith("combined/"));
+        Assertions.assertTrue(String.valueOf(body.get("downloadUrl")).startsWith("/api/video/download-clip?path="));
+
+        Mockito.verify(mockCutter, Mockito.times(1)).cut(
+                Mockito.eq("https://example.com/sample.mp4"), Mockito.anyString(), Mockito.eq(30.0), Mockito.eq(45.0)
+        );
+        Mockito.verify(mockCutter, Mockito.times(1)).cut(
+                Mockito.eq("https://example.com/sample.mp4"), Mockito.anyString(), Mockito.eq(60.0), Mockito.eq(75.0)
+        );
+        Mockito.verify(mockConcat, Mockito.times(1)).concat(
+                Mockito.argThat(list -> list.size() == 2), Mockito.any(java.io.File.class), Mockito.eq(false)
+        );
+    }
+
+    @Test
+    void testMergeSelectedClips_UnknownVideo_ReturnsBadRequestWithoutFallbackToVibeShort() {
+        ResponseEntity<?> res = controller.mergeSelectedClips(Map.of(
+                "videoName", "khong_ton_tai_99999.mp4",
+                "lesson", "BaiTest",
+                "segments", List.of(
+                        Map.of("start", 0.0, "end", 10.0),
+                        Map.of("start", 20.0, "end", 30.0)
+                )
+        ));
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+        Assertions.assertNotNull(res.getBody());
+        String json = String.valueOf(res.getBody());
+        Assertions.assertFalse(json.contains("vibe_short"), "Không được âm thầm fallback sang vibe_short.mp4");
+    }
+
+    @Test
+    void testMergeSelectedClips_StaleHashDoesNotOverrideMatchingVideoName() throws Exception {
+        java.nio.file.Path uploadsDir = Paths.get("uploads");
+        java.nio.file.Path publicDir = Paths.get("frontend", "public", "videos");
+        if (!Files.exists(publicDir)) {
+            publicDir = Paths.get("..", "frontend", "public", "videos");
+        }
+        Files.createDirectories(uploadsDir);
+        String staleHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        java.nio.file.Path staleFile = uploadsDir.resolve(staleHash + "_stale_other.mp4");
+        java.nio.file.Path expectedTarget = publicDir.resolve("Bai08_Ep_kieu_du_lieu.mp4");
+        Assumptions.assumeTrue(Files.isRegularFile(expectedTarget), "Cần file mẫu Bai08_Ep_kieu_du_lieu.mp4");
+        Files.write(staleFile, new byte[]{1, 2, 3});
+
+        try {
+            com.autocut.video.VideoCutter mockCutter = Mockito.mock(com.autocut.video.VideoCutter.class);
+            com.autocut.video.VideoConcat mockConcat = Mockito.mock(com.autocut.video.VideoConcat.class);
+            VideoController mockController = new VideoController(
+                    cacheService, configService, r2Service, videoRepository, mockCutter, mockConcat
+            );
+            Mockito.when(mockCutter.cut(Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()))
+                    .thenAnswer(inv -> com.autocut.video.CutResult.success(
+                            inv.getArgument(0), inv.getArgument(1),
+                            inv.getArgument(2), inv.getArgument(3), 10L, 100L));
+            Mockito.when(mockConcat.concat(Mockito.anyList(), Mockito.any(java.io.File.class), Mockito.anyBoolean()))
+                    .thenAnswer(inv -> com.autocut.video.ConcatResult.success(
+                            List.of(), ((java.io.File) inv.getArgument(1)).getAbsolutePath(), 10L, 200L));
+
+            ResponseEntity<?> res = mockController.mergeSelectedClips(Map.of(
+                    "videoName", "Bai08_Ep_kieu_du_lieu.mp4",
+                    "videoHash", staleHash,
+                    "lesson", "Bài 08",
+                    "segments", List.of(
+                            Map.of("start", 0.0, "end", 10.0),
+                            Map.of("start", 20.0, "end", 30.0)
+                    )
+            ));
+
+            Assertions.assertEquals(HttpStatus.OK, res.getStatusCode());
+            Mockito.verify(mockCutter, Mockito.times(2)).cut(
+                    Mockito.argThat((String src) -> src.endsWith("Bai08_Ep_kieu_du_lieu.mp4")),
+                    Mockito.anyString(),
+                    Mockito.anyDouble(),
+                    Mockito.anyDouble()
+            );
+        } finally {
+            Files.deleteIfExists(staleFile);
+        }
+    }
+
+    @Test
+    void testMergeSelectedClips_PerSegmentSourcesAcrossJoinedVideos_UsesEachSourceAndReencodes() {
+        com.autocut.video.VideoCutter mockCutter = Mockito.mock(com.autocut.video.VideoCutter.class);
+        com.autocut.video.VideoConcat mockConcat = Mockito.mock(com.autocut.video.VideoConcat.class);
+        VideoController mockController = new VideoController(
+                cacheService, configService, r2Service, videoRepository, mockCutter, mockConcat
+        );
+        Mockito.when(mockCutter.cut(Mockito.anyString(), Mockito.anyString(), Mockito.anyDouble(), Mockito.anyDouble()))
+                .thenAnswer(inv -> com.autocut.video.CutResult.success(
+                        inv.getArgument(0), inv.getArgument(1),
+                        inv.getArgument(2), inv.getArgument(3), 10L, 100L));
+        Mockito.when(mockConcat.concat(Mockito.anyList(), Mockito.any(java.io.File.class), Mockito.anyBoolean()))
+                .thenAnswer(inv -> com.autocut.video.ConcatResult.success(
+                        List.of(), ((java.io.File) inv.getArgument(1)).getAbsolutePath(), 10L, 200L));
+
+        ResponseEntity<?> res = mockController.mergeSelectedClips(Map.of(
+                "videoName", "Bai08.mp4 & Bai07.mp4",
+                "lesson", "Nối tiếp",
+                "segments", List.of(
+                        Map.of("start", 5.0, "end", 20.0, "videoUrl", "https://example.com/v1.mp4"),
+                        Map.of("start", 10.0, "end", 30.0, "videoUrl", "https://example.com/v2.mp4")
+                )
+        ));
+
+        Assertions.assertEquals(HttpStatus.OK, res.getStatusCode());
+        Mockito.verify(mockCutter).cut(Mockito.eq("https://example.com/v1.mp4"), Mockito.anyString(), Mockito.eq(5.0), Mockito.eq(20.0));
+        Mockito.verify(mockCutter).cut(Mockito.eq("https://example.com/v2.mp4"), Mockito.anyString(), Mockito.eq(10.0), Mockito.eq(30.0));
+        Mockito.verify(mockConcat).concat(Mockito.argThat(l -> l.size() == 2), Mockito.any(java.io.File.class), Mockito.eq(true));
     }
 }

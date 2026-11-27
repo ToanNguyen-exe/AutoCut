@@ -8,69 +8,9 @@ import { pipeline } from "stream/promises";
 import { Sentence, TranscriptData, Segment, SegmentsData } from "@/types";
 import { recalculateParts } from "@/lib/utils";
 import { resolveGroqApiKey } from "@/lib/groqEnv";
+import { findExistingTranscript } from "@/lib/videoFs";
 
 export const dynamic = "force-dynamic";
-
-function findExistingTranscript(projectRoot: string, videoName: string): TranscriptData | null {
-  const clean = videoName.replace(/^[0-9a-fA-F]{64}_/, "");
-  const stem = path.parse(clean).name.toLowerCase();
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const targetNorm = norm(stem);
-
-  const searchDirs = [
-    path.join(projectRoot, "transcripts"),
-    path.join(projectRoot, "backend", "transcripts"),
-    path.join(projectRoot, "cache"),
-  ];
-
-  for (const dir of searchDirs) {
-    if (!fs.existsSync(dir)) continue;
-    const files = fs.readdirSync(dir);
-
-    // 1. Khớp tên chính xác trước
-    for (const f of files) {
-      if (!f.endsWith(".json")) continue;
-      const fStem = f.replace(/_transcript\.json$/, "").replace(/\.json$/, "").toLowerCase();
-      const fNorm = norm(fStem);
-      if (fStem === stem || fNorm === targetNorm) {
-        try {
-          const content = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
-          if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
-            const first = content.sentences[0]?.text || "";
-            if (first.includes("Nội dung bóc băng của video")) continue;
-            return content as TranscriptData;
-          }
-        } catch {}
-      }
-    }
-
-    // 2. Bí danh chuẩn cho video demo/bài giảng có sẵn
-    if (targetNorm.includes("bai08") || targetNorm.includes("epkieu")) {
-      const match = files.find((f) => f.toLowerCase().includes("ep_kieu") || f.toLowerCase().includes("ep-kieu"));
-      if (match) {
-        try {
-          const content = JSON.parse(fs.readFileSync(path.join(dir, match), "utf-8"));
-          if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
-            return content as TranscriptData;
-          }
-        } catch {}
-      }
-    }
-    if (targetNorm.includes("bai07") || targetNorm.includes("bien")) {
-      const match = files.find((f) => f.toLowerCase().includes("bai07") || f.toLowerCase().includes("bien"));
-      if (match) {
-        try {
-          const content = JSON.parse(fs.readFileSync(path.join(dir, match), "utf-8"));
-          if (content && Array.isArray(content.sentences) && content.sentences.length > 0) {
-            return content as TranscriptData;
-          }
-        } catch {}
-      }
-    }
-  }
-
-  return null;
-}
 
 function generateSegmentsFromSentences(
   sentences: Sentence[],

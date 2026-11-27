@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
-import path from "path";
-import { Readable } from "node:stream";
+import { resolveStreamFile } from "@/lib/videoFs";
 
 /**
  * Next.js API Route phát / stream video hỗ trợ HTTP Range requests (206 Partial Content)
@@ -12,82 +11,7 @@ export async function GET(request: NextRequest) {
   const fileParam = searchParams.get("file") || "";
   const hashParam = searchParams.get("hash") || "";
 
-  // Danh sách các thư mục kiểm tra để tìm file
-  const projectRoot = process.cwd(); // Thư mục modun6 hoặc modun6/frontend
-  const candidateDirs = [
-    path.join(projectRoot, "public", "videos"),
-    path.join(projectRoot, "frontend", "public", "videos"),
-    path.join(projectRoot, "uploads"),
-    path.join(projectRoot, "..", "uploads"),
-    path.join(projectRoot, "backend", "uploads"),
-    path.join(projectRoot, "..", "backend", "uploads"),
-  ];
-
-  let resolvedPath: string | null = null;
-
-  for (const dir of candidateDirs) {
-    if (!fs.existsSync(dir)) continue;
-
-    try {
-      const files = fs.readdirSync(dir);
-      const norm = (s: string) =>
-        s.toLowerCase().replace(/[\s_\(\)\-\.]/g, "").replace(/mp4$/g, "");
-
-      // 1. Khớp theo hash
-      if (hashParam) {
-        const found = files.find((f) => f.toLowerCase().startsWith(hashParam.toLowerCase()));
-        if (found) {
-          resolvedPath = path.join(dir, found);
-          break;
-        }
-      }
-
-      // 2. Khớp theo tên file
-      if (fileParam) {
-        const cleanFile = fileParam.trim().toLowerCase();
-
-        // 2a. Khớp chính xác tên file
-        const foundExact = files.find((f) => f.toLowerCase() === cleanFile);
-        if (foundExact) {
-          resolvedPath = path.join(dir, foundExact);
-          break;
-        }
-
-        // 2b. Khớp normalized đối với file upload có tiền tố hash: <sha256>_<tên file>
-        const targetNorm = norm(cleanFile);
-        if (targetNorm) {
-          const foundNorm = files.find((f) => norm(f).endsWith(targetNorm));
-          if (foundNorm) {
-            resolvedPath = path.join(dir, foundNorm);
-            break;
-          }
-        }
-
-        // 3. Khớp tương đối theo tên bài học
-        if (cleanFile.includes("bai08") || cleanFile.includes("ep_kieu")) {
-          const found08 = files.find((f) => /bai08|ep[-_]kieu|ytsave/i.test(f));
-          if (found08) {
-            resolvedPath = path.join(dir, found08);
-            break;
-          }
-        } else if (cleanFile.includes("bai07") || cleanFile.includes("bien")) {
-          const found07 = files.find((f) => /bai07|bien/i.test(f));
-          if (found07) {
-            resolvedPath = path.join(dir, found07);
-            break;
-          }
-        } else if (cleanFile.includes("bai09") || cleanFile.includes("chuoi")) {
-          const found09 = files.find((f) => /bai09|chuoi/i.test(f));
-          if (found09) {
-            resolvedPath = path.join(dir, found09);
-            break;
-          }
-        }
-      }
-    } catch {
-      // Tiếp tục tìm ở thư mục tiếp theo
-    }
-  }
+  const resolvedPath = resolveStreamFile(process.cwd(), fileParam, hashParam);
 
   // Nếu tìm thấy file cục bộ, stream với HTTP 206 Range Request
   if (resolvedPath && fs.existsSync(resolvedPath)) {
@@ -103,8 +27,16 @@ export async function GET(request: NextRequest) {
         const chunksize = end - start + 1;
 
         const fileStream = fs.createReadStream(resolvedPath, { start, end });
-        // Readable.toWeb giữ backpressure và hủy file stream khi client ngắt kết nối.
-        const webStream = Readable.toWeb(fileStream) as ReadableStream;
+        const webStream = new ReadableStream({
+          start(controller) {
+            fileStream.on("data", (chunk) => controller.enqueue(chunk));
+            fileStream.on("end", () => controller.close());
+            fileStream.on("error", (err) => controller.error(err));
+          },
+          cancel() {
+            fileStream.destroy();
+          },
+        });
 
         return new NextResponse(webStream, {
           status: 206,
@@ -117,7 +49,16 @@ export async function GET(request: NextRequest) {
         });
       } else {
         const fileStream = fs.createReadStream(resolvedPath);
-        const webStream = Readable.toWeb(fileStream) as ReadableStream;
+        const webStream = new ReadableStream({
+          start(controller) {
+            fileStream.on("data", (chunk) => controller.enqueue(chunk));
+            fileStream.on("end", () => controller.close());
+            fileStream.on("error", (err) => controller.error(err));
+          },
+          cancel() {
+            fileStream.destroy();
+          },
+        });
 
         return new NextResponse(webStream, {
           status: 200,

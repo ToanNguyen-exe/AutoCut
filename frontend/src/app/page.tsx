@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SegmentsData, Segment, Sentence, TranscriptData, User, JoinedVideoClip } from "@/types";
-import { getCurrentUser } from "@/lib/auth";
+import { ensureAuthenticated, getCurrentUser } from "@/lib/auth";
 import {
   fetchConfig,
   submitRenderSegments,
@@ -13,8 +13,15 @@ import {
   fetchBackendVideos,
   analyzeVideoWithAutoSync,
   saveProjectToBackend,
+  resolveProtectedStreamUrl,
+  mergeSelectedClipsBackend,
+  getDownloadClipUrl,
+  triggerBrowserDownload,
+  uploadVideoFile,
   API_BASE,
 } from "@/lib/api";
+import { buildMergeClipItems, extractSha256FromStreamUrl } from "@/lib/mergeSelection";
+import { clearAllTimerRefs } from "@/lib/timerManager";
 
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioHeader } from "@/components/StudioHeader";
@@ -43,7 +50,7 @@ import {
   resolvePlayableVideoUrl,
 } from "@/lib/videoLibrary";
 import { getVideoBlob } from "@/lib/videoStorage";
-import { recalculateParts, slugify, formatTime } from "@/lib/utils";
+import { recalculateParts, slugify, formatTime, generateSegmentsFromSentences } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 // Dữ liệu chuẩn theo Bài 08 - Ép kiểu dữ liệu Python matching reference image
@@ -143,6 +150,7 @@ const BAI08_TRANSCRIPT_DATA: TranscriptData = {
 const syncLibraryCardsFromLibrary = (items: VideoLibraryItem[]): LibraryVideoCard[] => {
   return items.map((item, idx) => ({
     id: item.id || `lib_${idx}`,
+    videoId: item.videoId,
     title: item.title || item.lesson || item.name,
     fileName: item.name,
     durationStr: formatTime(item.duration),
@@ -169,9 +177,10 @@ const INITIAL_JOINED_VIDEOS: JoinedVideoClip[] = [
   },
 ];
 
+
 function normalizeContiguousSegments(segments: Segment[], totalDuration: number): Segment[] {
   if (!segments || segments.length === 0) return segments;
-  const rawResult: Segment[] = [];
+  const result: Segment[] = [];
   let currentStart = 0.0;
   const dur = Math.max(1, totalDuration);
 
@@ -185,62 +194,28 @@ function normalizeContiguousSegments(segments: Segment[], totalDuration: number)
       end = Number(dur.toFixed(1));
     } else {
       const nextSeg = segments[i + 1];
-      // Khoảng chết/khoảng lặng giữa 2 phân đoạn mặc định nối trọn vẹn vào cuối phân đoạn trước,
-      // giúp phân đoạn kế tiếp bắt đầu chuẩn xác theo mốc thời gian câu nói thực tế
+      // Nếu có khoảng trống giữa đoạn hiện tại và đoạn kế tiếp (nextSeg.start > s.end)
       if (nextSeg && nextSeg.start > s.end) {
-        end = Number(nextSeg.start.toFixed(1));
+        end = Number(((s.end + nextSeg.start) / 2).toFixed(1));
       } else {
         end = Number(s.end.toFixed(1));
       }
     }
 
     if (end <= start) {
-      end = Number((start + Math.max(5, (dur - start) / (segments.length - i))).toFixed(1));
+      end = Number((start + Math.max(1, (dur - start) / (segments.length - i))).toFixed(1));
     }
     currentStart = end;
 
     const sectionFolder = `${s.section_no.toString().padStart(2, "0")}_${s.section.replace(/\s+/g, "")}`;
-    rawResult.push({
+    result.push({
       ...s,
       start,
       end,
       parts: recalculateParts(start, end, sectionFolder, s.topic_no, s.slug),
     });
   }
-
-  // Loại bỏ triệt để các phân đoạn ngắn vô nghĩa (dưới 5s hoặc 1s không có ý nghĩa)
-  const merged: Segment[] = [];
-  for (const seg of rawResult) {
-    const segDur = seg.end - seg.start;
-    if (segDur < 5.0 && merged.length > 0 && dur > 15.0) {
-      // Gộp vào phân đoạn ngay trước đó
-      const prev = merged[merged.length - 1];
-      prev.end = seg.end;
-      const secFolder = `${prev.section_no.toString().padStart(2, "0")}_${prev.section.replace(/\s+/g, "")}`;
-      prev.parts = recalculateParts(prev.start, prev.end, secFolder, prev.topic_no, prev.slug);
-    } else {
-      merged.push(seg);
-    }
-  }
-
-  // Nếu đoạn đầu tiên bị ngắn dưới 5s và có đoạn sau thì gộp vào đoạn sau
-  if (merged.length > 1 && (merged[0].end - merged[0].start) < 5.0 && dur > 15.0) {
-    const first = merged.shift()!;
-    merged[0].start = first.start;
-    const secFolder = `${merged[0].section_no.toString().padStart(2, "0")}_${merged[0].section.replace(/\s+/g, "")}`;
-    merged[0].parts = recalculateParts(merged[0].start, merged[0].end, secFolder, merged[0].topic_no, merged[0].slug);
-  }
-
-  // Đánh lại số thứ tự phân đoạn liên tục
-  return merged.map((s, idx) => {
-    const topicNo = idx + 1;
-    const secFolder = `${s.section_no.toString().padStart(2, "0")}_${s.section.replace(/\s+/g, "")}`;
-    return {
-      ...s,
-      topic_no: topicNo,
-      parts: recalculateParts(s.start, s.end, secFolder, topicNo, s.slug),
-    };
-  });
+  return result;
 }
 
 function normalizeTranscript(trans: TranscriptData | undefined, totalDur: number): TranscriptData | undefined {
@@ -265,8 +240,6 @@ export default function Home() {
   const [transcript, setTranscript] = useState<TranscriptData | undefined>(BAI08_TRANSCRIPT_DATA);
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeSegmentId, setActiveSegmentId] = useState<string | undefined>("seg_01");
   const [isRendering, setIsRendering] = useState<boolean>(false);
@@ -274,6 +247,7 @@ export default function Home() {
   const [isAddVideoOpen, setIsAddVideoOpen] = useState<boolean>(false);
   const [externalVideoUrl, setExternalVideoUrl] = useState<string | null>("/videos/Bai08_Ep_kieu_du_lieu.mp4");
   const [currentVideoHash, setCurrentVideoHash] = useState<string>("");
+  const [currentVideoId, setCurrentVideoId] = useState<number | undefined>(undefined);
   const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
   const [videoLibrary, setVideoLibrary] = useState<VideoLibraryItem[]>([]);
   const [undoStack, setUndoStack] = useState<Segment[][]>([]);
@@ -297,7 +271,11 @@ export default function Home() {
   const [analysisProgress, setAnalysisProgress] = useState<number>(0);
   const [analysisStep, setAnalysisStep] = useState<string>("");
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const renderTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const analyzeTickerRef = useRef<NodeJS.Timeout | null>(null);
+  const mergeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isMergingClips, setIsMergingClips] = useState<boolean>(false);
 
   // Tiến độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
@@ -346,36 +324,30 @@ export default function Home() {
     showToast("success", `✓ Đã cập nhật màu nền giao diện mới: ${color.toUpperCase()}`);
   }, [showToast]);
 
-  // Check login authentication
+  // Check login authentication and restore in-memory JWT via HttpOnly refresh cookie
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      router.push("/login");
-    } else {
-      setCurrentUser(user);
+    let active = true;
+    const cachedUser = getCurrentUser();
+    if (cachedUser) {
+      setCurrentUser(cachedUser);
     }
+    ensureAuthenticated().then((user) => {
+      if (!active) return;
+      if (!user) {
+        router.push("/login");
+      } else {
+        setCurrentUser(user);
+      }
+    });
     return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      active = false;
+      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef, mergeTimerRef]);
     };
   }, [router]);
 
   // 1. Phục hồi Active Session từ localStorage & IndexedDB ngay khi mount (F5)
   useEffect(() => {
     let isCancelled = false;
-    const restoredBlobUrls = new Set<string>();
-    const blobUrlRequests = new Map<string, Promise<string | null>>();
-    const restoreBlobUrl = (name: string): Promise<string | null> => {
-      const existing = blobUrlRequests.get(name);
-      if (existing) return existing;
-      const request = getVideoBlob(name).then((blob) => {
-        if (!blob || isCancelled) return null;
-        const url = URL.createObjectURL(blob);
-        restoredBlobUrls.add(url);
-        return url;
-      });
-      blobUrlRequests.set(name, request);
-      return request;
-    };
 
     async function restoreSessionAndLoad() {
       let restored = false;
@@ -397,7 +369,21 @@ export default function Home() {
               const validSegments = saved.data.segments.filter(
                 (s: Segment) => s && typeof s.start === "number" && typeof s.end === "number"
               );
-              setData({ ...saved.data, segments: validSegments.length > 0 ? validSegments : saved.data.segments });
+              let restoredVidId: number | undefined = undefined;
+              if (typeof saved.videoId === "number") {
+                restoredVidId = saved.videoId;
+              } else if (typeof saved.data?.videoId === "number") {
+                restoredVidId = saved.data.videoId;
+              }
+              if (restoredVidId !== undefined) {
+                setCurrentVideoId(restoredVidId);
+              }
+
+              setData({
+                ...saved.data,
+                videoId: restoredVidId ?? saved.data?.videoId,
+                segments: validSegments.length > 0 ? validSegments : saved.data.segments
+              });
               restoredVideoName = saved.data.video;
               restoredTotalDur = totalDur;
               if (saved.transcript) {
@@ -432,11 +418,11 @@ export default function Home() {
         let finalUrl: string | null = null;
         if (!restoredUrl || restoredUrl.startsWith("blob:") || restoredUrl.includes("commondatastorage.googleapis.com")) {
           // Thử lấy blob từ IndexedDB để tạo lại object URL mới
-          const cachedUrl = await restoreBlobUrl(restoredVideoName);
-          if (cachedUrl && !isCancelled) {
-            finalUrl = cachedUrl;
+          const cachedBlob = await getVideoBlob(restoredVideoName);
+          if (cachedBlob && !isCancelled) {
+            finalUrl = URL.createObjectURL(cachedBlob);
           } else if (restoredHash) {
-            finalUrl = `${API_BASE}/stream/${restoredHash}`;
+            finalUrl = await resolveProtectedStreamUrl(`${API_BASE}/stream/${restoredHash}`);
           } else {
             finalUrl = resolvePlayableVideoUrl(restoredUrl || undefined, restoredVideoName);
           }
@@ -453,9 +439,9 @@ export default function Home() {
               restoredJoinedVideos.map(async (clip, idx) => {
                 let clipUrl = clip.url;
                 if (!clipUrl || clipUrl.startsWith("blob:") || clipUrl.includes("commondatastorage.googleapis.com")) {
-                  const cachedUrl = await restoreBlobUrl(clip.fileName);
-                  if (cachedUrl) {
-                    clipUrl = cachedUrl;
+                  const blob = await getVideoBlob(clip.fileName);
+                  if (blob) {
+                    clipUrl = URL.createObjectURL(blob);
                   } else if (idx === 0 && finalUrl) {
                     clipUrl = finalUrl;
                   } else {
@@ -499,14 +485,19 @@ export default function Home() {
         const loadedLib = getLibraryVideos();
         const refreshedLib = await Promise.all(
           loadedLib.map(async (item) => {
-            if (item.url && item.url.startsWith("blob:")) {
-              const cachedUrl = await restoreBlobUrl(item.name);
-              if (cachedUrl) {
-                return { ...item, url: cachedUrl };
+            let itemUrl = item.url;
+            if (itemUrl && itemUrl.startsWith("blob:")) {
+              const b = await getVideoBlob(item.name);
+              if (b) {
+                itemUrl = URL.createObjectURL(b);
+              } else {
+                itemUrl = resolvePlayableVideoUrl(undefined, item.name);
               }
-              return { ...item, url: resolvePlayableVideoUrl(undefined, item.name) };
             }
-            return item;
+            return {
+              ...item,
+              url: itemUrl,
+            };
           })
         );
         setVideoLibrary(refreshedLib);
@@ -531,6 +522,7 @@ export default function Home() {
         ) {
           const dbItems: VideoLibraryItem[] = backendVidsRes.data.map((item, idx) => ({
             id: `backend_vid_${item.id || idx}`,
+            videoId: item.id,
             name: item.fileName,
             lesson: item.fileName.replace(/\.[^/.]+$/, ""),
             title: item.fileName.replace(/\.[^/.]+$/, ""),
@@ -561,7 +553,6 @@ export default function Home() {
 
     return () => {
       isCancelled = true;
-      restoredBlobUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -589,31 +580,34 @@ export default function Home() {
     if (typeof window === "undefined") return;
     if (!data || !data.video) return;
 
-    const timer = window.setTimeout(() => {
-      try {
-        const sessionData = {
-          data,
-          transcript,
-          externalVideoUrl,
-          currentVideoHash,
-          activeSegmentId,
-          currentTime: currentTimeRef.current,
-          joinedVideos,
-        };
-        localStorage.setItem("autocut_active_session", JSON.stringify(sessionData));
-      } catch (e) {
-        console.warn("Khong the ghi session vao localStorage:", e);
-      }
-    }, 1500);
-    return () => window.clearTimeout(timer);
+    try {
+      const activeVidId = data.videoId ?? currentVideoId;
+      const sessionData = {
+        videoId: activeVidId,
+        data: {
+          ...data,
+          videoId: activeVidId,
+        },
+        transcript,
+        externalVideoUrl,
+        currentVideoHash,
+        activeSegmentId,
+        currentTime,
+        joinedVideos,
+      };
+      localStorage.setItem("autocut_active_session", JSON.stringify(sessionData));
+    } catch (e) {
+      console.warn("Khong the ghi session vao localStorage:", e);
+    }
   }, [
     isSessionLoaded,
     data,
+    currentVideoId,
     transcript,
     externalVideoUrl,
     currentVideoHash,
     activeSegmentId,
-    isPlaying,
+    currentTime,
     joinedVideos,
   ]);
 
@@ -759,33 +753,21 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSaveProject]);
 
-  const handleOpenExportModal = () => {
-    setIsRendering(false);
-    setProgressModalMode("render");
-    setRenderedClips([]);
-    setProgressPercent(0);
-    setProgressError(null);
-    setIsProgressModalOpen(true);
-  };
-
-  const handleStartRender = async (selectedSegments: Segment[]) => {
-    if (!selectedSegments || selectedSegments.length === 0) {
-      showToast("error", "Vui lòng chọn ít nhất 1 phân đoạn để tải về!");
-      return;
-    }
+  const handleRender = async () => {
     setIsRendering(true);
+    setIsProgressModalOpen(true);
     setProgressModalMode("render");
     setProgressPercent(15);
     setProgressError(null);
     setRenderedClips([]);
     setRenderedOutputDir("");
-    setProgressActionText(`Đang khởi tạo cắt ${selectedSegments.length} phân đoạn đã chọn...`);
+    setProgressActionText("Đang khởi tạo kế hoạch cắt FFmpeg & nạp cấu hình padding...");
 
     const initialSteps: ProgressStep[] = [
       {
         id: "step-plan",
         title: "1. Khởi tạo danh sách phân đoạn",
-        description: `Áp dụng padding âm thanh cho ${selectedSegments.length} phân đoạn được chọn.`,
+        description: `Áp dụng padding_start (0.3s) và padding_end (0.5s) kẹp biên [0, duration] cho ${data.segments.length} phân đoạn.`,
         status: "running",
       },
       {
@@ -797,7 +779,7 @@ export default function Home() {
       {
         id: "step-output",
         title: "3. Đóng gói & tạo liên kết tải file xuất bản",
-        description: "Tạo liên kết tải trực tiếp về máy tính.",
+        description: "Lưu tại thư mục output và sẵn sàng tải về máy tính.",
         status: "pending",
       },
     ];
@@ -805,17 +787,18 @@ export default function Home() {
 
     // Tự động tăng phần trăm nhịp nhàng để người dùng thấy rõ tiến trình
     let currentP = 20;
-    const progressTimer = setInterval(() => {
+    if (renderTimerRef.current) clearInterval(renderTimerRef.current);
+    renderTimerRef.current = setInterval(() => {
       currentP = Math.min(88, currentP + Math.floor(Math.random() * 8) + 3);
       setProgressPercent(currentP);
       if (currentP > 30 && currentP < 85) {
         const segIdx = Math.min(
-          selectedSegments.length - 1,
-          Math.floor(((currentP - 30) / 55) * selectedSegments.length)
+          data.segments.length - 1,
+          Math.floor(((currentP - 30) / 55) * data.segments.length)
         );
-        const activeSeg = selectedSegments[segIdx];
+        const activeSeg = data.segments[segIdx];
         setProgressActionText(
-          `Đang cắt clip #${segIdx + 1}/${selectedSegments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
+          `Đang cắt clip #${segIdx + 1}/${data.segments.length}: ${activeSeg?.topic || "Phân đoạn"}...`
         );
         setProgressSteps((prev) =>
           prev.map((s) => {
@@ -828,12 +811,11 @@ export default function Home() {
     }, 700);
 
     try {
-      const result = await submitRenderSegments({
-        ...data,
-        segments: selectedSegments,
-        reviewed: true,
-      });
-      clearInterval(progressTimer);
+      const result = await submitRenderSegments({ ...data, reviewed: true });
+      if (renderTimerRef.current) {
+        clearInterval(renderTimerRef.current);
+        renderTimerRef.current = null;
+      }
 
       if (result.success) {
         setProgressPercent(100);
@@ -844,12 +826,12 @@ export default function Home() {
         setRenderedClips(result.renderedFiles || []);
         setRenderedOutputDir(result.outputDirectory || "");
         setTotalRenderedCount(
-          result.totalRendered || result.renderedFiles?.length || selectedSegments.length
+          result.totalRendered || result.renderedFiles?.length || data.segments.length
         );
 
         showToast(
           "success",
-          `Đã cắt xong ${selectedSegments.length} phân đoạn! File đang được tải trực tiếp về máy tính của bạn.`
+          `${result.message} ${result.savedPlan ? `(Lưu tại: ${result.savedPlan})` : ""}`
         );
       } else {
         setProgressPercent(60);
@@ -860,11 +842,188 @@ export default function Home() {
         showToast("error", `Lỗi: ${result.message}`);
       }
     } catch (err) {
-      clearInterval(progressTimer);
+      if (renderTimerRef.current) {
+        clearInterval(renderTimerRef.current);
+        renderTimerRef.current = null;
+      }
       setProgressError(
         err instanceof Error ? err.message : "Lỗi ngoại lệ khi cắt video"
       );
     } finally {
+      if (renderTimerRef.current) clearInterval(renderTimerRef.current);
+      renderTimerRef.current = null;
+      setIsRendering(false);
+    }
+  };
+
+  const handleMergeSelectedClips = async (selectedSegments: Segment[]): Promise<boolean> => {
+    if (selectedSegments.length < 2) {
+      showToast("info", "Vui lòng tích chọn ít nhất 2 phân đoạn trên timeline để gộp!");
+      return false;
+    }
+    if (isMergingClips) return false;
+
+    setIsMergingClips(true);
+    setIsRendering(true);
+    setIsProgressModalOpen(true);
+    setProgressModalMode("render");
+    setProgressPercent(18);
+    setProgressError(null);
+    setRenderedClips([]);
+    setRenderedOutputDir("");
+    setProgressActionText(`Đang cắt & ghép ${selectedSegments.length} phân đoạn đã chọn thành 1 video MP4...`);
+    setProgressSteps([
+      {
+        id: "merge-cut",
+        title: `1. Cắt ${selectedSegments.length} phân đoạn đã chọn`,
+        description: selectedSegments.map((s) => s.topic).join(" • "),
+        status: "running",
+      },
+      {
+        id: "merge-concat",
+        title: "2. Ghép nối thành 1 tệp video MP4 hoàn chỉnh",
+        description: "Ghép liên tục theo đúng thứ tự trên timeline và chuẩn bị liên kết tải về.",
+        status: "pending",
+      },
+    ]);
+
+    if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
+    let pct = 18;
+    mergeTimerRef.current = setInterval(() => {
+      pct = Math.min(88, pct + Math.floor(Math.random() * 8) + 4);
+      setProgressPercent(pct);
+      if (pct >= 55) {
+        setProgressSteps((prev) =>
+          prev.map((s) =>
+            s.id === "merge-cut"
+              ? { ...s, status: "completed" }
+              : s.id === "merge-concat"
+              ? { ...s, status: "running" }
+              : s
+          )
+        );
+      }
+    }, 600);
+
+    try {
+      let mergeItems = buildMergeClipItems(selectedSegments, joinedVideos, {
+        videoName: data.video,
+        videoUrl: externalVideoUrl || undefined,
+        videoHash: currentVideoHash || undefined,
+      });
+
+      // Nếu có clip cục bộ (blob:) chưa nằm trên backend uploads/, tự đồng bộ lên trước khi cắt
+      const uploadedByName = new Map<string, { sha256: string; cloudUrl?: string }>();
+      for (const item of mergeItems) {
+        if (item.videoUrl?.startsWith("blob:") && !item.videoHash && item.videoName && !uploadedByName.has(item.videoName)) {
+          const blob = await getVideoBlob(item.videoName).catch(() => null);
+          if (blob && blob.size > 0) {
+            const uploadTarget =
+              typeof File !== "undefined" && blob instanceof File
+                ? blob
+                : new File([blob], item.videoName, { type: blob.type || "video/mp4" });
+            const up = await uploadVideoFile(uploadTarget);
+            if (up.source === "api" && up.data?.sha256) {
+              uploadedByName.set(item.videoName, {
+                sha256: up.data.sha256,
+                cloudUrl: up.data.cloud_url,
+              });
+            }
+          }
+        }
+      }
+      if (uploadedByName.size > 0) {
+        mergeItems = mergeItems.map((it) => {
+          const synced = uploadedByName.get(it.videoName);
+          return synced
+            ? { ...it, videoHash: synced.sha256, videoUrl: synced.cloudUrl || it.videoUrl }
+            : it;
+        });
+      }
+
+      const lessonTitle = data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips";
+      let result = await mergeSelectedClipsBackend({
+        videoName: data.video,
+        videoHash: currentVideoHash || undefined,
+        videoUrl: externalVideoUrl || undefined,
+        lesson: lessonTitle,
+        user: currentUser?.id || currentUser?.username || "admin",
+        segments: mergeItems,
+      });
+
+      // Dự phòng 1 lần: nếu backend báo chưa thấy file nguồn nhưng IndexedDB còn blob, upload rồi thử lại
+      if (result.source !== "api" && result.error?.includes("Không tìm thấy video nguồn")) {
+        const localBlob = await getVideoBlob(data.video).catch(() => null);
+        if (localBlob && localBlob.size > 0) {
+          const uploadTarget =
+            typeof File !== "undefined" && localBlob instanceof File
+              ? localBlob
+              : new File([localBlob], data.video, { type: localBlob.type || "video/mp4" });
+          const up = await uploadVideoFile(uploadTarget);
+          if (up.source === "api" && up.data?.sha256) {
+            setCurrentVideoHash(up.data.sha256);
+            mergeItems = mergeItems.map((it) => ({
+              ...it,
+              videoHash: up.data!.sha256,
+              videoUrl: up.data!.cloud_url || it.videoUrl,
+            }));
+            result = await mergeSelectedClipsBackend({
+              videoName: data.video,
+              videoHash: up.data.sha256,
+              videoUrl: up.data.cloud_url || externalVideoUrl || undefined,
+              lesson: lessonTitle,
+              user: currentUser?.id || currentUser?.username || "admin",
+              segments: mergeItems,
+            });
+          }
+        }
+      }
+
+      if (mergeTimerRef.current) {
+        clearInterval(mergeTimerRef.current);
+        mergeTimerRef.current = null;
+      }
+
+      if (result.source === "api" && result.data) {
+        const merged = result.data;
+        const friendlyFileName = `${slugify(lessonTitle) || "merged"}_ghep_${merged.mergedCount}_doan.mp4`;
+        setProgressPercent(100);
+        setProgressActionText(merged.message || `Đã gộp ${merged.mergedCount} đoạn thành 1 video MP4!`);
+        setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+        setRenderedClips([
+          {
+            file: friendlyFileName,
+            path: merged.outputFile,
+            sizeBytes: merged.outputSizeBytes || 0,
+            executionMs: merged.executionTimeMs || 0,
+          },
+        ]);
+        setRenderedOutputDir("output/combined");
+        setTotalRenderedCount(1);
+
+        const downloadHref = merged.protectedDownloadUrl || getDownloadClipUrl(merged.outputFile);
+        if (downloadHref) {
+          triggerBrowserDownload(downloadHref, friendlyFileName);
+        }
+        showToast("success", merged.message || "Đã gộp thành công thành 1 video MP4!");
+        return true;
+      } else {
+        setProgressPercent(60);
+        setProgressError(result.error || "Không thể gộp các phân đoạn đã chọn");
+        setProgressSteps((prev) =>
+          prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+        );
+        showToast("error", `Lỗi gộp video: ${result.error || "Thất bại"}`);
+        return false;
+      }
+    } catch (err) {
+      setProgressError(err instanceof Error ? err.message : "Lỗi ngoại lệ khi gộp video");
+      showToast("error", "Đã xảy ra lỗi khi gộp các đoạn video đã chọn.");
+      return false;
+    } finally {
+      if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
+      mergeTimerRef.current = null;
+      setIsMergingClips(false);
       setIsRendering(false);
     }
   };
@@ -932,7 +1091,9 @@ export default function Home() {
   }, []);
 
   const handleAddVideo = async (newVideo: NewVideoData) => {
-    setExternalVideoUrl(newVideo.url);
+    const authorizedUrl = await resolveProtectedStreamUrl(newVideo.url);
+    setExternalVideoUrl(authorizedUrl);
+    setCurrentVideoId(newVideo.videoId);
     if (newVideo.sha256) {
       setCurrentVideoHash(newVideo.sha256);
     } else {
@@ -945,7 +1106,10 @@ export default function Home() {
 
     // Nếu AI đã phân tích khi upload: nạp ngay transcript và segments
     if (newVideo.segmentsData && newVideo.segmentsData.segments.length > 0) {
-      setData(newVideo.segmentsData);
+      setData({
+        ...newVideo.segmentsData,
+        videoId: newVideo.videoId ?? newVideo.segmentsData.videoId,
+      });
       if (newVideo.transcript) {
         setTranscript(newVideo.transcript);
       }
@@ -954,6 +1118,7 @@ export default function Home() {
       setJoinedVideos([
         {
           id: `clip_${Date.now()}`,
+          videoId: newVideo.videoId,
           title: lessonTitle,
           fileName: newVideo.name,
           url: newVideo.url,
@@ -965,6 +1130,7 @@ export default function Home() {
 
       const libItem: VideoLibraryItem = {
         id: `vid_${Date.now()}`,
+        videoId: newVideo.videoId,
         name: newVideo.name,
         lesson: lessonTitle,
         title: lessonTitle,
@@ -1018,6 +1184,7 @@ export default function Home() {
 
     // Đặt mode = "raw" (Chưa phân tích)
     setData({
+      videoId: newVideo.videoId,
       video: newVideo.name,
       lesson: lessonTitle,
       mode: "raw",
@@ -1028,6 +1195,7 @@ export default function Home() {
     setJoinedVideos([
       {
         id: `clip_${Date.now()}`,
+        videoId: newVideo.videoId,
         title: lessonTitle,
         fileName: newVideo.name,
         url: newVideo.url,
@@ -1043,6 +1211,7 @@ export default function Home() {
     // Lưu video mới vào thư viện video
     const libItem: VideoLibraryItem = {
       id: `vid_${Date.now()}`,
+      videoId: newVideo.videoId,
       name: newVideo.name,
       lesson: lessonTitle,
       title: lessonTitle,
@@ -1102,6 +1271,7 @@ export default function Home() {
     );
 
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    if (analyzeTickerRef.current) clearInterval(analyzeTickerRef.current);
     const startTime = Date.now();
     progressTimerRef.current = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
@@ -1162,7 +1332,7 @@ export default function Home() {
     setProgressSteps(initialSteps);
 
     let tickerP = 15;
-    const ticker = setInterval(() => {
+    analyzeTickerRef.current = setInterval(() => {
       tickerP = Math.min(85, tickerP + Math.floor(Math.random() * 8) + 4);
       setProgressPercent(tickerP);
       if (tickerP >= 30 && tickerP < 60) {
@@ -1186,38 +1356,37 @@ export default function Home() {
       }
     }, 600);
 
-    const totalSecs = Math.max(
-      1,
-      Number(
-        (joinedVideos && joinedVideos.length > 0
-          ? joinedVideos.reduce((max, v) => Math.max(max, v.endOffset), 0)
-          : data.segments.reduce((max, s) => Math.max(max, s.end), 0)
-        ).toFixed(1)
-      )
-    );
+    try {
+      const totalSecs = Math.max(
+        5,
+        data.segments.reduce((max, s) => Math.max(max, s.end), 0)
+      );
 
-    const finalizeAnalysisSuccess = async (segCount: number, sentCount: number) => {
-      clearInterval(ticker);
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-        progressTimerRef.current = null;
-      }
-      setAnalysisProgress(100);
-      setAnalysisStep("✓ Hoàn tất phân tích AI 100%!");
-      setProgressPercent(100);
-      setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn và bóc băng ${sentCount} câu thoại!`);
-      setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
-      await new Promise((r) => setTimeout(r, 450));
-      setIsAnalyzing(false);
-      setAnalysisProgress(0);
-      setAnalysisStep("");
-    };
+      const finalizeAnalysisSuccess = async (segCount: number, sentCount: number) => {
+        if (analyzeTickerRef.current) {
+          clearInterval(analyzeTickerRef.current);
+          analyzeTickerRef.current = null;
+        }
+        if (progressTimerRef.current) {
+          clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
+        setAnalysisProgress(100);
+        setAnalysisStep("✓ Hoàn tất phân tích AI 100%!");
+        setProgressPercent(100);
+        setProgressActionText(`Đã hoàn tất phân tích ${segCount} phân đoạn và bóc băng ${sentCount} câu thoại!`);
+        setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+        await new Promise((r) => setTimeout(r, 450));
+        setIsAnalyzing(false);
+        setAnalysisProgress(0);
+        setAnalysisStep("");
+      };
 
-    // Danh sách toàn bộ các video trên Timeline cần phân tích
-    const clipsToAnalyze: JoinedVideoClip[] =
-      joinedVideos && joinedVideos.length > 0
-        ? joinedVideos
-        : [
+      // Danh sách toàn bộ các video trên Timeline cần phân tích
+      const clipsToAnalyze: JoinedVideoClip[] =
+        joinedVideos && joinedVideos.length > 0
+          ? joinedVideos
+          : [
             {
               id: `clip_${Date.now()}`,
               title: data.lesson,
@@ -1229,285 +1398,269 @@ export default function Home() {
             },
           ];
 
-    const libVideos = getLibraryVideos();
-    const analyzedClipsData: Array<{
-      clip: JoinedVideoClip;
-      segments: Segment[];
-      sentences: Sentence[];
-    }> = [];
+      const libVideos = getLibraryVideos();
+      const analyzedClipsData: Array<{
+        clip: JoinedVideoClip;
+        segments: Segment[];
+        sentences: Sentence[];
+      }> = [];
 
-    for (let i = 0; i < clipsToAnalyze.length; i++) {
-      const clip = clipsToAnalyze[i];
-      const clipDur = Math.max(1, clip.duration || 60);
-      let clipSentences: Sentence[] = [];
-      let clipSegments: Segment[] = [];
+      for (let i = 0; i < clipsToAnalyze.length; i++) {
+        const clip = clipsToAnalyze[i];
+        const clipDur = Math.max(1, clip.duration || 60);
+        let clipSentences: Sentence[] = [];
+        let clipSegments: Segment[] = [];
 
-      // 1. ƯU TIÊN SỐ 1: Gọi trực tiếp Backend AI Spring Boot (/api/video/analyze) để chạy Gemini Segmenter
-      // Nếu uploads/ thiếu tệp nhưng trình duyệt còn giữ video trong IndexedDB, tự động đồng bộ lên Backend rồi thử lại.
-      const videoUrlToSend = clip.url || externalVideoUrl || undefined;
-      let backendHttpError: string | null = null;
+        // 1. ƯU TIÊN SỐ 1: Gọi trực tiếp Backend AI Spring Boot (/api/video/analyze) để chạy Gemini Segmenter
+        // Nếu uploads/ thiếu tệp nhưng trình duyệt còn giữ video trong IndexedDB, tự động đồng bộ lên Backend rồi thử lại.
+        const videoUrlToSend = clip.url || externalVideoUrl || undefined;
+        let backendHttpError: string | null = null;
 
-      try {
-        const syncResult = await analyzeVideoWithAutoSync({
-          videoName: clip.fileName,
-          lesson: clip.title,
-          duration: clipDur,
-          hash: currentVideoHash || undefined,
-          force: shouldForce,
-          url: videoUrlToSend,
-          getLocalBlob: () => getVideoBlob(clip.fileName),
-        });
-        if (syncResult.syncedHash && syncResult.syncedHash !== currentVideoHash) {
-          setCurrentVideoHash(syncResult.syncedHash);
-        }
-        if (
-          syncResult.syncedUrl &&
-          syncResult.syncedUrl !== externalVideoUrl &&
-          !syncResult.syncedUrl.startsWith("blob:")
-        ) {
-          setExternalVideoUrl(syncResult.syncedUrl);
-        }
-        const res = syncResult.response;
-        if (
-          res.source === "api" &&
-          res.data?.status === "SUCCESS" &&
-          res.data?.segmentsData?.segments &&
-          res.data.segmentsData.segments.length > 0
-        ) {
-          clipSegments = res.data.segmentsData.segments;
-          clipSentences = res.data.transcript?.sentences || [];
-        } else if (res.status !== undefined) {
-          backendHttpError = res.error || `Backend AI trả về lỗi HTTP ${res.status}`;
-        }
-      } catch (backendErr) {
-        console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
-      }
-
-      if (clipSegments.length === 0 && backendHttpError) {
-        clearInterval(ticker);
-        if (progressTimerRef.current) {
-          clearInterval(progressTimerRef.current);
-          progressTimerRef.current = null;
-        }
-        setIsAnalyzing(false);
-        setProgressPercent(100);
-        setProgressError(backendHttpError);
-        setProgressActionText("Phân tích AI trên Backend gặp lỗi.");
-        showToast("error", `❌ Lỗi phân tích AI: ${backendHttpError}`);
-        return;
-      }
-
-      // 2. Dự phòng: Nếu Backend offline và KHÔNG bật forceRefresh, kiểm tra cache trong thư viện video (videoLibrary)
-      if (clipSegments.length === 0 && !shouldForce && data.mode !== "raw") {
-        const matchedLib = libVideos.find(
-          (v) =>
-            v.name &&
-            v.name.toLowerCase() === clip.fileName.toLowerCase() &&
-            v.status === "edited" &&
-            v.transcript?.sentences &&
-            v.transcript.sentences.length > 1
-        );
-
-        if (matchedLib?.segments && matchedLib.segments.length > 0) {
-          clipSegments = matchedLib.segments;
-          clipSentences = matchedLib.transcript?.sentences || [];
-        }
-      }
-
-      // 3. Dự phòng: Gọi route handler /api/groq nếu vẫn chưa có phân đoạn
-      if (clipSegments.length === 0) {
         try {
-          const groqFormData = new FormData();
-          groqFormData.append("videoName", clip.fileName);
-          groqFormData.append("lesson", clip.title);
-          if (shouldForce) {
-            groqFormData.append("force", "true");
-          }
-          if (currentVideoHash) {
-            groqFormData.append("hash", currentVideoHash);
-          }
-          if (videoUrlToSend) {
-            groqFormData.append("url", videoUrlToSend);
-          }
-          const localBlob = await getVideoBlob(clip.fileName);
-          if (localBlob) {
-            groqFormData.append("file", localBlob, clip.fileName);
-          }
-
-          const groqResp = await fetch("/api/groq", {
-            method: "POST",
-            body: groqFormData,
+          const clipHash =
+            extractSha256FromStreamUrl(clip.url) ||
+            (i === 0 && !clip.url?.includes("/videos/") ? currentVideoHash : undefined);
+          const syncResult = await analyzeVideoWithAutoSync({
+            videoName: clip.fileName,
+            lesson: clip.title,
+            duration: clipDur,
+            hash: clipHash || undefined,
+            force: shouldForce,
+            url: videoUrlToSend,
+            getLocalBlob: () => getVideoBlob(clip.fileName),
           });
-
-          if (groqResp.ok) {
-            const groqJson = await groqResp.json();
-            if (groqJson.segmentsData?.segments && groqJson.segmentsData.segments.length > 0) {
-              clipSegments = groqJson.segmentsData.segments;
-            }
-            if (clipSentences.length === 0 && groqJson.transcript?.sentences && groqJson.transcript.sentences.length > 0) {
-              clipSentences = groqJson.transcript.sentences;
-            }
+          if (syncResult.syncedHash && syncResult.syncedHash !== currentVideoHash) {
+            setCurrentVideoHash(syncResult.syncedHash);
           }
-        } catch (groqErr) {
-          console.warn(`Groq API warning cho video "${clip.fileName}":`, groqErr);
+          if (
+            syncResult.syncedUrl &&
+            syncResult.syncedUrl !== externalVideoUrl &&
+            !syncResult.syncedUrl.startsWith("blob:")
+          ) {
+            const authorizedSyncUrl = await resolveProtectedStreamUrl(syncResult.syncedUrl);
+            setExternalVideoUrl(authorizedSyncUrl);
+          }
+          const res = syncResult.response;
+          if (
+            res.source === "api" &&
+            res.data?.status === "SUCCESS" &&
+            res.data?.segmentsData?.segments &&
+            res.data.segmentsData.segments.length > 0
+          ) {
+            clipSegments = res.data.segmentsData.segments;
+            clipSentences = res.data.transcript?.sentences || [];
+          } else if (res.status !== undefined) {
+            backendHttpError = res.error || `Backend AI trả về lỗi HTTP ${res.status}`;
+          }
+        } catch (backendErr) {
+          console.warn(`Backend AI warning cho video "${clip.fileName}":`, backendErr);
         }
+
+        if (clipSegments.length === 0 && backendHttpError) {
+          setProgressPercent(100);
+          setProgressError(backendHttpError);
+          setProgressActionText("Phân tích AI trên Backend gặp lỗi.");
+          showToast("error", `❌ Lỗi phân tích AI: ${backendHttpError}`);
+          return;
+        }
+
+        // 2. Dự phòng: Nếu Backend offline và KHÔNG bật forceRefresh, kiểm tra cache trong thư viện video (videoLibrary)
+        if (clipSegments.length === 0 && !shouldForce && data.mode !== "raw") {
+          const matchedLib = libVideos.find(
+            (v) =>
+              (v.name && v.name.toLowerCase() === clip.fileName.toLowerCase()) ||
+              (v.lesson && v.lesson.toLowerCase() === clip.title.toLowerCase()) ||
+              (v.title && v.title.toLowerCase() === clip.title.toLowerCase())
+          );
+
+          if (matchedLib?.transcript?.sentences && matchedLib.transcript.sentences.length > 0) {
+            clipSentences = matchedLib.transcript.sentences;
+            clipSegments = matchedLib.segments && matchedLib.segments.length > 0 ? matchedLib.segments : [];
+          }
+        }
+
+        // 3. Dự phòng: Gọi Groq Whisper / file transcript API (/api/groq) nếu vẫn chưa có phân đoạn
+        if (clipSegments.length === 0) {
+          try {
+            const groqFormData = new FormData();
+            groqFormData.append("videoName", clip.fileName);
+            groqFormData.append("lesson", clip.title);
+            if (shouldForce) groqFormData.append("force", "true");
+            if (currentVideoHash) groqFormData.append("hash", currentVideoHash);
+            if (videoUrlToSend) groqFormData.append("url", videoUrlToSend);
+            const localBlob = await getVideoBlob(clip.fileName);
+            if (localBlob) {
+              groqFormData.append("file", localBlob, clip.fileName);
+            }
+
+            const groqResp = await fetch("/api/groq", {
+              method: "POST",
+              body: groqFormData,
+            });
+
+            if (groqResp.ok) {
+              const groqJson = await groqResp.json();
+              if (groqJson.segmentsData?.segments && groqJson.segmentsData.segments.length > 0) {
+                clipSegments = groqJson.segmentsData.segments;
+              }
+              if (clipSentences.length === 0 && groqJson.transcript?.sentences && groqJson.transcript.sentences.length > 0) {
+                clipSentences = groqJson.transcript.sentences;
+              }
+            }
+          } catch (groqErr) {
+            console.warn(`Groq API warning cho video "${clip.fileName}":`, groqErr);
+          }
+        }
+
+        // Tự động sinh phân đoạn cho clip nếu chưa có (target 360s, max 420s mỗi đoạn)
+        if (clipSegments.length === 0) {
+          const numSecs = Math.max(1, Math.ceil(clipDur / 360));
+          const step = Number((clipDur / numSecs).toFixed(1));
+          let cStart = 0;
+          for (let s = 1; s <= numSecs; s++) {
+            const cEnd = s === numSecs ? clipDur : Number((cStart + step).toFixed(1));
+            const secTopic = s === 1 ? `Khởi đầu: ${clip.title}` : s === numSecs ? `Tổng kết: ${clip.title}` : `Phần ${s}: ${clip.title}`;
+            const cleanSlug = slugify(secTopic);
+            clipSegments.push({
+              id: `seg_${Date.now()}_${i}_${s}`,
+              section_no: s,
+              section: `0${s}_Doan_${s}`,
+              topic_no: s,
+              topic: secTopic,
+              slug: cleanSlug,
+              start_id: `S${String(s).padStart(4, "0")}`,
+              end_id: `S${String(s).padStart(4, "0")}`,
+              start: cStart,
+              end: cEnd,
+              parts: recalculateParts(cStart, cEnd, `0${s}_Doan_${s}`, s, cleanSlug),
+            });
+            cStart = cEnd;
+          }
+        }
+
+        analyzedClipsData.push({
+          clip,
+          segments: clipSegments,
+          sentences: clipSentences,
+        });
       }
 
-      // Tự động sinh phân đoạn cho clip nếu chưa có (target 360s, max 420s mỗi đoạn)
-      if (clipSegments.length === 0) {
-        const numSecs = Math.max(1, Math.ceil(clipDur / 360));
-        const step = Number((clipDur / numSecs).toFixed(1));
-        let cStart = 0;
-        for (let s = 1; s <= numSecs; s++) {
-          const cEnd = s === numSecs ? clipDur : Number((cStart + step).toFixed(1));
-          const secTopic = s === 1 ? `Khởi đầu: ${clip.title}` : s === numSecs ? `Tổng kết: ${clip.title}` : `Phần ${s}: ${clip.title}`;
-          const cleanSlug = slugify(secTopic);
-          clipSegments.push({
-            id: `seg_${Date.now()}_${i}_${s}`,
-            section_no: s,
-            section: `0${s}_Doan_${s}`,
-            topic_no: s,
-            topic: secTopic,
+      // 5. Offset toàn bộ câu thoại và phân đoạn theo mốc thời gian nối tiếp trên Timeline
+      const allSegments: Segment[] = [];
+      const allSentences: Sentence[] = [];
+      let cumulativeTopicNo = 1;
+      let cumulativeSentNo = 1;
+
+      for (let idx = 0; idx < analyzedClipsData.length; idx++) {
+        const { clip, segments, sentences } = analyzedClipsData[idx];
+        const offset = clip.startOffset;
+        const isAppended = idx > 0;
+        const videoIndex = idx + 1;
+
+        // Offset câu thoại
+        for (const sent of sentences) {
+          const sentStart = Number((offset + (sent.start >= 0 ? sent.start : 0)).toFixed(1));
+          const sentEnd = Number((offset + Math.max(sent.start + 0.5, sent.end)).toFixed(1));
+          allSentences.push({
+            id: `S${String(cumulativeSentNo++).padStart(4, "0")}`,
+            start: sentStart,
+            end: sentEnd,
+            text: sent.text,
+          });
+        }
+
+        // Offset phân đoạn
+        for (let sIdx = 0; sIdx < segments.length; sIdx++) {
+          const seg = segments[sIdx];
+          const segStart = Number((offset + (seg.start >= 0 ? seg.start : 0)).toFixed(1));
+          const segEnd = Number((offset + (seg.end > seg.start ? seg.end : clip.duration)).toFixed(1));
+          const topicNo = cumulativeTopicNo++;
+          const secFolder = `0${videoIndex}_${slugify(clip.title)}`;
+          const cleanSlug = seg.slug || slugify(seg.topic || `muc-${topicNo}`);
+
+          allSegments.push({
+            ...seg,
+            id: `seg_ai_${Date.now()}_${idx}_${sIdx}`,
+            topic_no: topicNo,
+            section_no: seg.section_no || (sIdx + 1),
+            section: seg.section || secFolder,
+            topic: seg.topic,
             slug: cleanSlug,
-            start_id: `S${String(s).padStart(4, "0")}`,
-            end_id: `S${String(s).padStart(4, "0")}`,
-            start: cStart,
-            end: cEnd,
-            parts: recalculateParts(cStart, cEnd, `0${s}_Doan_${s}`, s, cleanSlug),
+            start: segStart,
+            end: segEnd,
+            parts: recalculateParts(segStart, segEnd, secFolder, topicNo, cleanSlug),
+            videoTitle: clip.title,
+            videoIndex: videoIndex,
+            isAppended: isAppended,
           });
-          cStart = cEnd;
         }
-      }
 
-      analyzedClipsData.push({
-        clip,
-        segments: clipSegments,
-        sentences: clipSentences,
-      });
-    }
-
-    // 5. Offset toàn bộ câu thoại và phân đoạn theo mốc thời gian nối tiếp trên Timeline
-    const allSegments: Segment[] = [];
-    const allSentences: Sentence[] = [];
-    let cumulativeTopicNo = 1;
-    let cumulativeSentNo = 1;
-
-    for (let idx = 0; idx < analyzedClipsData.length; idx++) {
-      const { clip, segments, sentences } = analyzedClipsData[idx];
-      const offset = clip.startOffset;
-      const isAppended = idx > 0;
-      const videoIndex = idx + 1;
-
-      // Offset câu thoại
-      for (const sent of sentences) {
-        const sentStart = Number((offset + (sent.start >= 0 ? sent.start : 0)).toFixed(1));
-        const sentEnd = Number((offset + Math.max(sent.start + 0.5, sent.end)).toFixed(1));
-        allSentences.push({
-          id: `S${String(cumulativeSentNo++).padStart(4, "0")}`,
-          start: sentStart,
-          end: sentEnd,
-          text: sent.text,
-        });
-      }
-
-      // Offset phân đoạn
-      for (let sIdx = 0; sIdx < segments.length; sIdx++) {
-        const seg = segments[sIdx];
-        const segStart = Number((offset + (seg.start >= 0 ? seg.start : 0)).toFixed(1));
-        const segEnd = Number((offset + (seg.end > seg.start ? seg.end : clip.duration)).toFixed(1));
-        const topicNo = cumulativeTopicNo++;
-        const secFolder = `0${videoIndex}_${slugify(clip.title)}`;
-        const cleanSlug = seg.slug || slugify(seg.topic || `muc-${topicNo}`);
-
-        allSegments.push({
-          ...seg,
-          id: `seg_ai_${Date.now()}_${idx}_${sIdx}`,
-          topic_no: topicNo,
-          section_no: seg.section_no || (sIdx + 1),
-          section: seg.section || secFolder,
-          topic: seg.topic,
-          slug: cleanSlug,
-          start: segStart,
-          end: segEnd,
-          parts: recalculateParts(segStart, segEnd, secFolder, topicNo, cleanSlug),
-          videoTitle: clip.title,
-          videoIndex: videoIndex,
-          isAppended: isAppended,
-        });
-      }
-
-      // Lưu phân đoạn và transcript riêng lẻ của từng video vào videoLibrary
-      updateVideoSegmentsInLibrary(clip.fileName, segments);
-      const libItem: VideoLibraryItem = {
-        id: `vid_lib_${clip.id}`,
-        name: clip.fileName,
-        lesson: clip.title,
-        title: clip.title,
-        url: clip.url,
-        duration: clip.duration,
-        status: "edited",
-        statusLabel: "Đã phân tích AI",
-        category: idx === 0 ? "Video chính" : "Video nối tiếp",
-        segmentsCount: segments.length,
-        updatedAt: new Date().toLocaleTimeString("vi-VN"),
-        segments: segments,
-        transcript: {
-          video: clip.fileName,
+        // Lưu phân đoạn và transcript riêng lẻ của từng video vào videoLibrary
+        updateVideoSegmentsInLibrary(clip.fileName, segments);
+        const libItem: VideoLibraryItem = {
+          id: `vid_lib_${clip.id}`,
+          videoId: clip.videoId,
+          name: clip.fileName,
+          lesson: clip.title,
+          title: clip.title,
+          url: clip.url,
           duration: clip.duration,
-          sentences: sentences,
-        },
-      };
-      saveVideoToLibrary(libItem);
-    }
-
-    const calculatedTotal = clipsToAnalyze.reduce((sum, c) => Math.max(sum, c.endOffset), 0) || totalSecs;
-    const normalizedSegs = normalizeContiguousSegments(allSegments, calculatedTotal);
-
-    setData((prev) => ({
-      ...prev,
-      mode: "analyzed",
-      reviewed: false,
-      segments: normalizedSegs,
-    }));
-
-    setTranscript({
-      video: data.video,
-      duration: calculatedTotal,
-      sentences: allSentences,
-    });
-
-    if (normalizedSegs.length > 0) {
-      setActiveSegmentId(normalizedSegs[0].id);
-    }
-
-    // BẮT BUỘC: Phải có câu thoại thực tế từ âm thanh video mới coi là PASS!
-    if (allSentences.length === 0) {
-      clearInterval(ticker);
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-        progressTimerRef.current = null;
+          status: "edited",
+          statusLabel: "Đã phân tích AI",
+          category: idx === 0 ? "Video chính" : "Video nối tiếp",
+          segmentsCount: segments.length,
+          updatedAt: new Date().toLocaleTimeString("vi-VN"),
+          segments: segments,
+          transcript: {
+            video: clip.fileName,
+            duration: clip.duration,
+            sentences: sentences,
+          },
+        };
+        saveVideoToLibrary(libItem);
       }
-      setIsAnalyzing(false);
-      setProgressPercent(100);
-      setProgressError("Phân tích không đạt yêu cầu: Chưa trích xuất được câu thoại nào từ âm thanh video!");
-      setProgressActionText("Chưa có câu thoại (0 câu).");
+
+      const calculatedTotal = clipsToAnalyze.reduce((sum, c) => Math.max(sum, c.endOffset), 0) || totalSecs;
+      const normalizedSegs = normalizeContiguousSegments(allSegments, calculatedTotal);
+
+      setData((prev) => ({
+        ...prev,
+        mode: "analyzed",
+        reviewed: false,
+        segments: normalizedSegs,
+      }));
+
+      setTranscript({
+        video: data.video,
+        duration: calculatedTotal,
+        sentences: allSentences,
+      });
+
+      if (normalizedSegs.length > 0) {
+        setActiveSegmentId(normalizedSegs[0].id);
+      }
+
+      setVideoLibrary(getLibraryVideos());
+      setLibraryCards(syncLibraryCardsFromLibrary(getLibraryVideos()));
+      setUndoStack([]);
+      setRedoStack([]);
+      finalizeAnalysisSuccess(normalizedSegs.length, allSentences.length);
+
       showToast(
-        "error",
-        "❌ AI chưa trích xuất được câu thoại nào từ âm thanh video!"
+        "success",
+        `✓ AI đã hoàn tất phân tích lời thoại và phân đoạn cho toàn bộ ${clipsToAnalyze.length} video (${normalizedSegs.length} phân đoạn, ${allSentences.length} câu thoại)!`
       );
-      return;
+    } catch (err) {
+      console.error("Lỗi trong quá trình phân tích AI:", err);
+      setProgressError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi phân tích AI");
+      showToast("error", `Lỗi phân tích AI: ${err instanceof Error ? err.message : "Thất bại"}`);
+    } finally {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (analyzeTickerRef.current) clearInterval(analyzeTickerRef.current);
+      progressTimerRef.current = null;
+      analyzeTickerRef.current = null;
+      setIsAnalyzing(false);
     }
-
-    setVideoLibrary(getLibraryVideos());
-    setLibraryCards(syncLibraryCardsFromLibrary(getLibraryVideos()));
-    setUndoStack([]);
-    setRedoStack([]);
-    finalizeAnalysisSuccess(normalizedSegs.length, allSentences.length);
-
-    showToast(
-      "success",
-      `✓ AI đã hoàn tất phân tích lời thoại và phân đoạn cho toàn bộ ${clipsToAnalyze.length} video (${normalizedSegs.length} phân đoạn, ${allSentences.length} câu thoại)!`
-    );
   }, [joinedVideos, data, externalVideoUrl, currentVideoHash, showToast]);
 
   const handleStartAnalyzeAI = useCallback(() => {
@@ -1578,8 +1731,8 @@ export default function Home() {
       const appendDuration = Math.max(
         1,
         ("duration" in videoToAppend ? videoToAppend.duration : undefined) ||
-          ("durationSeconds" in videoToAppend ? videoToAppend.durationSeconds : undefined) ||
-          60
+        ("durationSeconds" in videoToAppend ? videoToAppend.durationSeconds : undefined) ||
+        60
       );
       const offset = Number(currentDuration.toFixed(1));
 
@@ -1587,8 +1740,8 @@ export default function Home() {
         ("segments" in videoToAppend && videoToAppend.segments && videoToAppend.segments.length > 0)
           ? videoToAppend.segments
           : ("segmentsData" in videoToAppend && videoToAppend.segmentsData?.segments && videoToAppend.segmentsData.segments.length > 0)
-          ? videoToAppend.segmentsData.segments
-          : [];
+            ? videoToAppend.segmentsData.segments
+            : [];
 
       let newAppendedSegments: Segment[] = [];
       const vName = ("fileName" in videoToAppend ? videoToAppend.fileName : videoToAppend.name) || "video";
@@ -1699,6 +1852,7 @@ export default function Home() {
         }
       }
 
+
       if (appendTranscript?.sentences && appendTranscript.sentences.length > 0) {
         const existingCount = transcript?.sentences?.length || 0;
         const shifted = appendTranscript.sentences.map((sent, idx) => ({
@@ -1762,7 +1916,7 @@ export default function Home() {
                 });
               }
             }
-          } catch {}
+          } catch { }
         })();
       }
 
@@ -1775,6 +1929,7 @@ export default function Home() {
       // Đảm bảo video nối tiếp được lưu bền vững vào thư viện video (F5 không mất)
       const libItem: VideoLibraryItem = {
         id: `vid_${Date.now()}`,
+        videoId: videoToAppend.videoId,
         name: vName,
         lesson: vTitle,
         title: vTitle,
@@ -1800,141 +1955,150 @@ export default function Home() {
     [data, totalDuration, transcript, joinedVideos, handleSeek, showToast]
   );
 
-  // Mở riêng hoặc chuyển tới một video từ cột Thư viện video
+  // Mở riêng hoặc chuyển tới một video từ cột Thư viện video hoặc Drawer
   const handleSelectLibraryCard = useCallback(
-    (card: LibraryVideoCard) => {
-      const validUrl = resolvePlayableVideoUrl(card.url, card.fileName);
-      setExternalVideoUrl(validUrl);
+    async (card: LibraryVideoCard) => {
+      // 1. Tìm nguồn video phát được chính xác cho card.fileName (ưu tiên blob trong IndexedDB)
+      let playableUrl: string | null = null;
+      try {
+        const blob = await getVideoBlob(card.fileName);
+        if (blob) {
+          playableUrl = URL.createObjectURL(blob);
+        }
+      } catch { }
 
-      const cleanStem = (s: string) =>
-        (s || "").toLowerCase().trim().replace(/\.[^/.]+$/, "").replace(/[\s_\(\)\-]+/g, "");
+      if (!playableUrl) {
+        playableUrl = await resolveProtectedStreamUrl(
+          resolvePlayableVideoUrl(card.url, card.fileName)
+        );
+      }
 
-      const isMatchingVideo = (name1?: string, name2?: string) => {
-        if (!name1 || !name2) return false;
-        const n1 = name1.toLowerCase().trim();
-        const n2 = name2.toLowerCase().trim();
-        if (n1 === n2) return true;
-        const s1 = cleanStem(n1);
-        const s2 = cleanStem(n2);
-        return s1 === s2;
-      };
-
-      // 1. Kiểm tra xem video này đã có trong danh sách nối tiếp (joinedVideos) chưa
-      const existingClipIndex = joinedVideos.findIndex(
-        (v) =>
-          isMatchingVideo(v.fileName, card.fileName) ||
-          isMatchingVideo(v.title, card.title) ||
-          isMatchingVideo(v.fileName, card.title) ||
-          isMatchingVideo(v.title, card.fileName)
+      setExternalVideoUrl(playableUrl);
+      setCurrentVideoHash(
+        extractSha256FromStreamUrl(card.url) ||
+          extractSha256FromStreamUrl(playableUrl) ||
+          ""
       );
 
-      if (existingClipIndex >= 0) {
-        // Video này đã nằm trong timeline nối tiếp -> Tua thẳng đến vị trí bắt đầu của video đó!
-        const targetClip = joinedVideos[existingClipIndex];
-        const segInClip = data.segments.find(
-          (s) => s.start >= targetClip.startOffset && s.start < targetClip.endOffset
-        );
-        const seekTime = segInClip ? segInClip.start : targetClip.startOffset;
-        handleSeek(seekTime);
-        if (segInClip) {
-          setActiveSegmentId(segInClip.id);
-        }
-        setIsPlaying(true);
-        showToast("success", `Đang chuyển tới Video ${existingClipIndex + 1}: "${targetClip.title}"`);
-        return;
-      }
+      // 2. Tải transcript và segments riêng biệt cho video này
+      let activeTranscript: TranscriptData | undefined = card.transcript;
+      let fetchedSegments: Segment[] | undefined = undefined;
 
-      if (card.fileName === data.video) {
-        // Đang ở video này -> Bật phát video ngay lập tức và đảm bảo đường dẫn nguồn video chuẩn
-        setJoinedVideos((prev) => {
-          if (prev.length > 0 && prev[0].fileName === card.fileName) {
-            return [{ ...prev[0], url: validUrl }, ...prev.slice(1)];
+      if (!activeTranscript || !activeTranscript.sentences || activeTranscript.sentences.length === 0) {
+        try {
+          const formData = new FormData();
+          formData.append("videoName", card.fileName);
+          formData.append("lesson", card.title);
+          const res = await fetch("/api/groq", { method: "POST", body: formData });
+          if (res.ok) {
+            const groqData = await res.json();
+            if (groqData.transcript?.sentences && groqData.transcript.sentences.length > 0) {
+              activeTranscript = groqData.transcript;
+              if (groqData.segmentsData?.segments && groqData.segmentsData.segments.length > 0) {
+                fetchedSegments = groqData.segmentsData.segments;
+              }
+            }
           }
-          return [
-            {
-              id: card.id,
-              title: card.title,
-              fileName: card.fileName,
-              url: validUrl,
-              duration: card.durationSeconds || 535,
-              startOffset: 0,
-              endOffset: card.durationSeconds || 535,
-            },
-          ];
-        });
-        setCurrentTime(0);
-        setIsPlaying(true);
-        showToast("success", `Đang phát video: "${card.title}"`);
-      } else {
-        // Chuyển sang dự án video mới
-        const rawSegments = card.segments && card.segments.length > 0 ? card.segments : [];
-        const dur = card.durationSeconds > 0 ? card.durationSeconds : 120;
-
-        let targetSegments: Segment[] = [];
-        if (rawSegments.length > 0) {
-          targetSegments = rawSegments;
-        } else {
-          targetSegments = [
-            {
-              id: `seg_${Date.now()}_raw`,
-              section_no: 1,
-              section: "01_VideoGoc",
-              topic_no: 1,
-              topic: card.title,
-              slug: slugify(card.title),
-              start_id: "s001",
-              end_id: "s001",
-              start: 0,
-              end: dur,
-              parts: [
-                {
-                  part: 1,
-                  start: 0,
-                  end: dur,
-                  file: `01_VideoGoc/01_${slugify(card.title)}.mp4`,
-                },
-              ],
-            },
-          ];
+        } catch (e) {
+          console.warn("Không thể tải transcript từ /api/groq cho card:", e);
         }
-
-        setUndoStack((prev) => [...prev.slice(-30), data.segments]);
-        setRedoStack([]);
-
-        setData({
-          video: card.fileName,
-          lesson: card.title,
-          mode: card.segments && card.segments.length > 1 ? "analyzed" : "raw",
-          reviewed: false,
-          segments: targetSegments,
-        });
-
-        setJoinedVideos([
-          {
-            id: card.id || `clip_${Date.now()}`,
-            title: card.title,
-            fileName: card.fileName,
-            url: validUrl,
-            duration: dur,
-            startOffset: 0,
-            endOffset: dur,
-          },
-        ]);
-
-        if (card.transcript) {
-          setTranscript(card.transcript);
-        } else {
-          setTranscript(undefined);
-        }
-
-        setActiveSegmentId(targetSegments[0].id);
-        setCurrentTime(0);
-        setIsPlaying(true);
-
-        showToast("success", `Đang mở và phát: ${card.title} (${card.durationStr})`);
       }
+
+      const dur = card.durationSeconds > 0 ? card.durationSeconds : (activeTranscript?.duration || 120);
+
+      // 3. Chuẩn bị phân đoạn
+      let targetSegments: Segment[] = [];
+      if (fetchedSegments && fetchedSegments.length > 0) {
+        targetSegments = fetchedSegments;
+      } else if (card.segments && card.segments.length > 0) {
+        targetSegments = card.segments;
+      } else if (activeTranscript?.sentences && activeTranscript.sentences.length > 0) {
+        targetSegments = generateSegmentsFromSentences(
+          activeTranscript.sentences,
+          dur,
+          card.fileName,
+          card.title
+        );
+      } else {
+        targetSegments = [
+          {
+            id: `seg_${Date.now()}_raw`,
+            section_no: 1,
+            section: "01_VideoGoc",
+            topic_no: 1,
+            topic: card.title,
+            slug: slugify(card.title),
+            start_id: "s001",
+            end_id: "s001",
+            start: 0,
+            end: dur,
+            parts: [
+              {
+                part: 1,
+                start: 0,
+                end: dur,
+                file: `01_VideoGoc/01_${slugify(card.title)}.mp4`,
+              },
+            ],
+          },
+        ];
+      }
+
+      setUndoStack((prev) => [...prev.slice(-30), data.segments]);
+      setRedoStack([]);
+      setCurrentVideoId(card.videoId);
+
+      setData({
+        videoId: card.videoId,
+        video: card.fileName,
+        lesson: card.title,
+        mode: targetSegments.length > 1 ? "analyzed" : "raw",
+        reviewed: false,
+        segments: targetSegments,
+      });
+
+      setJoinedVideos([
+        {
+          id: card.id || `clip_${Date.now()}`,
+          videoId: card.videoId,
+          title: card.title,
+          fileName: card.fileName,
+          url: playableUrl,
+          duration: dur,
+          startOffset: 0,
+          endOffset: dur,
+        },
+      ]);
+
+      setTranscript(activeTranscript);
+      setActiveSegmentId(targetSegments[0]?.id || "seg_01");
+      setCurrentTime(0);
+      setIsPlaying(true);
+
+      // Cập nhật lại thư viện video với transcript & segments chuẩn đã sửa lỗi
+      updateVideoSegmentsInLibrary(card.fileName, targetSegments);
+      const updatedLib = saveVideoToLibrary({
+        id: card.id,
+        videoId: card.videoId,
+        name: card.fileName,
+        lesson: card.title,
+        title: card.title,
+        url: playableUrl,
+        duration: dur,
+        status: targetSegments.length > 1 ? "edited" : "added",
+        statusLabel: targetSegments.length > 1 ? "Đã phân tích AI" : "Chưa phân tích",
+        category: "Video thư viện",
+        segmentsCount: targetSegments.length,
+        segments: targetSegments,
+        transcript: activeTranscript,
+        updatedAt: new Date().toLocaleTimeString("vi-VN"),
+      });
+      setVideoLibrary(updatedLib);
+      setLibraryCards(syncLibraryCardsFromLibrary(updatedLib));
+
+      showToast("success", `Đang mở và phát: ${card.title} (${formatTime(dur)})`);
     },
-    [data.video, data.segments, joinedVideos, handleSeek, showToast]
+    [data.segments, showToast]
   );
 
   // Xử lý khi người dùng chọn một video trong Thư viện Video Drawer
@@ -1942,6 +2106,7 @@ export default function Home() {
     (video: VideoLibraryItem) => {
       const card: LibraryVideoCard = {
         id: video.id,
+        videoId: video.videoId,
         title: video.title || video.lesson || video.name,
         fileName: video.name,
         durationStr: formatTime(video.duration),
@@ -2035,7 +2200,7 @@ export default function Home() {
         onRefreshFromBackend={handleRefreshFromBackend}
         onExport={handleExportJson}
         onSave={handleSaveProject}
-        onRender={handleOpenExportModal}
+        onRender={handleRender}
         onOpenAddVideo={() => setIsAddVideoOpen(true)}
         onAnalyzeAI={handleStartAnalyzeAI}
         onReAnalyzeAI={handleReAnalyzeAI}
@@ -2151,10 +2316,10 @@ export default function Home() {
         {notification && (
           <div
             className={`absolute top-4 right-4 z-50 p-3 rounded-xl border flex items-center gap-2.5 text-xs shadow-2xl backdrop-blur-md animate-in fade-in duration-200 ${notification.type === "success"
-                ? "bg-white border-emerald-300 text-emerald-800"
-                : notification.type === "error"
-                  ? "bg-white border-rose-300 text-rose-800"
-                  : "bg-white border-indigo-300 text-indigo-900"
+              ? "bg-white border-emerald-300 text-emerald-800"
+              : notification.type === "error"
+                ? "bg-white border-rose-300 text-rose-800"
+                : "bg-white border-indigo-300 text-indigo-900"
               }`}
           >
             {notification.type === "success" ? (
@@ -2186,12 +2351,14 @@ export default function Home() {
         isMuted={isMuted}
         canUndo={undoStack.length > 0}
         canRedo={redoStack.length > 0}
+        isMergingSelectedClips={isMergingClips}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onTogglePlay={() => setIsPlaying(!isPlaying)}
         onSeek={handleSeek}
         onSelectSegment={(id) => setActiveSegmentId(id)}
         onUpdateSegments={handleUpdateSegments}
+        onMergeSelectedClips={handleMergeSelectedClips}
         onVolumeChange={setVolume}
         onToggleMute={handleToggleMute}
         onOpenSegmentDetail={handleOpenSegmentDetail}
@@ -2263,10 +2430,8 @@ export default function Home() {
         renderedClips={renderedClips}
         outputDirectory={renderedOutputDir}
         totalRendered={totalRenderedCount}
-        segments={data.segments}
         onClose={() => setIsProgressModalOpen(false)}
         onExportJson={handleExportJson}
-        onStartRender={handleStartRender}
       />
     </div>
   );

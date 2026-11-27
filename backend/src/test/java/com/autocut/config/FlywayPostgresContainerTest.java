@@ -53,13 +53,14 @@ class FlywayPostgresContainerTest {
                 .load()
                 .migrate();
 
-        Assertions.assertEquals(1, result.migrationsExecuted,
-                "Baseline phải áp đúng 1 migration trên schema rỗng");
+        // V1__baseline.sql + V202611251030__auth.sql (F01)
+        Assertions.assertEquals(2, result.migrationsExecuted,
+                "Migration phải áp đủ 2 migration (V1 + V2 auth) trên schema rỗng");
 
         try (Connection conn = connect()) {
             List<String> tables = listTables(conn);
             for (String expected : List.of("videos", "topics", "sections",
-                    "video_parts", "transcripts", "users")) {
+                    "video_parts", "transcripts", "users", "refresh_tokens", "auth_tickets")) {
                 Assertions.assertTrue(tables.contains(expected),
                         "Thiếu bảng " + expected + " — danh sách thật: " + tables);
             }

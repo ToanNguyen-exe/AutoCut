@@ -65,6 +65,21 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
     },
   ]);
 
+  const prevVideoTitleRef = useRef(videoTitle);
+  useEffect(() => {
+    if (videoTitle && videoTitle !== prevVideoTitleRef.current) {
+      prevVideoTitleRef.current = videoTitle;
+      setMessages([
+        {
+          id: `msg_${Date.now()}`,
+          sender: "bot",
+          text: `Xin chào! Mình là Trợ lý AI AutoCut. Đã nạp video "${videoTitle}" (${segments.length} phân đoạn). Bạn muốn chỉnh sửa, tóm tắt hay gộp phân đoạn nào?`,
+          provider: "Groq Llama",
+        },
+      ]);
+    }
+  }, [videoTitle, segments.length]);
+
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -416,7 +431,7 @@ export const AiAssistantChatPanel: React.FC<AiAssistantChatPanelProps> = ({
       </div>
 
       {/* Re-analyze banner if video not analyzed or quick trigger */}
-      {(onAnalyzeAI || onReAnalyzeAI) && (
+      {onAnalyzeAI && (
         <div className="px-4 py-2 bg-gradient-to-r from-indigo-50/70 via-purple-50/60 to-blue-50/70 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-blue-950/40 border-b border-indigo-100/90 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-indigo-950 dark:text-indigo-200">
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />

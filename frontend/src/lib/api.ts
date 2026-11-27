@@ -1,9 +1,7 @@
 import type { SegmentsData, Segment, TranscriptData } from "@/types";
+import { API_BASE, apiFetch, requestAuthTicket } from "./http.ts";
 
-const rawBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/video";
-export const API_BASE = rawBase.endsWith("/api/video")
-  ? rawBase
-  : `${rawBase.replace(/\/+$/, "")}/api/video`;
+export { API_BASE };
 
 export interface ApiResponse<T> {
   data?: T;
@@ -113,7 +111,7 @@ export const FALLBACK_SEGMENTS: SegmentsData = {
  */
 export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
   try {
-    const res = await fetch(`${API_BASE}/mock-segments`, {
+    const res = await apiFetch(`${API_BASE}/mock-segments`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -134,7 +132,7 @@ export async function fetchMockSegments(): Promise<ApiResponse<SegmentsData>> {
  */
 export async function fetchMockTranscript(): Promise<ApiResponse<TranscriptData>> {
   try {
-    const res = await fetch(`${API_BASE}/mock-transcript`, {
+    const res = await apiFetch(`${API_BASE}/mock-transcript`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -162,7 +160,7 @@ export interface CacheResponse {
  */
 export async function checkCache(hash: string): Promise<ApiResponse<CacheResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/cache/${encodeURIComponent(hash)}`, {
+    const res = await apiFetch(`${API_BASE}/cache/${encodeURIComponent(hash)}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -186,7 +184,7 @@ export async function checkCache(hash: string): Promise<ApiResponse<CacheRespons
  */
 export async function fetchConfig(): Promise<ApiResponse<Record<string, unknown>>> {
   try {
-    const res = await fetch(`${API_BASE}/config`, {
+    const res = await apiFetch(`${API_BASE}/config`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -223,19 +221,100 @@ export interface RenderResponse {
   engine?: string;
 }
 
+export function normalizeClipPath(filePath: string, lesson?: string): string {
+  if (!filePath) return "";
+  // Chuẩn hóa đường dẫn: đổi tất cả \ thành /
+  let clean = filePath.replace(/\\/g, "/");
+
+  // Nếu là đường dẫn tuyệt đối chứa output/, chỉ lấy phần sau output/
+  const outputIdx = clean.toLowerCase().indexOf("/output/");
+  if (outputIdx !== -1) {
+    clean = clean.substring(outputIdx + "/output/".length);
+  } else if (clean.toLowerCase().startsWith("output/")) {
+    clean = clean.substring("output/".length);
+  } else if (lesson && !clean.includes("/") && !clean.startsWith(lesson)) {
+    // Nếu chỉ có tên file đơn thuần (e.g. 01_intro.mp4), ghép thêm lesson
+    clean = `${lesson}/${clean}`;
+  }
+
+  return clean;
+}
+
 /**
  * Lấy URL tải về 1 clip MP4 cụ thể từ Backend
  */
-export function getDownloadClipUrl(filePath: string): string {
-  return `${API_BASE}/download-clip?path=${encodeURIComponent(filePath)}`;
+export function getDownloadClipUrl(filePath: string, lesson?: string, ticket?: string): string {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticketParam = ticket ? `&ticket=${encodeURIComponent(ticket)}` : "";
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(clean)}${ticketParam}`;
 }
 
 /**
  * Lấy URL tải về toàn bộ các clip đã cắt dưới dạng file nén ZIP
  */
-export function getDownloadZipUrl(lesson: string, user?: string): string {
+export function getDownloadZipUrl(lesson: string, user?: string, ticket?: string): string {
+  const cleanLesson = (lesson || "clips").trim();
   const userParam = user ? `&user=${encodeURIComponent(user)}` : "";
-  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(lesson)}${userParam}`;
+  const ticketParam = ticket ? `&ticket=${encodeURIComponent(ticket)}` : "";
+  return `${API_BASE}/download-zip?lesson=${encodeURIComponent(cleanLesson)}${userParam}${ticketParam}`;
+}
+
+export function buildVideoSegmentsUrl(videoId: number | string): string {
+  return `${API_BASE}/${videoId}/segments`;
+}
+
+export async function resolveProtectedDownloadClipUrl(
+  filePath: string,
+  lesson?: string
+): Promise<string> {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticket = await requestAuthTicket("DOWNLOAD", clean);
+  return getDownloadClipUrl(filePath, lesson, ticket || undefined);
+}
+
+export async function resolveProtectedDownloadZipUrl(
+  lesson: string,
+  user?: string
+): Promise<string> {
+  const cleanLesson = (lesson || "clips").trim();
+  const ticket = await requestAuthTicket("DOWNLOAD", cleanLesson);
+  return getDownloadZipUrl(cleanLesson, user, ticket || undefined);
+}
+
+export async function resolveProtectedStreamUrl(url: string): Promise<string> {
+  if (!url || !url.includes("/api/video/stream/") || url.includes("ticket=")) {
+    return url;
+  }
+  const match = url.match(/\/api\/video\/stream\/([a-fA-F0-9]{64})/);
+  if (!match) return url;
+  const hash = match[1];
+  const ticket = await requestAuthTicket("STREAM", hash);
+  if (!ticket) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}ticket=${encodeURIComponent(ticket)}`;
+}
+
+/**
+ * Kích hoạt tải tệp trực tiếp an toàn trên trình duyệt chuẩn HTML5 (tránh bị popup blocker chặn)
+ */
+export function triggerBrowserDownload(url: string, filename?: string): void {
+  if (typeof window === "undefined" || !url) return;
+  const link = document.createElement("a");
+  link.href = url;
+  if (filename) {
+    link.download = filename;
+  }
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+  }, 300);
 }
 
 /**
@@ -245,7 +324,7 @@ export async function submitRenderSegments(
   segmentsData: SegmentsData
 ): Promise<RenderResponse> {
   try {
-    const res = await fetch(`${API_BASE}/render`, {
+    const res = await apiFetch(`${API_BASE}/render`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(segmentsData),
@@ -297,6 +376,8 @@ export async function submitRenderSegments(
 
 export interface UploadVideoResponse {
   status: string;
+  videoId?: number;
+  video_id?: number;
   file_name: string;
   file_size: number;
   sha256: string;
@@ -319,7 +400,7 @@ export async function uploadVideoFile(
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/upload-sample`, {
+    const res = await apiFetch(`${API_BASE}/upload-sample`, {
       method: "POST",
       body: formData,
     });
@@ -366,7 +447,7 @@ export interface BackendVideoItem {
  */
 export async function fetchBackendVideos(): Promise<ApiResponse<BackendVideoItem[]>> {
   try {
-    const res = await fetch(`${API_BASE}/list`, {
+    const res = await apiFetch(`${API_BASE}/list`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -425,7 +506,7 @@ export async function analyzeVideoBackend(payload: {
       requestBody.url = payload.url;
     }
 
-    const res = await fetch(`${API_BASE}/analyze`, {
+    const res = await apiFetch(`${API_BASE}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -583,7 +664,7 @@ export async function saveProjectToBackend(
   payload: SaveProjectPayload
 ): Promise<ApiResponse<SaveProjectResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/save`, {
+    const res = await apiFetch(`${API_BASE}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -621,11 +702,97 @@ export interface ConcatVideosResponse {
 /**
  * Ghép nối nhiều file clip thành 1 video tổng hợp qua FFmpeg Concat của SV1 (POST /api/video/concat)
  */
+export interface MergeSelectedClipsPayload {
+  videoName: string;
+  videoHash?: string;
+  videoUrl?: string;
+  lesson: string;
+  user?: string;
+  segments: Array<{
+    start: number;
+    end: number;
+    topic?: string;
+    videoName?: string;
+    videoUrl?: string;
+    videoHash?: string;
+  }>;
+}
+
+export interface MergeSelectedClipsResponse {
+  status: string;
+  message: string;
+  file: string;
+  outputFile: string;
+  downloadUrl: string;
+  protectedDownloadUrl?: string;
+  outputSizeBytes?: number;
+  executionTimeMs?: number;
+  mergedCount: number;
+}
+
+/**
+ * Cắt và ghép các phân đoạn được tích chọn trên Timeline (kể cả cách quãng) thành 1 file MP4 (POST /api/video/merge-clips).
+ */
+export async function mergeSelectedClipsBackend(
+  payload: MergeSelectedClipsPayload
+): Promise<ApiResponse<MergeSelectedClipsResponse>> {
+  const validSegments = (payload.segments || []).filter(
+    (s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.start >= 0 && s.end > s.start
+  );
+  if (validSegments.length < 2) {
+    return {
+      error: "Cần tích chọn ít nhất 2 phân đoạn hợp lệ để gộp thành 1 video.",
+      source: "fallback",
+    };
+  }
+
+  try {
+    const res = await apiFetch(`${API_BASE}/merge-clips`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        videoName: payload.videoName,
+        videoHash: payload.videoHash,
+        videoUrl: payload.videoUrl,
+        lesson: payload.lesson || "clips",
+        user: payload.user || "admin",
+        segments: validSegments,
+      }),
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = (await res.json()) as { error?: string | { message?: string } };
+        if (typeof errJson.error === "string") {
+          errorMsg = errJson.error;
+        } else if (errJson.error && typeof errJson.error.message === "string") {
+          errorMsg = errJson.error.message;
+        }
+      } catch {
+        // Bỏ qua nếu body không phải JSON
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = (await res.json()) as MergeSelectedClipsResponse;
+    if (data.outputFile) {
+      data.protectedDownloadUrl = await resolveProtectedDownloadClipUrl(data.outputFile);
+    }
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể gộp các phân đoạn đã chọn",
+      source: "fallback",
+    };
+  }
+}
+
 export async function submitConcatVideos(
   payload: ConcatVideosPayload
 ): Promise<ApiResponse<ConcatVideosResponse>> {
   try {
-    const res = await fetch(`${API_BASE}/concat`, {
+    const res = await apiFetch(`${API_BASE}/concat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -660,7 +827,7 @@ export async function deleteSegmentBackend(
   segmentId: string
 ): Promise<ApiResponse<{ deleted: boolean; message: string; segments?: Segment[] }>> {
   try {
-    const res = await fetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
+    const res = await apiFetch(`${API_BASE}/${videoId}/segments/${encodeURIComponent(segmentId)}`, {
       method: "DELETE",
     });
     if (res.ok) {
@@ -670,5 +837,69 @@ export async function deleteSegmentBackend(
     return { error: `HTTP ${res.status}`, source: "fallback" };
   } catch (err) {
     return { error: String(err), source: "fallback" };
+  }
+}
+
+export interface SaveSegmentsResponse {
+  status: string;
+  videoId: number;
+  totalTopics: number;
+  message: string;
+}
+
+/**
+ * Lấy cấu trúc phân đoạn từ Database theo Video ID (GET /api/video/{id}/segments)
+ */
+export async function getSegments(
+  videoId: number
+): Promise<ApiResponse<SegmentsData>> {
+  try {
+    const res = await apiFetch(buildVideoSegmentsUrl(videoId), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SegmentsData = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Không thể lấy danh sách phân đoạn từ Database";
+    return {
+      error: message,
+      source: "fallback",
+    };
+  }
+}
+
+/**
+ * Lưu trực tiếp cấu trúc phân đoạn vào Database theo Video ID (POST /api/video/{id}/segments)
+ */
+export async function saveSegments(
+  videoId: number,
+  segs: Segment[]
+): Promise<ApiResponse<SaveSegmentsResponse>> {
+  try {
+    const res = await apiFetch(buildVideoSegmentsUrl(videoId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(segs),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+    }
+
+    const data: SaveSegmentsResponse = await res.json();
+    return { data, source: "api" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Không thể lưu phân đoạn vào Database";
+    return {
+      error: message,
+      source: "fallback",
+    };
   }
 }
