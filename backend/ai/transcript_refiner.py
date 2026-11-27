@@ -9,6 +9,7 @@ Nhiệm vụ trong Pipeline:
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import nullcontext
+import gc
 import json
 import logging
 from pathlib import Path
@@ -341,7 +342,7 @@ NGUYÊN TẮC CỐT LÕI (BẢO TOÀN NGUYÊN VĂN & TÁCH CÂU CHI TIẾT):
    - Toàn bộ các mẩu id từ {batch[0].id} đến {batch[-1].id} phải được bao phủ liên tục theo thứ tự thời gian tăng dần, không được bỏ rơi bất kỳ mẩu id nào.
 
 DANH SÁCH ĐẦU VÀO:
-{json.dumps(batch_data, ensure_ascii=False, indent=2)}
+{json.dumps(batch_data, ensure_ascii=False, separators=(',', ':'))}
 
 ĐỊNH DẠNG JSON ĐẦU RA BẮT BUỘC:
 {{
@@ -362,6 +363,7 @@ DANH SÁCH ĐẦU VÀO:
         try:
             response = self._generate_with_fallback(prompt)
             parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
+            response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
             batch_map = {s.id: s for s in batch}
             merged_sentences = parsed.get("sentences") or parsed.get("items") or []
 
@@ -539,6 +541,9 @@ DANH SÁCH ĐẦU VÀO:
             )
 
         transcript.sentences = new_sentences
+        # Giải phóng danh sách câu tạm khi transcript lớn (mỗi câu là object Pydantic)
+        if len(new_sentences) > 200:
+            gc.collect()
         return transcript
 
     def segment_transcript(
@@ -576,8 +581,11 @@ DANH SÁCH ĐẦU VÀO:
         max_llm_chars = int(raw_cfg.get("segmentation", {}).get("max_llm_chars", 60000) or 60000)
         target_transcript_chars = max(8000, max_llm_chars - 3000)
 
+        # Bỏ timestamp khỏi prompt: bước phân đoạn chỉ cần mã câu + lời thoại,
+        # mốc thời gian lấy lại từ Sentence.start/end nên không mất thông tin,
+        # còn prompt ngắn hơn ~25% (ít token, ít RAM chuỗi).
         formatted_sentences = [
-            f"{s.id} [{s.start:.1f}s-{s.end:.1f}s]: {s.text}"
+            f"{s.id}: {s.text}"
             for s in sentences
         ]
         if sum(len(line) + 1 for line in formatted_sentences) > target_transcript_chars:
@@ -589,7 +597,7 @@ DANH SÁCH ĐẦU VÀO:
                     t = s.text.strip()
                     if len(t) > char_cap:
                         t = t[: char_cap - 1].rstrip() + "…"
-                    compact_lines.append(f"{s.id} [{int(round(s.start))}s]: {t}")
+                    compact_lines.append(f"{s.id}: {t}")
                 formatted_sentences = compact_lines
                 if sum(len(line) + 1 for line in formatted_sentences) <= target_transcript_chars:
                     fits_budget = True
@@ -693,6 +701,7 @@ DANH SÁCH CÂU TRANSCRIPT:
                 logger.info(f"[SEGMENTER] Goi AI lan #{attempt}")
                 response = self._generate_with_fallback(prompt)
                 parsed = _parse_json_response(response, getattr(self, "model_name", "unknown"))
+                response = None  # chuỗi JSON lớn, giải phóng ngay sau khi parse
 
                 # Hỗ trợ cấu trúc sections -> topics (Đặc tả B4 llm_raw.json)
                 used_model = getattr(self, "model_name", None) or (
@@ -754,6 +763,11 @@ DANH SÁCH CÂU TRANSCRIPT:
                 time.sleep(wait_sec)
 
         # 2. Nếu force_ai=False và Gemini không khả dụng: mới dùng fallback chia đều từ câu thật
+        # Đã gọi AI xong: nhả chuỗi prompt lớn và danh sách dòng đã format
+        if len(sentences) > 200:
+            del prompt, formatted_sentences
+            gc.collect()
+
         if not raw_topics:
             raw_topics = self._fallback_segment_from_sentences(sentences, lesson_name)
 
