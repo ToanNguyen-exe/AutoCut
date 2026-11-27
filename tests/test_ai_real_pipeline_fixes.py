@@ -233,10 +233,14 @@ def test_refine_transcript_splits_overmerged_multi_sentence_item():
     assert result.sentences[2].end <= result.sentences[3].start + 0.01
 
 
-def test_model_priority_matches_week2_branch(monkeypatch):
+def test_model_priority_matches_week2_branch(monkeypatch, tmp_path):
     """Kiểm tra: Thứ tự ưu tiên model mặc định khớp với nhánh feature/sv2-whisper-stt-week2."""
     import backend.ai.config_loader as config_mod
     import backend.ai.transcript_refiner as refiner_mod
+
+    # Cách ly file "sức khoẻ model" trên đĩa: sau khi chạy thật, cache/gemini_model_health.json
+    # có thể đánh dấu model chết và đổi thứ tự ưu tiên -> test phải chạy trên trạng thái sạch.
+    monkeypatch.setattr(refiner_mod, "MODEL_HEALTH_FILE", tmp_path / "gemini_model_health.json", raising=False)
 
     expected_order = [
         "gemini-3.8-flash",

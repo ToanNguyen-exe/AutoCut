@@ -12,6 +12,7 @@ from contextlib import nullcontext
 import gc
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import sys
@@ -53,6 +54,86 @@ FALLBACK_MODELS = [
 REFINER_HTTP_TIMEOUT_MS = 60000.0
 DEFAULT_REFINE_MAX_WORKERS = 2
 EXHAUSTED_MODEL_COOLDOWN_SEC = 60.0
+
+# Model trả 504/timeout bị đánh dấu "chết" và bỏ qua trong 30 phút.
+# Mỗi lần phân tích là một tiến trình Python mới, nên trạng thái phải lưu ra đĩa,
+# nếu không lần chạy sau lại chờ đủ 58s cho từng model đã chết.
+DEAD_MODEL_COOLDOWN_SEC = float(os.environ.get("GEMINI_DEAD_COOLDOWN_SEC", "1800"))
+MODEL_HEALTH_FILE = PROJECT_ROOT / "cache" / "gemini_model_health.json"
+_health_lock = threading.Lock()
+
+
+def _load_model_health() -> Dict[str, Any]:
+    try:
+        if MODEL_HEALTH_FILE.is_file():
+            data = json.loads(MODEL_HEALTH_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+    except Exception as exc:  # noqa: BLE001 - hỏng file thì coi như chưa có
+        logger.debug(f"[GEMINI-HEALTH] Không đọc được {MODEL_HEALTH_FILE.name}: {exc}")
+    return {}
+
+
+def _save_model_health(data: Dict[str, Any]) -> None:
+    try:
+        MODEL_HEALTH_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = MODEL_HEALTH_FILE.with_name(MODEL_HEALTH_FILE.name + ".tmp")
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(MODEL_HEALTH_FILE)
+    except Exception as exc:  # noqa: BLE001 - lỗi ghi không được làm hỏng pipeline
+        logger.debug(f"[GEMINI-HEALTH] Không ghi được {MODEL_HEALTH_FILE.name}: {exc}")
+
+
+def _mark_model_dead(model_name: str) -> None:
+    """Ghi nhận model vừa 504/timeout để các lần chạy sau bỏ qua."""
+    with _health_lock:
+        data = _load_model_health()
+        dead = data.get("dead")
+        if not isinstance(dead, dict):
+            dead = {}
+        dead[model_name] = time.time()
+        data["dead"] = dead
+        _save_model_health(data)
+
+
+def _mark_model_healthy(model_name: str) -> None:
+    """Lưu model vừa chạy được để lần sau ưu tiên gọi trước."""
+    with _health_lock:
+        data = _load_model_health()
+        data["preferred"] = model_name
+        dead = data.get("dead")
+        if isinstance(dead, dict):
+            dead.pop(model_name, None)
+            data["dead"] = dead
+        _save_model_health(data)
+
+
+def _is_model_dead(model_name: str) -> bool:
+    dead = _load_model_health().get("dead")
+    if not isinstance(dead, dict):
+        return False
+    marked_at = dead.get(model_name)
+    if not isinstance(marked_at, (int, float)):
+        return False
+    return (time.time() - marked_at) < DEAD_MODEL_COOLDOWN_SEC
+
+
+def _preferred_model() -> Optional[str]:
+    preferred = _load_model_health().get("preferred")
+    if isinstance(preferred, str) and preferred and not _is_model_dead(preferred):
+        return preferred
+    return None
+
+
+def _is_dead_model_error(err: Exception) -> bool:
+    """504 DEADLINE_EXCEEDED / timeout: model coi như không dùng được trong phiên này."""
+    text = str(err).lower()
+    return (
+        "504" in text
+        or "deadline" in text
+        or "timed out" in text
+        or "timeout" in text
+    )
 
 
 def slugify_vi(text: str) -> str:
@@ -103,8 +184,17 @@ class TranscriptRefiner:
             logger.error("[GEMINI-API_KEY_ERROR] Thieu GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GEMINI_API_KEY trong .env hoặc cấu hình!")
         primary = model_name or getattr(default_ai_config, "gemini_model", "gemini-3.5-flash")
-        self.models_to_try = [primary] + [m for m in FALLBACK_MODELS if m != primary]
+        ordered = [primary] + [m for m in FALLBACK_MODELS if m != primary]
+        remembered = _preferred_model()
+        if remembered and remembered in ordered:
+            ordered = [remembered] + [m for m in ordered if m != remembered]
+        # Bỏ các model đã chết trong 30 phút qua, nhưng luôn giữ ít nhất một ứng viên
+        alive = [m for m in ordered if not _is_model_dead(m)]
+        self.models_to_try = alive or ordered
         self.model_name = self.models_to_try[0]
+        skipped = [m for m in ordered if m not in self.models_to_try]
+        if skipped:
+            logger.info(f"[GEMINI-HEALTH] Bỏ qua model lỗi gần đây: {', '.join(skipped)}")
         self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
         self._unavailable_models: Set[str] = unavailable_models if unavailable_models is not None else set()
         self._exhausted_at: Dict[str, float] = {}
@@ -152,6 +242,7 @@ class TranscriptRefiner:
                         self.model_name = model_candidate
                         exhausted.discard(model_candidate)
                         exhausted_at.pop(model_candidate, None)
+                    _mark_model_healthy(model_candidate)
                     logger.info(f"[GEMINI] Model: {model_candidate}")
                     return response, None, had_non_quota_err
                 except Exception as err:
@@ -165,6 +256,13 @@ class TranscriptRefiner:
                     if _is_model_not_found_error(err):
                         with lock:
                             unavailable.add(model_candidate)
+                        break
+                    if _is_dead_model_error(err):
+                        # 504/timeout: ghi ra đĩa để lần chạy sau không chờ lại 60s
+                        _mark_model_dead(model_candidate)
+                        with lock:
+                            exhausted.add(model_candidate)
+                            exhausted_at[model_candidate] = time.monotonic()
                         break
                     if code == "TOKEN_OR_QUOTA_EXHAUSTED":
                         with lock:
