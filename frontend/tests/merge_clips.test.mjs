@@ -7,6 +7,7 @@ import {
   reconcileSelectedSegmentIds,
   getCheckedSegmentsInOrder,
   canMergeSelectedSegments,
+  buildMergeClipItems,
 } from "../src/lib/mergeSelection.ts";
 import { API_BASE, mergeSelectedClipsBackend } from "../src/lib/api.ts";
 import { setAccessToken } from "../src/lib/http.ts";
@@ -125,4 +126,59 @@ test("StudioTimeline.tsx renders segment checkboxes and a Gộp button on the ti
   assert.ok(timelineSource.includes('role="checkbox"'), "Mỗi đoạn trên timeline phải có checkbox tích chọn");
   assert.ok(timelineSource.includes("onMergeSelectedClips"), "StudioTimeline phải có prop onMergeSelectedClips");
   assert.ok(timelineSource.includes("Gộp"), "Toolbar timeline phải có nút Gộp ngay phía trên");
+});
+
+test("buildMergeClipItems maps timeline offsets to each joinedVideo source and ignores stale hash across clips", () => {
+  const joinedVideos = [
+    {
+      id: "c1",
+      title: "Bài 08",
+      fileName: "Bai08_Ep_kieu_du_lieu.mp4",
+      url: "/videos/Bai08_Ep_kieu_du_lieu.mp4",
+      duration: 535,
+      startOffset: 0,
+      endOffset: 535,
+    },
+    {
+      id: "c2",
+      title: "Download 1",
+      fileName: "Download (1).mp4",
+      url: "/api/video/stream/1809023fa1af6117a14ebaf58d56f8166d4d4e2f8466ce99a1c1f3230ddf282f?ticket=old",
+      duration: 227,
+      startOffset: 535,
+      endOffset: 762,
+    },
+  ];
+
+  const chosen = [
+    { ...sampleSegments[0], start: 10, end: 50, topic: "Đoạn video 1" },
+    { ...sampleSegments[3], start: 545, end: 600, topic: "Đoạn video 2" },
+  ];
+
+  const mapped = buildMergeClipItems(chosen, joinedVideos, {
+    videoName: "Bai08_Ep_kieu_du_lieu.mp4 & Download 1",
+    videoHash: "cafd6ea8e7e70e2cc9fee826eacbb4f1443e13032676d104ef4a8bdf4236d7f2",
+  });
+
+  assert.equal(mapped.length, 2);
+  assert.equal(mapped[0].videoName, "Bai08_Ep_kieu_du_lieu.mp4");
+  assert.equal(mapped[0].videoHash, undefined, "Không gắn nhầm hash cũ vào video không khớp");
+  assert.equal(mapped[0].start, 10);
+  assert.equal(mapped[0].end, 50);
+
+  assert.equal(mapped[1].videoName, "Download (1).mp4");
+  assert.equal(mapped[1].videoHash, "1809023fa1af6117a14ebaf58d56f8166d4d4e2f8466ce99a1c1f3230ddf282f");
+  assert.equal(mapped[1].start, 10);
+  assert.equal(mapped[1].end, 65);
+});
+
+test("page.tsx resets currentVideoHash inside handleSelectLibraryCard when switching videos", () => {
+  const pageSource = fs.readFileSync(path.join(FRONTEND_ROOT, "src/app/page.tsx"), "utf-8");
+  const idx = pageSource.indexOf("const handleSelectLibraryCard = useCallback");
+  assert.ok(idx !== -1);
+  const snippet = pageSource.slice(idx, idx + 1500);
+  assert.ok(
+    snippet.includes("setCurrentVideoHash("),
+    "handleSelectLibraryCard phải cập nhật/xóa currentVideoHash khi đổi video"
+  );
 });

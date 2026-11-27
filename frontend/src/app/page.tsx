@@ -17,8 +17,10 @@ import {
   mergeSelectedClipsBackend,
   getDownloadClipUrl,
   triggerBrowserDownload,
+  uploadVideoFile,
   API_BASE,
 } from "@/lib/api";
+import { buildMergeClipItems, extractSha256FromStreamUrl } from "@/lib/mergeSelection";
 import { clearAllTimerRefs } from "@/lib/timerManager";
 
 import { StudioSidebar } from "@/components/StudioSidebar";
@@ -854,12 +856,12 @@ export default function Home() {
     }
   };
 
-  const handleMergeSelectedClips = async (selectedSegments: Segment[]) => {
+  const handleMergeSelectedClips = async (selectedSegments: Segment[]): Promise<boolean> => {
     if (selectedSegments.length < 2) {
       showToast("info", "Vui lòng tích chọn ít nhất 2 phân đoạn trên timeline để gộp!");
-      return;
+      return false;
     }
-    if (isMergingClips) return;
+    if (isMergingClips) return false;
 
     setIsMergingClips(true);
     setIsRendering(true);
@@ -904,18 +906,78 @@ export default function Home() {
     }, 600);
 
     try {
-      const result = await mergeSelectedClipsBackend({
+      let mergeItems = buildMergeClipItems(selectedSegments, joinedVideos, {
+        videoName: data.video,
+        videoUrl: externalVideoUrl || undefined,
+        videoHash: currentVideoHash || undefined,
+      });
+
+      // Nếu có clip cục bộ (blob:) chưa nằm trên backend uploads/, tự đồng bộ lên trước khi cắt
+      const uploadedByName = new Map<string, { sha256: string; cloudUrl?: string }>();
+      for (const item of mergeItems) {
+        if (item.videoUrl?.startsWith("blob:") && !item.videoHash && item.videoName && !uploadedByName.has(item.videoName)) {
+          const blob = await getVideoBlob(item.videoName).catch(() => null);
+          if (blob && blob.size > 0) {
+            const uploadTarget =
+              typeof File !== "undefined" && blob instanceof File
+                ? blob
+                : new File([blob], item.videoName, { type: blob.type || "video/mp4" });
+            const up = await uploadVideoFile(uploadTarget);
+            if (up.source === "api" && up.data?.sha256) {
+              uploadedByName.set(item.videoName, {
+                sha256: up.data.sha256,
+                cloudUrl: up.data.cloud_url,
+              });
+            }
+          }
+        }
+      }
+      if (uploadedByName.size > 0) {
+        mergeItems = mergeItems.map((it) => {
+          const synced = uploadedByName.get(it.videoName);
+          return synced
+            ? { ...it, videoHash: synced.sha256, videoUrl: synced.cloudUrl || it.videoUrl }
+            : it;
+        });
+      }
+
+      const lessonTitle = data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips";
+      let result = await mergeSelectedClipsBackend({
         videoName: data.video,
         videoHash: currentVideoHash || undefined,
         videoUrl: externalVideoUrl || undefined,
-        lesson: data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips",
+        lesson: lessonTitle,
         user: currentUser?.id || currentUser?.username || "admin",
-        segments: selectedSegments.map((s) => ({
-          start: s.start,
-          end: s.end,
-          topic: s.topic,
-        })),
+        segments: mergeItems,
       });
+
+      // Dự phòng 1 lần: nếu backend báo chưa thấy file nguồn nhưng IndexedDB còn blob, upload rồi thử lại
+      if (result.source !== "api" && result.error?.includes("Không tìm thấy video nguồn")) {
+        const localBlob = await getVideoBlob(data.video).catch(() => null);
+        if (localBlob && localBlob.size > 0) {
+          const uploadTarget =
+            typeof File !== "undefined" && localBlob instanceof File
+              ? localBlob
+              : new File([localBlob], data.video, { type: localBlob.type || "video/mp4" });
+          const up = await uploadVideoFile(uploadTarget);
+          if (up.source === "api" && up.data?.sha256) {
+            setCurrentVideoHash(up.data.sha256);
+            mergeItems = mergeItems.map((it) => ({
+              ...it,
+              videoHash: up.data!.sha256,
+              videoUrl: up.data!.cloud_url || it.videoUrl,
+            }));
+            result = await mergeSelectedClipsBackend({
+              videoName: data.video,
+              videoHash: up.data.sha256,
+              videoUrl: up.data.cloud_url || externalVideoUrl || undefined,
+              lesson: lessonTitle,
+              user: currentUser?.id || currentUser?.username || "admin",
+              segments: mergeItems,
+            });
+          }
+        }
+      }
 
       if (mergeTimerRef.current) {
         clearInterval(mergeTimerRef.current);
@@ -924,12 +986,13 @@ export default function Home() {
 
       if (result.source === "api" && result.data) {
         const merged = result.data;
+        const friendlyFileName = `${slugify(lessonTitle) || "merged"}_ghep_${merged.mergedCount}_doan.mp4`;
         setProgressPercent(100);
         setProgressActionText(merged.message || `Đã gộp ${merged.mergedCount} đoạn thành 1 video MP4!`);
         setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
         setRenderedClips([
           {
-            file: merged.file || "merged_video.mp4",
+            file: friendlyFileName,
             path: merged.outputFile,
             sizeBytes: merged.outputSizeBytes || 0,
             executionMs: merged.executionTimeMs || 0,
@@ -940,9 +1003,10 @@ export default function Home() {
 
         const downloadHref = merged.protectedDownloadUrl || getDownloadClipUrl(merged.outputFile);
         if (downloadHref) {
-          triggerBrowserDownload(downloadHref, merged.file || "merged_video.mp4");
+          triggerBrowserDownload(downloadHref, friendlyFileName);
         }
         showToast("success", merged.message || "Đã gộp thành công thành 1 video MP4!");
+        return true;
       } else {
         setProgressPercent(60);
         setProgressError(result.error || "Không thể gộp các phân đoạn đã chọn");
@@ -950,10 +1014,12 @@ export default function Home() {
           prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
         );
         showToast("error", `Lỗi gộp video: ${result.error || "Thất bại"}`);
+        return false;
       }
     } catch (err) {
       setProgressError(err instanceof Error ? err.message : "Lỗi ngoại lệ khi gộp video");
       showToast("error", "Đã xảy ra lỗi khi gộp các đoạn video đã chọn.");
+      return false;
     } finally {
       if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
       mergeTimerRef.current = null;
@@ -1351,11 +1417,14 @@ export default function Home() {
         let backendHttpError: string | null = null;
 
         try {
+          const clipHash =
+            extractSha256FromStreamUrl(clip.url) ||
+            (i === 0 && !clip.url?.includes("/videos/") ? currentVideoHash : undefined);
           const syncResult = await analyzeVideoWithAutoSync({
             videoName: clip.fileName,
             lesson: clip.title,
             duration: clipDur,
-            hash: currentVideoHash || undefined,
+            hash: clipHash || undefined,
             force: shouldForce,
             url: videoUrlToSend,
             getLocalBlob: () => getVideoBlob(clip.fileName),
@@ -1905,6 +1974,11 @@ export default function Home() {
       }
 
       setExternalVideoUrl(playableUrl);
+      setCurrentVideoHash(
+        extractSha256FromStreamUrl(card.url) ||
+          extractSha256FromStreamUrl(playableUrl) ||
+          ""
+      );
 
       // 2. Tải transcript và segments riêng biệt cho video này
       let activeTranscript: TranscriptData | undefined = card.transcript;

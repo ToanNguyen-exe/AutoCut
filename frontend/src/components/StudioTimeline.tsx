@@ -50,7 +50,7 @@ interface StudioTimelineProps {
   onSeek: (time: number) => void;
   onSelectSegment: (id: string) => void;
   onUpdateSegments: (newSegments: Segment[]) => void;
-  onMergeSelectedClips?: (selectedSegments: Segment[]) => void;
+  onMergeSelectedClips?: (selectedSegments: Segment[]) => Promise<boolean | void> | void;
   onVolumeChange?: (vol: number) => void;
   onToggleMute?: () => void;
   onOpenSegmentDetail?: (segment: Segment, index: number) => void;
@@ -102,12 +102,15 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     [segments]
   );
 
-  const handleMergeCheckedClick = useCallback(() => {
+  const handleMergeCheckedClick = useCallback(async () => {
     if (!onMergeSelectedClips || !canMergeChecked || isMergingSelectedClips) {
       return;
     }
     const chosen = getCheckedSegmentsInOrder(segments, validCheckedIds);
-    onMergeSelectedClips(chosen);
+    const result = await onMergeSelectedClips(chosen);
+    if (result !== false) {
+      setCheckedSegmentIds([]);
+    }
   }, [onMergeSelectedClips, canMergeChecked, isMergingSelectedClips, segments, validCheckedIds]);
 
   // Resizable timeline height (kéo lên kéo xuống)

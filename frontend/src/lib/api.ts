@@ -708,7 +708,14 @@ export interface MergeSelectedClipsPayload {
   videoUrl?: string;
   lesson: string;
   user?: string;
-  segments: Array<{ start: number; end: number; topic?: string }>;
+  segments: Array<{
+    start: number;
+    end: number;
+    topic?: string;
+    videoName?: string;
+    videoUrl?: string;
+    videoHash?: string;
+  }>;
 }
 
 export interface MergeSelectedClipsResponse {
