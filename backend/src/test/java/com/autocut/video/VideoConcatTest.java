@@ -273,7 +273,17 @@ class VideoConcatTest {
         assertNotNull(cmd);
         assertTrue(cmd.contains("-filter_complex"), "Phai chua tham so -filter_complex");
         assertTrue(cmd.contains("-map"), "Phai map video va audio streams");
-        assertTrue(cmd.contains("libx264"), "Phai re-encode bang libx264");
+        // Bộ mã hoá phụ thuộc máy: NVENC nếu ffmpeg hỗ trợ GPU, ngược lại libx264.
+        boolean usesNvenc = cmd.contains("h264_nvenc");
+        boolean usesX264 = cmd.contains("libx264");
+        assertTrue(usesNvenc || usesX264, "Phai re-encode bang h264_nvenc hoac libx264");
+        if (usesNvenc) {
+            assertTrue(cmd.contains("-cq"), "NVENC phai dung -cq");
+            assertTrue(cmd.contains("-b:v"), "NVENC phai dat -b:v 0 voi che do vbr");
+        } else {
+            assertTrue(cmd.contains("-crf"), "libx264 phai dung -crf");
+        }
+        assertTrue(cmd.contains("yuv420p"), "Phai ep pixel format yuv420p de trinh duyet phat duoc");
         assertTrue(cmd.contains("aac"), "Phai re-encode audio bang aac");
 
         int filterIdx = cmd.indexOf("-filter_complex");

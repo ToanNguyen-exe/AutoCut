@@ -79,6 +79,31 @@ public class VideoConcat {
             }
         }
 
+        // 2b. Loại clip hỏng (thiếu moov atom — thường do lần cắt trước bị dừng giữa chừng).
+        //     Nếu để lọt vào, ffmpeg concat sẽ thất bại và rơi xuống nhánh re-encode toàn bộ,
+        //     với video dài thì đó là nhiều giờ CPU.
+        List<File> usableClips = new ArrayList<>();
+        List<String> brokenClips = new ArrayList<>();
+        for (File clip : clips) {
+            if (isClipReadable(clip)) {
+                usableClips.add(clip);
+            } else {
+                brokenClips.add(clip.getName());
+            }
+        }
+        if (!brokenClips.isEmpty()) {
+            log.warn("Bỏ qua {} clip hỏng không đọc được (cần cắt lại): {}", brokenClips.size(), brokenClips);
+        }
+        if (usableClips.isEmpty()) {
+            return ConcatResult.failure(inputPaths, outputPath, 0L,
+                ErrorCode.CUT_FAILED,
+                "Tất cả clip đều hỏng hoặc rỗng: " + String.join(", ", brokenClips));
+        }
+        if (usableClips.size() != clips.size()) {
+            clips = usableClips;
+            inputPaths = toStringPaths(clips);
+        }
+
         // 3. Tạo thư mục cha cho output nếu chưa có
         File parentDir = output.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -90,6 +115,17 @@ public class VideoConcat {
             ConcatResult fastResult = tryFastConcat(clips, output, inputPaths, outputPath, startTime);
             if (fastResult.success()) {
                 return fastResult;
+            }
+            if (!videoProps.isConcatAllowReencode()) {
+                // Re-encode toàn bộ video dài tốn hàng chục phút tới hàng giờ.
+                // Mặc định KHÔNG tự động làm vậy: báo lỗi rõ để người dùng cắt lại clip hỏng.
+                String hint = brokenClips.isEmpty()
+                    ? "các clip khác codec/độ phân giải/fps"
+                    : "clip hỏng: " + String.join(", ", brokenClips);
+                log.error("Ghép nhanh thất bại ({}). Không tự động re-encode toàn bộ — bật autocut.video.concat-allow-reencode=true nếu muốn.", hint);
+                return ConcatResult.failure(inputPaths, outputPath, System.currentTimeMillis() - startTime,
+                    ErrorCode.CUT_FAILED,
+                    "Không ghép nhanh được (" + hint + "). Hãy cắt lại clip lỗi rồi thử lại.");
             }
             log.warn("Chế độ ghép nhanh (-c copy) thất bại (có thể do video khác chuẩn codec/resolution/fps). Đang tự động chuyển sang Safe Concat Filter (re-encode chuẩn hóa)...");
         }
@@ -222,6 +258,7 @@ public class VideoConcat {
      */
     List<String> buildCommandFilter(List<File> clips, File output) {
         List<String> cmd = new ArrayList<>();
+        String encoder = EncoderSupport.resolve(videoProps);
         cmd.add(videoProps.getFfmpegPath());
         cmd.add("-y");
 
@@ -255,11 +292,24 @@ public class VideoConcat {
         cmd.add("-map");
         cmd.add("[a]");
         cmd.add("-c:v");
-        cmd.add("libx264");
-        cmd.add("-preset");
-        cmd.add("fast");
-        cmd.add("-crf");
-        cmd.add("22");
+        cmd.add(encoder);
+        if (EncoderSupport.NVENC.equals(encoder)) {
+            cmd.add("-preset");
+            cmd.add(videoProps.getNvencPreset());
+            cmd.add("-rc");
+            cmd.add("vbr");
+            cmd.add("-cq");
+            cmd.add(String.valueOf(videoProps.getNvencCq()));
+            cmd.add("-b:v");
+            cmd.add("0");
+        } else {
+            cmd.add("-preset");
+            cmd.add("fast");
+            cmd.add("-crf");
+            cmd.add("22");
+        }
+        cmd.add("-pix_fmt");
+        cmd.add("yuv420p");
         cmd.add("-c:a");
         cmd.add("aac");
         cmd.add("-movflags");
@@ -304,6 +354,37 @@ public class VideoConcat {
             "-c", "copy",
             output.getAbsolutePath()
         );
+    }
+
+    /**
+     * Kiểm tra clip có đọc được không (đủ moov atom, có thời lượng).
+     * Clip bị dừng giữa chừng khi cắt sẽ không có moov atom và làm hỏng cả bước ghép.
+     */
+    boolean isClipReadable(File clip) {
+        if (clip == null || !clip.isFile() || clip.length() == 0) {
+            return false;
+        }
+        try {
+            Process p = new ProcessBuilder(
+                videoProps.getFfprobePath(), "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=nw=1:nk=1",
+                clip.getAbsolutePath()).start();
+            CompletableFuture<String> out = StreamUtil.readStreamAsync(p.getInputStream());
+            StreamUtil.readStreamAsync(p.getErrorStream());
+            if (!p.waitFor(10, TimeUnit.SECONDS)) {
+                p.destroyForcibly();
+                return false;
+            }
+            if (p.exitValue() != 0) {
+                return false;
+            }
+            String duration = out.get(2, TimeUnit.SECONDS);
+            return duration != null && !duration.isBlank() && Double.parseDouble(duration.trim()) > 0;
+        } catch (Exception e) {
+            log.debug("Không kiểm tra được clip {}: {}", clip.getName(), e.getMessage());
+            return false;
+        }
     }
 
     private List<String> toStringPaths(List<File> clips) {

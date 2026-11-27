@@ -33,6 +33,9 @@ public class VideoCutter {
     private final ConfigService configService;
     private final Map<String, Double> durationCache = new ConcurrentHashMap<>();
 
+    /** Kết quả dò NVENC một lần duy nhất; null = chưa dò. */
+    private volatile Boolean nvencAvailable;
+
     public VideoCutter() {
         this(new VideoProps(), null);
     }
@@ -53,6 +56,49 @@ public class VideoCutter {
 
     public ConfigService getConfigService() {
         return configService;
+    }
+
+    /**
+     * Chọn bộ mã hoá cho nhánh re-encode dựa trên cấu hình autocut.video.encoder.
+     * "auto" (mặc định) dùng NVENC nếu ffmpeg của máy có hỗ trợ, ngược lại dùng libx264.
+     */
+    String resolveVideoEncoder() {
+        return EncoderSupport.resolve(videoProps);
+    }
+
+    /**
+     * Dò xem ffmpeg hiện tại có encoder h264_nvenc hay không (kết quả cache theo ffmpeg path).
+     */
+    boolean isNvencAvailable() {
+        return EncoderSupport.isNvencAvailable(videoProps);
+    }
+
+    /**
+     * Dựng lệnh FFmpeg re-encode với bộ mã hoá chỉ định.
+     * NVENC dùng -rc vbr -cq thay cho -crf của libx264.
+     */
+    List<String> buildCommandWithEncoder(String inputSource, File outputFile, String startStr, String endStr, String encoder) {
+        if ("h264_nvenc".equals(encoder)) {
+            return List.of(
+                videoProps.getFfmpegPath(),
+                "-y",
+                "-ss", startStr,
+                "-to", endStr,
+                "-i", inputSource,
+                "-c:v", "h264_nvenc",
+                "-preset", videoProps.getNvencPreset(),
+                "-rc", "vbr",
+                "-cq", String.valueOf(videoProps.getNvencCq()),
+                "-b:v", "0",
+                // Nguồn 10-bit/4:2:2 (ProRes, nhiều camera) không được NVENC nhận trực tiếp
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-avoid_negative_ts", "make_zero",
+                "-movflags", "+faststart",
+                outputFile.getAbsolutePath()
+            );
+        }
+        return buildCommand(inputSource, outputFile, startStr, endStr);
     }
 
     /**
@@ -212,7 +258,7 @@ public class VideoCutter {
         File outFile = new File(outputPath);
 
         if (isRemoteUrl(trimmedInput)) {
-            return executeFfmpegCut(trimmedInput, getRemoteDisplayName(trimmedInput), outFile, start, end, totalDuration);
+            return executeFfmpegCut(trimmedInput, getRemoteDisplayName(trimmedInput), outFile, start, end, totalDuration, true, true);
         }
 
         return cut(new File(trimmedInput), outFile, start, end, totalDuration);
@@ -285,13 +331,35 @@ public class VideoCutter {
                 ErrorCode.FILE_EMPTY, ErrorCode.FILE_EMPTY.getDescription());
         }
 
-        return executeFfmpegCut(inputFile.getAbsolutePath(), inputFile.getName(), outputFile, start, end, totalDuration);
+        return executeFfmpegCut(inputFile.getAbsolutePath(), inputFile.getName(), outputFile, start, end, totalDuration, true, true);
+    }
+
+    /**
+     * Cắt CHÍNH XÁC TUYỆT ĐỐI: không đệm thở, không stream-copy.
+     *
+     * Dùng cho thao tác "gộp các phân đoạn đã chọn": người dùng chọn đúng đoạn nào thì
+     * file kết quả phải chứa đúng đoạn đó. Đệm thở (-0.3s/+0.5s) và stream-copy lệch
+     * keyframe sẽ làm clip dài hơn lựa chọn (2 đoạn 4s ra 10,3s thay vì 8s).
+     */
+    public CutResult cutExact(File inputFile, File outputFile, double start, double end) {
+        String inputPathStr = inputFile != null ? inputFile.getAbsolutePath() : "";
+        String outputPathStr = outputFile != null ? outputFile.getAbsolutePath() : "";
+        if (inputFile == null || !inputFile.exists() || !inputFile.isFile()) {
+            return CutResult.failure(inputPathStr, outputPathStr, start, end, 0L,
+                ErrorCode.FILE_NOT_FOUND, ErrorCode.FILE_NOT_FOUND.getDescription());
+        }
+        if (inputFile.length() == 0) {
+            return CutResult.failure(inputPathStr, outputPathStr, start, end, 0L,
+                ErrorCode.FILE_EMPTY, ErrorCode.FILE_EMPTY.getDescription());
+        }
+        return executeFfmpegCut(inputFile.getAbsolutePath(), inputFile.getName(), outputFile, start, end, 0.0, false, false);
     }
 
     /**
      * Thực thi lệnh cắt video bằng FFmpeg cho cả tệp cục bộ và URL phát trực tuyến từ xa.
      */
-    private CutResult executeFfmpegCut(String inputSource, String displayName, File outputFile, double start, double end, double totalDuration) {
+    private CutResult executeFfmpegCut(String inputSource, String displayName, File outputFile, double start, double end, double totalDuration,
+                                       boolean applyPadding, boolean allowFastCopy) {
         long startTime = System.currentTimeMillis();
         String inputPathStr = inputSource != null ? inputSource : "";
         String outputPathStr = outputFile != null ? outputFile.getAbsolutePath() : "";
@@ -309,11 +377,19 @@ public class VideoCutter {
                 String.format(Locale.US, "Mốc thời gian không hợp lệ: start=%.3f, end=%.3f", start, end));
         }
 
-        // 3. Áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên
+        // 3. Áp dụng đệm thở âm thanh (-0.3s / +0.5s) và kẹp biên (bỏ qua khi cắt chính xác tuyệt đối)
         double videoDuration = totalDuration > 0 ? totalDuration : getOrProbeDuration(inputSource);
-        double[] paddedRange = calculatePaddedRange(start, end, videoDuration);
-        double paddedStart = paddedRange[0];
-        double paddedEnd = paddedRange[1];
+        double paddedStart;
+        double paddedEnd;
+        if (applyPadding) {
+            double[] paddedRange = calculatePaddedRange(start, end, videoDuration);
+            paddedStart = paddedRange[0];
+            paddedEnd = paddedRange[1];
+        } else {
+            double maxBound = videoDuration > 0 ? videoDuration : Double.MAX_VALUE;
+            paddedStart = Math.max(0.0, Math.min(start, maxBound));
+            paddedEnd = Math.max(paddedStart, Math.min(end, maxBound));
+        }
 
         // Định dạng số với Locale.US để đảm bảo dấu chấm thập phân (ví dụ 12.345 thay vì 12,345)
         String startStr = String.format(Locale.US, "%.3f", paddedStart);
@@ -328,9 +404,10 @@ public class VideoCutter {
             }
         }
 
-        // 4. Ưu tiên chế độ Siêu Tốc (Fast Stream-Copy -c copy) trước
-        // Không decode/encode pixel, giảm thời gian từ 30 phút xuống 3 giây, tiết kiệm 99% CPU
+        // 4. Ưu tiên chế độ Siêu Tốc (Fast Stream-Copy -c copy) trước — chỉ khi được phép,
+        //    vì stream-copy bám keyframe nên mốc cắt bị lệch (đo thực tế: chọn 2×4s ra 10,3s).
         List<String> fastCommand = buildCommandFast(inputSource, outputFile, startStr, endStr);
+        if (allowFastCopy) {
         log.info("Thử cắt siêu tốc bằng Stream Copy (-c copy) [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}]",
             displayName, outputFile.getName(), start, end, startStr, endStr);
         try {
@@ -346,7 +423,7 @@ public class VideoCutter {
                 long executionTimeMs = System.currentTimeMillis() - startTime;
                 long outputSize = outputFile.length();
                 double durationSec = paddedEnd - paddedStart;
-                log.info("Cắt siêu tốc Stream Copy THÀNH CÔNG: {} (Thời lượng: {:.2f}s, Thời gian thực tế: {} ms, Dung lượng: {} bytes)",
+                log.info("Cắt siêu tốc Stream Copy THÀNH CÔNG: {} (Thời lượng: {}s, Thời gian thực tế: {} ms, Dung lượng: {} bytes)",
                     outputFile.getName(), durationSec, executionTimeMs, outputSize);
                 return CutResult.success(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs, outputSize);
             }
@@ -359,69 +436,87 @@ public class VideoCutter {
         } catch (Exception ex) {
             log.warn("Lỗi khi thử cắt Stream Copy: {}, tự động fallback sang Re-encode...", ex.getMessage());
         }
-
-        // 5. Fallback sang Re-encode chuẩn hóa (libx264) nếu Stream Copy không khả dụng
-        List<String> command = buildCommand(inputSource, outputFile, startStr, endStr);
-
-        log.info("Bắt đầu cắt clip Re-encode [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}] (duration={}s)",
-            displayName, outputFile.getName(), start, end, startStr, endStr, videoDuration);
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            Process process = pb.start();
-
-            // Đọc đồng thời stderr (nơi ffmpeg in log/tiến độ) và stdout bằng StreamUtil để chống deadlock
-            CompletableFuture<String> stderrFuture = StreamUtil.readStreamAsync(process.getErrorStream());
-            CompletableFuture<String> stdoutFuture = StreamUtil.readStreamAsync(process.getInputStream());
-
-            int timeoutSec = videoProps.getCutTimeoutSeconds() > 0 ? videoProps.getCutTimeoutSeconds() : 300;
-            boolean finished = process.waitFor(timeoutSec, TimeUnit.SECONDS);
-
-            long executionTimeMs = System.currentTimeMillis() - startTime;
-
-            if (!finished) {
-                process.destroyForcibly();
-                log.error("Cắt video bị timeout sau {} giây đối với tệp: {}", timeoutSec, outputFile.getName());
-                return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
-                    ErrorCode.TIMEOUT, ErrorCode.TIMEOUT.getDescription());
-            }
-
-            String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
-            int exitCode = process.exitValue();
-
-            if (exitCode != 0 || !outputFile.exists() || outputFile.length() == 0) {
-                String errorDetail = (stderr != null && !stderr.isBlank()) ? stderr.trim() : "Exit code: " + exitCode;
-                log.error("Lệnh FFmpeg thất bại khi cắt clip {} (exit code: {}) - Chi tiết: {}",
-                    outputFile.getName(), exitCode, errorDetail);
-                return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
-                    ErrorCode.CUT_FAILED, "FFmpeg lỗi (code " + exitCode + "): " + errorDetail);
-            }
-
-            long outputSize = outputFile.length();
-            double durationSec = paddedEnd - paddedStart;
-
-            log.info("Cắt video thành công: {} (Thời lượng: {:.2f}s, Thời gian cắt thực tế: {} ms ({:.2f}s), Dung lượng: {} bytes)",
-                outputFile.getName(), durationSec, executionTimeMs, executionTimeMs / 1000.0, outputSize);
-
-            return CutResult.success(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs, outputSize);
-
-        } catch (java.io.IOException e) {
-            long executionTimeMs = System.currentTimeMillis() - startTime;
-            log.error("Không thể khởi chạy ffmpeg: {}. Vui lòng kiểm tra cài đặt ffmpeg.", e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
-                ErrorCode.PROCESS_EXECUTION_FAILED, "Không thể khởi chạy ffmpeg: " + e.getMessage());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            long executionTimeMs = System.currentTimeMillis() - startTime;
-            log.error("Tiến trình cắt video bị gián đoạn: {}", e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
-                ErrorCode.UNKNOWN_ERROR, "Tiến trình cắt bị gián đoạn: " + e.getMessage());
-        } catch (Exception e) {
-            long executionTimeMs = System.currentTimeMillis() - startTime;
-            log.error("Lỗi ngoại lệ khi cắt video {}: {}", outputFile.getName(), e.getMessage());
-            return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
-                ErrorCode.UNKNOWN_ERROR, "Lỗi không xác định khi cắt video: " + e.getMessage());
         }
+
+        // 5. Fallback sang Re-encode chuẩn hóa nếu Stream Copy không khả dụng.
+        //    Ưu tiên NVENC (GPU) khi ffmpeg hỗ trợ; nếu GPU lỗi thì tự động về libx264 (CPU).
+        String preferredEncoder = resolveVideoEncoder();
+        List<String> encodersToTry = "h264_nvenc".equals(preferredEncoder)
+            ? List.of("h264_nvenc", "libx264")
+            : List.of("libx264");
+
+        log.info("Bắt đầu cắt clip Re-encode [{} -> {}]: thô=[{} -> {}], đệm thở=[{} -> {}] (duration={}s, encoder={})",
+            displayName, outputFile.getName(), start, end, startStr, endStr, videoDuration, preferredEncoder);
+
+        CutResult lastFailure = null;
+        for (String encoder : encodersToTry) {
+            List<String> command = buildCommandWithEncoder(inputSource, outputFile, startStr, endStr, encoder);
+            long encodeStartedAt = System.currentTimeMillis();
+
+            try {
+                ProcessBuilder pb = new ProcessBuilder(command);
+                Process process = pb.start();
+
+                // Đọc đồng thời stderr (nơi ffmpeg in log/tiến độ) và stdout bằng StreamUtil để chống deadlock
+                CompletableFuture<String> stderrFuture = StreamUtil.readStreamAsync(process.getErrorStream());
+                CompletableFuture<String> stdoutFuture = StreamUtil.readStreamAsync(process.getInputStream());
+
+                int timeoutSec = videoProps.getCutTimeoutSeconds() > 0 ? videoProps.getCutTimeoutSeconds() : 300;
+                boolean finished = process.waitFor(timeoutSec, TimeUnit.SECONDS);
+
+                long executionTimeMs = System.currentTimeMillis() - startTime;
+
+                if (!finished) {
+                    process.destroyForcibly();
+                    log.error("Cắt video bị timeout sau {} giây đối với tệp: {}", timeoutSec, outputFile.getName());
+                    return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
+                        ErrorCode.TIMEOUT, ErrorCode.TIMEOUT.getDescription());
+                }
+
+                String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
+                int exitCode = process.exitValue();
+
+                if (exitCode != 0 || !outputFile.exists() || outputFile.length() == 0) {
+                    String errorDetail = (stderr != null && !stderr.isBlank()) ? stderr.trim() : "Exit code: " + exitCode;
+                    log.error("Lệnh FFmpeg thất bại khi cắt clip {} (encoder={}, exit code: {}) - Chi tiết: {}",
+                        outputFile.getName(), encoder, exitCode, errorDetail);
+                    lastFailure = CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
+                        ErrorCode.CUT_FAILED, "FFmpeg lỗi (code " + exitCode + "): " + errorDetail);
+                    // GPU lỗi (driver/codec không hỗ trợ) → thử lại bằng CPU thay vì trả lỗi cho người dùng
+                    continue;
+                }
+
+                long outputSize = outputFile.length();
+                double durationSec = paddedEnd - paddedStart;
+                long encodeMs = System.currentTimeMillis() - encodeStartedAt;
+
+                log.info("Cắt video thành công: {} (Thời lượng: {}s, encoder={}, thời gian encode: {} ms, tổng: {} ms, dung lượng: {} bytes)",
+                    outputFile.getName(), durationSec, encoder, encodeMs, executionTimeMs, outputSize);
+
+                return CutResult.success(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs, outputSize);
+
+            } catch (java.io.IOException e) {
+                long executionTimeMs = System.currentTimeMillis() - startTime;
+                log.error("Không thể khởi chạy ffmpeg (encoder={}): {}. Vui lòng kiểm tra cài đặt ffmpeg.", encoder, e.getMessage());
+                lastFailure = CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
+                    ErrorCode.PROCESS_EXECUTION_FAILED, "Không thể khởi chạy ffmpeg: " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                long executionTimeMs = System.currentTimeMillis() - startTime;
+                log.error("Tiến trình cắt video bị gián đoạn: {}", e.getMessage());
+                return CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
+                    ErrorCode.UNKNOWN_ERROR, "Tiến trình cắt bị gián đoạn: " + e.getMessage());
+            } catch (Exception e) {
+                long executionTimeMs = System.currentTimeMillis() - startTime;
+                log.error("Lỗi ngoại lệ khi cắt video {} (encoder={}): {}", outputFile.getName(), encoder, e.getMessage());
+                lastFailure = CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd, executionTimeMs,
+                    ErrorCode.UNKNOWN_ERROR, "Lỗi không xác định khi cắt video: " + e.getMessage());
+            }
+        }
+
+        return lastFailure != null ? lastFailure
+            : CutResult.failure(inputPathStr, outputPathStr, paddedStart, paddedEnd,
+                System.currentTimeMillis() - startTime, ErrorCode.UNKNOWN_ERROR, "Không thể cắt video");
     }
 
     /**
@@ -437,6 +532,8 @@ public class VideoCutter {
             "-c:v", "libx264",
             "-preset", "fast",
             "-crf", "22",
+            // Ép 8-bit 4:2:0 để trình duyệt phát được cả khi nguồn là 10-bit 4:2:2
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-avoid_negative_ts", "make_zero",
             "-movflags", "+faststart",
