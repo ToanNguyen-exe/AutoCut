@@ -1937,6 +1937,226 @@ public class VideoController {
         }
     }
 
+    /**
+     * Cắt và ghép các phân đoạn bất kỳ được người dùng tích chọn trên timeline
+     * (liền kề hoặc cách quãng) thành 1 tệp video MP4 duy nhất trong output/combined.
+     */
+    @PostMapping("/merge-clips")
+    public ResponseEntity<?> mergeSelectedClips(@RequestBody(required = false) Map<String, Object> payload) {
+        if (payload == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Thiếu dữ liệu yêu cầu gộp clip"
+            ));
+        }
+
+        String videoName = payload.get("videoName") != null ? String.valueOf(payload.get("videoName")).trim() : "";
+        String videoHash = payload.get("videoHash") != null ? String.valueOf(payload.get("videoHash")).trim() : "";
+        String videoUrl = payload.get("videoUrl") != null ? String.valueOf(payload.get("videoUrl")).trim() : "";
+        String rawLesson = payload.get("lesson") != null && !String.valueOf(payload.get("lesson")).isBlank()
+                ? String.valueOf(payload.get("lesson")).trim()
+                : "clips";
+        String rawUser = payload.get("user") != null ? String.valueOf(payload.get("user")).trim() : "admin";
+
+        if (!SafePaths.isSafeSegment(rawLesson) || rawUser.contains("..") || rawUser.contains("/") || rawUser.contains("\\")) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Tên bài học hoặc người dùng không hợp lệ"
+            ));
+        }
+
+        Object rawSegmentsObj = payload.get("segments");
+        if (!(rawSegmentsObj instanceof List<?> rawSegments) || rawSegments.size() < 2) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Cần chọn ít nhất 2 phân đoạn để gộp clip"
+            ));
+        }
+
+        List<double[]> ranges = new ArrayList<>();
+        for (Object item : rawSegments) {
+            if (!(item instanceof Map<?, ?> segMap)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Định dạng phân đoạn không hợp lệ"
+                ));
+            }
+            double start = segMap.get("start") instanceof Number n1 ? n1.doubleValue() : -1;
+            double end = segMap.get("end") instanceof Number n2 ? n2.doubleValue() : -1;
+            if (start < 0 || end <= start) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "error", "Khoảng thời gian phân đoạn không hợp lệ"
+                ));
+            }
+            ranges.add(new double[]{start, end});
+        }
+
+        String sourceVideo = resolveMergeVideoSource(videoName, videoHash, videoUrl);
+        if (sourceVideo == null || sourceVideo.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "error", "Không tìm thấy video nguồn: " + abbreviate(videoName)
+            ));
+        }
+
+        Path root = outputRoot();
+        Path combinedDir;
+        Path outputFile;
+        String fileName = "merged_" + System.currentTimeMillis() + ".mp4";
+        try {
+            combinedDir = SafePaths.resolveWithin(root, "combined");
+            Files.createDirectories(combinedDir);
+            outputFile = SafePaths.resolveWithin(combinedDir, fileName);
+        } catch (IOException e) {
+            log.error("Không tạo được thư mục gộp clip: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Không tạo được thư mục đầu ra"
+            ));
+        }
+
+        Path tempDir = null;
+        List<File> tempClips = new ArrayList<>();
+        try {
+            tempDir = Files.createTempDirectory("autocut_merge_");
+            for (int i = 0; i < ranges.size(); i++) {
+                double[] r = ranges.get(i);
+                Path tempClipPath = tempDir.resolve("part_" + i + ".mp4");
+                CutResult cutResult = videoCutter.cut(sourceVideo, tempClipPath.toAbsolutePath().toString(), r[0], r[1]);
+                if (!cutResult.success()) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "status", "ERROR",
+                        "error", "Cắt đoạn #" + (i + 1) + " thất bại: " + cutResult.errorMessage()
+                    ));
+                }
+                tempClips.add(tempClipPath.toFile());
+            }
+
+            com.autocut.video.ConcatResult concatResult = videoConcat.concat(tempClips, outputFile.toFile(), false);
+            if (!concatResult.success()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "ERROR",
+                    "error", concatResult.errorMessage() != null ? concatResult.errorMessage() : "Ghép clip thất bại"
+                ));
+            }
+
+            String relPath = "combined/" + fileName;
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", "SUCCESS");
+            responseBody.put("message", "Đã gộp thành công " + ranges.size() + " đoạn thành 1 clip!");
+            responseBody.put("file", fileName);
+            responseBody.put("outputFile", relPath);
+            responseBody.put("downloadUrl", "/api/video/download-clip?path=" + relPath);
+            responseBody.put("outputSizeBytes", concatResult.outputSizeBytes());
+            responseBody.put("executionTimeMs", concatResult.executionTimeMs());
+            responseBody.put("mergedCount", ranges.size());
+            return ResponseEntity.ok(responseBody);
+        } catch (IOException e) {
+            log.error("Lỗi I/O khi gộp clip: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "ERROR",
+                "error", "Lỗi máy chủ khi xử lý gộp clip"
+            ));
+        } finally {
+            if (tempDir != null) {
+                for (File f : tempClips) {
+                    try {
+                        Files.deleteIfExists(f.toPath());
+                    } catch (IOException ignored) {
+                    }
+                }
+                try {
+                    Files.deleteIfExists(tempDir);
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
+    private String resolveMergeVideoSource(String videoName, String videoHash, String videoUrl) {
+        String effectiveHash = videoHash;
+        if ((effectiveHash == null || !SafePaths.isSha256(effectiveHash)) && videoUrl != null) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("/api/video/stream/([a-fA-F0-9]{64})")
+                    .matcher(videoUrl);
+            if (matcher.find()) {
+                effectiveHash = matcher.group(1);
+            }
+        }
+
+        if (SafePaths.isSha256(effectiveHash)) {
+            String lowerHash = effectiveHash.toLowerCase(Locale.ROOT);
+            for (Path uploadDir : List.of(rootFor("uploads"), Paths.get("uploads"), resolveProjectRoot().resolve("uploads"))) {
+                if (Files.exists(uploadDir)) {
+                    try (var stream = Files.list(uploadDir)) {
+                        Optional<Path> found = stream
+                                .filter(Files::isRegularFile)
+                                .filter(p -> {
+                                    String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                                    return name.equals(lowerHash)
+                                            || name.equals(lowerHash + ".mp4")
+                                            || name.startsWith(lowerHash + "_");
+                                })
+                                .findFirst();
+                        if (found.isPresent()) {
+                            return found.get().toAbsolutePath().toString();
+                        }
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+            Optional<VideoEntity> byHash = videoRepository.findBySha256Hash(lowerHash);
+            if (byHash.isPresent() && byHash.get().getCloudUrl() != null && !byHash.get().getCloudUrl().isBlank()) {
+                String cUrl = byHash.get().getCloudUrl();
+                if (!cUrl.contains("/api/video/stream/")) {
+                    return cUrl;
+                }
+            }
+        }
+
+        if (videoName != null && !videoName.isBlank() && SafePaths.isSafeSegment(videoName)) {
+            Path projectRoot = resolveProjectRoot();
+            for (Path base : List.of(
+                    rootFor("input"),
+                    rootFor("uploads"),
+                    outputRoot(),
+                    projectRoot.resolve("frontend").resolve("public").resolve("videos"),
+                    Paths.get("frontend", "public", "videos"))) {
+                try {
+                    Path candidate = SafePaths.resolveWithin(base, videoName);
+                    if (Files.isRegularFile(candidate)) {
+                        return candidate.toAbsolutePath().toString();
+                    }
+                } catch (PathOutsideRootException ignored) {
+                }
+            }
+            String lowerName = videoName.toLowerCase(Locale.ROOT);
+            for (Path uploadDir : List.of(rootFor("uploads"), projectRoot.resolve("uploads"))) {
+                if (Files.exists(uploadDir)) {
+                    try (var stream = Files.list(uploadDir)) {
+                        Optional<Path> found = stream
+                                .filter(Files::isRegularFile)
+                                .filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith("_" + lowerName))
+                                .findFirst();
+                        if (found.isPresent()) {
+                            return found.get().toAbsolutePath().toString();
+                        }
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        }
+
+        if (videoUrl != null
+                && (videoUrl.startsWith("http://") || videoUrl.startsWith("https://"))
+                && !videoUrl.contains("/api/video/stream/")) {
+            return videoUrl;
+        }
+
+        return resolveVideoSource(videoName);
+    }
+
     private String resolveVideoSource(String videoName) {
         if (videoName != null && (videoName.startsWith("http://") || videoName.startsWith("https://"))) {
             return videoName;

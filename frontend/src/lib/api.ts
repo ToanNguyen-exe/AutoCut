@@ -702,6 +702,85 @@ export interface ConcatVideosResponse {
 /**
  * Ghép nối nhiều file clip thành 1 video tổng hợp qua FFmpeg Concat của SV1 (POST /api/video/concat)
  */
+export interface MergeSelectedClipsPayload {
+  videoName: string;
+  videoHash?: string;
+  videoUrl?: string;
+  lesson: string;
+  user?: string;
+  segments: Array<{ start: number; end: number; topic?: string }>;
+}
+
+export interface MergeSelectedClipsResponse {
+  status: string;
+  message: string;
+  file: string;
+  outputFile: string;
+  downloadUrl: string;
+  protectedDownloadUrl?: string;
+  outputSizeBytes?: number;
+  executionTimeMs?: number;
+  mergedCount: number;
+}
+
+/**
+ * Cắt và ghép các phân đoạn được tích chọn trên Timeline (kể cả cách quãng) thành 1 file MP4 (POST /api/video/merge-clips).
+ */
+export async function mergeSelectedClipsBackend(
+  payload: MergeSelectedClipsPayload
+): Promise<ApiResponse<MergeSelectedClipsResponse>> {
+  const validSegments = (payload.segments || []).filter(
+    (s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.start >= 0 && s.end > s.start
+  );
+  if (validSegments.length < 2) {
+    return {
+      error: "Cần tích chọn ít nhất 2 phân đoạn hợp lệ để gộp thành 1 video.",
+      source: "fallback",
+    };
+  }
+
+  try {
+    const res = await apiFetch(`${API_BASE}/merge-clips`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        videoName: payload.videoName,
+        videoHash: payload.videoHash,
+        videoUrl: payload.videoUrl,
+        lesson: payload.lesson || "clips",
+        user: payload.user || "admin",
+        segments: validSegments,
+      }),
+    });
+
+    if (!res.ok) {
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = (await res.json()) as { error?: string | { message?: string } };
+        if (typeof errJson.error === "string") {
+          errorMsg = errJson.error;
+        } else if (errJson.error && typeof errJson.error.message === "string") {
+          errorMsg = errJson.error.message;
+        }
+      } catch {
+        // Bỏ qua nếu body không phải JSON
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = (await res.json()) as MergeSelectedClipsResponse;
+    if (data.outputFile) {
+      data.protectedDownloadUrl = await resolveProtectedDownloadClipUrl(data.outputFile);
+    }
+    return { data, source: "api" };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Không thể gộp các phân đoạn đã chọn",
+      source: "fallback",
+    };
+  }
+}
+
 export async function submitConcatVideos(
   payload: ConcatVideosPayload
 ): Promise<ApiResponse<ConcatVideosResponse>> {

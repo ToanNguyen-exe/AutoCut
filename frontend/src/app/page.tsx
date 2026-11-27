@@ -14,6 +14,9 @@ import {
   analyzeVideoWithAutoSync,
   saveProjectToBackend,
   resolveProtectedStreamUrl,
+  mergeSelectedClipsBackend,
+  getDownloadClipUrl,
+  triggerBrowserDownload,
   API_BASE,
 } from "@/lib/api";
 import { clearAllTimerRefs } from "@/lib/timerManager";
@@ -268,7 +271,9 @@ export default function Home() {
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const renderTimerRef = useRef<NodeJS.Timeout | null>(null);
   const analyzeTickerRef = useRef<NodeJS.Timeout | null>(null);
+  const mergeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isMergingClips, setIsMergingClips] = useState<boolean>(false);
 
   // Tiến độ Cắt Video & Tải File Xuất Bản (Export & Analysis Progress Modal)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
@@ -334,7 +339,7 @@ export default function Home() {
     });
     return () => {
       active = false;
-      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef]);
+      clearAllTimerRefs([progressTimerRef, renderTimerRef, analyzeTickerRef, mergeTimerRef]);
     };
   }, [router]);
 
@@ -845,6 +850,114 @@ export default function Home() {
     } finally {
       if (renderTimerRef.current) clearInterval(renderTimerRef.current);
       renderTimerRef.current = null;
+      setIsRendering(false);
+    }
+  };
+
+  const handleMergeSelectedClips = async (selectedSegments: Segment[]) => {
+    if (selectedSegments.length < 2) {
+      showToast("info", "Vui lòng tích chọn ít nhất 2 phân đoạn trên timeline để gộp!");
+      return;
+    }
+    if (isMergingClips) return;
+
+    setIsMergingClips(true);
+    setIsRendering(true);
+    setIsProgressModalOpen(true);
+    setProgressModalMode("render");
+    setProgressPercent(18);
+    setProgressError(null);
+    setRenderedClips([]);
+    setRenderedOutputDir("");
+    setProgressActionText(`Đang cắt & ghép ${selectedSegments.length} phân đoạn đã chọn thành 1 video MP4...`);
+    setProgressSteps([
+      {
+        id: "merge-cut",
+        title: `1. Cắt ${selectedSegments.length} phân đoạn đã chọn`,
+        description: selectedSegments.map((s) => s.topic).join(" • "),
+        status: "running",
+      },
+      {
+        id: "merge-concat",
+        title: "2. Ghép nối thành 1 tệp video MP4 hoàn chỉnh",
+        description: "Ghép liên tục theo đúng thứ tự trên timeline và chuẩn bị liên kết tải về.",
+        status: "pending",
+      },
+    ]);
+
+    if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
+    let pct = 18;
+    mergeTimerRef.current = setInterval(() => {
+      pct = Math.min(88, pct + Math.floor(Math.random() * 8) + 4);
+      setProgressPercent(pct);
+      if (pct >= 55) {
+        setProgressSteps((prev) =>
+          prev.map((s) =>
+            s.id === "merge-cut"
+              ? { ...s, status: "completed" }
+              : s.id === "merge-concat"
+              ? { ...s, status: "running" }
+              : s
+          )
+        );
+      }
+    }, 600);
+
+    try {
+      const result = await mergeSelectedClipsBackend({
+        videoName: data.video,
+        videoHash: currentVideoHash || undefined,
+        videoUrl: externalVideoUrl || undefined,
+        lesson: data.lesson || data.video.replace(/\.[^/.]+$/, "") || "clips",
+        user: currentUser?.id || currentUser?.username || "admin",
+        segments: selectedSegments.map((s) => ({
+          start: s.start,
+          end: s.end,
+          topic: s.topic,
+        })),
+      });
+
+      if (mergeTimerRef.current) {
+        clearInterval(mergeTimerRef.current);
+        mergeTimerRef.current = null;
+      }
+
+      if (result.source === "api" && result.data) {
+        const merged = result.data;
+        setProgressPercent(100);
+        setProgressActionText(merged.message || `Đã gộp ${merged.mergedCount} đoạn thành 1 video MP4!`);
+        setProgressSteps((prev) => prev.map((s) => ({ ...s, status: "completed" })));
+        setRenderedClips([
+          {
+            file: merged.file || "merged_video.mp4",
+            path: merged.outputFile,
+            sizeBytes: merged.outputSizeBytes || 0,
+            executionMs: merged.executionTimeMs || 0,
+          },
+        ]);
+        setRenderedOutputDir("output/combined");
+        setTotalRenderedCount(1);
+
+        const downloadHref = merged.protectedDownloadUrl || getDownloadClipUrl(merged.outputFile);
+        if (downloadHref) {
+          triggerBrowserDownload(downloadHref, merged.file || "merged_video.mp4");
+        }
+        showToast("success", merged.message || "Đã gộp thành công thành 1 video MP4!");
+      } else {
+        setProgressPercent(60);
+        setProgressError(result.error || "Không thể gộp các phân đoạn đã chọn");
+        setProgressSteps((prev) =>
+          prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+        );
+        showToast("error", `Lỗi gộp video: ${result.error || "Thất bại"}`);
+      }
+    } catch (err) {
+      setProgressError(err instanceof Error ? err.message : "Lỗi ngoại lệ khi gộp video");
+      showToast("error", "Đã xảy ra lỗi khi gộp các đoạn video đã chọn.");
+    } finally {
+      if (mergeTimerRef.current) clearInterval(mergeTimerRef.current);
+      mergeTimerRef.current = null;
+      setIsMergingClips(false);
       setIsRendering(false);
     }
   };
@@ -2164,12 +2277,14 @@ export default function Home() {
         isMuted={isMuted}
         canUndo={undoStack.length > 0}
         canRedo={redoStack.length > 0}
+        isMergingSelectedClips={isMergingClips}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onTogglePlay={() => setIsPlaying(!isPlaying)}
         onSeek={handleSeek}
         onSelectSegment={(id) => setActiveSegmentId(id)}
         onUpdateSegments={handleUpdateSegments}
+        onMergeSelectedClips={handleMergeSelectedClips}
         onVolumeChange={setVolume}
         onToggleMute={handleToggleMute}
         onOpenSegmentDetail={handleOpenSegmentDetail}

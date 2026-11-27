@@ -292,7 +292,7 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                   </p>
                 </div>
 
-                {renderedClips.length > 0 && (
+                {renderedClips.length > 1 && (
                   <button
                     onClick={handleDownloadZip}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200 cursor-pointer shadow-2xs"
