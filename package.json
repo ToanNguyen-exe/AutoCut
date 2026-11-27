@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
-    "build": "npm ci --prefix frontend && npm --prefix frontend run build:worker",
+    "build": "npm ci --prefix frontend --include=dev && npm --prefix frontend run build:worker",
     "build:next": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
     "backend": "cd backend && .\\mvnw.cmd spring-boot:run",
-    "build:worker": "npm ci --prefix frontend && npm --prefix frontend run build:worker",
+    "build:worker": "npm ci --prefix frontend --include=dev && npm --prefix frontend run build:worker",
     "deploy:worker": "wrangler deploy",
     "preview:worker": "npm --prefix frontend run preview:worker"
   },
