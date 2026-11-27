@@ -18,7 +18,6 @@ import { Segment } from "@/types";
 import { formatTime } from "@/lib/utils";
 import {
   RenderedClipItem,
-  getDownloadClipUrl,
   resolveProtectedDownloadClipUrl,
   resolveProtectedDownloadZipUrl,
   resolveProtectedDownloadSelectedZipUrl,
