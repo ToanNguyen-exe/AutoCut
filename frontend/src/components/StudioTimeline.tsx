@@ -8,6 +8,7 @@ import {
   reconcileSelectedSegmentIds,
   getCheckedSegmentsInOrder,
   canMergeSelectedSegments,
+  getTimelineMergeValidation,
 } from "@/lib/mergeSelection";
 import {
   Play,
@@ -44,13 +45,15 @@ interface StudioTimelineProps {
   volume?: number;
   isMuted?: boolean;
   isMergingSelectedClips?: boolean;
+  checkedSegmentIds?: string[];
+  onCheckedSegmentIdsChange?: (ids: string[]) => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onTogglePlay?: () => void;
   onSeek: (time: number) => void;
   onSelectSegment: (id: string) => void;
   onUpdateSegments: (newSegments: Segment[]) => void;
-  onMergeSelectedClips?: (selectedSegments: Segment[]) => Promise<boolean | void> | void;
+  onMergeSelectedClips?: (selectedSegments: Segment[]) => Promise<boolean | void> | boolean | void;
   onVolumeChange?: (vol: number) => void;
   onToggleMute?: () => void;
   onOpenSegmentDetail?: (segment: Segment, index: number) => void;
@@ -66,6 +69,8 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   canRedo = false,
   joinedVideos = [],
   isMergingSelectedClips = false,
+  checkedSegmentIds: controlledCheckedIds,
+  onCheckedSegmentIdsChange,
   onUndo,
   onRedo,
   onTogglePlay,
@@ -86,20 +91,37 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
   }, [onTogglePlay]);
 
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [checkedSegmentIds, setCheckedSegmentIds] = useState<string[]>([]);
+  const [internalCheckedIds, setInternalCheckedIds] = useState<string[]>([]);
+  const rawCheckedIds = controlledCheckedIds ?? internalCheckedIds;
+
+  const updateCheckedIds = useCallback(
+    (updater: string[] | ((prev: string[]) => string[])) => {
+      if (onCheckedSegmentIdsChange) {
+        const next = typeof updater === "function" ? updater(rawCheckedIds) : updater;
+        onCheckedSegmentIdsChange(next);
+      } else {
+        setInternalCheckedIds(updater);
+      }
+    },
+    [onCheckedSegmentIdsChange, rawCheckedIds]
+  );
 
   const validCheckedIds = useMemo(
-    () => reconcileSelectedSegmentIds(checkedSegmentIds, segments),
-    [checkedSegmentIds, segments]
+    () => reconcileSelectedSegmentIds(rawCheckedIds, segments),
+    [rawCheckedIds, segments]
   );
 
   const canMergeChecked = canMergeSelectedSegments(validCheckedIds);
+  const mergeValidation = useMemo(
+    () => getTimelineMergeValidation(segments, validCheckedIds, joinedVideos),
+    [segments, validCheckedIds, joinedVideos]
+  );
 
   const handleToggleCheck = useCallback(
     (segmentId: string) => {
-      setCheckedSegmentIds((prev) => toggleSelectedSegmentId(reconcileSelectedSegmentIds(prev, segments), segmentId));
+      updateCheckedIds((prev) => toggleSelectedSegmentId(reconcileSelectedSegmentIds(prev, segments), segmentId));
     },
-    [segments]
+    [segments, updateCheckedIds]
   );
 
   const handleMergeCheckedClick = useCallback(async () => {
@@ -109,9 +131,9 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
     const chosen = getCheckedSegmentsInOrder(segments, validCheckedIds);
     const result = await onMergeSelectedClips(chosen);
     if (result !== false) {
-      setCheckedSegmentIds([]);
+      updateCheckedIds([]);
     }
-  }, [onMergeSelectedClips, canMergeChecked, isMergingSelectedClips, segments, validCheckedIds]);
+  }, [onMergeSelectedClips, canMergeChecked, isMergingSelectedClips, segments, validCheckedIds, updateCheckedIds]);
 
   // Resizable timeline height (kéo lên kéo xuống)
   const [timelineHeight, setTimelineHeight] = useState<number>(() => {
@@ -460,7 +482,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             <Trash2 className="w-4 h-4" />
           </button>
 
-          {/* Gộp các phân đoạn đã tích thành 1 file MP4 */}
+          {/* Gộp các phân đoạn liền kề đã tích ngay trên track Nội dung */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -468,13 +490,17 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
               disabled={!canMergeChecked || isMergingSelectedClips}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border transition ${
                 canMergeChecked && !isMergingSelectedClips
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs cursor-pointer"
+                  ? mergeValidation.ok
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs cursor-pointer"
+                    : "bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 shadow-2xs cursor-pointer"
                   : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200/80 dark:border-white/10 cursor-not-allowed"
               }`}
               title={
                 canMergeChecked
-                  ? `Cắt & ghép ${validCheckedIds.length} phân đoạn đã tích thành 1 video MP4`
-                  : "Tích chọn ít nhất 2 phân đoạn bên dưới để gộp thành 1 video MP4"
+                  ? mergeValidation.ok
+                    ? `Gộp ${validCheckedIds.length} phân đoạn đã tích thành 1 đoạn trên track Nội dung`
+                    : mergeValidation.reason
+                  : "Tích chọn ít nhất 2 phân đoạn liền kề bên dưới để gộp trên timeline"
               }
             >
               {isMergingSelectedClips ? (
@@ -493,7 +519,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
             {validCheckedIds.length > 0 && !isMergingSelectedClips && (
               <button
                 type="button"
-                onClick={() => setCheckedSegmentIds([])}
+                onClick={() => updateCheckedIds([])}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer"
                 title="Bỏ tích tất cả"
               >
@@ -796,7 +822,7 @@ export const StudioTimeline: React.FC<StudioTimelineProps> = ({
                           role="checkbox"
                           aria-checked={isChecked}
                           aria-label={`Tích chọn đoạn #${idx + 1}: ${seg.topic}`}
-                          title={isChecked ? "Bỏ tích phân đoạn này" : "Tích chọn phân đoạn để gộp video"}
+                          title={isChecked ? "Bỏ tích phân đoạn này" : "Tích chọn đoạn để gộp trên timeline hoặc Export tải về"}
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();

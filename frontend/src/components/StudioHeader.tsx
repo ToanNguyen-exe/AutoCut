@@ -30,6 +30,7 @@ interface StudioHeaderProps {
   isSaving?: boolean;
   isDemo?: boolean;
   themeColor?: string;
+  selectedExportCount?: number;
   onThemeColorChange?: (color: string, isDark: boolean) => void;
   onRefreshFromBackend?: () => void;
   onExport?: () => void;
@@ -49,6 +50,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   analysisProgress = 0,
   isSaving = false,
   themeColor,
+  selectedExportCount = 0,
   onThemeColorChange,
   onOpenAddVideo,
   onExport,
@@ -207,7 +209,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button
             onClick={onRender}
             disabled={isRendering}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+            title={
+              selectedExportCount > 0
+                ? `Chỉ cắt và xuất ${selectedExportCount} đoạn đang tích trên timeline`
+                : "Chọn các đoạn cần cắt & xuất video"
+            }
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
             {isRendering ? (
               <>
@@ -215,7 +222,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 <span>Rendering...</span>
               </>
             ) : (
-              <span>Export</span>
+              <span>
+                {selectedExportCount > 0 ? `Export (${selectedExportCount} đoạn)` : "Export"}
+              </span>
             )}
           </button>
 

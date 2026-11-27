@@ -274,6 +274,44 @@ export async function resolveProtectedDownloadClipUrl(
   return getDownloadClipUrl(filePath, lesson, ticket || undefined);
 }
 
+/**
+ * URL xem trước clip ngay trong trình duyệt (Content-Disposition: inline) — dùng cho
+ * kết quả gộp clip: người dùng xem được độ dài/nội dung trước, tải về chỉ khi họ muốn.
+ */
+export function getPreviewClipUrl(filePath: string, lesson?: string, ticket?: string): string {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticketParam = ticket ? `&ticket=${encodeURIComponent(ticket)}` : "";
+  return `${API_BASE}/download-clip?path=${encodeURIComponent(clean)}&inline=1${ticketParam}`;
+}
+
+/**
+ * Dọn thư mục clip đã xuất sau khi người dùng đóng bảng kết quả.
+ * Clip chỉ cần tồn tại trong lúc xem trước/tải về — không để rác tích tụ trong `output/`.
+ * Không ném lỗi: dọn dẹp thất bại không được làm hỏng trải nghiệm đóng bảng.
+ */
+export async function deleteExportDirectory(dirPath: string): Promise<boolean> {
+  if (!dirPath || !dirPath.trim()) return false;
+  try {
+    const res = await apiFetch(`${API_BASE}/export-dir?path=${encodeURIComponent(dirPath.trim())}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function resolveProtectedPreviewClipUrl(
+  filePath: string,
+  lesson?: string
+): Promise<string> {
+  const clean = normalizeClipPath(filePath, lesson);
+  if (!clean) return "";
+  const ticket = await requestAuthTicket("DOWNLOAD", clean);
+  return getPreviewClipUrl(filePath, lesson, ticket || undefined);
+}
+
 export async function resolveProtectedDownloadZipUrl(
   lesson: string,
   user?: string
@@ -281,6 +319,32 @@ export async function resolveProtectedDownloadZipUrl(
   const cleanLesson = (lesson || "clips").trim();
   const ticket = await requestAuthTicket("DOWNLOAD", cleanLesson);
   return getDownloadZipUrl(cleanLesson, user, ticket || undefined);
+}
+
+export function getDownloadSelectedZipUrl(
+  lesson: string,
+  paths: string[],
+  user?: string,
+  ticket?: string
+): string {
+  const cleanLesson = (lesson || "clips").trim();
+  const baseUrl = getDownloadZipUrl(cleanLesson, user, ticket);
+  const pathParams = (paths || [])
+    .map((p) => normalizeClipPath(p, cleanLesson))
+    .filter(Boolean)
+    .map((cleanPath) => `&paths=${encodeURIComponent(cleanPath)}`)
+    .join("");
+  return `${baseUrl}${pathParams}`;
+}
+
+export async function resolveProtectedDownloadSelectedZipUrl(
+  lesson: string,
+  paths: string[],
+  user?: string
+): Promise<string> {
+  const cleanLesson = (lesson || "clips").trim();
+  const ticket = await requestAuthTicket("DOWNLOAD", cleanLesson);
+  return getDownloadSelectedZipUrl(cleanLesson, paths, user, ticket || undefined);
 }
 
 export async function resolveProtectedStreamUrl(url: string): Promise<string> {
@@ -320,8 +384,16 @@ export function triggerBrowserDownload(url: string, filename?: string): void {
 /**
  * Gửi kế hoạch phân đoạn đã duyệt lên Backend để thực hiện cắt video (POST /api/video/render - B10)
  */
+export type RenderSegmentsRequest = SegmentsData & {
+  videoHash?: string;
+  videoUrl?: string;
+  user?: string;
+  autoConcat?: boolean;
+  segments: Array<Segment & { videoName?: string; videoUrl?: string; videoHash?: string }>;
+};
+
 export async function submitRenderSegments(
-  segmentsData: SegmentsData
+  segmentsData: RenderSegmentsRequest
 ): Promise<RenderResponse> {
   try {
     const res = await apiFetch(`${API_BASE}/render`, {
@@ -332,14 +404,29 @@ export async function submitRenderSegments(
 
     if (!res.ok) {
       let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
-      try {
-        const errJson = (await res.json()) as { error?: string };
-        if (errJson && typeof errJson.error === "string") {
-          errorMsg = errJson.error;
+      const rawText = await res.text().catch(() => "");
+      if (rawText) {
+        try {
+          const errJson = JSON.parse(rawText) as {
+            error?: string | { message?: string };
+            message?: string;
+          };
+          if (typeof errJson.error === "string" && errJson.error.trim()) {
+            errorMsg = errJson.error;
+          } else if (
+            errJson.error &&
+            typeof errJson.error === "object" &&
+            typeof errJson.error.message === "string"
+          ) {
+            errorMsg = errJson.error.message;
+          } else if (typeof errJson.message === "string" && errJson.message.trim()) {
+            errorMsg = errJson.message;
+          } else {
+            errorMsg = rawText;
+          }
+        } catch {
+          errorMsg = rawText;
         }
-      } catch {
-        const errText = await res.text().catch(() => "");
-        if (errText) errorMsg = errText;
       }
       throw new Error(errorMsg);
     }
@@ -725,6 +812,7 @@ export interface MergeSelectedClipsResponse {
   outputFile: string;
   downloadUrl: string;
   protectedDownloadUrl?: string;
+  protectedPreviewUrl?: string;
   outputSizeBytes?: number;
   executionTimeMs?: number;
   mergedCount: number;
@@ -778,6 +866,7 @@ export async function mergeSelectedClipsBackend(
     const data = (await res.json()) as MergeSelectedClipsResponse;
     if (data.outputFile) {
       data.protectedDownloadUrl = await resolveProtectedDownloadClipUrl(data.outputFile);
+      data.protectedPreviewUrl = await resolveProtectedPreviewClipUrl(data.outputFile);
     }
     return { data, source: "api" };
   } catch (err) {

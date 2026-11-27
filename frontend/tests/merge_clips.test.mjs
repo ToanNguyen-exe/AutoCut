@@ -8,6 +8,8 @@ import {
   getCheckedSegmentsInOrder,
   canMergeSelectedSegments,
   buildMergeClipItems,
+  getTimelineMergeValidation,
+  mergeTimelineSegments,
 } from "../src/lib/mergeSelection.ts";
 import { API_BASE, mergeSelectedClipsBackend } from "../src/lib/api.ts";
 import { setAccessToken } from "../src/lib/http.ts";
@@ -180,5 +182,112 @@ test("page.tsx resets currentVideoHash inside handleSelectLibraryCard when switc
   assert.ok(
     snippet.includes("setCurrentVideoHash("),
     "handleSelectLibraryCard phải cập nhật/xóa currentVideoHash khi đổi video"
+  );
+});
+
+test("mergeTimelineSegments gộp các đoạn liền kề trên timeline, giữ id đầu, cập nhật mốc/parts và không mutate đầu vào", () => {
+  const originalSnapshot = JSON.parse(JSON.stringify(sampleSegments));
+
+  // Chọn ngược thứ tự seg_3 rồi seg_2 -> vẫn gộp đúng theo thứ tự timeline [20..90]
+  const res = mergeTimelineSegments(sampleSegments, ["seg_3", "seg_2"]);
+  assert.equal(res.ok, true);
+  assert.equal(res.segments.length, 3);
+
+  const merged = res.segments[1];
+  assert.equal(merged.id, "seg_2", "Phải giữ id của đoạn đầu tiên theo chuẩn F00");
+  assert.equal(merged.start, 20);
+  assert.equal(merged.end, 90);
+  assert.equal(merged.start_id, "S3");
+  assert.equal(merged.end_id, "S6");
+  assert.equal(merged.topic, "Khái niệm & Ví dụ");
+  assert.equal(merged.parts[0].start, 20);
+  assert.equal(merged.parts[merged.parts.length - 1].end, 90);
+
+  // Đánh lại topic_no tuần tự 1..3
+  assert.deepEqual(
+    res.segments.map((s) => s.topic_no),
+    [1, 2, 3]
+  );
+
+  // Không mutate mảng input ban đầu
+  assert.deepEqual(sampleSegments, originalSnapshot);
+});
+
+test("mergeTimelineSegments gộp được 3 đoạn liền kề dài > 420s thành 1 clip duy nhất (không tự tách lại thành _Phan1/_Phan2)", () => {
+  const longSegments = [
+    { id: "s1", section_no: 1, section: "01_GioiThieu", topic_no: 1, topic: "Đoạn 1", slug: "doan-1", start_id: "S1", end_id: "S2", start: 0, end: 294, parts: [] },
+    { id: "s2", section_no: 1, section: "01_GioiThieu", topic_no: 2, topic: "Đoạn 2", slug: "doan-2", start_id: "S3", end_id: "S4", start: 294, end: 558, parts: [] },
+    { id: "s3", section_no: 1, section: "01_GioiThieu", topic_no: 3, topic: "Đoạn 3", slug: "doan-3", start_id: "S5", end_id: "S6", start: 558, end: 650, parts: [] },
+  ];
+
+  const res = mergeTimelineSegments(longSegments, ["s1", "s2", "s3"]);
+  assert.equal(res.ok, true);
+  assert.equal(res.segments.length, 1);
+  assert.equal(res.segments[0].start, 0);
+  assert.equal(res.segments[0].end, 650);
+  // Yêu cầu từ người dùng: clip đã gộp phải giữ nguyên 1 file duy nhất khi xuất, không bị cắt lại thành 2 file _Phan1/_Phan2
+  assert.equal(res.segments[0].parts.length, 1, "Clip đã gộp phải giữ đúng 1 part duy nhất để xuất thành 1 file");
+  assert.equal(res.segments[0].parts[0].start, 0);
+  assert.equal(res.segments[0].parts[0].end, 650);
+  assert.ok(!res.segments[0].parts[0].file.includes("_Phan"), "Tên file không được có hậu tố _Phan1/_Phan2");
+  assert.ok(
+    !res.segments[0].parts[0].file.startsWith("01_01_"),
+    "Không lặp tiền tố 01_01_ nếu section đã có tiền tố số"
+  );
+});
+
+test("getTimelineMergeValidation từ chối gộp khi chưa đủ 2 đoạn, không liền kề, có khoảng đã xóa hoặc khác video", () => {
+  assert.equal(getTimelineMergeValidation(sampleSegments, ["seg_1"]).ok, false);
+
+  // Không liền kề (seg_1 và seg_3 bỏ qua seg_2)
+  const nonContiguous = getTimelineMergeValidation(sampleSegments, ["seg_1", "seg_3"]);
+  assert.equal(nonContiguous.ok, false);
+
+  // Liền kề trong mảng nhưng có khoảng trống đã xóa ở giữa (> 0.4s)
+  const withDeletedGap = [sampleSegments[0], sampleSegments[2]];
+  const gapRes = getTimelineMergeValidation(withDeletedGap, ["seg_1", "seg_3"]);
+  assert.equal(gapRes.ok, false);
+
+  // Khác video nguồn trong joinedVideos
+  const joinedVideos = [
+    { id: "v1", title: "V1", fileName: "v1.mp4", url: "/videos/v1.mp4", duration: 50, startOffset: 0, endOffset: 50 },
+    { id: "v2", title: "V2", fileName: "v2.mp4", url: "/videos/v2.mp4", duration: 70, startOffset: 50, endOffset: 120 },
+  ];
+  const crossVideo = getTimelineMergeValidation(sampleSegments, ["seg_2", "seg_3"], joinedVideos);
+  assert.equal(crossVideo.ok, false);
+});
+
+test("page.tsx gộp đoạn trực tiếp trên timeline thay vì mở popup ExportProgressModal / mergeSelectedClipsBackend", () => {
+  const pageSource = fs.readFileSync(path.join(FRONTEND_ROOT, "src/app/page.tsx"), "utf-8");
+  const idx = pageSource.indexOf("const handleMergeSelectedClips =");
+  assert.ok(idx !== -1, "Phải có handleMergeSelectedClips trong page.tsx");
+  const endIdx = pageSource.indexOf("const handleDurationChange =", idx);
+  assert.ok(endIdx !== -1);
+  const snippet = pageSource.slice(idx, endIdx);
+
+  assert.ok(
+    snippet.includes("mergeTimelineSegments("),
+    "handleMergeSelectedClips phải gọi mergeTimelineSegments để gộp trực tiếp các phân đoạn trên timeline"
+  );
+  assert.ok(
+    snippet.includes('action: "merge"'),
+    "handleMergeSelectedClips phải báo action: 'merge' để tránh toast xóa nhầm"
+  );
+  assert.ok(
+    !snippet.includes("setIsProgressModalOpen(true)"),
+    "handleMergeSelectedClips KHÔNG được mở popup ExportProgressModal"
+  );
+  assert.ok(
+    !snippet.includes("mergeSelectedClipsBackend"),
+    "handleMergeSelectedClips KHÔNG được gọi API xuất file MP4 tải về"
+  );
+
+  const timelineSource = fs.readFileSync(
+    path.join(FRONTEND_ROOT, "src/components/StudioTimeline.tsx"),
+    "utf-8"
+  );
+  assert.ok(
+    !timelineSource.includes("thành 1 video MP4"),
+    "Nút Gộp trên timeline không được mô tả là xuất/tải 1 video MP4"
   );
 });

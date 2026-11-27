@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   Sparkles,
@@ -12,12 +12,16 @@ import {
   Archive,
   FileJson,
   Loader2,
+  Check,
 } from "lucide-react";
+import { Segment } from "@/types";
+import { formatTime } from "@/lib/utils";
 import {
   RenderedClipItem,
   getDownloadClipUrl,
   resolveProtectedDownloadClipUrl,
   resolveProtectedDownloadZipUrl,
+  resolveProtectedDownloadSelectedZipUrl,
   triggerBrowserDownload,
 } from "@/lib/api";
 
@@ -41,8 +45,13 @@ interface ExportProgressModalProps {
   steps: ProgressStep[];
   error?: string | null;
   renderedClips?: RenderedClipItem[];
+  previewUrl?: string;
+  previewLabel?: string;
   outputDirectory?: string;
   totalRendered?: number;
+  segments?: Segment[];
+  isSelectingSegments?: boolean;
+  onStartSelectedExport?: (selectedIds: string[], exportFormat: "separate" | "merged") => void;
   onClose: () => void;
   onExportJson?: () => void;
   onCancel?: () => void;
@@ -59,12 +68,48 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
   steps,
   error,
   renderedClips = [],
+  previewUrl,
+  previewLabel,
   outputDirectory,
   totalRendered,
+  segments = [],
+  isSelectingSegments = false,
+  onStartSelectedExport,
   onClose,
   onExportJson,
 }) => {
   const [copiedPath, setCopiedPath] = useState(false);
+  const [selectedIdsForExport, setSelectedIdsForExport] = useState<string[]>([]);
+  const [exportFormat, setExportFormat] = useState<"separate" | "merged">("separate");
+  const [downloadSelectedPaths, setDownloadSelectedPaths] = useState<string[]>([]);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const seenClipPathsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (isOpen && isSelectingSegments) {
+      setSelectedIdsForExport(segments.map((s) => s.id));
+      setExportFormat("separate");
+    }
+  }, [isOpen, isSelectingSegments, segments]);
+
+  useEffect(() => {
+    if (renderedClips.length === 0) {
+      seenClipPathsRef.current.clear();
+      setDownloadSelectedPaths([]);
+      return;
+    }
+    const newlyAdded: string[] = [];
+    for (const clip of renderedClips) {
+      const p = clip.path || clip.file;
+      if (p && !seenClipPathsRef.current.has(p)) {
+        seenClipPathsRef.current.add(p);
+        newlyAdded.push(p);
+      }
+    }
+    if (newlyAdded.length > 0) {
+      setDownloadSelectedPaths((prev) => [...prev, ...newlyAdded]);
+    }
+  }, [renderedClips]);
 
   useEffect(() => {
     if (copiedPath) {
@@ -77,6 +122,23 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
 
   const isCompleted = !isRunning && !error && progressPercent >= 100;
   const isFailed = !isRunning && !!error;
+  const isPickerActive = mode === "render" && isSelectingSegments;
+
+  const toggleSegmentForExport = (id: string) => {
+    setSelectedIdsForExport((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleDownloadClipPath = (clipPath: string) => {
+    setDownloadSelectedPaths((prev) =>
+      prev.includes(clipPath) ? prev.filter((p) => p !== clipPath) : [...prev, clipPath]
+    );
+  };
+
+  const selectedDurationSum = segments
+    .filter((s) => selectedIdsForExport.includes(s.id))
+    .reduce((sum, s) => sum + Math.max(0, s.end - s.start), 0);
 
   const handleCopyDir = () => {
     if (outputDirectory) {
@@ -87,7 +149,14 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
 
   const handleDownloadZip = async () => {
     const lName = lessonTitle || videoTitle || "clips";
-    const url = await resolveProtectedDownloadZipUrl(lName);
+    const pathsToZip =
+      downloadSelectedPaths.length > 0
+        ? downloadSelectedPaths
+        : renderedClips.map((c) => c.path || c.file).filter(Boolean);
+    const url =
+      pathsToZip.length > 0
+        ? await resolveProtectedDownloadSelectedZipUrl(lName, pathsToZip)
+        : await resolveProtectedDownloadZipUrl(lName);
     const cleanName = lName.replace(/[^a-zA-Z0-9_.-]/g, "_");
     triggerBrowserDownload(url, `${cleanName}_exported_clips.zip`);
   };
@@ -149,6 +218,108 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 min-h-0 bg-slate-50/30">
+          {isPickerActive ? (
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Chọn các đoạn muốn cắt &amp; tải về
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Chỉ cắt đúng các đoạn bạn chọn (không cần đợi render toàn bộ video). Mẹo: bạn cũng có thể tick sẵn ngoài timeline rồi bấm Export.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIdsForExport(segments.map((s) => s.id))}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 cursor-pointer"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIdsForExport([])}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto rounded-xl border border-slate-200/80">
+                {segments.map((seg, idx) => {
+                  const checked = selectedIdsForExport.includes(seg.id);
+                  const dur = Math.max(0, seg.end - seg.start);
+                  return (
+                    <label
+                      key={seg.id}
+                      onClick={() => toggleSegmentForExport(seg.id)}
+                      className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition ${
+                        checked ? "bg-indigo-50/60" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 transition ${
+                            checked
+                              ? "bg-indigo-600 border-indigo-600 text-white"
+                              : "bg-white border-slate-300 text-transparent"
+                          }`}
+                        >
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">
+                            #{idx + 1} {seg.topic}
+                          </p>
+                          <p className="text-[11px] font-mono text-slate-500">
+                            {formatTime(seg.start)} → {formatTime(seg.end)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">
+                        {formatTime(dur)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {selectedIdsForExport.length >= 2 && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat("separate")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                      exportFormat === "separate"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    Xuất từng clip rời (Nhanh • Stream Copy)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat("merged")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                      exportFormat === "merged"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    Gộp thành 1 file MP4 duy nhất
+                  </button>
+                </div>
+              )}
+
+              <div className="text-xs text-slate-500 font-medium">
+                Đã chọn <strong className="text-indigo-700">{selectedIdsForExport.length}/{segments.length}</strong> đoạn • Tổng thời lượng cần cắt:{" "}
+                <strong className="font-mono text-slate-800">{formatTime(selectedDurationSum)}</strong>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Progress Bar & Current Status */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3.5">
             <div className="flex items-center justify-between text-sm">
@@ -279,40 +450,74 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
           )}
 
           {/* Success Output: Rendered Clips List with Direct Download Links */}
-          {mode === "render" && isCompleted && (
+          {mode === "render" && !isPickerActive && (isCompleted || renderedClips.length > 0) && (
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                     <FileVideo className="w-4 h-4 text-indigo-600" />
-                    <span>Danh sách clip đã xuất bản ({renderedClips.length || totalRendered || 0} clip)</span>
+                    <span>Danh sách clip đã cắt ({renderedClips.length || totalRendered || 0} clip)</span>
                   </h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Các clip đã được cắt độc lập bằng libx264, âm thanh mượt mà.
+                    Cắt xong đoạn nào tải ngay đoạn đó, hoặc tích chọn các clip muốn nén ZIP tải về.
                   </p>
                 </div>
 
-                {renderedClips.length > 1 && (
+                {renderedClips.length > 1 && downloadSelectedPaths.length > 0 && (
                   <button
                     onClick={handleDownloadZip}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200 cursor-pointer shadow-2xs"
-                    title="Tải toàn bộ các clip con dưới dạng file nén ZIP"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200 cursor-pointer shadow-2xs shrink-0"
+                    title="Tải các clip đã tích dưới dạng file nén ZIP"
                   >
                     <Archive className="w-3.5 h-3.5" />
-                    <span>Tải toàn bộ (.zip)</span>
+                    <span>Tải đã chọn ({downloadSelectedPaths.length}) .zip</span>
                   </button>
                 )}
               </div>
 
+              {/* Lỗi khi tạo vé tải xuống */}
+              {downloadError && (
+                <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800">
+                  {downloadError}
+                </div>
+              )}
+
+              {/* Xem trước ngay tại chỗ (không bật popup riêng) */}
+              {previewUrl && (
+                <div className="rounded-xl overflow-hidden border border-slate-200 bg-black">
+                  <div className="px-3 py-2 bg-slate-900 text-slate-200 text-xs font-bold flex items-center justify-between">
+                    <span className="truncate">{previewLabel || "Xem trước video đã gộp"}</span>
+                  </div>
+                  <video src={previewUrl} controls className="w-full max-h-72 bg-black" />
+                </div>
+              )}
+
               {/* Clips list */}
               {renderedClips.length > 0 ? (
                 <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto rounded-xl border border-slate-100">
-                  {renderedClips.map((clip, idx) => (
+                  {renderedClips.map((clip, idx) => {
+                    const clipKey = clip.path || clip.file;
+                    const isCheckedForZip = downloadSelectedPaths.includes(clipKey);
+                    return (
                     <div
-                      key={idx}
+                      key={clipKey || idx}
                       className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
+                        {renderedClips.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => toggleDownloadClipPath(clipKey)}
+                            className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 transition cursor-pointer ${
+                              isCheckedForZip
+                                ? "bg-indigo-600 border-indigo-600 text-white"
+                                : "bg-white border-slate-300 text-transparent"
+                            }`}
+                            title="Chọn/bỏ chọn clip này vào gói ZIP"
+                          >
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </button>
+                        )}
                         <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs font-bold flex items-center justify-center shrink-0">
                           #{idx + 1}
                         </span>
@@ -329,17 +534,22 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                         </div>
                       </div>
 
-                      <a
-                        href={getDownloadClipUrl(clip.path || clip.file, lessonTitle || videoTitle)}
-                        download={clip.file || "clip.mp4"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={async (e) => {
-                          e.preventDefault();
+                      <button
+                        type="button"
+                        onClick={async () => {
                           const downloadUrl = await resolveProtectedDownloadClipUrl(
                             clip.path || clip.file,
                             lessonTitle || videoTitle
                           );
+                          // Không bao giờ điều hướng khi thiếu vé: nếu không có vé, backend sẽ trả
+                          // 401 AUTH_REQUIRED và người dùng chỉ thấy JSON lỗi trong tab mới.
+                          if (!downloadUrl) {
+                            setDownloadError(
+                              "Không tạo được vé tải xuống. Phiên đăng nhập có thể đã hết hạn — hãy đăng nhập lại rồi thử lại."
+                            );
+                            return;
+                          }
+                          setDownloadError(null);
                           triggerBrowserDownload(downloadUrl, clip.file || "clip.mp4");
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold border border-slate-200 hover:border-indigo-300 shadow-2xs transition shrink-0 cursor-pointer"
@@ -347,9 +557,9 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Tải về</span>
-                      </a>
+                      </button>
                     </div>
-                  ))}
+                  );})}
                 </div>
               ) : (
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-600">
@@ -376,6 +586,8 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
               )}
             </div>
           )}
+            </>
+          )}
         </div>
 
         {/* Modal Footer */}
@@ -393,27 +605,59 @@ export const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5">
-            {isCompleted && mode === "render" && renderedClips.length > 0 && (
-              <button
-                onClick={handleDownloadZip}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Tải tất cả clip (.zip)</span>
-              </button>
-            )}
+            {isPickerActive ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedIdsForExport.length === 0}
+                  onClick={() =>
+                    onStartSelectedExport?.(
+                      selectedIdsForExport,
+                      selectedIdsForExport.length < 2 ? "separate" : exportFormat
+                    )
+                  }
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition ${
+                    selectedIdsForExport.length > 0
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>Bắt đầu Export ({selectedIdsForExport.length} đoạn)</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {isCompleted && mode === "render" && renderedClips.length > 1 && downloadSelectedPaths.length > 0 && (
+                  <button
+                    onClick={handleDownloadZip}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Tải các clip đã chọn (.zip)</span>
+                  </button>
+                )}
 
-            <button
-              onClick={onClose}
-              disabled={isRunning}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-2xs ${
-                isRunning
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
-              }`}
-            >
-              {isCompleted ? "Hoàn tất & Đóng" : isFailed ? "Đóng" : "Đang xử lý..."}
-            </button>
+                <button
+                  onClick={onClose}
+                  disabled={isRunning}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-2xs ${
+                    isRunning
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
+                  }`}
+                >
+                  {isCompleted ? "Hoàn tất & Đóng" : isFailed ? "Đóng" : "Đang xử lý..."}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
