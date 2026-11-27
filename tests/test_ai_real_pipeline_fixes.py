@@ -260,6 +260,9 @@ def test_model_priority_matches_week2_branch(monkeypatch):
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_refine_model", fresh_cfg.groq_refine_model)
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_segment_model", fresh_cfg.groq_segment_model)
     monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_model", fresh_cfg.gemini_model)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_api_key", "", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_api_url", "", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_model", "", raising=False)
     monkeypatch.setattr(refiner_mod.genai, "Client", lambda **kwargs: object())
 
     refiner = TranscriptRefiner(api_key="fake-test-key", groq_api_key="gsk_fake_test")
@@ -342,3 +345,84 @@ def test_segment_transcript_compacts_very_long_1600_sentence_transcript_within_b
     assert len(captured[0]) <= 64000, f"Prompt 1650 câu vượt ngân sách: {len(captured[0])} ký tự"
     assert "S0001" in captured[0]
     assert "S1650" in captured[0]
+
+
+def test_segment_prompt_avoids_hardcoded_s0680_and_loads_config_section_labels():
+    """Prompt phân đoạn không được chèn cứng mã ví dụ S0680/S0017 và phải nạp đủ section_labels (gồm Hỏi đáp) từ config."""
+    sentences = [
+        Sentence(id="S0001", start=0.0, end=5.0, text="Chào mừng các bạn."),
+        Sentence(id="S0002", start=5.0, end=10.0, text="Hôm nay học Web3."),
+        Sentence(id="S0003", start=10.0, end=15.0, text="Phần hỏi đáp cho sinh viên."),
+        Sentence(id="S0004", start=15.0, end=20.0, text="Tổng kết bài học."),
+    ]
+    transcript = TranscriptOutput(video="web3.mp4", duration=20.0, sentences=sentences)
+    captured = []
+
+    def fake_generate(prompt: str):
+        captured.append(prompt)
+        class Resp:
+            text = json.dumps({
+                "sections": [{
+                    "label": "Giới thiệu",
+                    "topics": [{"title": "Tổng quan", "slug": "tong-quan", "start_id": "S0001", "end_id": "S0004"}],
+                }]
+            })
+        return Resp()
+
+    refiner = object.__new__(TranscriptRefiner)
+    refiner.models_to_try = ["gemini-3.5-flash-lite"]
+    refiner.model_name = "gemini-3.5-flash-lite"
+    refiner._generate_with_fallback = fake_generate
+
+    TranscriptRefiner.segment_transcript(refiner, transcript, lesson_name="Web3", force_ai=True, max_retries=1)
+
+    assert len(captured) == 1
+    prompt_text = captured[0]
+    assert '"S0680"' not in prompt_text, "Không được hardcode S0680 trong ví dụ JSON khiến LLM chép nhầm mốc"
+    assert '"S0017"' not in prompt_text, "Không được hardcode S0017 trong ví dụ JSON"
+    assert "Hỏi đáp" in prompt_text, "Prompt phải nạp nhãn 'Hỏi đáp' từ section_labels trong config.yaml"
+    assert "RANH GIỚI" in prompt_text.upper()
+    assert "2–6 phút" in prompt_text and "90 giây" in prompt_text, (
+        "Prompt phải nêu rõ khung độ dài mục tiêu 2–6 phút và hạn chế tách clip nhỏ dưới 90 giây"
+    )
+
+
+def test_segment_transcript_shifts_dangling_connector_out_of_topic_end():
+    """Nếu LLM kết thúc chủ đề bằng câu nối lửng ('Thì.', 'Mình sẽ tới cái phần là.'), phải lùi ranh giới về câu hoàn chỉnh trước đó."""
+    sentences = [
+        Sentence(id="S0001", start=0.0, end=40.0, text="Kinh nghiệm tham gia hackathon giúp hồ sơ vững hơn."),
+        Sentence(id="S0002", start=40.0, end=42.0, text="Mình sẽ tới cái phần là."),
+        Sentence(id="S0003", start=42.0, end=43.0, text="Thì."),
+        Sentence(id="S0004", start=43.0, end=90.0, text="Đầu tiên là câu hỏi của bạn Nguyễn Hồng Phúc."),
+    ]
+    transcript = TranscriptOutput(video="web3.mp4", duration=90.0, sentences=sentences)
+
+    def fake_generate(prompt: str):
+        class Resp:
+            text = json.dumps({
+                "sections": [
+                    {
+                        "label": "Thực hành ví dụ",
+                        "topics": [{"title": "Kinh nghiệm Hackathon", "slug": "hackathon", "start_id": "S0001", "end_id": "S0003"}],
+                    },
+                    {
+                        "label": "Hỏi đáp",
+                        "topics": [{"title": "Giải đáp câu hỏi", "slug": "giai-dap", "start_id": "S0004", "end_id": "S0004"}],
+                    },
+                ]
+            })
+        return Resp()
+
+    refiner = object.__new__(TranscriptRefiner)
+    refiner.models_to_try = ["gemini-3.5-flash-lite"]
+    refiner.model_name = "gemini-3.5-flash-lite"
+    refiner._generate_with_fallback = fake_generate
+
+    result = TranscriptRefiner.segment_transcript(refiner, transcript, lesson_name="Web3", force_ai=True, max_retries=1)
+    segs = result["segments"]
+    assert len(segs) == 2
+    assert segs[0]["end_id"] == "S0001"
+    assert segs[0]["end"] == 40.0
+    assert segs[1]["start_id"] == "S0002"
+    assert segs[1]["start"] == 40.0
+

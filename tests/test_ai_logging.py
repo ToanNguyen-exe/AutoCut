@@ -110,6 +110,7 @@ def test_logs_error_when_gemini_api_key_missing_or_invalid(monkeypatch, caplog):
 
     monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_api_key", "")
     monkeypatch.setattr(refiner_mod.default_ai_config, "groq_api_key", "")
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_api_key", "", raising=False)
     with pytest.raises(ValueError):
         TranscriptRefiner(api_key="")
 

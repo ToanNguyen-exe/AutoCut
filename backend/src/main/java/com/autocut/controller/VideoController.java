@@ -859,7 +859,7 @@ public class VideoController {
                 if (!processLog.isBlank()) {
                     for (String line : processLog.split("\\r?\\n")) {
                         if (line.contains("[GEMINI") || line.contains("[GROQ") || line.contains("[SEGMENTER")
-                                || line.contains("[REFINER") || line.contains("[CLI]")) {
+                                || line.contains("[SEGMENT_LLM") || line.contains("[REFINER") || line.contains("[CLI]")) {
                             log.info("[Python AI] {}", line.trim());
                         }
                     }

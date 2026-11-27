@@ -199,4 +199,72 @@ class CutPointServiceTest {
             assertEquals(seg.end(), seg.parts().get(seg.parts().size() - 1).end(), 0.01, "part.end phải khớp segment.end");
         }
     }
+
+    @Test
+    @DisplayName("P10: Sau khi Boundary Snapping dịch mốc giây, start_id/end_id phải đồng bộ theo đúng câu ranh giới mới")
+    void testSnapAndFilterSegments_SynchronizesSentenceIdsWithSnappedTimes() {
+        TranscriptDTO transcript = new TranscriptDTO("web3.mp4", 120.0, List.of(
+                new Sentence("S0001", 0.0, 20.0, "Chào mừng các bạn quay lại kênh.", null),
+                new Sentence("S0002", 20.0, 40.0, "Video chia làm 3 phần chính.", null),
+                new Sentence("S0003", 40.0, 43.0, "Bây giờ chúng ta bắt đầu phần đầu tiên.", null),
+                new Sentence("S0004", 43.0, 80.0, "Đánh giá hệ sinh thái blockchain.", null),
+                new Sentence("S0005", 80.0, 120.0, "Kết thúc phần lý thuyết.", null)
+        ));
+
+        CutPointsDTO cutPoints = cutPointService.calculateCutPoints(transcript);
+
+        // AI ban đầu đặt S0003 ở cuối seg_1, nhưng S0003 mở đầu bằng cue phrase "Bây giờ chúng ta"
+        // nên Boundary Snapping sẽ kéo mốc kết thúc seg_1 về 40.0s (cuối S0002).
+        List<Segment> rawList = List.of(
+                new Segment(
+                        "seg_ai_01", 1, "01_gioi-thieu", 1, "Giới thiệu", "gioi-thieu",
+                        "S0001", "S0003", 0.0, 43.0,
+                        List.of(new VideoPart(1, 0.0, 43.0, "01_gioi-thieu.mp4"))
+                ),
+                new Segment(
+                        "seg_ai_02", 2, "02_ly-thuyet", 2, "Hệ sinh thái", "he-sinh-thai",
+                        "S0004", "S0005", 43.0, 120.0,
+                        List.of(new VideoPart(1, 43.0, 120.0, "02_he-sinh-thai.mp4"))
+                )
+        );
+
+        SegmentsDTO result = cutPointService.snapAndFilterSegments(
+                new SegmentsDTO("web3.mp4", "web3", "analyzed", false, rawList),
+                transcript,
+                cutPoints
+        );
+
+        assertEquals(2, result.segments().size());
+        Segment seg1 = result.segments().get(0);
+        Segment seg2 = result.segments().get(1);
+
+        assertEquals(40.0, seg1.end(), 0.01);
+        assertEquals(40.0, seg2.start(), 0.01);
+        assertEquals("S0001", seg1.startId());
+        assertEquals("S0002", seg1.endId(), "end_id của seg_1 phải cập nhật về S0002 khớp mốc 40.0s");
+        assertEquals("S0003", seg2.startId(), "start_id của seg_2 phải cập nhật về S0003 khớp mốc 40.0s");
+        assertEquals("S0005", seg2.endId());
+    }
+
+    @Test
+    @DisplayName("P05 & P10: Không cắt ngay sau câu nối lửng ('Thì.', 'Là.') mà dịch ranh giới ra trước câu nối")
+    void testCalculateCutPoints_PenalizesDanglingConnectorAndSnapsAway() {
+        TranscriptDTO transcript = new TranscriptDTO("web3.mp4", 120.0, List.of(
+                new Sentence("S0001", 0.0, 35.0, "Kinh nghiệm tham gia hackathon.", null),
+                new Sentence("S0002", 35.0, 40.0, "Có hai bạn nhắn tin hỏi mình.", null),
+                new Sentence("S0003", 40.0, 41.0, "Thì.", null),
+                new Sentence("S0004", 41.0, 120.0, "Đầu tiên là bạn Nguyễn Hồng Phúc.", null)
+        ));
+
+        CutPointsDTO cutPoints = cutPointService.calculateCutPoints(transcript);
+        CutPoint afterDangling = cutPoints.cutPoints().stream()
+                .filter(cp -> "S0003".equals(cp.afterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(0, afterDangling.score(), "Điểm cắt ngay sau câu nối lửng 'Thì.' phải bị hạ về 0");
+
+        double snappedEnd = cutPointService.snapBoundary("S0003", false, transcript, cutPoints);
+        assertEquals(40.0, snappedEnd, 0.01, "Boundary Snapping phải né 'Thì.' và lùi mốc cắt về cuối S0002 (40.0s)");
+    }
 }

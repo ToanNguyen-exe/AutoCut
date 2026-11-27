@@ -68,8 +68,9 @@ FALLBACK_MODELS = [
     *GEMINI_FALLBACK_MODELS,
 ]
 
-# Timeout 60s cho bước phân đoạn dài, 20s cho các lô chau chuốt nhỏ để tránh bị 504 đóng băng cả pipeline
+# Timeout 60s cho bước phân đoạn dài, 120s cho Segmenter suy luận sâu tùy chọn, 20s cho các lô chau chuốt nhỏ
 REFINER_HTTP_TIMEOUT_MS = 60000.0
+CUSTOM_SEGMENT_HTTP_TIMEOUT_MS = 120000.0
 REFINE_BATCH_HTTP_TIMEOUT_MS = 20000.0
 DEFAULT_REFINE_MAX_WORKERS = 2
 EXHAUSTED_MODEL_COOLDOWN_SEC = 60.0
@@ -93,6 +94,29 @@ def slugify_vi(text: str) -> str:
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
     s = re.sub(r"[^a-zA-Z0-9]+", "-", s).strip("-").lower()
     return s[:48].strip("-") or "chu-de"
+
+
+_DANGLING_CONNECTOR_EXACT = frozenset({
+    "thì", "và", "là", "hoặc", "nhưng", "nhưng mà", "mà", "nên", "nên là",
+    "cho nên", "cho nên là", "tức là", "nghĩa là", "ví dụ", "ví dụ như",
+    "đầu tiên là", "tiếp theo là", "bây giờ là", "tại vì", "tại vì là",
+    "bởi vì", "khi mà", "nếu mà", "còn", "còn về", "về phần",
+})
+_DANGLING_TRAILING_WORDS = frozenset({
+    "là", "mà", "thì", "và", "hoặc", "như", "về", "của", "cho", "với", "để", "nếu", "khi",
+})
+
+
+def _is_dangling_connector(text: str) -> bool:
+    """Nhận diện câu nối/mở ý còn bỏ lửng (ví dụ: 'Thì.', 'Mình sẽ tới cái phần là.') không nên đứng cuối phân đoạn."""
+    norm = re.sub(r"[.?!,…:;]+$", "", (text or "").strip()).strip().lower()
+    norm = re.sub(r"\s+", " ", norm)
+    if not norm:
+        return False
+    if norm in _DANGLING_CONNECTOR_EXACT:
+        return True
+    words = norm.split(" ")
+    return len(words) <= 6 and words[-1] in _DANGLING_TRAILING_WORDS
 
 
 def _strip_reasoning_and_fences(raw_text: str) -> str:
@@ -126,6 +150,14 @@ def _parse_json_response(
         if start_idx == -1 or end_idx <= start_idx:
             raise
         parsed = json.loads(cleaned[start_idx : end_idx + 1])
+    if isinstance(parsed, list) and parsed and all(isinstance(it, dict) for it in parsed):
+        first = parsed[0]
+        if len(parsed) == 1 and any(k in first for k in ("sentences", "sections", "items")):
+            return first
+        if "topics" in first or "label" in first:
+            return {"sections": parsed}
+        if any(k in first for k in ("start_id", "id", "text")):
+            return {"sentences": parsed}
     if not isinstance(parsed, dict):
         raise ValueError(f"LLM {model_name} khong tra ve JSON object")
     return parsed
@@ -149,6 +181,9 @@ class TranscriptRefiner:
         groq_api_url: Optional[str] = None,
         refine_model: Optional[str] = None,
         segment_model: Optional[str] = None,
+        segment_llm_api_key: Optional[str] = None,
+        segment_llm_api_url: Optional[str] = None,
+        segment_llm_model: Optional[str] = None,
     ):
         self.groq_api_key = (
             groq_api_key
@@ -160,8 +195,26 @@ class TranscriptRefiner:
             or getattr(default_ai_config, "groq_api_url", DEFAULT_GROQ_API_URL)
         )
         self.api_key = api_key if api_key is not None else default_ai_config.gemini_api_key
+        self.segment_llm_api_key = (
+            segment_llm_api_key
+            if segment_llm_api_key is not None
+            else getattr(default_ai_config, "segment_llm_api_key", "")
+        )
+        self.segment_llm_api_url = (
+            segment_llm_api_url
+            if segment_llm_api_url is not None
+            else getattr(default_ai_config, "segment_llm_api_url", "")
+        )
+        self.segment_llm_model = (
+            segment_llm_model
+            if segment_llm_model is not None
+            else getattr(default_ai_config, "segment_llm_model", "")
+        )
+        has_custom_segment_llm = bool(
+            self.segment_llm_api_key and self.segment_llm_api_url and self.segment_llm_model
+        )
 
-        if not self.groq_api_key and not self.api_key:
+        if not self.groq_api_key and not self.api_key and not has_custom_segment_llm:
             logger.error("[GEMINI-API_KEY_ERROR] Thieu GROQ_API_KEY va GEMINI_API_KEY trong .env")
             raise ValueError("Không tìm thấy GROQ_API_KEY hoặc GEMINI_API_KEY trong .env hoặc cấu hình!")
 
@@ -178,6 +231,8 @@ class TranscriptRefiner:
         if model_name:
             refine_order.append(model_name)
             segment_order.append(model_name)
+        if has_custom_segment_llm:
+            segment_order.append(self.segment_llm_model)
         if self.groq_api_key:
             refine_order.extend([m for m in (groq_refine, groq_segment, DEFAULT_GROQ_EXTRA_MODEL) if m])
             segment_order.extend([m for m in (groq_segment, groq_refine, DEFAULT_GROQ_EXTRA_MODEL) if m])
@@ -186,7 +241,7 @@ class TranscriptRefiner:
 
         self.refine_models_to_try = list(dict.fromkeys(refine_order))
         self.segment_models_to_try = list(dict.fromkeys(segment_order))
-        self.models_to_try = list(self.refine_models_to_try)
+        self.models_to_try = list(self.refine_models_to_try or self.segment_models_to_try)
         self._default_models_to_try = tuple(self.models_to_try)
         self.model_name = self.models_to_try[0]
         self.exhausted_models: Set[str] = exhausted_models if exhausted_models is not None else set()
@@ -202,13 +257,34 @@ class TranscriptRefiner:
             else None
         )
 
-    def _call_groq(self, model_candidate: str, prompt: str, timeout_sec: Optional[float] = None):
-        """Gọi Groq Cloud Chat Completions bằng stdlib urllib (không cần thêm thư viện ngoài)."""
-        api_key = getattr(self, "groq_api_key", "")
+    def _is_custom_segment_model(self, model_candidate: str) -> bool:
+        return bool(
+            model_candidate
+            and getattr(self, "segment_llm_api_key", "")
+            and getattr(self, "segment_llm_api_url", "")
+            and model_candidate == getattr(self, "segment_llm_model", "")
+        )
+
+    def _provider_for_model(self, model_candidate: str) -> str:
+        if self._is_custom_segment_model(model_candidate):
+            return "SEGMENT_LLM"
+        return _provider_label(model_candidate)
+
+    def _call_groq(
+        self,
+        model_candidate: str,
+        prompt: str,
+        timeout_sec: Optional[float] = None,
+        api_key_override: Optional[str] = None,
+        api_url_override: Optional[str] = None,
+        use_json_mode: bool = True,
+    ):
+        """Gọi Chat Completions chuẩn OpenAI (Groq Cloud hoặc endpoint Segmenter tùy chọn) bằng stdlib urllib."""
+        api_key = api_key_override if api_key_override is not None else getattr(self, "groq_api_key", "")
         if not api_key:
             raise RuntimeError("401 Unauthorized: missing GROQ_API_KEY")
 
-        api_url = getattr(self, "groq_api_url", DEFAULT_GROQ_API_URL)
+        api_url = api_url_override or getattr(self, "groq_api_url", DEFAULT_GROQ_API_URL)
         req_timeout_sec = float(timeout_sec) if timeout_sec is not None else (REFINER_HTTP_TIMEOUT_MS / 1000.0)
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -245,11 +321,11 @@ class TranscriptRefiner:
                 return ""
 
         try:
-            data = send_request(include_response_format=True)
+            data = send_request(include_response_format=use_json_mode)
         except urllib.error.HTTPError as err:
             body = read_err_body(err)
             body_lower = body.lower()
-            retry_without_rf = err.code == 400 and (
+            retry_without_rf = use_json_mode and err.code == 400 and (
                 "response_format" in body_lower
                 or "json_object" in body_lower
                 or "json_validate_failed" in body_lower
@@ -268,7 +344,7 @@ class TranscriptRefiner:
 
         choices = data.get("choices") or []
         if not choices:
-            raise ValueError("Groq khong tra ve choices hop le")
+            raise ValueError("LLM khong tra ve choices hop le")
         choice0 = choices[0]
         message = choice0.get("message") or {}
         content = message.get("content")
@@ -279,7 +355,7 @@ class TranscriptRefiner:
             )
         content_str = str(content or "").strip()
         if not content_str:
-            raise ValueError("Groq tra ve noi dung rong")
+            raise ValueError("LLM tra ve noi dung rong")
 
         finish_reason = str(choice0.get("finish_reason") or "").lower()
         mapped_reason = "MAX_TOKENS" if finish_reason == "length" else finish_reason.upper()
@@ -289,8 +365,18 @@ class TranscriptRefiner:
         )
 
     def _call_model(self, model_candidate: str, prompt: str, timeout_ms: Optional[float] = None):
-        """Điều phối gọi Groq Cloud (3 model chính/dự phòng) hoặc Gemini SDK (dự phòng)."""
+        """Điều phối gọi Segmenter tùy chọn, Groq Cloud (3 model chính/dự phòng) hoặc Gemini SDK (dự phòng)."""
         effective_timeout_ms = float(timeout_ms) if timeout_ms is not None else REFINER_HTTP_TIMEOUT_MS
+        if self._is_custom_segment_model(model_candidate):
+            seg_timeout_sec = max(effective_timeout_ms, CUSTOM_SEGMENT_HTTP_TIMEOUT_MS) / 1000.0
+            return self._call_groq(
+                model_candidate,
+                prompt,
+                timeout_sec=seg_timeout_sec,
+                api_key_override=self.segment_llm_api_key,
+                api_url_override=self.segment_llm_api_url,
+                use_json_mode=False,
+            )
         if _is_groq_model(model_candidate):
             return self._call_groq(model_candidate, prompt, timeout_sec=effective_timeout_ms / 1000.0)
         client = getattr(self, "client", None)
@@ -334,7 +420,7 @@ class TranscriptRefiner:
             with lock:
                 if model_candidate in unavailable:
                     continue
-            provider = _provider_label(model_candidate)
+            provider = self._provider_for_model(model_candidate)
             for attempt in range(1, 3):
                 try:
                     response = self._call_model(model_candidate, prompt, timeout_ms=timeout_ms)
@@ -353,7 +439,7 @@ class TranscriptRefiner:
                     code, _ = classify_ai_api_error(err)
                     is_key_err = code == "API_KEY_ERROR"
                     has_other_provider = any(
-                        _provider_label(other) != provider for other in candidates[idx + 1 :]
+                        self._provider_for_model(other) != provider for other in candidates[idx + 1 :]
                     )
                     log_ai_api_error(
                         logger,
@@ -366,7 +452,7 @@ class TranscriptRefiner:
                         if has_other_provider:
                             with lock:
                                 for other in candidates:
-                                    if _provider_label(other) == provider:
+                                    if self._provider_for_model(other) == provider:
                                         unavailable.add(other)
                             break
                         raise err
@@ -459,7 +545,7 @@ class TranscriptRefiner:
 
         if last_err is not None:
             target_label = tried_models[0] if len(tried_models) == 1 else ",".join(tried_models)
-            provider_label = _provider_label(tried_models[-1]) if tried_models else "GEMINI"
+            provider_label = self._provider_for_model(tried_models[-1]) if tried_models else "GEMINI"
             log_ai_api_error(logger, provider_label, target_label, last_err, is_fatal=True)
         # pyrefly: ignore[bad-raise]
         raise last_err
@@ -933,25 +1019,31 @@ class TranscriptRefiner:
 
         first_id = sentences[0].id
         last_id = sentences[-1].id
+        section_labels = raw_cfg.get("segmentation", {}).get("section_labels") or [
+            "Giới thiệu", "Lý thuyết", "Thực hành ví dụ", "Bài tập", "Hỏi đáp", "Tổng kết"
+        ]
+        section_labels_str = ", ".join(f'"{lbl}"' for lbl in section_labels)
 
         prompt = f"""
 Bạn là chuyên gia phân tích cấu trúc bài giảng video tự động (Semantic Video Segmentation).
 Dưới đây là bản bóc băng (transcript) của video "{transcript.video}" (Chủ đề: "{lesson_name}", thời lượng: {total_duration}s), gồm các câu từ {first_id} đến {last_id}.
 
 NHIỆM VỤ:
-1. Tự động nhận diện chủ đề và thể loại nội dung video (ví dụ: bài giảng lập trình, khóa học kiến thức, thuyết trình chuyên đề...).
-2. Phân tích cấu trúc video thành các phần lớn (sections) có ý nghĩa như: "Giới thiệu", "Lý thuyết", "Thực hành ví dụ", "Tổng kết"...
+1. Tự động nhận diện chủ đề và thể loại nội dung video (ví dụ: bài giảng lập trình, khóa học kiến thức, talkshow hỏi đáp, thuyết trình chuyên đề...).
+2. Phân tích cấu trúc video thành các phần lớn (sections) phù hợp từ danh sách nhãn: {section_labels_str}. (Ví dụ: phần giải đáp câu hỏi khán giả/sinh viên dùng nhãn "Hỏi đáp").
 3. Trong mỗi phần lớn (section), BẮT BUỘC phân chia chi tiết thành các bài học / chủ đề cụ thể (topics) theo từng đơn vị kiến thức mà người nói giảng dạy (ví dụ đối với lập trình: thiết lập môi trường & lệnh đầu tiên, biến & kiểu dữ liệu, toán tử, rẽ nhánh if-else, vòng lặp for, object, function, array, string, DOM, bất đồng bộ, lưu trữ dữ liệu...). Tuyệt đối không được gộp bài giảng dài thành 1-2 đoạn chung chung.
 
 QUY TẮC BẮT BUỘC:
 1. Chủ đề (topic) đầu tiên của section đầu tiên PHẢI có "start_id": "{first_id}".
 2. Chủ đề (topic) cuối cùng của section cuối cùng PHẢI có "end_id": "{last_id}".
 3. Các topics phải nối tiếp nhau liên tục theo thứ tự thời gian tăng dần (end_id của topic trước liền kề với start_id của topic sau).
-4. CẢNH BÁO QUAN TRỌNG VỀ MÃ CÂU: "start_id" và "end_id" BẮT BUỘC phải là mã câu ID thực tế có trong danh sách bên dưới (chỉ từ {first_id} đến {last_id}). TUYỆT ĐỐI KHÔNG lấy số giây thời gian (như 828s hay 1330s) để ghép thành mã câu giả (như S0828 hay S1330)!
-5. "slug" phải là chuỗi không dấu, cách nhau bằng dấu gạch ngang (ví dụ: "bien-va-khoi-tao", "cau-truc-if-else").
-6. QUY TẮC THỜI LƯỢNG (TỐI ĐA 7 PHÚT / 420 GIÂY MỖI ĐOẠN VIDEO):
+4. CẢNH BÁO QUAN TRỌNG VỀ MÃ CÂU: "start_id" và "end_id" BẮT BUỘC phải là mã câu ID thực tế có trong danh sách bên dưới (chỉ từ {first_id} đến {last_id}). TUYỆT ĐỐI KHÔNG lấy số giây thời gian (như 828s hay 1330s) để ghép thành mã câu giả!
+5. RANH GIỚI CẮT SẠCH: Câu dẫn chuyển ý sang chủ đề hoặc câu hỏi mới (ví dụ: "Mình sẽ tới phần hỏi đáp...", "Rồi bên phía bạn X có câu hỏi...", "Bây giờ chúng ta sang...", "Cho nên là mình hy vọng...") PHẢI đặt làm "start_id" của chủ đề MỚI, KHÔNG để dính ở cuối chủ đề cũ. Tuyệt đối không chọn "end_id" là câu nối/mở ý còn bỏ lửng (như "Thì.", "Và.", "Là.", "Đầu tiên là.", "Cho nên là.").
+6. "slug" phải là chuỗi không dấu, cách nhau bằng dấu gạch ngang (ví dụ: "bien-va-khoi-tao", "cau-truc-if-else").
+7. QUY TẮC THỜI LƯỢNG (TỐI ĐA 7 PHÚT / 420 GIÂY MỖI ĐOẠN VIDEO):
    Mỗi bài học / chủ đề (topic) KHÔNG ĐƯỢC dài quá 7 phút (420 giây). Nếu một chủ đề kiến thức có nội dung dài hơn 7 phút, BẮT BUỘC phải chia chủ đề đó thành nhiều đoạn nhỏ nối tiếp nhau trong cùng section với tiêu đề kèm '(Phần 1)', '(Phần 2)' (ví dụ: 'Khai báo biến (Phần 1)', 'Khai báo biến (Phần 2)'), sao cho mỗi đoạn đều có thời lượng không vượt quá 7 phút (<= 420s).
-7. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau:
+   Khung độ dài mục tiêu: ưu tiên mỗi chủ đề khoảng 2–6 phút (hạn chế tách thành nhiều clip nhỏ dưới 90 giây, trừ phần Giới thiệu hoặc Tổng kết).
+8. Chỉ trả về JSON thuần túy theo đúng cấu trúc sections và topics sau (thay mọi placeholder <ID_...> bằng mã câu thật trong danh sách):
 
 {{
   "sections": [
@@ -962,7 +1054,7 @@ QUY TẮC BẮT BUỘC:
           "title": "Tổng quan và mục lục bài giảng",
           "slug": "tong-quan-va-muc-luc",
           "start_id": "{first_id}",
-          "end_id": "S0017"
+          "end_id": "<ID_KET_THUC_1>"
         }}
       ]
     }},
@@ -972,14 +1064,14 @@ QUY TẮC BẮT BUỘC:
         {{
           "title": "Thiết lập môi trường & Lệnh đầu tiên",
           "slug": "moi-truong-va-lenh-dau-tien",
-          "start_id": "S0018",
-          "end_id": "S0046"
+          "start_id": "<ID_BAT_DAU_2>",
+          "end_id": "<ID_KET_THUC_2>"
         }},
         {{
           "title": "Khai báo và khởi tạo biến",
           "slug": "bien-va-khoi-tao",
-          "start_id": "S0047",
-          "end_id": "S0059"
+          "start_id": "<ID_BAT_DAU_3>",
+          "end_id": "<ID_KET_THUC_3>"
         }}
       ]
     }},
@@ -989,7 +1081,7 @@ QUY TẮC BẮT BUỘC:
         {{
           "title": "Tổng kết và định hướng học tập",
           "slug": "tong-ket-bai-giang",
-          "start_id": "S0680",
+          "start_id": "<ID_BAT_DAU_CUOI>",
           "end_id": "{last_id}"
         }}
       ]
@@ -1105,6 +1197,23 @@ DANH SÁCH CÂU TRANSCRIPT:
                 if 0 <= val <= total_duration and sentences:
                     return min(sentences, key=lambda s: abs(s.start - val))
             return default_sent
+
+        # Hậu kiểm ranh giới: không để chủ đề kết thúc ở câu nối/mở ý lửng (đẩy sang đầu chủ đề kế tiếp)
+        sentence_idx_map = {s.id: i for i, s in enumerate(sentences)}
+        for i in range(len(raw_topics) - 1):
+            curr_item = raw_topics[i]
+            next_item = raw_topics[i + 1]
+            s_obj = resolve_sentence(curr_item.get("start_id"), sentences[min(i, len(sentences) - 1)])
+            e_obj = resolve_sentence(curr_item.get("end_id"), sentences[-1])
+            s_idx = sentence_idx_map.get(s_obj.id, 0)
+            e_idx = sentence_idx_map.get(e_obj.id, len(sentences) - 1)
+            shifted = 0
+            while shifted < 2 and e_idx > s_idx and _is_dangling_connector(sentences[e_idx].text):
+                e_idx -= 1
+                shifted += 1
+            if shifted > 0:
+                curr_item["end_id"] = sentences[e_idx].id
+                next_item["start_id"] = sentences[min(len(sentences) - 1, e_idx + 1)].id
 
         for idx, item in enumerate(raw_topics, start=1):
             start_id = str(item.get("start_id", sentences[0].id))

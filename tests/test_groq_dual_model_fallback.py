@@ -45,6 +45,9 @@ def _isolate_default_ai_config(monkeypatch):
         raising=False,
     )
     monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_model", "gemini-3.5-flash-lite", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_api_key", "", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_api_url", "", raising=False)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "segment_llm_model", "", raising=False)
 
 
 def test_config_defaults_groq_dual_models_and_removes_openrouter(monkeypatch):
@@ -785,5 +788,197 @@ def test_refine_stops_waiting_after_consecutive_post_cooldown_failures(monkeypat
 
     assert 1 <= len(waits) <= 3, f"Chỉ được chờ tối đa 3 lần thất bại liên tiếp, thực tế: {len(waits)}"
     assert len(res.sentences) == 10
+
+
+def test_config_loads_optional_segment_llm_env_and_classifies_402(monkeypatch):
+    """AIConfig nạp tùy chọn SEGMENT_LLM_* từ .env (mặc định rỗng) và phân loại lỗi 402 là hết quota."""
+    monkeypatch.delenv("SEGMENT_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("SEGMENT_LLM_API_URL", raising=False)
+    monkeypatch.delenv("SEGMENT_LLM_MODEL", raising=False)
+    cfg_empty = config_mod.AIConfig(config_dict={})
+    assert cfg_empty.segment_llm_api_key == ""
+    assert cfg_empty.segment_llm_api_url == ""
+    assert cfg_empty.segment_llm_model == ""
+
+    monkeypatch.setenv("SEGMENT_LLM_API_KEY", "sk-custom-seg")
+    monkeypatch.setenv("SEGMENT_LLM_API_URL", "https://api.xah.io/v1/chat/completions")
+    monkeypatch.setenv("SEGMENT_LLM_MODEL", "pandaka/deepseek-v4.1-flash-1017")
+    cfg = config_mod.AIConfig(config_dict={})
+    assert cfg.segment_llm_api_key == "sk-custom-seg"
+    assert cfg.segment_llm_api_url == "https://api.xah.io/v1/chat/completions"
+    assert cfg.segment_llm_model == "pandaka/deepseek-v4.1-flash-1017"
+
+    code, _ = config_mod.classify_ai_api_error(RuntimeError("HTTP 402 Payment Required: insufficient balance"))
+    assert code == "TOKEN_OR_QUOTA_EXHAUSTED"
+
+
+def test_custom_segment_llm_used_only_for_segment_not_refine(monkeypatch):
+    """Model SEGMENT_LLM_* chỉ được ưu tiên ở bước phân đoạn (segment), tuyệt đối không chen vào bước chau chuốt (refine)."""
+    captured = []
+
+    def fake_urlopen(req, timeout=None):
+        body = json.loads(req.data.decode("utf-8"))
+        captured.append((req.full_url, req.get_header("Authorization"), body, timeout))
+        if req.full_url == "https://api.xah.io/v1/chat/completions":
+            return _FakeHTTPResponse({
+                "choices": [{
+                    "message": {
+                        "content": json.dumps({
+                            "sections": [{
+                                "label": "Hỏi đáp",
+                                "topics": [{
+                                    "title": "Giải đáp Web3",
+                                    "slug": "giai-dap-web3",
+                                    "start_id": "S0001",
+                                    "end_id": "S0002",
+                                }],
+                            }]
+                        })
+                    },
+                    "finish_reason": "stop",
+                }]
+            })
+        return _FakeHTTPResponse({
+            "choices": [{
+                "message": {
+                    "content": json.dumps({
+                        "sentences": [
+                            {"start_id": "S0001", "end_id": "S0001", "text": "Xin chào Web3."},
+                            {"start_id": "S0002", "end_id": "S0002", "text": "Giải đáp câu hỏi."},
+                        ]
+                    })
+                },
+                "finish_reason": "stop",
+            }]
+        })
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(refiner_mod.genai, "Client", lambda **kwargs: object())
+
+    refiner = TranscriptRefiner(
+        api_key="gem_test",
+        groq_api_key="gsk_test",
+        segment_llm_api_key="sk_xah_test",
+        segment_llm_api_url="https://api.xah.io/v1/chat/completions",
+        segment_llm_model="pandaka/deepseek-v4.1-flash-1017",
+    )
+
+    assert "pandaka/deepseek-v4.1-flash-1017" not in refiner.refine_models_to_try
+    assert refiner.refine_models_to_try[0] == "openai/gpt-oss-20b"
+    assert refiner.segment_models_to_try[0] == "pandaka/deepseek-v4.1-flash-1017"
+    assert refiner.segment_models_to_try[1] == "openai/gpt-oss-120b"
+
+    tr = TranscriptOutput(
+        video="web3.mp4",
+        duration=20.0,
+        sentences=[
+            Sentence(id="S0001", start=0.0, end=10.0, text="xin chao web3"),
+            Sentence(id="S0002", start=10.0, end=20.0, text="giai dap cau hoi"),
+        ],
+    )
+    refined = refiner.refine_transcript(tr, max_workers=1)
+    seg_res = refiner.segment_transcript(refined, lesson_name="Web3", force_ai=True, max_retries=1)
+
+    assert len(captured) == 2
+    ref_url, ref_auth, ref_body, _ = captured[0]
+    seg_url, seg_auth, seg_body, seg_timeout = captured[1]
+    assert ref_url == "https://api.groq.com/openai/v1/chat/completions"
+    assert ref_auth == "Bearer gsk_test"
+    assert ref_body["model"] == "openai/gpt-oss-20b"
+    assert seg_url == "https://api.xah.io/v1/chat/completions"
+    assert seg_auth == "Bearer sk_xah_test"
+    assert seg_body["model"] == "pandaka/deepseek-v4.1-flash-1017"
+    assert "response_format" not in seg_body
+    assert seg_timeout is not None and seg_timeout >= 120.0
+    assert seg_res["segments"][0]["topic"] == "Giải đáp Web3"
+
+
+def test_custom_segment_llm_401_falls_back_to_groq_without_disabling_groq(monkeypatch):
+    """Nếu endpoint SEGMENT_LLM lỗi 401 (key sai/hết hạn), chỉ loại model đó và fallback sang Groq mà không vô hiệu hóa Groq."""
+    called = []
+
+    def fake_urlopen(req, timeout=None):
+        body = json.loads(req.data.decode("utf-8"))
+        called.append((req.full_url, body["model"]))
+        if req.full_url == "https://api.xah.io/v1/chat/completions":
+            raise urllib.error.HTTPError(
+                url=req.full_url,
+                code=401,
+                msg="Unauthorized",
+                hdrs={},
+                fp=io.BytesIO(b'{"error": {"message": "Invalid API key"}}'),
+            )
+        return _FakeHTTPResponse({
+            "choices": [{
+                "message": {
+                    "content": json.dumps({
+                        "sections": [{
+                            "label": "Giới thiệu",
+                            "topics": [{
+                                "title": "Mở đầu",
+                                "slug": "mo-dau",
+                                "start_id": "S0001",
+                                "end_id": "S0001",
+                            }],
+                        }]
+                    })
+                },
+                "finish_reason": "stop",
+            }]
+        })
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(refiner_mod.default_ai_config, "gemini_api_key", "")
+
+    refiner = TranscriptRefiner(
+        groq_api_key="gsk_test",
+        segment_llm_api_key="sk_bad_xah",
+        segment_llm_api_url="https://api.xah.io/v1/chat/completions",
+        segment_llm_model="pandaka/deepseek-v4.1-flash-1017",
+    )
+    tr = TranscriptOutput(
+        video="demo.mp4",
+        duration=10.0,
+        sentences=[Sentence(id="S0001", start=0.0, end=10.0, text="Xin chào các bạn.")],
+    )
+    seg_res = refiner.segment_transcript(tr, lesson_name="Demo", force_ai=True, max_retries=1)
+
+    assert called == [
+        ("https://api.xah.io/v1/chat/completions", "pandaka/deepseek-v4.1-flash-1017"),
+        ("https://api.groq.com/openai/v1/chat/completions", "openai/gpt-oss-120b"),
+    ]
+    assert "pandaka/deepseek-v4.1-flash-1017" in refiner._unavailable_models
+    assert "openai/gpt-oss-120b" not in refiner._unavailable_models
+    assert seg_res["segments"][0]["topic"] == "Mở đầu"
+
+
+def test_parse_json_response_accepts_sentence_and_section_arrays_and_rejects_invalid():
+    """Gemini flash-lite hay trả mảng JSON [...] thay vì object; _parse_json_response phải bọc hợp lệ và vẫn từ chối mảng rác."""
+    class _Resp:
+        def __init__(self, text: str):
+            self.text = text
+            self.candidates = []
+
+    sent_arr = json.dumps([{"start_id": "S0001", "end_id": "S0001", "text": "Xin chào JavaScript."}])
+    assert refiner_mod._parse_json_response(_Resp(sent_arr), "gemini-3.5-flash-lite") == {
+        "sentences": [{"start_id": "S0001", "end_id": "S0001", "text": "Xin chào JavaScript."}]
+    }
+
+    wrapped_arr = json.dumps([{"sentences": [{"start_id": "S0001", "end_id": "S0001", "text": "Ok."}]}])
+    assert refiner_mod._parse_json_response(_Resp(wrapped_arr), "gemini-3.5-flash-lite") == {
+        "sentences": [{"start_id": "S0001", "end_id": "S0001", "text": "Ok."}]
+    }
+
+    sec_arr = json.dumps([{"label": "Giới thiệu", "topics": [{"title": "Mở đầu", "start_id": "S0001", "end_id": "S0002"}]}])
+    assert refiner_mod._parse_json_response(_Resp(sec_arr), "gemini-3.5-flash-lite") == {
+        "sections": [{"label": "Giới thiệu", "topics": [{"title": "Mở đầu", "start_id": "S0001", "end_id": "S0002"}]}]
+    }
+
+    with pytest.raises(ValueError):
+        refiner_mod._parse_json_response(_Resp("[]"), "gemini-3.5-flash-lite")
+    with pytest.raises(ValueError):
+        refiner_mod._parse_json_response(_Resp("[1, 2, 3]"), "gemini-3.5-flash-lite")
+
+
 
 

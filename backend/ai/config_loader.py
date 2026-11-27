@@ -103,6 +103,12 @@ class AIConfig:
         )
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
+        # Tùy chọn: Endpoint OpenAI-compatible riêng cho bước Phân đoạn (Segmenter)
+        # Chỉ kích hoạt khi cấu hình đủ cả 3 biến; không ảnh hưởng bước Chau chuốt (Refiner).
+        self.segment_llm_api_key: str = (os.getenv("SEGMENT_LLM_API_KEY") or "").strip()
+        self.segment_llm_api_url: str = (os.getenv("SEGMENT_LLM_API_URL") or "").strip()
+        self.segment_llm_model: str = (os.getenv("SEGMENT_LLM_MODEL") or "").strip()
+
         # Thư mục cache, output và segments duy nhất tại thư mục gốc AutoCut
         project_root = Path(__file__).resolve().parent.parent.parent
         self.cache_dir: str = os.getenv("CACHE_DIR", str(project_root / "cache"))
@@ -123,8 +129,9 @@ _API_ERROR_RULES: Tuple[Tuple[str, str, re.Pattern[str]], ...] = (
         "TOKEN_OR_QUOTA_EXHAUSTED",
         "Het token/quota",
         re.compile(
-            r"(?<![\w.])(?:429|413)(?![\w.])|resource_exhausted|quota|rate_limit|rate limit"
-            r"|too many requests|insufficient_quota|context_length|context length|max_tokens"
+            r"(?<![\w.])(?:429|413|402)(?![\w.])|resource_exhausted|quota|rate_limit|rate limit"
+            r"|too many requests|insufficient_quota|insufficient_balance|insufficient balance"
+            r"|insufficient_credit|insufficient credit|context_length|context length|max_tokens"
             r"|payload too large|token limit|token quota|het token"
         ),
     ),
